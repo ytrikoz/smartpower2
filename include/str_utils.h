@@ -3,7 +3,7 @@
 
 #include "consts.h"
 
-typedef enum {ALIGN_LEFT, ALIGN_CENTER, ALIGN_RIGHT} TextAligment;
+typedef enum { ALIGN_LEFT, ALIGN_CENTER, ALIGN_RIGHT } TextAligment;
 
 int quadraticRegression(double volt);
 String formatMHz(uint32_t uint32_t);

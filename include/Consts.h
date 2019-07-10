@@ -31,14 +31,16 @@
 //#define DISABLE_NTP
 
 #define APPNAME "SmartPower2"
-#define FW_VERSION "0.6.1" " (" __DATE__ ")"
+#define FW_VERSION \
+    "0.6.1"        \
+    " (" __DATE__ ")"
 
 #define COLLECT_LOOP_STATS_INTERVAL 5000
 #define START_SHOWING_RESTART_COUNTER_ON 5
 #define ONE_SECOND_ms 1000
 #define ONE_MINUTE_s 60
 #define ONE_HOUR_s 3600
-#define ONE_HOUR_ms ONE_HOUR_s * ONE_SECOND_ms;
+#define ONE_HOUR_ms ONE_HOUR_s* ONE_SECOND_ms;
 #define SEVENTY_YEARS_ms 2208988800
 
 #define FILENAME_MAX_LENGTH 31

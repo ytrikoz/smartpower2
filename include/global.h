@@ -1,21 +1,20 @@
 #pragma once
-#include <SimpleTimer.h>
 #include <SimpleCLI.h>
+#include <SimpleTimer.h>
 
-#include "consts.h"
 #include "cli.h"
+#include "consts.h"
 
 #include "ConfigHelper.h"
-#include "Multimeter.h"
-#include "Shell.h"
-#include "Multimeter.h"
 #include "Display.h"
-#include "WebService.h"
-#include "TelnetServer.h"
+#include "Multimeter.h"
 #include "NTPClient.h"
 #include "NetworkService.h"
-#include "SystemClock.h"
 #include "OTAUpdate.h"
+#include "Shell.h"
+#include "SystemClock.h"
+#include "TelnetServer.h"
+#include "WebService.h"
 
 extern TelnetServer *telnet;
 extern NetworkServices *network_discovery;
@@ -30,8 +29,8 @@ extern void setup_telnet();
 extern void setup_network_discovery();
 extern void setup_clock();
 
-extern bool init_telnet_shell(Stream*);
-extern void init_serial_shell(Stream*);
+extern bool init_telnet_shell(Stream *);
+extern void init_serial_shell(Stream *);
 extern String get_system_time();
 
 // main

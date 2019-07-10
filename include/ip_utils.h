@@ -20,9 +20,12 @@ void setupAP(IPAddress);
 
 bool startAP(const char* ssid, const char* password, IPAddress host);
 
-void startSTA(const char *ssid, const char *password, IPAddress host, IPAddress subnet, IPAddress gateway, IPAddress dns);
-void startSTA(const char *ssid, const char *passwd);
+void startSTA(const char* ssid, const char* password, IPAddress host,
+              IPAddress subnet, IPAddress gateway, IPAddress dns);
+void startSTA(const char* ssid, const char* passwd);
 
-void setupSTA(IPAddress host, IPAddress gateway, IPAddress subnet, IPAddress dns);
-void setupSTA(const char* ssid, const char* password, IPAddress ipaddr, IPAddress subnet, IPAddress gateway, IPAddress dns);
+void setupSTA(IPAddress host, IPAddress gateway, IPAddress subnet,
+              IPAddress dns);
+void setupSTA(const char* ssid, const char* password, IPAddress ipaddr,
+              IPAddress subnet, IPAddress gateway, IPAddress dns);
 void setupSTA(const char* ssid, const char* password);

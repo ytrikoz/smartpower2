@@ -8,9 +8,8 @@
 
 #include "types.h"
 
-class ConfigHelper
-{
-public:
+class ConfigHelper {
+   public:
     ConfigHelper();
     ~ConfigHelper();
 
@@ -24,14 +23,14 @@ public:
 
     uint8_t getWiFiMode();
     bool setBootPowerState(BootPowerState);
-    bool setBootPowerState(uint8_t);    
+    bool setBootPowerState(uint8_t);
     BootPowerState getBootPowerState();
 
     const char *getSSID();
     const char *getSSID_AP();
     const char *getPassword();
     const char *getPassword_AP();
-    
+
     bool getDHCP();
 
     float getOutputVoltage();
@@ -63,7 +62,9 @@ public:
     bool setDNS(const char *);
     bool setOutputVoltage(float value);
 
-    bool setNetworkSTAConfig(uint8_t, const char *, const char *, bool, const char *, const char *, const char *, const char *);
+    bool setNetworkSTAConfig(uint8_t, const char *, const char *, bool,
+                             const char *, const char *, const char *,
+                             const char *);
     bool setPowerConfig(BootPowerState state, float outputVoltage);
     bool setNtpConfig(sint8_t timeZone_h, uint16_t updateInterval_s);
 
@@ -72,7 +73,7 @@ public:
     String getConfigJson();
     Config *getData();
 
-private:
+   private:
     void onConfigChanged(Parameter param);
 
     int getIntValue(Parameter param);

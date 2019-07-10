@@ -1,7 +1,7 @@
 //#include <GDBStub.h>
 #include <Arduino.h>
-#include <Wire.h>
 #include <ESP8266WiFi.h>
+#include <Wire.h>
 #include "HardwareSerial.h"
 
 #include "mcp4652.h"

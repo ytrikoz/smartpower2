@@ -5,32 +5,32 @@
 #define MEASUREMENT_INTERVAL 50
 #define SECONDS_IN_HOUR 3600
 
-class Multimeter
-{
-private:
-	unsigned long lastUpdated;
-	bool calcWattHours;  
-	bool enabled;	
+class Multimeter {
+   private:
+    unsigned long lastUpdated;
+    bool calcWattHours;
+    bool enabled;
 
-    float voltage; 
-    float current; 
-    float power; 	
-	double wattSeconds;	
-public:
-	Multimeter();	
+    float voltage;
+    float current;
+    float power;
+    double wattSeconds;
 
-	void begin();	
-	void end();	
-	void loop();
+   public:
+    Multimeter();
 
-	String toString();
+    void begin();
+    void end();
+    void loop();
 
-	float getVoltage();
-	float getCurrent();
-	float getPower();
+    String toString();
 
-	double getWattHours();		
-	void setWattHours(double value);
-	void enableWattHours(bool enabled);			
-	bool isWattHoursEnabled();
+    float getVoltage();
+    float getCurrent();
+    float getPower();
+
+    double getWattHours();
+    void setWattHours(double value);
+    void enableWattHours(bool enabled);
+    bool isWattHoursEnabled();
 };
