@@ -1,0 +1,180 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=320, initial-scale=1" />
+  <meta name="MobileOptimized" content="320" />
+  <meta name="HandheldFriendly" content="true" />
+  <style type="text/css">
+    body {
+      font-family: sans-serif;
+      background-color: #a9a9a9;
+      display: flex;
+      flex-flow: column;
+      align-items: left;
+    }
+    h1 {
+      top: -1px;
+	    padding-top: 1px;
+      color: rgb(255, 255, 255);
+      display: block;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      height: 20px;
+      line-height: 20.8px;
+      margin-block-end: 0px;
+      margin-block-start: 0px;
+      margin-bottom: 0px;
+      margin-top: 0px;
+      min-height: 17.6px;
+      outline-color: rgb(255, 255, 255);
+      outline-style: none;
+      outline-width: 0px;
+      padding-bottom: 11.2px;
+      padding-top: 11.2px;
+      text-align: center;
+      text-shadow: rgb(17, 17, 17) 0px 1px 0px;
+      text-size-adjust: 100%;
+      white-space: nowrap;
+    }
+
+    h2 {
+      color: #e1e1e1;
+      text-shadow: 2px 2px 2px black;
+    }
+
+    li {
+      background-color: #7cfc00;
+      list-style-type: none;
+      margin-bottom: 10px;
+      padding-right: 5px;
+      border-top: 3px solid #7cfc00;
+      border-bottom: 3px solid #7cfc00;
+      box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.7);
+    }
+
+    b,
+    a:nth-child(1) {
+      background-color: #ff4500;
+      font-weight: bold;
+      color: white;
+      text-decoration: none;
+      padding: 0 5px;
+      border-top: 3.2px solid #ff4500;
+      border-bottom: 3.6px solid #ff4500;
+      text-shadow: 2px 2px 1px black;
+    }
+
+    input {
+      height: 35px;
+      font-size: 13px;
+    }
+
+    h1+main {
+      display: flex;
+    }
+
+    section {
+      display: flex;
+      flex-direction: column;
+      padding: 0.2em;
+    }
+
+    #left {
+      align-items: flex-end;
+      text-shadow: 1px 1px 2px #757474;
+    }
+
+    .note {
+      background-color: salmon;
+      padding: 0.5em;
+      margin-top: 1em;
+      text-align: center;
+      max-width: 320px;
+      border-radius: 0.5em;
+    }
+
+    .button {
+      width: 130px;
+      height: 40px;
+      font-size: 16px;
+      margin-top: 1em;
+      cursor: pointer;
+      background-color: #adff2f;
+      box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.7);
+    }
+
+    [type=submit] {
+      height: 40px;
+      min-width: 70px;
+    }
+
+    [value=Format] {
+      background-color: #ddd;
+    }
+
+    [title] {
+      background-color: silver;
+      font-size: 16px;
+      width: 125px;
+    }
+  </style>
+  <title>Firmware uploader</title>
+  <script>
+    function list() {
+      let myList = document.querySelector('main');
+
+      fetch('list?dir').then(
+        function (response) { return response.json(); }).then(function (json) {
+          for (var i = 0; i < json.length - 1; i++) {
+            let dir = `<li><a href ="${json[i].name}">${json[i].name}</a><small> ${json[i].size}</small><a href ="${json[i].name}"download="${json[i].name}"> download </a>`;
+            dir += `or <a href ="${json[i].name}?delete=/${json[i].name}"> delete </a>`;
+          }
+          myList.insertAdjacentHTML('beforeend', dir);
+          myList.insertAdjacentHTML('beforeend', `<li><b>SPIFFS</b>${json[i].usedBytes}/${json[i].totalBytes}`);
+          free = json[i].freeBytes;
+        })
+    }
+    function fileSize() {
+      var nBytes = document.querySelector('input').files[0].size, sOutput = `${nBytes} Byte`;
+      var a = document.querySelector('span'), b = document.querySelector('[value="Upload"]');
+      for (var aMultiples = [
+        ' KB',
+        ' MB'
+      ], nMultiple = 0, nApprox = nBytes / 1024; nApprox > 1; nApprox /= 1024, nMultiple++) {
+        sOutput = nApprox.toFixed(2) + aMultiples[nMultiple];
+      }
+      if (typeof free == "undefined") {
+        free = 0;
+      }
+      if (nBytes > free) {
+        a.innerHTML = `<li><small> File size: ${sOutput}</small><strong style="color: red;">Not enough space</strong></li>`;
+        b.setAttribute('disabled', 'disabled');
+      }
+      else {
+        a.innerHTML = `<li><b>File size:</b>${sOutput}</li>`;
+        b.removeAttribute('disabled');
+      }
+    }
+    function confirmFormat() {return confirm('Format SPIFFS completely wipes all the data and settings are you shure?');}
+    document.addEventListener('DOMContentLoaded', list);
+  </script>
+</head>
+
+<body>
+  <header><h1>Firmware uploader</h1></header>
+  <form action="/upload" method="POST" enctype="multipart/form-data">
+    <input type="file" name="upload" onchange="fileSize()">
+    <input type="submit" value="Upload" disabled>
+  </form>
+  <div>
+    <hr>
+    <span></span>
+    <main></main>
+  </div>
+  <div><form action="/format" method="POST"><input type="submit" value="Format SPIFFS" onclick="return confirmFormat()"></form></div>
+</body>
+
+</html>
