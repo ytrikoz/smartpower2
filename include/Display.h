@@ -16,23 +16,28 @@
 #define DELAY_TIME 3500
 
 typedef struct {
-    bool needsToRefresh;
-    char param[LCD_COLS + 1];
-    char value[LCD_COLS * 4 + 1];
+    bool updated = false;
+    // fixed str part
+    char param[LCD_COLS + 1] = {0};
+    // scrolling str part
+    char value[DISPLAY_VIRTUAL_COLS + 1] = {0};
+    // active virtual screen
+    uint8_t screen_X = 1;
+    uint8_t screen_Y = 1;
+    // scrolling inline position
     uint8_t index;
-    uint8_t page;
-
-} DisplayLine;
+} DisplayItem;
 
 class Display {
    private:
+    Print *output;    
     uint8_t addr;
     LiquidCrystal_I2C *lcd;
-    DisplayLine line[LCD_ROWS];
+    DisplayItem item[LCD_ROWS];
 
-    unsigned long lastUpdateTime;
+    unsigned long lastUpdated;
     bool connected;
-
+    
     bool getAddr();
 
     void showByteXfer(unsigned long etime);
@@ -40,24 +45,23 @@ class Display {
     unsigned long timeFPS(uint8_t iter, uint8_t cols, uint8_t rows);
 
     void show(const String &s);
-
-    HardwareSerial *_serial;
     void _print(String arg);
     void _println(void);
     void _println(String arg);
 
    public:
-    Display(HardwareSerial *serial);
+    Display();
+    void setOutput(Print *p);
     bool init();
     bool isConnected();
-
     void turnOn();
     void turnOff();
 
     void onProgress(uint8_t per, const char *message = NULL);
 
-    void setLine(uint8_t n, const char *textStr);
-    const char *getParam(uint8_t n);
-    void setParamLine(uint8_t row, const char *paramStr, const char *valueStr);
-    void update(boolean forced = false);
+    void setItem(uint8_t row, const char *str);
+    void setItem(uint8_t row, const char *param, const char *value);
+    const char *getParamStr(uint8_t row);
+    
+    void redraw(boolean forced = false);
 };

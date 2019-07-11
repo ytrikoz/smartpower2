@@ -3,14 +3,20 @@
 
 #include "consts.h"
 
-typedef enum { ALIGN_LEFT, ALIGN_CENTER, ALIGN_RIGHT } TextAligment;
+namespace str_utils {
 
-int quadraticRegression(double volt);
-String formatMHz(uint32_t uint32_t);
+typedef enum { LEFT, CENTER, RIGHT } Align;
 String formatSize(size_t bytes);
 bool setstr(char *_dest, const char *_src, uint8_t _size);
 String strof(int number, char character);
-void charsOf(char *str, char chr, uint8_t size);
+
 String mac2str(uint8 hwaddr[6]);
-void printWelcome(Print *p);
-String marginStr(const char *str, TextAligment align, uint8_t width);
+void printWelcomeTo(Print *p);
+
+String getStrInMHz(uint32_t freq);
+void setStrOfChar(char *str, char chr, uint8_t size);
+void addPaddingTo(char *str, Align align, uint8_t line_width,
+                  const char ch = ' ');
+void stringToBytes(const char *str, char sep, byte *bytes, int len,
+                   int base);
+}  // namespace str_utils

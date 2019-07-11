@@ -5,25 +5,22 @@ ConfigHelper *config;
 ConfigHelper::ConfigHelper() {
     filename = new char[FILENAME_MAX_LENGTH];
     config = new Config();
-    config->setOnConfigChange(
-        [this](Parameter param) { onConfigChanged(param); });
+    config->setOnEvents([this](Parameter param) { onConfigEvent(param); });
 }
 
 ConfigHelper::~ConfigHelper() { delete[] filename; }
 
-void ConfigHelper::onConfigChanged(Parameter param) {
+void ConfigHelper::onConfigEvent(Parameter param) {
 #ifdef DEBUG_CONFIG
-    debug->printf("[config] param #%d changed\r\n", param);
+    USE_DEBUG_SERIAL.printf("[config] param #%d changed\r\n", param);
 #endif
-
-    fileSynced = false;
+    synced = false;
 }
 
 Config *ConfigHelper::getData() { return config; }
 
 void ConfigHelper::init(const char *name) {
-    setstr(filename, name, FILENAME_MAX_LENGTH);
-
+    str_utils::setstr(this->filename, name, FILENAME_MAX_LENGTH);
     if (!loadFile(filename)) {
         reset();
     }
@@ -60,10 +57,10 @@ bool ConfigHelper::loadFile(const char *name) {
 
 void ConfigHelper::save() {
 #ifdef DEBUG_CONFIG
-    debug->printf("[config] synced %s\r\n", fileSynced ? "yes" : "no");
+    debug->printf("[config] synced %s\r\n", synced ? "yes" : "no");
 #endif
-    if (!fileSynced) {
-        fileSynced = saveFile(filename);
+    if (!synced) {
+        synced = saveFile(filename);
     }
 }
 
@@ -95,7 +92,7 @@ void ConfigHelper::reload() {
     debug->printf("[config] reload %s\r\n", filename);
 #endif
     if (loadFile(filename)) {
-        fileSynced = true;
+        synced = true;
     }
 }
 
@@ -182,7 +179,7 @@ bool ConfigHelper::getBoolValue(Parameter param) {
     return (bool)atoi(getStrValue(param));
 }
 
-IPAddress ConfigHelper::getIPAddrValue(Parameter param) {
+IPAddress ConfigHelper::getIPAddr(Parameter param) {
     return atoip(getStrValue(param));
 }
 
@@ -245,26 +242,19 @@ const char *ConfigHelper::getPassword() { return getStrValue(PASSWORD); }
 
 const char *ConfigHelper::getPassword_AP() { return getStrValue(AP_PASSWORD); }
 
-IPAddress ConfigHelper::getIPAddr_AP() { return getIPAddrValue(AP_IPADDR); }
+IPAddress ConfigHelper::getIPAddr_AP() { return getIPAddr(AP_IPADDR); }
 
 bool ConfigHelper::getDHCP() { return getBoolValue(DHCP); }
 
-IPAddress ConfigHelper::getDNS() { return getIPAddrValue(DNS); }
-
-IPAddress ConfigHelper::getNetmask() { return getIPAddrValue(NETMASK); }
-
-IPAddress ConfigHelper::getGateway() { return getIPAddrValue(NETMASK); }
-
-IPAddress ConfigHelper::getIPAddr() { return getIPAddrValue(IPADDR); }
-
-const char *ConfigHelper::getIPStr() { return getStrValue(IPADDR); }
-
+float ConfigHelper::getOutputVoltage() { return getFloatValue(OUTPUT_VOLTAGE); }
+IPAddress ConfigHelper::getDNS() { return getIPAddr(DNS); }
+IPAddress ConfigHelper::getNetmask() { return getIPAddr(NETMASK); }
+IPAddress ConfigHelper::getGateway() { return getIPAddr(NETMASK); }
+IPAddress ConfigHelper::getIPAddr() { return getIPAddr(IPADDR); }
+const char *ConfigHelper::getIPAddrStr() { return getStrValue(IPADDR); }
 const char *ConfigHelper::getNetmaskStr() { return getStrValue(NETMASK); }
-
 const char *ConfigHelper::getGatewayStr() { return getStrValue(GATEWAY); }
 const char *ConfigHelper::getDNSStr() { return getStrValue(DNS); }
-
-float ConfigHelper::getOutputVoltage() { return getFloatValue(OUTPUT_VOLTAGE); }
 
 uint8_t ConfigHelper::getTPW() {
     // maximum value of RF Tx Power, unit: 0.25 dBm, range [0, 82]

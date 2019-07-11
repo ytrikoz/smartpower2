@@ -40,7 +40,7 @@ class ConfigHelper {
     IPAddress getIPAddr();
     IPAddress getIPAddr_AP();
 
-    const char *getIPStr();
+    const char *getIPAddrStr();
     IPAddress getNetmask();
     const char *getNetmaskStr();
     IPAddress getGateway();
@@ -74,25 +74,23 @@ class ConfigHelper {
     Config *getData();
 
    private:
-    void onConfigChanged(Parameter param);
+    void onConfigEvent(Parameter param);
 
     int getIntValue(Parameter param);
     bool getBoolValue(Parameter param);
-    IPAddress getIPAddrValue(Parameter param);
+    IPAddress getIPAddr(Parameter param);
     const char *getStrValue(Parameter param);
     float getFloatValue(Parameter param);
 
     Config *config;
     char *filename;
-    Stream *serial;
 
     bool loadFile(const char *);
     bool saveFile(const char *);
 
-    bool fileSynced;
-
+    bool synced;
 #ifdef DEBUG_CONFIG
-    HardwareSerial *debug = &USE_DEBUG_SERIAL;
+    Print *debug = &USE_DEBUG_SERIAL;
 #endif
 };
 

@@ -1,7 +1,7 @@
 #include <TerminalWriter.h>
 
-TerminalWriter::TerminalWriter(Print *output) {
-    this->output = output;
+TerminalWriter::TerminalWriter(Print *p) {
+    output = p;
     eol = CRLF;
     ctrlCodesEnabled = false;
 }
@@ -27,12 +27,13 @@ void TerminalWriter::del() {
 }
 
 void TerminalWriter::prompt() {
-    char buf[OUTPUT_MAX_LENGTH];
-    memset(&buf, '\x00', sizeof(buf[0]) * OUTPUT_MAX_LENGTH);
+    char buf[OUTPUT_MAX_LENGTH + 1];
+    memset(&buf[0], '\x00', sizeof(buf[0]) * OUTPUT_MAX_LENGTH + 1);
     strcpy(buf, rtc.getLocalFormated().c_str());
 
     if (isWiFiActive()) {
-        strcat(buf, " ");
+        buf[strlen(buf)] = ' ';
+        buf[strlen(buf)+1] = '\x00';
         strcat(buf, wifi_station_get_hostname());
     }
     strcat(buf, " > ");

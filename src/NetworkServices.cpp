@@ -30,7 +30,7 @@ void NetworkServices::begin() {
         output->println(FPSTR(str_failed));
     }
 
-    output->print(F("[netbios] "));
+    output->print(FPSTR(str_netbios));
     if (begin_netbios(hostname)) {
         output->println(FPSTR(str_ready));
     } else {
@@ -70,5 +70,5 @@ void NetworkServices::loop() {
 
     if (mdns) mdns->update();
 
-    // netbios - no in loop executing
+    // netbios
 }

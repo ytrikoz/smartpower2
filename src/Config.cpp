@@ -1,9 +1,9 @@
-#include <Config.h>
+#include "Config.h"
 
 Config::Config() {
     for (uint8_t i = 0; i < PARAM_COUNT; i++) {
         values[i] = new char[metadata[i].size];
-        setstr(values[i], '\x00', metadata[i].size);
+        str_utils::setstr(values[i], '\x00', metadata[i].size);
     }
 }
 
@@ -15,16 +15,16 @@ Config::~Config() {
 
 void Config::setDefault() {
     for (int i = 0; i < PARAM_COUNT; i++) {
-        setstr(values[i], metadata[i].defValue, metadata[i].size);
+        str_utils::setstr(values[i], metadata[i].def, metadata[i].size);
     }
 }
 
-void Config::setOnConfigChange(ConfigChangeEventHandler eventHandler) {
-    onConfigChangeEvent = eventHandler;
+void Config::setOnEvents(ConfigEventHandler eventHandler) {
+    onEvents = eventHandler;
 }
 
-void Config::onConfigChange(Parameter param) {
-    if (onConfigChangeEvent) onConfigChangeEvent(param);
+void Config::onConfigChangeEvent(Parameter param) {
+    if (onEvents) onEvents(param);
 }
 
 const char *Config::getStrValue(Parameter param) { return values[param]; }
@@ -71,11 +71,12 @@ bool Config::setValue(const char *name, const char *value) {
 }
 
 bool Config::setValue(Parameter param, const char *value) {
-    bool changed = setstr(values[param], value, metadata[param].size);
+    bool changed =
+        str_utils::setstr(values[param], value, metadata[param].size);
 #ifdef DEBUG_CONFIG
     debug->printf("[config] set #%d: %s\r\n", param, value);
 #endif
-    if (changed) onConfigChange(param);
+    if (changed) onConfigChangeEvent(param);
     return changed;
 }
 

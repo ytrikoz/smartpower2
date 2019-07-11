@@ -1,10 +1,10 @@
 #include "main.h"
 
-uint8_t powerBtnLongPressCounter;
-unsigned long powerBtnLastEvent = 0;
-bool powerBtnPressed = false;
-bool powerBtnReleased = true;
-bool powerBtnPressedHandled = false;
+uint8_t volatile powerBtnLongPressCounter;
+unsigned long volatile powerBtnLastEvent = 0;
+bool volatile powerBtnPressed = false;
+bool volatile powerBtnReleased = true;
+bool volatile powerBtnPressedHandled = false;
 
 typedef struct {
     bool connected = false;
@@ -26,7 +26,7 @@ PowerState get_power_state() { return state; }
 void set_power_state(PowerState value) {
     state = value;
 
-    USE_SERIAL.print("[power]");
+    USE_SERIAL.printf_P(str_power);
     USE_SERIAL.print(' ');
     USE_SERIAL.println(state == POWER_ON ? "on" : "off");
 
@@ -48,8 +48,10 @@ void set_power_state(PowerState value) {
 
 uint8_t get_http_clients_count() {
     uint8_t result = 0;
+    #ifndef DISABLE_HTTP
     for (uint8_t i = 0; i < WEBSOCKETS_SERVER_CLIENT_MAX; i++)
         if (clients[i].connected) result++;
+    #endif
     return result;
 }
 
@@ -61,12 +63,25 @@ uint8_t get_telnet_clients_count() {
 #endif
 }
 
-unsigned long loopMeasureTime = 0;
-unsigned long loopStartTime = 0;
-unsigned long loopCounter = 0;
-unsigned long loopLongest = 0;
+int quadraticRegression(double volt) {
+    double a = 0.0000006562;
+    double b = 0.0022084236;
+    float c = 4.08;
+    double d = b * b - a * (c - volt);
+    double root = (-b + sqrt(d)) / a;
+    if (root < 0)
+        root = 0;
+    else if (root > 255)
+        root = 255;
+    return root;
+}
 
-ulong get_lps() { return loopCounter / (millis() - loopMeasureTime); }
+unsigned long volatile loopMeasureTime = 0;
+unsigned long volatile loopStartTime = 0;
+unsigned long volatile loopCounter = 0;
+unsigned long volatile loopLongest = 0;
+
+ulong get_lps() { return loopCounter * ONE_SECOND_ms / (millis() - loopMeasureTime); }
 
 ulong get_longest_loop() { return loopLongest; }
 
@@ -248,7 +263,7 @@ void sendOnPageState(uint8_t num, uint8_t page) {
             payload += ',';
             payload += config->getDHCP();
             payload += ',';
-            payload += config->getIPStr();
+            payload += config->getIPAddrStr();
             payload += ',';
             payload += config->getNetmaskStr();
             payload += ',';
@@ -289,30 +304,31 @@ void update_wifi_led() {
     }
 }
 
+#ifndef DISABLE_LCD
 void update_display() {
     if (!display->isConnected()) return;
 
     String str;
     if (state == POWER_OFF) {
         if (WiFi.getMode() == WIFI_STA) {
-            display->setParamLine(0, "STA >", WiFi.SSID().c_str());
+            display->setItem(0, "STA >", WiFi.SSID().c_str());
             if (display_alt_line) {
-                display->setParamLine(1, "IP >",
+                display->setItem(1, "IP >",
                                       WiFi.localIP().toString().c_str());
             } else
-                display->setParamLine(1, "RSSI>", String(WiFi.RSSI()).c_str());
+                display->setItem(1, "RSSI>", String(WiFi.RSSI()).c_str());
         }
 
         else if (WiFi.getMode() == WIFI_AP) {
-            display->setParamLine(0, "AP >", WiFi.softAPSSID().c_str());
-            display->setParamLine(1, "PWD>", WiFi.softAPPSK().c_str());
+            display->setItem(0, "AP >", WiFi.softAPSSID().c_str());
+            display->setItem(1, "1D>", WiFi.softAPPSK().c_str());
         }
     } else if (state == POWER_ON) {
         String str = String(meter->getVoltage(), 3);
         str += " V ";
         str += String(meter->getCurrent(), 3);
         str += " A ";
-        display->setLine(0, str.c_str());
+        display->setItem(0, str.c_str());
 
         double watt = meter->getPower();
         str = String(watt, (watt < 10) ? 3 : 2);
@@ -325,9 +341,10 @@ void update_display() {
             str += String(rwatth / 1000, 3);
             str += "KWh";
         }
-        display->setLine(1, str.c_str());
+        display->setItem(1, str.c_str());
     }
 }
+#endif 
 
 void handle_power_button_press() {
     if (powerBtnPressedHandled) {
@@ -385,6 +402,15 @@ void setup_hardware() {
     SPIFFS.begin();
 }
 
+void onBootProgress(uint8_t per, const char *message)
+{
+    #ifndef DISABLE_LCD
+    if (display) display->onProgress(per, message);
+    #else
+        USE_SERIAL.printf_P(strf_boot_progress, message, per);
+    #endif
+}
+
 void setup() {
     USE_SERIAL.begin(115200);
     // gdbstub_init();
@@ -396,6 +422,7 @@ void setup() {
     USE_SERIAL.println(ESP.getResetReason());
     USE_SERIAL.print(F("[reset] info: "));
     USE_SERIAL.println(ESP.getResetInfo());
+    
     setup_hardware();
 
     memset(&clients[0], 0x00,
@@ -403,25 +430,29 @@ void setup() {
 
     config = new ConfigHelper();
     meter = new Multimeter();
-    display = new Display(&USE_SERIAL);
+    
+    #ifndef DISABLE_LCD
+    display = new Display();
+    display->setOutput(&USE_SERIAL);
+    if (display->init()) display->turnOn();
+    #endif
 
-    printWelcome(&USE_SERIAL);
+    str_utils::printWelcomeTo(&USE_SERIAL);
     USE_SERIAL.print("[wait]");
     USE_SERIAL.print(" ");
     delaySequence(3);
     USE_SERIAL.println();
 
-    if (display->init()) display->turnOn();
-    display->onProgress(10, "VER>" FW_VERSION);
+    onBootProgress(10, "VER>" FW_VERSION);    
     meter->begin();
 
-    display->onProgress(20, "CFG>");
+    onBootProgress(20, "CFG>");
     config->init(FILE_CONFIG);
 
-    display->onProgress(40, "WIFI>");
+    onBootProgress(40, "WIFI>");
     start_wifi();
 
-    display->onProgress(80, "START>");
+    onBootProgress(80, "START>");
     switch (config->getBootPowerState()) {
         case BOOT_POWER_OFF: {
             state = POWER_OFF;
@@ -445,18 +476,20 @@ void setup() {
 
     init_serial_shell(&USE_SERIAL);
 
-    display->onProgress(100);
+    onBootProgress(100, "");
 
     timer.setInterval(1000, [] {
-        update_wifi_led();
-        update_display();
         handle_power_button_press();
+        update_wifi_led();        
         send_multimeter_data_to_clients();
+        #ifndef DISABLE_LCD
+        update_display();
+        #endif
     });
 
     timer.setInterval(5000, [] { display_alt_line = !display_alt_line; });
 
-    timer.setInterval(COLLECT_LOOP_STATS_INTERVAL, [] {
+    timer.setInterval(LOOP_STATS_INTERVAL, [] {
         loopMeasureTime = millis();
         loopCounter = 0;
         loopLongest = 0;
@@ -494,10 +527,11 @@ void loop() {
 #ifndef DISABLE_NETWORK_DISCOVERY
     if (network_discovery) network_discovery->loop();
 #endif
-
-    if (display) display->update();
-
+#ifndef DISABLE_LCD
+    if (display) display->redraw();
+#endif
     rtc.loop();
+    
     timer.run();
 
     /* loop timings */
@@ -519,28 +553,23 @@ void delaySequence(uint8_t sec) {
 
 void start_services() {
     IPAddress host = hostIP();
-#ifndef DISABLE_HTTP
-    File f = SPIFFS.open(FILE_WEB_SETTINGS, "w");
-    f.printf("ipaddr=\"%s\"\r\n", host.toString().c_str());
-    f.flush();
-    f.close();
 
+#ifndef DISABLE_HTTP
     http = new WebService(host, HTTP_PORT, WEBSOCKET_PORT, WEB_ROOT);
-    http->setOutputPrint(&USE_SERIAL);
+    http->setOutput(&USE_SERIAL);
     http->setOnConnection(onClient);
     http->setOnData(onClientData);
     http->begin();
 #endif
 
-#ifndef DISABLE_OTA
-    USE_SERIAL.print("[ota]");
-    USE_SERIAL.print(" ");
+#ifndef DISABLE_OTA_UPDATE
+    USE_SERIAL.print(FPSTR(str_ota_update));
     ota = new OTAUpdate();
     ota->setOutput(&USE_SERIAL);
     if (ota->begin(HOSTNAME, OTA_PORT)) {
-        USE_SERIAL.printf("%s:%d", HOSTNAME, OTA_PORT);
+        USE_SERIAL.printf_P(strf_ip_port, HOSTNAME, OTA_PORT);
     } else {
-        USE_SERIAL.print("failed");
+        USE_SERIAL.print(FPSTR(str_failed));
     }
     USE_SERIAL.println();
 #endif

@@ -1,8 +1,18 @@
 #include "WebService.h"
 
-WebService::WebService(IPAddress host, int http, int ws, const char *root) {
-    server = new ESP8266WebServer(host, http);
-    _root = root;
+WebService::WebService(IPAddress ip, int http_port, int websocket_port,
+                       const char *root) {
+    #ifdef DEBUG_WEB_SERVICE
+        USE_DEBUG_SERIAL.printf("ipaddr=\"%s\"\r\n", ip.toString().c_str());
+    #endif
+    File f = SPIFFS.open(FILE_WEB_SETTINGS, "w");
+    f.printf("ipaddr=\"%s\"\r\n", ip.toString().c_str());
+    f.flush();
+    f.close();
+    
+    this->root = root;
+
+    server = new ESP8266WebServer(ip, http_port);
 
     server->on("/upload", HTTP_POST, [this]() { server->send(200); },
                [this]() { onFileUploading(); });
@@ -36,20 +46,21 @@ WebService::WebService(IPAddress host, int http, int ws, const char *root) {
         }
     });
 
-    socket = new WebSocketsServer(ws);
+    socket = new WebSocketsServer(websocket_port);
     socket->onEvent(
         [this](uint8_t num, WStype_t type, uint8_t *payload, size_t lenght) {
             socketEvent(num, type, payload, lenght);
         });
 
-    initSSDP(http);
+    ssdp = new SSDPClass();
+    setup_ssdp(ssdp, http_port);
     if (ssdp->begin()) {
         server->on("/description.xml", HTTP_GET,
                    [this]() { ssdp->schema(server->client()); });
     }
 }
 
-void WebService::setOutputPrint(Print *output) { this->output = output; }
+void WebService::setOutput(Print *p) { this->output = p; }
 
 void WebService::onNoContent() { server->send(204, "text/plan", "No Content"); }
 
@@ -72,9 +83,11 @@ void WebService::onNotFound() {
 void WebService::begin() {
     server->begin();
     socket->begin();
+    active = true;
 }
 
 void WebService::loop() {
+    if (!active) return;
     server->handleClient();
     socket->loop();
 }
@@ -103,7 +116,7 @@ void WebService::socketEvent(uint8_t num, WStype_t type, uint8_t *payload,
             onData(num, data);
             return;
         case WStype_BIN:
-            output->printf(" <- (binnary) %s\r\n", formatSize(lenght).c_str());
+            output->printf(" <- (binnary) %s\r\n", str_utils::formatSize(lenght).c_str());
             hexdump(payload, lenght);
             break;
         default:
@@ -119,7 +132,7 @@ bool WebService::getFileContent(const String uri) {
     return sendFile(path + ".gz") || sendFile(path);
 }
 
-String WebService::getFilePath(const String uri) { return String(_root) + uri; }
+String WebService::getFilePath(const String uri) { return String(root) + uri; }
 
 bool WebService::sendFile(String path) {
     if (SPIFFS.exists(path)) {
@@ -137,7 +150,7 @@ bool WebService::sendFile(String path) {
         output->print(" ");
         output->print(type.c_str());
         output->print(" ");
-        output->print(formatSize(sent).c_str());
+        output->print(str_utils::formatSize(sent).c_str());
         output->println();
 
         return true;
@@ -146,7 +159,7 @@ bool WebService::sendFile(String path) {
 }
 
 void WebService::onGetFileList() {
-    String path = server->hasArg("path") ? server->arg("path") : _root;
+    String path = server->hasArg("path") ? server->arg("path") : root;
     output->printf("[http] filelist %s\r\n", path.c_str());
     Dir dir = SPIFFS.openDir(path);
     String output = "[";
@@ -248,8 +261,7 @@ void WebService::setOnData(WebSocketDataCallback callback) {
     onData = callback;
 }
 
-void WebService::initSSDP(uint16_t port) {
-    ssdp = new SSDPClass();
+void WebService::setup_ssdp(SSDPClass *ssdp, uint16_t port) {
     ssdp->setSchemaURL(F("description.xml"));
     ssdp->setHTTPPort(port);
     ssdp->setName(HOSTNAME);

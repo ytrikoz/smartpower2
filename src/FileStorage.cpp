@@ -1,6 +1,9 @@
 #include "FileStorage.h"
 
-FileStorage::FileStorage(const char* name) { strcpy(filename, name); }
+FileStorage::FileStorage(const char* name) {
+    memset(&filename[0], 0, sizeof(filename[0]) * FILENAME_MAX_LENGTH + 1);
+    strcpy(filename, name); 
+}
 
 bool FileStorage::store(const char* buf) {
 #ifdef DEBUG_FILE_STORAGE
@@ -16,6 +19,7 @@ bool FileStorage::store(const char* buf) {
 #endif
         result = true;
     }
+   
     return result;
 }
 
@@ -32,9 +36,17 @@ bool FileStorage::restore(char* buf) {
             result = true;
         }
         f.close();
-#ifdef DEBUG_FILE_STORAGE
-        debug->println(buf);
+ #ifdef DEBUG_FILE_STORAGE
+        debug->print(buf);
 #endif
     }
+    else {
+         #ifdef DEBUG_FILE_STORAGE
+        debug->printf_P(str_file_not_found);
+        #endif
+    }
+    #ifdef DEBUG_FILE_STORAGE
+    debug->println();
+    #endif
     return result;
 }

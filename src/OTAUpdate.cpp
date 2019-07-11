@@ -10,61 +10,61 @@ OTAUpdate::OTAUpdate() {
     arduinoOTA->onError([this](ota_error_t error) { this->onError(error); });
 }
 
-void OTAUpdate::setOutput(Print *p) { _output = p; }
+void OTAUpdate::setOutput(Print *p) { output = p; }
 
 bool OTAUpdate::begin(const char *hostname, uint16_t port) {
     // arduinoOTA->setPassword("admin");
     // arduinoOTA->setPasswordHash("21232f297a57a5a743894a0e4a801fc3"); //
     // MD5(admin)
-
-    arduinoOTA->setPort(port);
     arduinoOTA->setHostname(hostname);
+    arduinoOTA->setPort(port);
     arduinoOTA->setRebootOnSuccess(false);
     arduinoOTA->begin(false);
-
     return true;
 }
 
 void OTAUpdate::onStart(void) {
-    _output->print("[update]");
-    _output->print(" start ");
+    output->print(FPSTR(str_ota_update));
+    output->print(FPSTR(str_start));
+    PGM_P strP;
     switch (this->arduinoOTA->getCommand()) {
         case U_FLASH:
-            _output->println("firmware");
+            strP = str_firmware;
             break;
         case U_SPIFFS:
-            _output->println("spiffs");
+            strP = str_spiffs;
             break;
         default:
-            _output->println("unknown");
+            strP = str_unknown;
             break;
     }
+    output->println(FPSTR(strP));
 }
 
 void OTAUpdate::onEnd() {
-    _output->print("[update]");
-    _output->println(" complete");
+    output->print(FPSTR(str_ota_update));
+    output->println(FPSTR(str_complete));
 }
 
 void OTAUpdate::onProgress(unsigned int progress, unsigned int total) {
-    char buf[16];
-    sprintf(buf, " %u%%\r", (progress / (total / 100)));
-    _output->print(buf);
+    char buf[8];
+    output->printf_P(buf, FPSTR(strf_progress), progress / total / 100);
+    output->print('\r');
 }
 
 void OTAUpdate::onError(ota_error_t error) {
-    _output->print("[update] ");
-    _output->print("error on ");
+    output->print(FPSTR(str_ota_update));
+    output->print(FPSTR(str_error));
     if (error == OTA_AUTH_ERROR) {
-        _output->println("auth");
+        output->println("auth");
     } else if (error == OTA_BEGIN_ERROR) {
-        _output->println("begin");
+        output->println("begin");
     } else if (error == OTA_CONNECT_ERROR) {
-        _output->println("connect");
+        output->println("connect");
     } else if (error == OTA_RECEIVE_ERROR) {
-        _output->println("receive");
+        output->println("receive");
     } else if (error == OTA_END_ERROR) {
-        _output->println("end");
+        output->println("end");
     };
 }
 

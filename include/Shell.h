@@ -63,3 +63,6 @@ class Shell {
     void _redraw(const char *str);
     void _cursor(MoveDirection move, uint8_t n = 1);
 };
+
+
+

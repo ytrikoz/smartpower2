@@ -16,7 +16,7 @@ typedef std::function<void(uint8_t, String)> WebSocketDataCallback;
 class WebService {
    public:
     WebService(IPAddress host, int http, int ws, const char *root);
-    void setOutputPrint(Print *debug);
+    void setOutput(Print *output);
     void setOnConnection(WebSocketConnectionCallback callback);
     void setOnData(WebSocketDataCallback callback);
     void begin();
@@ -24,7 +24,8 @@ class WebService {
     void sendTxt(uint8_t, const char *);
 
    private:
-    void initSSDP(uint16_t port);
+    bool active = false;
+    void setup_ssdp(SSDPClass *ssdp, uint16_t port);
     void onGetFileList();
     String getFilePath(const String uri);
     bool getFileContent(const String uri);
@@ -46,8 +47,5 @@ class WebService {
     WebSocketDataCallback onData;
 
     Print *output;
-    const char *_root;
-
-    void _print(const char *);
-    void _println(const char * = NULL);
+    const char *root;
 };

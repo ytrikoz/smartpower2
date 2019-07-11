@@ -2,16 +2,22 @@
 
 SystemClock rtc;
 
+SystemClock::SystemClock()
+{
+  
+}
+
+
 void SystemClock::setConfig(Config *config) {
     setTimeZone(config->getIntValue(TIME_ZONE));
     setBackupInterval(config->getIntValue(TIME_BACKUP_INTERVAL));
 }
 
-void SystemClock::setTimeZone(uint8_t timeZone_h) {
+void SystemClock::setTimeZone(sint8_t timeZone_h) {
     timeOffset_s = timeZone_h * ONE_HOUR_s;
 }
 
-void SystemClock::setBackupInterval(uint8_t time_s) {
+void SystemClock::setBackupInterval(uint16_t time_s) {
     if ((time_s < TIME_BACKUP_INTERVAL_MIN_s) && (time_s != 0)) {
         time_s = TIME_BACKUP_INTERVAL_MIN_s;
     }
@@ -51,7 +57,7 @@ void SystemClock::loop() {
 
 void SystemClock::backup() {
     if (backupAgent) {
-        char buf[16];
+        char buf[32];
         backupAgent->store(itoa(getUTC(), buf, DEC));
     }
 }
@@ -61,9 +67,16 @@ void SystemClock::restore() {
         char buf[16];
         if (backupAgent->restore(buf)) {
             setEpochTime(atoi(buf));
-            return;
         }
     }
+}
+
+void SystemClock::setEpochTime(unsigned long epoch_s) {
+    epochTime_s = epoch_s;
+    lastUpdated_ms = millis();
+    synced = true;
+    output->print(FPSTR(str_clock));
+    output->println(getLocalFormated().c_str());
 }
 
 String SystemClock::getLocalFormated() {
@@ -94,14 +107,6 @@ unsigned long SystemClock::getUTC() { return epochTime_s; }
 
 unsigned long SystemClock::getLocal() { return timeOffset_s + getUTC(); }
 
-void SystemClock::setEpochTime(unsigned long epoch_s) {
-    epochTime_s = epoch_s;
-    lastUpdated_ms = millis();
-    synced = true;
-
-    output->printf_P(PSTR("[clock] set %s\r\n"), getLocalFormated().c_str());
-}
-
 uint8_t SystemClock::getWeekDay() { return (((getLocal() / 86400L) + 4) % 7); }
 
 uint8_t SystemClock::getHours() { return ((getLocal() % 86400L) / 3600); }
@@ -109,3 +114,5 @@ uint8_t SystemClock::getHours() { return ((getLocal() % 86400L) / 3600); }
 uint8_t SystemClock::getMinutes() { return ((getLocal() % 3600) / 60); }
 
 uint8_t SystemClock::getSeconds() { return (getLocal() % 60); }
+
+

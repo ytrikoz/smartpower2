@@ -71,16 +71,6 @@ volatile bool network = false;
 
 ADC_MODE(ADC_VCC);
 
-#ifndef DISABLE_HTTP
-WebService *http;
-#endif
-
-#ifndef DISABLE_DISPLAY
-Display *display;
-#endif
-
-#ifndef DISABLE_OTA
-OTAUpdate *ota;
-#endif
-
 String getSystemStatus();
+int quadraticRegression(double volt);
+void onBootProgress(uint8_t per, const char *message = NULL);

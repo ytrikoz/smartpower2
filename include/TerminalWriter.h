@@ -29,3 +29,5 @@ class TerminalWriter : public Print {
     bool ctrlCodesEnabled;
     EOLMarker eol;
 };
+
+

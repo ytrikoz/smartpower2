@@ -48,7 +48,7 @@ bool start_cli(TerminalWriter* writer) {
 
 void quit_cli() {
     output->println();
-    output->print(F("Quit..."));
+    output->print(F("Interrupted by another connection established"));
     output = nullptr;
 }
 
@@ -60,38 +60,35 @@ void print_P(PGM_P str) {
 
 void onGetConfigParameter(const char* name, const char* value) {
     char buf[OUTPUT_MAX_LENGTH];
-    sprintf_P(buf, get_config_paramenter, name, value);
-    output->println(buf);
+    sprintf_P(buf, strf_config_param_value, name, value);
+    output->print(buf);
 }
 
 void onConfigParameterChanged(const char* name, const char* old_value,
                               const char* new_value) {
     char buf[OUTPUT_MAX_LENGTH];
-    sprintf_P(buf, config_parameter_changed, name, old_value, new_value);
-    output->println(buf);
+    sprintf_P(buf, strf_config_param_changed, name, old_value, new_value);
+    output->print(buf);
 }
 
 void onUnknownCommandItem(const char* command, const char* item) {
     char buf[128];
-    sprintf_P(buf, unknown_command_item, item, command);
-    output->println(buf);
+    sprintf_P(buf, strf_unknown_command_item, item, command);
+    output->print(buf);
 }
 
 void onUnknownConfigParameter(const char* param) {
     char buf[128];
-    sprintf_P(buf, unknown_config_param, param);
-    output->println(buf);
+    sprintf_P(buf, strf_config_unknown_param, param);
+    output->print(buf);
 }
 
 void onUnknownActionParameter(const char* param, const char* action) {
-#ifdef DEBUG_CLI
-    USE_DEBUG_SERIAL.println("[cli] unknown parameter");
-#endif
-    output->printf_P(unknown_action_param, param, action);
+    output->printf_P(strf_unknown_action_param, param, action);
 }
 
-void onFileNotFound(const char* param) {
-    print_P(str_file_not_found);
+void onCommandResult(PGM_P strP, const char* filename) {
+    output->printf_P(strP, filename);
     output->println();
 }
 
@@ -158,9 +155,9 @@ void onSystemCommand(cmd* c) {
         } else if (isNegative(param)) {
             set_power_state(POWER_OFF);
         } else {
-            onUnknownActionParameter(param.c_str(), action.c_str());
-            return;
+            onUnknownActionParameter(param.c_str(), action.c_str());           
         }
+        return;
     } else {
         print_P(str_avaible_system_actions);
         output->println();
@@ -188,7 +185,7 @@ void onSetCommand(cmd* c) {
         }
     } else {
         char buf[OUTPUT_MAX_LENGTH];
-        sprintf_P(buf, unknown_config_param, name.c_str());
+        sprintf_P(buf, strf_set_param, name.c_str());
         output->print(buf);
     }
     output->println();
@@ -238,7 +235,7 @@ void onShowCommand(cmd* c) {
         output->println(config->getConfigJson().c_str());
     } else if (item.equals("status")) {
         char buf[OUTPUT_MAX_LENGTH];
-        sprintf(buf, "loop %lums longest %lums", get_lps(), get_longest_loop());
+        sprintf(buf, "LPS %lu max %lums", get_lps(), get_longest_loop());
         output->println(buf);
         sprintf(buf, "heap %s", getHeapStatistic().c_str());
         output->println(buf);
@@ -252,12 +249,14 @@ void onPrintCommand(cmd* c) {
     String file = cmd.getArgument("file").getValue();
     if (SPIFFS.exists(file)) {
         File f = SPIFFS.open(file, "r");
+        onCommandResult(strf_file_print, file.c_str());
         while (f.available()) {
             output->println(f.readString().c_str());
         }
+        
         f.close();
     } else {
-        onFileNotFound(file.c_str());
+        onCommandResult(strf_file_not_found, file.c_str());
     }
 }
 
@@ -266,11 +265,9 @@ void onRMCommand(cmd* c) {
     String file = cmd.getArgument("file").getValue();
     if (SPIFFS.exists(file)) {
         if (SPIFFS.remove(file)) {
-            char buf[OUTPUT_MAX_LENGTH];
-            sprintf_P(buf, PSTR("%s deleted"), file.c_str());
-            output->println(buf);
+            onCommandResult(strf_file_deleted, file.c_str());
         }
     } else {
-        onFileNotFound(file.c_str());
+        onCommandResult(strf_file_not_found, file.c_str());
     }
 }

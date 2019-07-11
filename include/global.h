@@ -24,6 +24,9 @@ extern SimpleCLI *cli;
 extern NTPClient *ntp;
 extern Shell *serial_shell;
 extern Shell *telnet_shell;
+extern WebService *http;
+extern Display *display;
+extern OTAUpdate *ota;
 
 extern void setup_telnet();
 extern void setup_network_discovery();

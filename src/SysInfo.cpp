@@ -22,12 +22,12 @@ String getCpuFreq() {
 }
 
 String getFreeSketch() {
-    String str = formatSize(ESP.getFreeSketchSpace());
+    String str = str_utils::formatSize(ESP.getFreeSketchSpace());
     return str;
 }
 
 String getSketchSize() {
-    String str = formatSize(ESP.getSketchSize());
+    String str = str_utils::formatSize(ESP.getSketchSize());
     return str;
 }
 
@@ -92,18 +92,16 @@ String getFlashMap() {
 }
 
 String getFSUsedSpace() {
-    FSInfo info;
-    SPIFFS.info(info);
-
-    String str = formatSize(info.usedBytes);
-    return str;
+    FSInfo fsi;
+    SPIFFS.info(fsi);
+    return String(str_utils::formatSize(fsi.usedBytes));
 }
 
 String getFSTotalSpace() {
     FSInfo info;
     SPIFFS.info(info);
 
-    String str = formatSize(info.totalBytes);
+    String str = str_utils::formatSize(info.totalBytes);
     return str;
 }
 
@@ -125,7 +123,7 @@ String getFSFileList() {
         str += " ";
         str += "FileSize";
         str += ":";
-        str += formatSize(fileSize);
+        str += str_utils::formatSize(fileSize);
     }
     str += " ";
     str += "}";
@@ -181,10 +179,10 @@ String getSystemInfoJson() {
     item["flashMode"] = String(flashChipMode[ESP.getFlashChipMode()]);
 
     item = doc.createNestedObject();
-    item["ChipSpeed"] = formatMHz(ESP.getFlashChipSpeed());
+    item["ChipSpeed"] = str_utils::getStrInMHz(ESP.getFlashChipSpeed());
 
     item = doc.createNestedObject();
-    item["ChipSize"] = String(formatSize(ESP.getFlashChipSize()));
+    item["ChipSize"] = String(str_utils::formatSize(ESP.getFlashChipSize()));
 
     String str;
 
@@ -230,7 +228,7 @@ String getVcc() {
 }
 
 String getHeapFree() {
-    String str = formatSize(ESP.getFreeHeap());
+    String str = str_utils::formatSize(ESP.getFreeHeap());
     return str;
 }
 
@@ -343,8 +341,8 @@ String getHeapStatistic() {
     uint8_t frag;
     ESP.getHeapStats(&free, &max, &frag);
     char buf[64];
-    sprintf(buf, "free %s max %s frag %d%%", formatSize(free).c_str(),
-            formatSize(max).c_str(), frag);
+    sprintf(buf, "free %s max %s frag %d%%", str_utils::formatSize(free).c_str(),
+            str_utils::formatSize(max).c_str(), frag);
     return String(buf);
 }
 
@@ -369,5 +367,7 @@ String getWifiStaStatus() {
 }
 
 bool isWiFiActive() {
-    return (WiFi.softAPgetStationNum() > 0) || (WiFi.status() == WL_CONNECTED);
+    return WiFi.softAPgetStationNum() || WiFi.status() == WL_CONNECTED;
 }
+
+

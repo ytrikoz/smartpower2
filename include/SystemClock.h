@@ -8,10 +8,11 @@
 
 class SystemClock {
    public:
+    SystemClock();
     void setOutput(Print *output);
     void setConfig(Config *config);
-    void setTimeZone(uint8_t timeZone);
-    void setBackupInterval(uint8_t time_s);
+    void setTimeZone(sint8_t timeZone);
+    void setBackupInterval(uint16_t time_s);
     void setEpochTime(unsigned long epochTime);
 
     uint32_t getUptime();

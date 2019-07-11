@@ -38,7 +38,7 @@ typedef enum {
     TIME_BACKUP_INTERVAL
 } Parameter;
 
-typedef std::function<void(Parameter)> ConfigChangeEventHandler;
+typedef std::function<void(Parameter)> ConfigEventHandler;
 
 class Config {
    public:
@@ -46,7 +46,7 @@ class Config {
     ~Config();
 
     void setDefault();
-    void setOnConfigChange(ConfigChangeEventHandler eventHandler);
+    void setOnEvents(ConfigEventHandler eventHandler);
     bool setValue(Parameter param, const char value);
     bool setValue(Parameter param, bool value);
     bool setValue(Parameter param, sint8_t value);
@@ -70,16 +70,16 @@ class Config {
     const size_t getValueSize(Parameter param);
 
    private:
-    void onConfigChange(Parameter param);
+    void onConfigChangeEvent(Parameter param);
 
-    ConfigChangeEventHandler onConfigChangeEvent;
+    ConfigEventHandler onEvents;
 
     char *values[PARAM_COUNT];
 
     typedef struct {
         char name[PARAM_NAME_STR_SIZE];
         size_t size;
-        const char *defValue;
+        const char *def;
     } Metadata;
 
     Metadata metadata[PARAM_COUNT] = {
@@ -102,9 +102,9 @@ class Config {
         {"twp", NUMBER_SIZE, "82"},
         {"ntp_sync", LARGE_NUMBER_SIZE, "3600"},
         {"ntp_pool", STR_SIZE, DEF_NTP_POOL_SERVER},
-        {"time_backup", LARGE_NUMBER_SIZE, "60"}};
+        {"time_backup", LARGE_NUMBER_SIZE, "600"}};
 
 #ifdef DEBUG_CONFIG
-    HardwareSerial *debug = &USE_DEBUG_SERIAL;
+    Print *debug = &USE_DEBUG_SERIAL;
 #endif
 };

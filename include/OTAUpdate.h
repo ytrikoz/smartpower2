@@ -2,6 +2,8 @@
 #include <ArduinoOTA.h>
 #include <FS.h>
 
+#include "consts.h"
+
 class OTAUpdate {
    public:
     OTAUpdate();
@@ -12,7 +14,7 @@ class OTAUpdate {
 
    private:
     ArduinoOTAClass *arduinoOTA;
-    Print *_output;
+    Print *output;
     void onStart(void);
     void onProgress(unsigned int progress, unsigned int total);
     void onEnd();
