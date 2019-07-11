@@ -5,6 +5,7 @@
 
 #include "consts.h"
 #include "sysinfo.h"
+#include "wireless.h"
 
 typedef enum { CRLF, LFCR, LF, CR } EOLMarker;
 typedef enum { MD_LEFT, MD_RIGHT, MD_UP, MD_DOWN } MoveDirection;

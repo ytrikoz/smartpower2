@@ -365,9 +365,3 @@ String getWifiStaStatus() {
     }
     return str;
 }
-
-bool isWiFiActive() {
-    return WiFi.softAPgetStationNum() || WiFi.status() == WL_CONNECTED;
-}
-
-

@@ -110,6 +110,8 @@
 #define ESC_CURSOR_FORWARD "\x1b[1C"
 #define ESC_CURSOR_BACKWARD "\x1b[1D"
 
+static const char strf_wifi_ap[] PROGMEM = "%s ip: %s ";
+static const char strf_wifi_scan_results [] PROGMEM = "#%d %s %s";
 static const char strf_file_print[] PROGMEM = "Print %s";
 static const char strf_file_deleted[] PROGMEM = "File % deleted";
 static const char strf_file_not_found[] PROGMEM = "File %s not found";
@@ -144,5 +146,12 @@ static const char str_netbios[] PROGMEM = "[netbios] ";
 static const char str_ota_update[] PROGMEM = "[otaupdate] ";
 static const char str_clock[] PROGMEM = "[clock] ";
 static const char str_telnet[] PROGMEM = "[telnet] ";
+static const char str_wifi[] PROGMEM = "[wifi] ";
+static const char str_sta_connected[] PROGMEM = "sta connected";
 static const char str_avaible_system_actions[] PROGMEM =
     "Available actions are: reset, load, save, restart, power";
+static const char str_network_not_found[] PROGMEM = "no networks found";
+static const char str_network_found[] PROGMEM = "%d networks found";
+
+
+

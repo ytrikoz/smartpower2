@@ -155,7 +155,7 @@ void onSystemCommand(cmd* c) {
         } else if (isNegative(param)) {
             set_power_state(POWER_OFF);
         } else {
-            onUnknownActionParameter(param.c_str(), action.c_str());           
+            onUnknownActionParameter(param.c_str(), action.c_str());
         }
         return;
     } else {
@@ -253,7 +253,7 @@ void onPrintCommand(cmd* c) {
         while (f.available()) {
             output->println(f.readString().c_str());
         }
-        
+
         f.close();
     } else {
         onCommandResult(strf_file_not_found, file.c_str());
@@ -270,4 +270,25 @@ void onRMCommand(cmd* c) {
     } else {
         onCommandResult(strf_file_not_found, file.c_str());
     }
+}
+
+void onWifiScanCommand(cmd* c) {
+    Command cmd(c);
+    output->printf_P(str_wifi);
+    output->print(F("scanning... "));
+    int8_t n = WiFi.scanNetworks();
+    output->print(str_wifi);
+    if (n == 0) {
+        output->print(str_network_not_found);
+    } else {
+        output->println();
+    }
+    output->println();
+    for (int i = 0; i < n; ++i) {
+        // Print SSID and RSSI for each network found
+        output->printf_P(str_wifi);
+        output->printf_P(strf_wifi_scan_results, i + 1, WiFi.SSID(i).c_str(),
+                         WiFi.RSSI(i));
+    }
+    output->println();
 }

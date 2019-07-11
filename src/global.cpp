@@ -1,5 +1,5 @@
 #include <global.h>
-
+    
 SimpleTimer timer;
 SimpleCLI *cli;
 Multimeter *meter;
@@ -55,7 +55,6 @@ void setup_telnet() {
     telnet->begin(TELNET_PORT);
 #endif
 }
-
 
 void setup_network_discovery() {    
 #ifndef DISABLE_NETWORK_DISCOVERY

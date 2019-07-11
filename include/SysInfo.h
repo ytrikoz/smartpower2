@@ -41,4 +41,3 @@ uint8_t rssi2per(sint8_t rssi);
 
 String getHeapStatistic();
 String getWifiStaStatus();
-bool isWiFiActive();

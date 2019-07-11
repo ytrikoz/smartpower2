@@ -13,6 +13,7 @@
 #include "Consts.h"
 #include "Led.h"
 #include "SysInfo.h"
+#include "wireless.h"
 
 #define I2C_SDA D2
 #define I2C_SCL D5

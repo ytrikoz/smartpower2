@@ -48,10 +48,10 @@ void set_power_state(PowerState value) {
 
 uint8_t get_http_clients_count() {
     uint8_t result = 0;
-    #ifndef DISABLE_HTTP
+#ifndef DISABLE_HTTP
     for (uint8_t i = 0; i < WEBSOCKETS_SERVER_CLIENT_MAX; i++)
         if (clients[i].connected) result++;
-    #endif
+#endif
     return result;
 }
 
@@ -81,7 +81,9 @@ unsigned long volatile loopStartTime = 0;
 unsigned long volatile loopCounter = 0;
 unsigned long volatile loopLongest = 0;
 
-ulong get_lps() { return loopCounter * ONE_SECOND_ms / (millis() - loopMeasureTime); }
+ulong get_lps() {
+    return loopCounter * ONE_SECOND_ms / (millis() - loopMeasureTime);
+}
 
 ulong get_longest_loop() { return loopLongest; }
 
@@ -293,7 +295,7 @@ void sendOnPageState(uint8_t num, uint8_t page) {
 }
 
 void update_wifi_led() {
-    if (isWiFiActive()) {
+    if (wireless::isWiFiActive()) {        
         if (get_http_clients_count() > 0) {
             wifi_led->blink();
         } else {
@@ -313,8 +315,7 @@ void update_display() {
         if (WiFi.getMode() == WIFI_STA) {
             display->setItem(0, "STA >", WiFi.SSID().c_str());
             if (display_alt_line) {
-                display->setItem(1, "IP >",
-                                      WiFi.localIP().toString().c_str());
+                display->setItem(1, "IP >", WiFi.localIP().toString().c_str());
             } else
                 display->setItem(1, "RSSI>", String(WiFi.RSSI()).c_str());
         }
@@ -344,7 +345,7 @@ void update_display() {
         display->setItem(1, str.c_str());
     }
 }
-#endif 
+#endif
 
 void handle_power_button_press() {
     if (powerBtnPressedHandled) {
@@ -402,13 +403,12 @@ void setup_hardware() {
     SPIFFS.begin();
 }
 
-void onBootProgress(uint8_t per, const char *message)
-{
-    #ifndef DISABLE_LCD
+void onBootProgress(uint8_t per, const char *message) {
+#ifndef DISABLE_LCD
     if (display) display->onProgress(per, message);
-    #else
-        USE_SERIAL.printf_P(strf_boot_progress, message, per);
-    #endif
+#else
+    USE_SERIAL.printf_P(strf_boot_progress, message, per);
+#endif
 }
 
 void setup() {
@@ -422,7 +422,7 @@ void setup() {
     USE_SERIAL.println(ESP.getResetReason());
     USE_SERIAL.print(F("[reset] info: "));
     USE_SERIAL.println(ESP.getResetInfo());
-    
+
     setup_hardware();
 
     memset(&clients[0], 0x00,
@@ -430,12 +430,12 @@ void setup() {
 
     config = new ConfigHelper();
     meter = new Multimeter();
-    
-    #ifndef DISABLE_LCD
+
+#ifndef DISABLE_LCD
     display = new Display();
     display->setOutput(&USE_SERIAL);
     if (display->init()) display->turnOn();
-    #endif
+#endif
 
     str_utils::printWelcomeTo(&USE_SERIAL);
     USE_SERIAL.print("[wait]");
@@ -443,7 +443,7 @@ void setup() {
     delaySequence(3);
     USE_SERIAL.println();
 
-    onBootProgress(10, "VER>" FW_VERSION);    
+    onBootProgress(10, "VER>" FW_VERSION);
     meter->begin();
 
     onBootProgress(20, "CFG>");
@@ -480,11 +480,11 @@ void setup() {
 
     timer.setInterval(1000, [] {
         handle_power_button_press();
-        update_wifi_led();        
+        update_wifi_led();
         send_multimeter_data_to_clients();
-        #ifndef DISABLE_LCD
+#ifndef DISABLE_LCD
         update_display();
-        #endif
+#endif
     });
 
     timer.setInterval(5000, [] { display_alt_line = !display_alt_line; });
@@ -531,7 +531,7 @@ void loop() {
     if (display) display->redraw();
 #endif
     rtc.loop();
-    
+
     timer.run();
 
     /* loop timings */
@@ -590,28 +590,32 @@ void start_wifi() {
     const char *ap_ssid = config->getSSID_AP();
     const char *ap_passwd = config->getPassword_AP();
     IPAddress ap_ipaddr = config->getIPAddr_AP();
+
     WiFi.hostname(HOSTNAME);
     system_phy_set_max_tpw(config->getTPW());
+
     if ((wifi_mode == WIFI_AP) || (wifi_mode == WIFI_AP_STA)) {
-        USE_SERIAL.printf("[wifi] ap %s ip: %s ", ap_ssid,
-                          ap_ipaddr.toString().c_str());
+        USE_SERIAL.printf_P(str_wifi);
+        USE_SERIAL.printf_P(strf_wifi_ap, ap_ssid,
+                            ap_ipaddr.toString().c_str());
         if (startAP(ap_ssid, ap_passwd, ap_ipaddr)) {
-            USE_SERIAL.println("success");
+            USE_SERIAL.printf_P(str_ready);
             network = true;
-        } else {
-            USE_SERIAL.println("failed");
-            char failsafe_ssid[32];
-            strcpy(failsafe_ssid, APPNAME);
-            strcat(failsafe_ssid, getChipId().c_str());
-            USE_SERIAL.printf("[wifi] ap %s ip: %s ", failsafe_ssid,
-                              ap_ipaddr.toString().c_str());
-            if (startAP(failsafe_ssid, ap_passwd, ap_ipaddr)) {
-                USE_SERIAL.println("success");
-                network = true;
-            } else {
-                USE_SERIAL.println("failed");
-            }
         }
+    } else {
+        USE_SERIAL.printf_P(str_ready);
+    }
+
+    char safe_ssid[32];
+    strcpy(safe_ssid, APPNAME);
+    strcat(safe_ssid, getChipId().c_str());
+    USE_SERIAL.printf("[wifi] ap %s ip: %s ", safe_ssid,
+                      ap_ipaddr.toString().c_str());
+    if (startAP(safe_ssid, ap_passwd, ap_ipaddr)) {
+        USE_SERIAL.println("success");
+        network = true;
+    } else {
+        USE_SERIAL.println("failed");
     }
 
     if (network) start_services();
@@ -627,17 +631,20 @@ void start_wifi() {
 
         gotIpEventHandler =
             WiFi.onStationModeGotIP([](const WiFiEventStationModeGotIP &event) {
-                USE_SERIAL.println("[wifi] sta connected");
+                USE_SERIAL.printf_P(str_wifi);
+                USE_SERIAL.printf_P(str_sta_connected);
                 network = true;
+
                 uint8_t broadcast_if = wifi_get_broadcast_if();
                 char buf[32];
-                sprintf(buf, "[network] change broadcast if%d to if%d",
+                sprintf(buf, "[network] change broadcast if%d to if%d ",
                         broadcast_if, 3);
                 USE_SERIAL.print(buf);
                 if (!wifi_set_broadcast_if(3)) {
                     USE_SERIAL.print(' ');
                     USE_SERIAL.println("failed");
                 }
+
                 start_services();
             });
 
@@ -645,24 +652,28 @@ void start_wifi() {
         const char *passwd = config->getPassword();
         const bool dhcp = config->getDHCP();
 
+        USE_SERIAL.printf("[wifi] sta ");
+        USE_SERIAL.print(ssid);
         if (dhcp) {
-            USE_SERIAL.print("[wifi] sta ");
-            USE_SERIAL.print(ssid);
-            USE_SERIAL.println(" dhcp on");
+            USE_SERIAL.print("dhcp on");
             startSTA(ssid, passwd);
         } else {
             IPAddress ipaddr, subnet, gateway, dns;
-
             ipaddr = config->getIPAddr();
             subnet = config->getNetmask();
             gateway = config->getGateway();
             dns = config->getDNS();
-            USE_SERIAL.print("[wifi] sta ");
-            USE_SERIAL.print(ssid);
             USE_SERIAL.print(" ip ");
             USE_SERIAL.println(ipaddr.toString().c_str());
+            USE_SERIAL.print(" subnet ");
+            USE_SERIAL.println(subnet.toString().c_str());
+            USE_SERIAL.print(" gateway ");
+            USE_SERIAL.println(gateway.toString().c_str());
+            USE_SERIAL.print(" dns ");
+            USE_SERIAL.print(dns.toString().c_str());
             startSTA(ssid, passwd, ipaddr, subnet, gateway, dns);
         }
+        USE_SERIAL.println();
     }
 }
 

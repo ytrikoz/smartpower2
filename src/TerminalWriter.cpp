@@ -31,7 +31,7 @@ void TerminalWriter::prompt() {
     memset(&buf[0], '\x00', sizeof(buf[0]) * OUTPUT_MAX_LENGTH + 1);
     strcpy(buf, rtc.getLocalFormated().c_str());
 
-    if (isWiFiActive()) {
+    if (wireless::isWiFiActive()) {
         buf[strlen(buf)] = ' ';
         buf[strlen(buf)+1] = '\x00';
         strcat(buf, wifi_station_get_hostname());
