@@ -22,7 +22,6 @@ String getVcc();
 String getHeapFree();
 String getHeapFrag();
 
-String getHostName();
 String getHostIPInfo();
 String getCpuFreq();
 String getFreeSketch();
@@ -39,5 +38,5 @@ String getFSFileList();
 const char* rssi2human(sint8_t rssi);
 uint8_t rssi2per(sint8_t rssi);
 
-String getHeapStatistic();
+String getHeapStat();
 String getWifiStaStatus();

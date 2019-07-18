@@ -3,24 +3,8 @@
 #include <ESP8266WiFi.h>
 #include <Wire.h>
 #include "HardwareSerial.h"
-
+#include "Types.h"
 #include "mcp4652.h"
-
-#include "global.h"
-#include "ip_utils.h"
-#include "str_utils.h"
-
-#include "Consts.h"
-#include "Led.h"
-#include "SysInfo.h"
-#include "wireless.h"
-
-#define I2C_SDA D2
-#define I2C_SCL D5
-#define POWER_LED_PIN D1
-#define WIFI_LED_PIN D4
-#define POWER_BTN_PIN D7
-#define POWER_SWITCH_PIN D6
 
 #define PAGE_HOME 1
 #define PAGE_SETTINGS 2
@@ -33,11 +17,15 @@
 #define SET_POWERMODE 'a'
 #define PAGE_STATE 'p'
 #define DATA_PVI 'd'
-#define MEASURE_MODE 'm'
+#define SET_MEASURE_MODE 'm'
 
 #define TAG_FIRMWARE_INFO 'f'
 #define TAG_SYSTEM_INFO 'S'
 #define TAG_NETWORK_INFO 'N'
+
+extern void onHttpClientConnect(uint8_t);
+extern void onHttpClientDisconnect(uint8_t);
+extern void onHttpClientData(uint8_t num, String data);
 
 extern PowerState get_state();
 extern void set_power_state(PowerState state);
@@ -50,28 +38,16 @@ void setup(void);
 void loop(void);
 void timerHandler();
 void setup_hardware();
-
-void onClient(uint8_t, bool);
-void onClientData(uint8_t num, String data);
 void sendClients(String, uint8_t);
 void sendClients(String, uint8_t, uint8_t);
 void sendOnPageState(uint8_t num, uint8_t page);
-
 bool formatSPIFFS();
 void systemRestart(uint8_t sec = 0);
-
 void set_power_switch(PowerState);
 void set_output_voltage(float value);
-
 void update_display();
 void update_wifi_led();
-
 void delaySequence(uint8_t sec);
-void start_wifi();
-volatile bool network = false;
-
 ADC_MODE(ADC_VCC);
-
-String getSystemStatus();
 int quadraticRegression(double volt);
 void onBootProgress(uint8_t per, const char *message = NULL);

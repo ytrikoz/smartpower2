@@ -1,6 +1,8 @@
 #include "ConfigHelper.h"
 
-ConfigHelper *config;
+#include <ESP8266WiFiType.h>
+
+#include "str_utils.h"
 
 ConfigHelper::ConfigHelper() {
     filename = new char[FILENAME_MAX_LENGTH];
@@ -153,7 +155,7 @@ bool ConfigHelper::setNetworkSTAConfig(uint8_t wifi, const char *ssid,
                                        const char *passwd, bool dhcp,
                                        const char *ipaddr, const char *netmask,
                                        const char *gateway, const char *dns) {
-    bool changes = setWiFiMode(wifi) | setSSID(ssid) | setPassword(passwd) |
+    bool changes = setWiFiMode((WiFiMode_t) wifi) | setSSID(ssid) | setPassword(passwd) |
                    setDHCP(dhcp) | setIPAddress(ipaddr) | setNetmask(netmask) |
                    setGateway(gateway) | setDNS(dns);
     return changes;
@@ -171,6 +173,9 @@ float ConfigHelper::getFloatValue(Parameter param) {
     return atof(getStrValue(param));
 }
 
+uint8_t ConfigHelper::getByteValue(Parameter param) {
+    return atoi(getStrValue(param));
+}
 int ConfigHelper::getIntValue(Parameter param) {
     return atoi(getStrValue(param));
 }
@@ -180,14 +185,18 @@ bool ConfigHelper::getBoolValue(Parameter param) {
 }
 
 IPAddress ConfigHelper::getIPAddr(Parameter param) {
-    return atoip(getStrValue(param));
+    return str_utils::atoip(getStrValue(param));
 }
 
 bool ConfigHelper::setWiFiMode(uint8_t value) {
-    if (value >= 1 && value <= 3) {
+    if (value >= WIFI_OFF && value <= WIFI_AP_STA) {
         return getData()->setValue(WIFI, value);
     }
     return false;
+}
+
+bool ConfigHelper::setWiFiMode(WiFiMode_t value) {
+    return getData()->setValue(WIFI, (uint8_t) value);
 }
 
 bool ConfigHelper::setSSID(const char *value) {
@@ -229,23 +238,13 @@ bool ConfigHelper::setOutputVoltage(float value) {
     return false;
 }
 
-uint8_t ConfigHelper::getWiFiMode() {
-    // 1: Station 2: SoftAP 3: Station + SoftAP
-    return getIntValue(WIFI);
-}
-
+WiFiMode_t ConfigHelper::getWiFiMode() {return (WiFiMode_t) getByteValue(WIFI);}
 const char *ConfigHelper::getSSID() { return getStrValue(SSID); }
-
 const char *ConfigHelper::getSSID_AP() { return getStrValue(AP_SSID); }
-
 const char *ConfigHelper::getPassword() { return getStrValue(PASSWORD); }
-
 const char *ConfigHelper::getPassword_AP() { return getStrValue(AP_PASSWORD); }
-
 IPAddress ConfigHelper::getIPAddr_AP() { return getIPAddr(AP_IPADDR); }
-
 bool ConfigHelper::getDHCP() { return getBoolValue(DHCP); }
-
 float ConfigHelper::getOutputVoltage() { return getFloatValue(OUTPUT_VOLTAGE); }
 IPAddress ConfigHelper::getDNS() { return getIPAddr(DNS); }
 IPAddress ConfigHelper::getNetmask() { return getIPAddr(NETMASK); }
@@ -255,8 +254,5 @@ const char *ConfigHelper::getIPAddrStr() { return getStrValue(IPADDR); }
 const char *ConfigHelper::getNetmaskStr() { return getStrValue(NETMASK); }
 const char *ConfigHelper::getGatewayStr() { return getStrValue(GATEWAY); }
 const char *ConfigHelper::getDNSStr() { return getStrValue(DNS); }
-
-uint8_t ConfigHelper::getTPW() {
-    // maximum value of RF Tx Power, unit: 0.25 dBm, range [0, 82]
-    return getIntValue(TPW);
-}
+// maximum value of RF Tx Power, unit: 0.25 dBm, range [0, 82]
+uint8_t ConfigHelper::getTPW() { return getByteValue(TPW); }

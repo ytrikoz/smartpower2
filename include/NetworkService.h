@@ -1,28 +1,29 @@
 #pragma once
+
 #include <DNSServer.h>
 #include <ESP8266NetBIOS.h>
 #include <ESP8266mDNS.h>
 
 #include "consts.h"
-#include "ip_utils.h"
 #include "str_utils.h"
 #include "sysinfo.h"
+#include "wireless.h"
 
-class NetworkServices {
+class NetworkService {
    public:
-    void setOutput(Stream *stream);
+    NetworkService();
     void begin();
+    void stop();
     void loop();
+    void setOutput(Print *p);
 
    private:
-    Stream *output;
-    bool ready;
-
     bool begin_dns(const char *domain, IPAddress ip, uint16_t port);
     bool begin_mdns(const char *hostname, uint16_t telnet_port,
                     uint16_t http_port, uint16_t ota_port);
     bool begin_netbios(const char *hostname);
-
+    Print *output;
+    bool active;
     DNSServer *dns;
     esp8266::MDNSImplementation::MDNSResponder *mdns;
     ESP8266NetBIOS *netbios;

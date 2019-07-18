@@ -5,7 +5,7 @@ FileStorage::FileStorage(const char* name) {
     strcpy(filename, name); 
 }
 
-bool FileStorage::store(const char* buf) {
+bool FileStorage::set(const char* buf) {
 #ifdef DEBUG_FILE_STORAGE
     debug->printf("[fs] %s -> ", filename);
 #endif

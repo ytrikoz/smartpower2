@@ -1,11 +1,9 @@
 #pragma once
 
 #include <FS.h>
-
+#include <ESP8266WiFi.h>
 #include <ArduinoJson.h>
-
 #include "Config.h"
-
 #include "types.h"
 
 class ConfigHelper {
@@ -17,29 +15,22 @@ class ConfigHelper {
     void reload();
     void save();
     void reset();
-
+    
+    WiFiMode_t getWiFiMode();
     void setLastPowerState(PowerState state);
     PowerState getLastPowerState();
-
-    uint8_t getWiFiMode();
     bool setBootPowerState(BootPowerState);
     bool setBootPowerState(uint8_t);
     BootPowerState getBootPowerState();
-
     const char *getSSID();
     const char *getSSID_AP();
     const char *getPassword();
     const char *getPassword_AP();
-
     bool getDHCP();
-
     float getOutputVoltage();
-
     uint8_t getTPW();
-
     IPAddress getIPAddr();
     IPAddress getIPAddr_AP();
-
     const char *getIPAddrStr();
     IPAddress getNetmask();
     const char *getNetmaskStr();
@@ -49,6 +40,7 @@ class ConfigHelper {
     const char *getDNSStr();
 
     bool setWiFiMode(uint8_t);
+    bool setWiFiMode(WiFiMode_t);
     bool setSSID(const char *);
     bool setPassword(const char *);
     bool setDHCP(bool);
@@ -81,7 +73,8 @@ class ConfigHelper {
     IPAddress getIPAddr(Parameter param);
     const char *getStrValue(Parameter param);
     float getFloatValue(Parameter param);
-
+    uint8_t getByteValue(Parameter param);
+    
     Config *config;
     char *filename;
 
@@ -93,5 +86,3 @@ class ConfigHelper {
     Print *debug = &USE_DEBUG_SERIAL;
 #endif
 };
-
-extern ConfigHelper *config;

@@ -76,7 +76,7 @@ void Display::onProgress(uint8_t per, const char *str) {
         setItem(0, str);
     }
     char tmp[LCD_COLS + 1];
-    str_utils::setStrOfChar(tmp, '#', (LCD_COLS * per / 100) + 1);
+    str_utils::strOfChar(tmp, '#', (LCD_COLS * per / 100) + 1);
     setItem(1, tmp);
     redraw(true);
 }
@@ -120,7 +120,7 @@ void Display::redraw(boolean forced) {
             // Wipe
             uint8_t wipe_str_len = _free_space - _value_len;
             char buf[wipe_str_len + 1];
-            str_utils::setStrOfChar(buf, ' ', wipe_str_len);
+            str_utils::strOfChar(buf, ' ', wipe_str_len);
             lcd->print(buf);
             i->updated = false;
         }
@@ -130,7 +130,7 @@ void Display::redraw(boolean forced) {
         // horizontal scrolling
         // [    <-abc]
         if (pos < _free_space) {
-            str_utils::setStrOfChar(buf, ' ', _free_space - pos + 1);
+            str_utils::strOfChar(buf, ' ', _free_space - pos + 1);
             lcd->print(buf);
 
             strncpy(buf, i->value, pos);
@@ -139,7 +139,7 @@ void Display::redraw(boolean forced) {
         }
         // [xyz<-    ]
         else if (pos >= _free_space) {
-            str_utils::setStrOfChar(buf, ' ', _free_space + 1);
+            str_utils::strOfChar(buf, ' ', _free_space + 1);
             for (uint8_t str_index = 0; str_index < _free_space; str_index++) {
                 int8_t _index = pos - _free_space + str_index;
                 if (_index >= _value_len) {
@@ -153,7 +153,7 @@ void Display::redraw(boolean forced) {
                 }
             }
             lcd->print(buf);
-            str_utils::setStrOfChar(buf, ' ', _free_space - strlen(buf) + 1);
+            str_utils::strOfChar(buf, ' ', _free_space - strlen(buf) + 1);
             lcd->print(buf);
         }
     };

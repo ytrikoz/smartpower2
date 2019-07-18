@@ -16,6 +16,8 @@ class Buffer {
     int length();
     void clear();
     void insert(const char chr);
+    void set(const char* str);
+    void set(Buffer* buf);
     char* get();
     void next();
     void prev();

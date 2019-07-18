@@ -22,6 +22,23 @@ void Buffer::insert(const char ch) {
     len++;
 }
 
+void Buffer::set(const char* str)
+{
+    clear();
+    strcpy(buffer, str);
+    len = strlen(buffer);
+    pos = len;
+}
+
+void Buffer::set(Buffer* buf)
+{
+    clear();
+    strcpy(buffer, buf->get());
+    len = strlen(buffer);
+    pos = len;
+
+}
+
 void Buffer::prev() {
     if (pos > 0) pos--;
 }
@@ -52,7 +69,7 @@ void Buffer::del_next() {
 }
 
 void Buffer::clear() {
-    memset(&buffer[0], '\x00', sizeof(buffer[0]) * capacity);
+    for(int i=0; i < capacity; i++ ) buffer[i] = '\x00';
     pos = 0;
     len = 0;
 }

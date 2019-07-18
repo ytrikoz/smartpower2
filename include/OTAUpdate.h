@@ -11,10 +11,10 @@ class OTAUpdate {
     bool begin(const char *hostname, uint16_t port = 8266);
     void loop();
     void end();
-
    private:
-    ArduinoOTAClass *arduinoOTA;
+    ArduinoOTAClass *ota;
     Print *output;
+    bool active;
     void onStart(void);
     void onProgress(unsigned int progress, unsigned int total);
     void onEnd();

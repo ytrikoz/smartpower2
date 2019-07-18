@@ -6,46 +6,44 @@
 #include <WebSocketsServer.h>
 
 #include "consts.h"
-#include "ip_utils.h"
 #include "str_utils.h"
 #include "sysinfo.h"
 
-typedef std::function<void(uint8_t, bool)> WebSocketConnectionCallback;
-typedef std::function<void(uint8_t, String)> WebSocketDataCallback;
+typedef std::function<void(uint8_t)> SocketConnectionEventHandler;
+typedef std::function<void(uint8_t, String)> SocketDataEventHandler;
 
 class WebService {
    public:
-    WebService(IPAddress host, int http, int ws, const char *root);
+    WebService(uint16_t http_port, uint16_t ws_port, const char *root);
     void setOutput(Print *output);
-    void setOnConnection(WebSocketConnectionCallback callback);
-    void setOnData(WebSocketDataCallback callback);
+    void setOnClientConnection(SocketConnectionEventHandler h);
+    void setOnClientDisconnected(SocketConnectionEventHandler h);
+    void setOnClientData(SocketDataEventHandler h);
     void begin();
     void loop();
     void sendTxt(uint8_t, const char *);
 
    private:
     bool active = false;
-    void setup_ssdp(SSDPClass *ssdp, uint16_t port);
-    void onGetFileList();
-    String getFilePath(const String uri);
-    bool getFileContent(const String uri);
+    int16_t http_port, socket_port;
+    char root[sizeof(WEB_ROOT)];
+
+    bool sendFile(String uri);
+    bool sendFileContent(String path);
+    String getFilePath(String uri);    
     const char *getContentType(String filename);
-    void onFileUploading();
+    void noContent();
+    void getFileList();
+    void fileUpload();
 
     void socketEvent(uint8_t num, WStype_t type, uint8_t *payload,
                      size_t lenght);
-    bool sendFile(const String);
 
-    void onNotFound();
-    void onNoContent();
+    SocketDataEventHandler onDataEvent;
+    SocketConnectionEventHandler onConnectEvent, onDisconnectEvent;
 
     ESP8266WebServer *server;
     WebSocketsServer *socket;
     SSDPClass *ssdp;
-
-    WebSocketConnectionCallback onConnection;
-    WebSocketDataCallback onData;
-
     Print *output;
-    const char *root;
 };

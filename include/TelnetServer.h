@@ -4,37 +4,35 @@
 #include <ESP8266WiFi.h>
 
 #include "consts.h"
-#include "ip_utils.h"
 #include "str_utils.h"
+#include "wireless.h"
 
 typedef std::function<bool(Stream *)> TelnetConnectEventHandler;
 typedef std::function<void()> TelnetDisconnectEventHandler;
 
 class TelnetServer {
    public:
-    TelnetServer();
+    TelnetServer(uint16_t port);
     void setOutput(Print *p);
 
-    void begin(uint16_t port);
+    void begin();
+    void stop();
     void write(const char *);
     void loop();
 
     bool hasClientConnected();
-    void setOnConnection(TelnetConnectEventHandler eventHandler);
-    void setOnDisconnect(TelnetDisconnectEventHandler eventHandler);
+    void setOnClientConnect(TelnetConnectEventHandler handler);
+    void setOnCLientDisconnect(TelnetDisconnectEventHandler handler);
 
    private:
-#ifdef DEBUG_TELNET
-    HardwareSerial *debug = &USE_DEBUG_SERIAL;
-#endif
-    void start();
-    void stop();
-
+    void init();
+    
     void onConnect();
     void onDisconnect();
 
     bool active;
     bool connected;
+    bool initialized;    
     uint16_t port;
 
     WiFiClient client;

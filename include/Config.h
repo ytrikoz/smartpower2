@@ -1,10 +1,9 @@
 #pragma once
-
 #include <Arduino.h>
 
 #include "consts.h"
-#include "ip_utils.h"
-#include "str_utils.h"
+#include "IPAddress.h"
+#include "Types.h"
 
 #define PARAM_COUNT 20
 #define PARAM_NAME_STR_SIZE 12
@@ -15,28 +14,6 @@
 #define NUMBER_SIZE 4
 #define LARGE_NUMBER_SIZE 9
 
-typedef enum {
-    WIFI,
-    SSID,
-    PASSWORD,
-    DHCP,
-    IPADDR,
-    NETMASK,
-    GATEWAY,
-    DNS,
-    OUTPUT_VOLTAGE,
-    POWER,
-    LOGIN,
-    PASSWD,
-    AP_SSID,
-    AP_PASSWORD,
-    AP_IPADDR,
-    TIME_ZONE,
-    TPW,
-    NTP_SYNC_INTERVAL,
-    NTP_POOL_SERVER,
-    TIME_BACKUP_INTERVAL
-} Parameter;
 
 typedef std::function<void(Parameter)> ConfigEventHandler;
 
@@ -62,6 +39,7 @@ class Config {
     bool getBoolValue(Parameter param);
     uint8_t getByteValue(Parameter param);
     uint16_t getIntValue(Parameter param);
+    sint8_t getSignedValue(Parameter param);
 
     bool getParameter(const char *name, Parameter &param);
     bool getParameter(const char *name, Parameter &param, size_t &size);
@@ -98,8 +76,8 @@ class Config {
         {"ap_ssid", STR_SIZE, "SmartPower2"},
         {"ap_passwd", STR_SIZE, "12345678"},
         {"ap_ipaddr", IPADDR_SIZE, "192.168.4.1"},
-        {"timezone", NUMBER_SIZE, "3"},
-        {"twp", NUMBER_SIZE, "82"},
+        {"time_zone", NUMBER_SIZE, "3"},
+        {"twp", NUMBER_SIZE, "82"}, 
         {"ntp_sync", LARGE_NUMBER_SIZE, "3600"},
         {"ntp_pool", STR_SIZE, DEF_NTP_POOL_SERVER},
         {"time_backup", LARGE_NUMBER_SIZE, "600"}};

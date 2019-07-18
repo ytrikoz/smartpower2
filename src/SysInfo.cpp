@@ -94,15 +94,13 @@ String getFlashMap() {
 String getFSUsedSpace() {
     FSInfo fsi;
     SPIFFS.info(fsi);
-    return String(str_utils::formatSize(fsi.usedBytes));
+    return str_utils::formatSize(fsi.usedBytes);
 }
 
 String getFSTotalSpace() {
     FSInfo info;
     SPIFFS.info(info);
-
-    String str = str_utils::formatSize(info.totalBytes);
-    return str;
+    return str_utils::formatSize(info.totalBytes);
 }
 
 String getFSFileList() {
@@ -179,7 +177,7 @@ String getSystemInfoJson() {
     item["flashMode"] = String(flashChipMode[ESP.getFlashChipMode()]);
 
     item = doc.createNestedObject();
-    item["ChipSpeed"] = str_utils::getStrInMHz(ESP.getFlashChipSpeed());
+    item["ChipSpeed"] = str_utils::formatInMHz(ESP.getFlashChipSpeed());
 
     item = doc.createNestedObject();
     item["ChipSize"] = String(str_utils::formatSize(ESP.getFlashChipSize()));
@@ -188,11 +186,6 @@ String getSystemInfoJson() {
 
     serializeJson(doc, str);
 
-    return str;
-}
-
-String getHostName() {
-    String str = String(wifi_station_get_hostname());
     return str;
 }
 
@@ -314,7 +307,7 @@ String getNetworkInfoJson() {
     item["mac"] = WiFi.macAddress();
 
     item = doc.createNestedObject();
-    item["hostname"] = getHostName();
+    item["hostname"] = WiFi.hostname();
 
     item = doc.createNestedObject();
     item["ip"] = WiFi.localIP().toString();
@@ -335,7 +328,7 @@ String getNetworkInfoJson() {
     return str;
 }
 
-String getHeapStatistic() {
+String getHeapStat() {
     uint32_t free;
     uint16_t max;
     uint8_t frag;

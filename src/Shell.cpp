@@ -1,18 +1,30 @@
 #include "Shell.h"
+#include "wireless.h"
 
-Shell::Shell(Stream *inout) {
-    this->inout = inout;
-    terminal = new TerminalWriter(inout);
+Shell::Shell() {
     in_buf = new Buffer(INPUT_MAX_LENGTH);
-    cc_buf = new Buffer(32);
+    cc_buf = new Buffer(32);    
+    prev_buf = new Buffer(INPUT_MAX_LENGTH);
     echoEnabled = false;
-
+    welcomeEnabled = false;
     state = ST_INACTIVE;
 }
 
-TerminalWriter *Shell::getTerminal() { return terminal; }
+Shell::~Shell()
+{
+    delete[] in_buf;
+    delete[] cc_buf;
+    delete[] prev_buf;   
+}
 
 void Shell::setParser(SimpleCLI *parser) { this->parser = parser; }
+
+void Shell::setTermul(Termul *term) { this->t = term; }
+
+Termul *Shell::getTerm()
+{
+    return this->t;
+}
 
 void Shell::setOnQuit(QuitShellEventHandler eventHandler) {
     onQuitShellEvent = eventHandler;
@@ -23,35 +35,38 @@ void Shell::setOnStart(StartShellEventHandler eventHandler) {
 }
 
 void Shell::start() {
-    terminal->print(FPSTR(msg_cli_hint));
-    terminal->println();
+    t->printf_P(str_cli_hint);
+    t->println();
 }
 
-void Shell::setEOL(EOLMarker eol) { this->eol = eol; }
+void Shell::enableWelcome(bool enabled) { welcomeEnabled = enabled;}
 
 void Shell::enableEcho(bool enabled) { echoEnabled = enabled; }
 
 void Shell::onStart() {
     if (!onStartShellEvent) {
-#ifdef DEBUG_SHELL
-        debug->println("[shell] disabled");
-#endif
+        #ifdef DEBUG_SHELL
+        debug->println("[shell] OnStartShell not set");
+        #endif
         return;
     }
 
-    if (onStartShellEvent(terminal)) {
-#ifdef DEBUG_SHELL
-        debug->println("[shell] start");
-#endif
+    if (onStartShellEvent(t)) {
+        #ifdef DEBUG_SHELL
+        debug->println("[shell] OnStartShell");
+        #endif
         state = ST_NORMAL;
-        terminal->prompt();
+        if (welcomeEnabled) {
+            welcome();
+        }
+        prompt();
         return;
     }
 
 #ifdef DEBUG_SHELL
     debug->println("[shell] denied");
 #endif
-    terminal->print(F("access denied"));
+    t->print(F("access denied"));
 }
 
 void Shell::onCancel() {
@@ -59,23 +74,22 @@ void Shell::onCancel() {
     debug->print("[shell] cancel");
 #endif
     in_buf->clear();
-    terminal->clear_eol();
+    t->clear_line();
 }
 
 void Shell::onQuit() {
 #ifdef DEBUG_SHELL
     debug->print("[shell] quit");
 #endif
-    terminal->println();
+    t->println();
     if (onQuitShellEvent) onQuitShellEvent();
-    terminal->print(FPSTR(msg_cli_hint));
-    terminal->println();
 }
 
 void Shell::loop() {
-    while (inout->available()) {
-        int ch = inout->read();
+    if (!t) return;
 
+    while (t->available()) {
+        int ch = t->read();
         // IGNORE
         if (ch == CHAR_NULL || ch == 255) continue;
 #ifdef DEBUG_SHELL
@@ -88,8 +102,9 @@ void Shell::loop() {
             continue;
         }
         // ESC SEQUENCE OR ESC KEY PRESS
-        if (state == ST_ESC_SEQ) {  // ESC PRESSED TWICE
+        if (state == ST_ESC_SEQ) { 
             if (ch == CHAR_ESC) {
+                 // ESC PRESSED TWICE
                 if (in_buf->empty()) {
                     // QUIT
                     onQuit();
@@ -138,6 +153,16 @@ void Shell::onInput(const char ch) {
         return;
     }
 
+    if (ch == CHAR_TAB)
+    {
+        if (!prev_buf->empty()) {
+            in_buf->set(prev_buf);
+            t->println();
+            prompt();
+            t->print(in_buf->get());          
+        }        
+    }
+
     if (ch == 195) {
         state = ST_CTRL_SEQ;
         return;
@@ -147,20 +172,20 @@ void Shell::onInput(const char ch) {
 #ifdef DEBUG_SHELL
         debug->print("[CR]");
 #endif
-        terminal->println();
+        t->println();
         if (!in_buf->empty()) {
-            char line[INPUT_MAX_LENGTH];
-            strncpy(line, in_buf->get(), INPUT_MAX_LENGTH);
-            parser->parse(line);
+            parser->parse(in_buf->get());
             while (parser->available()) {
                 Command cmd = parser->getCmd();
-                // TODO History
-                terminal->println();
-                cmd.run();
+                // TODO History                
+                t->println();
+                cmd.run();                
             }
+            prev_buf->set(in_buf->get());
+            prev_buf->insert('\x00');
             in_buf->clear();
         }
-        terminal->prompt();
+        prompt();
         return;
     }
 
@@ -170,7 +195,7 @@ void Shell::onInput(const char ch) {
 #endif
         if (!in_buf->empty()) {
             in_buf->del();
-            terminal->del();
+            t->del();
         }
         return;
     }
@@ -181,8 +206,33 @@ void Shell::onInput(const char ch) {
 #endif
         in_buf->insert(ch);
         if (echoEnabled) {
-            terminal->write(ch);
+            t->write(ch);
         }
         return;
     }
+}
+
+void Shell::welcome() {
+    char title[SCREEN_WIDTH + 1];
+    strcpy(title, APPNAME " v" FW_VERSION);
+    uint8_t width = SCREEN_WIDTH / 2;
+    str_utils::addPaddingTo(title, str_utils::CENTER, width, ' ');
+    char decor[width + 1];
+    str_utils::strOfChar(decor, '#', width);
+    t->println(decor);
+    t->println(title);
+    t->println(decor);
+    t->printf("echo: %s ", echoEnabled ? "yes": "no");    
+    t->println();
+}
+
+void Shell::prompt() {
+    char buf[OUTPUT_MAX_LENGTH + 1];
+    strcpy(buf, rtc.getLocalFormated().c_str());
+    uint8_t len = strlen(buf);
+    buf[len] = CHAR_SP;
+    buf[len + 1] = '\x00';   
+    strcat(buf, wireless::hostName().c_str());
+    strcat(buf, " > ");
+    t->print(buf);
 }

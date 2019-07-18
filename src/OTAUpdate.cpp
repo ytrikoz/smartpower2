@@ -1,33 +1,54 @@
 #include "OTAUpdate.h"
 
+#include "str_utils.h"
+
 OTAUpdate::OTAUpdate() {
-    arduinoOTA = new ArduinoOTAClass();
-    arduinoOTA->onStart([this]() { this->onStart(); });
-    arduinoOTA->onProgress([this](unsigned int progress, unsigned int total) {
+    ota = new ArduinoOTAClass();
+    ota->onStart([this]() { this->onStart(); });
+    ota->onProgress([this](unsigned int progress, unsigned int total) {
         this->onProgress(progress, total);
     });
-    arduinoOTA->onEnd([this]() { this->onEnd(); });
-    arduinoOTA->onError([this](ota_error_t error) { this->onError(error); });
+    ota->onEnd([this]() { this->onEnd(); });
+    ota->onError([this](ota_error_t error) { this->onError(error); });
+    
+    active = false;
 }
 
 void OTAUpdate::setOutput(Print *p) { output = p; }
 
-bool OTAUpdate::begin(const char *hostname, uint16_t port) {
+bool OTAUpdate::begin(const char *host, uint16_t port) {
     // arduinoOTA->setPassword("admin");
     // arduinoOTA->setPasswordHash("21232f297a57a5a743894a0e4a801fc3"); //
-    // MD5(admin)
-    arduinoOTA->setHostname(hostname);
-    arduinoOTA->setPort(port);
-    arduinoOTA->setRebootOnSuccess(false);
-    arduinoOTA->begin(false);
-    return true;
+    // MD5(admin)   
+    USE_SERIAL.printf_P(str_update);
+    if (strlen(host) == 0)
+    {
+        output->printf_P(str_failed);
+        output->printf_P(str_host);
+        output->printf_P(str_unset);
+        output->println();
+        return false;
+    }
+    ota->setHostname(host);
+    ota->setPort(port);
+    ota->setRebootOnSuccess(false);
+    ota->begin(false);
+    active = true;
+    if (active)
+    {
+        output->printf_P(strf_s_d, host, port);
+    } else {        
+        output->printf_P(str_failed);       
+    }
+    output->println();
+    return active;
 }
 
 void OTAUpdate::onStart(void) {
-    output->print(FPSTR(str_ota_update));
-    output->print(FPSTR(str_start));
+    output->printf_P(str_update);
+    output->printf_P(str_start);
     PGM_P strP;
-    switch (this->arduinoOTA->getCommand()) {
+    switch (this->ota->getCommand()) {
         case U_FLASH:
             strP = str_firmware;
             break;
@@ -38,23 +59,24 @@ void OTAUpdate::onStart(void) {
             strP = str_unknown;
             break;
     }
-    output->println(FPSTR(strP));
+    output->printf_P(strP);
+    output->println();
 }
 
 void OTAUpdate::onEnd() {
-    output->print(FPSTR(str_ota_update));
-    output->println(FPSTR(str_complete));
+    output->printf_P(str_update);
+    output->printf_P(str_complete);
+    output->println();
 }
 
 void OTAUpdate::onProgress(unsigned int progress, unsigned int total) {
     char buf[8];
-    output->printf_P(buf, FPSTR(strf_progress), progress / total / 100);
+    output->printf_P(buf, strf_progress, progress / total / 100);
     output->print('\r');
 }
 
 void OTAUpdate::onError(ota_error_t error) {
-    output->print(FPSTR(str_ota_update));
-    output->print(FPSTR(str_error));
+    output->printf_P(str_update);
     if (error == OTA_AUTH_ERROR) {
         output->println("auth");
     } else if (error == OTA_BEGIN_ERROR) {
@@ -66,10 +88,12 @@ void OTAUpdate::onError(ota_error_t error) {
     } else if (error == OTA_END_ERROR) {
         output->println("end");
     };
+    output->printf_P(str_error);
+    output->println();
 }
 
 void OTAUpdate::loop() {
-    if (arduinoOTA) {
-        arduinoOTA->handle();
+    if (active) {
+        ota->handle();
     }
 }

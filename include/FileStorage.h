@@ -6,7 +6,7 @@
 class FileStorage {
    public:
     FileStorage(const char* name);
-    bool store(const char* str);
+    bool set(const char* str);
     bool restore(char* str);
 
    private:

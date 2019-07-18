@@ -1,75 +1,70 @@
 #include "Multimeter.h"
 
+#include "consts.h"
+
 Multimeter::Multimeter() {
     mcp4652_init();
-
-    this->voltage = 0;
-    this->power = 0;
-    this->current = 0;
-    this->wattSeconds = 0;
-    this->calcWattHours = false;
-    this->lastUpdated = 0;
-    this->enabled = false;
+    voltage = 0;
+    power = 0;
+    current = 0;
+    wattSeconds = 0;
+    wattHoursCalculationEnabled = false;
+    started_ms = 0;
+    finished_ms = 0;
+    active = false;
 }
 
-void Multimeter::begin() { this->enabled = true; }
+void Multimeter::begin() {     
+    started_ms = millis();
+    updated_ms = started_ms - MEASUREMENT_INTERVAL_ms;
+    finished_ms = started_ms;
+    active = true; 
+}
 
-void Multimeter::end() { this->enabled = false; }
+void Multimeter::end() { active = false; }
 
 void Multimeter::loop() {
-    if (!this->enabled) {
-        return;
+    if (!active) return;
+
+    unsigned long now_ms = millis();    
+    
+    if (now_ms - updated_ms >= MEASUREMENT_INTERVAL_ms) {
+        voltage = ina231_read_voltage();        
+        current = ina231_read_current();                    
+        updated_ms = millis();
     }
 
-    unsigned long timePassed;
-
-    if (this->lastUpdated == 0) {
-        timePassed = MEASUREMENT_INTERVAL;
-    } else {
-        timePassed = millis() - this->lastUpdated;
-    }
-
-    if (timePassed >= MEASUREMENT_INTERVAL) {
-        this->voltage = ina231_read_voltage();
-        this->power = ina231_read_power();
-        this->current = ina231_read_current();
-
-        if (this->calcWattHours) {
-            this->wattSeconds += this->power * (timePassed / 1000);
-        }
-
-        this->lastUpdated = millis();
+    if (now_ms - finished_ms >= ONE_SECOND_ms) {
+        finished_ms += ONE_SECOND_ms;
+        power = ina231_read_power();
+        if (wattHoursCalculationEnabled) {
+            wattSeconds += power; 
+        }       
     }
 }
 
 void Multimeter::setWattHours(double value) {
-    this->wattSeconds = value * 3600;
+    this->wattSeconds = value / ONE_HOUR_s;
 }
+
+void Multimeter::enableWattHoursCalculation(bool enabled) {
+    wattHoursCalculationEnabled = enabled;
+}
+
+bool Multimeter::isWattHoursCalculationEnabled() { return wattHoursCalculationEnabled; }
+
+float Multimeter::getVoltage() { return voltage; }
+
+float Multimeter::getCurrent() { return current; }
+
+float Multimeter::getPower() { return power; }
 
 double Multimeter::getWattHours() {
-    return this->wattSeconds / SECONDS_IN_HOUR;
+    return wattSeconds * ONE_HOUR_s;
 }
 
-void Multimeter::enableWattHours(bool enabled) {
-    this->calcWattHours = enabled;
+unsigned long Multimeter::getDuration_s()
+{
+    return (finished_ms - started_ms) / ONE_SECOND_ms;
 }
 
-bool Multimeter::isWattHoursEnabled() { return this->calcWattHours; }
-
-float Multimeter::getVoltage() { return this->voltage; }
-
-float Multimeter::getCurrent() { return this->current; }
-
-float Multimeter::getPower() { return this->power; }
-
-String Multimeter::toString() {
-    String str = String(this->getVoltage(), 3);
-    str += ",";
-    str += String(this->getCurrent(), 3);
-    str += ",";
-    str += String(this->getPower(), 3);
-    str += ",";
-    str += String(this->getWattHours(), 3);
-
-    return str;
-}

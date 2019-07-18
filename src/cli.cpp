@@ -1,8 +1,15 @@
 #include "cli.h"
 
-TerminalWriter* output;
-Command cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet, cmdGet, cmdRm;
+#include "executors/ShowStatusCommand.h"
+#include "executors/ShowNtpCommand.h"
 
+using namespace executors;
+
+Print* output;
+Command cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet, cmdGet, cmdRm;
+ShowStatusCommand showStatus;
+ShowNtpCommand showNtp;
+        
 bool is_cli_active() { return (output); }
 
 void init_cli() {
@@ -40,33 +47,35 @@ void init_cli() {
     cmdRm.setCallback(onRMCommand);
 }
 
-bool start_cli(TerminalWriter* writer) {
-    if (output) quit_cli();
-    output = writer;
+bool start_cli(Print* p) {
+    if (output) {
+        output->printf_P(str_session_interrupted);
+    } 
+    output = p;
     return true;
 }
 
 void quit_cli() {
+    output->printf_P(str_cli_hint);
     output->println();
-    output->print(F("Interrupted by another connection established"));
     output = nullptr;
 }
 
 void print_P(PGM_P str) {
-    char buf[OUTPUT_MAX_LENGTH];
+    char buf[INPUT_MAX_LENGTH];
     strcpy_P(buf, str);
     output->print(buf);
 }
 
 void onGetConfigParameter(const char* name, const char* value) {
-    char buf[OUTPUT_MAX_LENGTH];
+    char buf[INPUT_MAX_LENGTH];
     sprintf_P(buf, strf_config_param_value, name, value);
-    output->print(buf);
+    output->println(buf);
 }
 
 void onConfigParameterChanged(const char* name, const char* old_value,
                               const char* new_value) {
-    char buf[OUTPUT_MAX_LENGTH];
+    char buf[INPUT_MAX_LENGTH];
     sprintf_P(buf, strf_config_param_changed, name, old_value, new_value);
     output->print(buf);
 }
@@ -74,13 +83,13 @@ void onConfigParameterChanged(const char* name, const char* old_value,
 void onUnknownCommandItem(const char* command, const char* item) {
     char buf[128];
     sprintf_P(buf, strf_unknown_command_item, item, command);
-    output->print(buf);
+    output->println(buf);
 }
 
 void onUnknownConfigParameter(const char* param) {
     char buf[128];
     sprintf_P(buf, strf_config_unknown_param, param);
-    output->print(buf);
+    output->println(buf);
 }
 
 void onUnknownActionParameter(const char* param, const char* action) {
@@ -117,6 +126,33 @@ void onCommandError(cmd_error* e) {
 void onHelpCommand(cmd* c) {
     Command cmd(c);
     output->println(cli->toString().c_str());
+}
+
+void onSystemWifiDiagCommand(cmd* c)
+{
+    WiFi.printDiag(*output);
+    output->println();
+}
+
+void onSystemWifiScanCommand(cmd* c) {
+    Command cmd(c);
+    output->printf_P(str_wifi);
+    output->printf_P(str_scanning);;
+    int8_t n = WiFi.scanNetworks();
+    output->print(str_wifi);
+    if (n == 0) {
+        output->print(str_network_not_found);
+    } else {
+        output->println();
+    }
+    output->println();
+    for (int i = 0; i < n; ++i) {
+        // Print SSID and RSSI for each network found
+        output->printf_P(str_wifi);
+        output->printf_P(strf_wifi_scan_results, i + 1, WiFi.SSID(i).c_str(),
+                         WiFi.RSSI(i));
+    }
+    output->println();
 }
 
 void onSystemCommand(cmd* c) {
@@ -163,7 +199,6 @@ void onSystemCommand(cmd* c) {
         output->println();
         return;
     }
-
     onSystemCommandDone(action, param);
 }
 
@@ -184,8 +219,8 @@ void onSetCommand(cmd* c) {
             output->print(F("no changes"));
         }
     } else {
-        char buf[OUTPUT_MAX_LENGTH];
-        sprintf_P(buf, strf_set_param, name.c_str());
+        char buf[INPUT_MAX_LENGTH];
+        sprintf_P(buf, strf_set_s, name.c_str());
         output->print(buf);
     }
     output->println();
@@ -206,7 +241,6 @@ void onGetCommand(cmd* c) {
     } else {
         onUnknownConfigParameter(name.c_str());
     }
-    output->println();
 }
 
 void onShowCommand(cmd* c) {
@@ -215,7 +249,7 @@ void onShowCommand(cmd* c) {
     if (item.equals("ip")) {
         output->println(getHostIPInfo().c_str());
     } else if (item.equals("clients")) {
-        char buf[OUTPUT_MAX_LENGTH];
+        char buf[INPUT_MAX_LENGTH];
         sprintf(buf, "wifi: %s", getConnectedStationInfo().c_str());
         output->println(buf);
         sprintf(buf, "http: %d", get_http_clients_count());
@@ -224,7 +258,7 @@ void onShowCommand(cmd* c) {
         output->println(buf);
 
     } else if (item.equals("power")) {
-        char buf[OUTPUT_MAX_LENGTH];
+        char buf[INPUT_MAX_LENGTH];
         sprintf(buf, "power %s", get_power_state() == POWER_ON ? "on" : "off");
         output->println(buf);
     } else if (item.equals("network")) {
@@ -234,12 +268,11 @@ void onShowCommand(cmd* c) {
     } else if (item.equals("config")) {
         output->println(config->getConfigJson().c_str());
     } else if (item.equals("status")) {
-        char buf[OUTPUT_MAX_LENGTH];
-        sprintf(buf, "LPS %lu max %lums", get_lps(), get_longest_loop());
-        output->println(buf);
-        sprintf(buf, "heap %s", getHeapStatistic().c_str());
-        output->println(buf);
-    } else {
+        showStatus.Execute(output);
+    } else if (item.equals("ntp")) {
+        showNtp.Execute(output);
+    }
+    else {
         onUnknownCommandItem(cmd.getName().c_str(), item.c_str());
     }
 }
@@ -270,25 +303,4 @@ void onRMCommand(cmd* c) {
     } else {
         onCommandResult(strf_file_not_found, file.c_str());
     }
-}
-
-void onWifiScanCommand(cmd* c) {
-    Command cmd(c);
-    output->printf_P(str_wifi);
-    output->print(F("scanning... "));
-    int8_t n = WiFi.scanNetworks();
-    output->print(str_wifi);
-    if (n == 0) {
-        output->print(str_network_not_found);
-    } else {
-        output->println();
-    }
-    output->println();
-    for (int i = 0; i < n; ++i) {
-        // Print SSID and RSSI for each network found
-        output->printf_P(str_wifi);
-        output->printf_P(strf_wifi_scan_results, i + 1, WiFi.SSID(i).c_str(),
-                         WiFi.RSSI(i));
-    }
-    output->println();
 }

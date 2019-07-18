@@ -1,5 +1,7 @@
 #include "Config.h"
 
+#include "str_utils.h"
+
 Config::Config() {
     for (uint8_t i = 0; i < PARAM_COUNT; i++) {
         values[i] = new char[metadata[i].size];
@@ -99,6 +101,10 @@ uint8_t Config::getByteValue(Parameter param) {
     return atoi(getStrValue(param));
 }
 
+sint8_t Config::getSignedValue(Parameter param) {
+    return atoi(getStrValue(param));
+}
+
 uint16_t Config::getIntValue(Parameter param) {
     return atoi(getStrValue(param));
 }
@@ -108,7 +114,7 @@ bool Config::getBoolValue(Parameter param) {
 }
 
 IPAddress Config::getIPAddrValue(Parameter param) {
-    return atoip(getStrValue(param));
+    return str_utils::atoip(getStrValue(param));
 }
 
 bool Config::getParameter(const char *name, Parameter &param) {

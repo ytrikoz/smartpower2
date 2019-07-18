@@ -1,5 +1,20 @@
 #include "main.h"
 
+#include "global.h"
+#include "str_utils.h"
+
+#include "Consts.h"
+#include "Led.h"
+#include "SysInfo.h"
+#include "wireless.h"
+
+#define I2C_SDA D2
+#define I2C_SCL D5
+#define POWER_LED_PIN D1
+#define WIFI_LED_PIN D4
+#define POWER_BTN_PIN D7
+#define POWER_SWITCH_PIN D6
+
 uint8_t volatile powerBtnLongPressCounter;
 unsigned long volatile powerBtnLastEvent = 0;
 bool volatile powerBtnPressed = false;
@@ -14,34 +29,22 @@ WebClient clients[MAX_WEB_CLIENTS];
 
 PowerState state = POWER_OFF;
 float outputVoltage;
-
 bool display_alt_line = false;
-
-WiFiEventHandler disconnectedEventHandler, gotIpEventHandler;
-
 Led *wifi_led, *power_led;
 
 PowerState get_power_state() { return state; }
 
 void set_power_state(PowerState value) {
     state = value;
-
     USE_SERIAL.printf_P(str_power);
-    USE_SERIAL.print(' ');
     USE_SERIAL.println(state == POWER_ON ? "on" : "off");
-
     digitalWrite(POWER_SWITCH_PIN, state);
-
     if (state == POWER_ON) {
         meter->begin();
         power_led->blink();
     } else if (state == POWER_OFF) {
         meter->end();
         power_led->turnOn();
-    }
-
-    if (get_http_clients_count() > 0) {
-        sendClients(String(POWER_ONOFF) + state, PAGE_HOME);
     }
     config->setLastPowerState(state);
 }
@@ -53,27 +56,6 @@ uint8_t get_http_clients_count() {
         if (clients[i].connected) result++;
 #endif
     return result;
-}
-
-uint8_t get_telnet_clients_count() {
-#ifndef DISABLE_TELNET
-    return telnet ? telnet->hasClientConnected() : 0;
-#else
-    return 0;
-#endif
-}
-
-int quadraticRegression(double volt) {
-    double a = 0.0000006562;
-    double b = 0.0022084236;
-    float c = 4.08;
-    double d = b * b - a * (c - volt);
-    double root = (-b + sqrt(d)) / a;
-    if (root < 0)
-        root = 0;
-    else if (root > 255)
-        root = 255;
-    return root;
 }
 
 unsigned long volatile loopMeasureTime = 0;
@@ -113,7 +95,6 @@ void setup_restart_timer(int count) {
         timer.deleteTimer(restartTimer);
     }
     restartCount = count;
-
     USE_SERIAL.print(F("System restart"));
     if (restartCount > 0) {
         USE_SERIAL.print(" in ");
@@ -121,29 +102,33 @@ void setup_restart_timer(int count) {
         USE_SERIAL.println('s');
     } else {
         USE_SERIAL.print(' ');
-        USE_SERIAL.print("now!");
+        USE_SERIAL.println("now!");
     }
     restartTimer = timer.setInterval(ONE_SECOND_ms, on_restart_sequence);
 }
 
 void set_output_voltage(float value) {
+    USE_SERIAL.printf_P(str_power);
+    USE_SERIAL.printf_P(strf_output_voltage, value);    
+    USE_SERIAL.println();
+    
     outputVoltage = value;
-
     mcp4652_write(WRITE_WIPER0, quadraticRegression(value));
 }
 
-void onClient(uint8_t num, bool state) { clients[num].connected = state; }
-
-void onClientData(uint8_t num, String data) {
+void onHttpClientConnect(uint8_t num) { clients[num].connected = true; }
+void onHttpClientDisconnect(uint8_t num) { clients[num].connected = false; }
+void onHttpClientData(uint8_t num, String data) {
     switch (data.charAt(0)) {
         case PAGE_STATE: {
-            uint8_t page = data.charAt(1) - 48;
+            uint8_t page = data.charAt(1) - CHR_ZERO;
             clients[num].page = page;
             sendOnPageState(num, page);
             break;
         }
         case POWER_ONOFF: {
             PowerState new_state = PowerState(data.substring(1).toInt());
+            
             set_power_state(new_state);
 
             String payload = String(POWER_ONOFF);
@@ -174,6 +159,22 @@ void onClientData(uint8_t num, String data) {
             break;
         }
         case SAVE_NETWORKS: {
+            static const Parameter items[8] = {WIFI,   SSID,    PASSWD,  DHCP,
+                                               IPADDR, NETMASK, GATEWAY, DNS};
+            uint8_t last = 0;
+            uint8_t pos = 0;
+            uint8_t index = 0;
+            while ((index < 8) && (pos = data.indexOf(",", last))) {
+                config->getData()->setValue(items[index++],
+                                            data.substring(last, pos).c_str());
+                last = pos + 1;
+            }
+            config->save();
+            for (int i = 0; i < MAX_WEB_CLIENTS; i++)
+                if (clients[i].connected && clients[i].page && (num != i))
+                    sendOnPageState(i, 1);
+            break;
+            /*
             String _config_mode = data.substring(1, data.indexOf(','));
             data.remove(1, data.indexOf(','));
             String _ssid = data.substring(1, data.indexOf(','));
@@ -189,28 +190,22 @@ void onClientData(uint8_t num, String data) {
             String _gateway = data.substring(1, data.indexOf(','));
             data.remove(1, data.indexOf(','));
             String _dns = data.substring(1, data.indexOf(','));
+            
+
             if (config->setNetworkSTAConfig(_config_mode.toInt(), _ssid.c_str(),
                                             _password.c_str(), _dhcp.toInt(),
                                             _ipaddr.c_str(), _netmask.c_str(),
-                                            _gateway.c_str(), _dns.c_str())) {
-                config->save();
-                for (int i = 0; i < MAX_WEB_CLIENTS; i++) {
-                    if (clients[i].connected && clients[i].page && (num != i))
-                        sendOnPageState(i, 1);
-                }
-            }
-            break;
+                                            _gateway.c_str(), _dns.c_str()))
+            */
         }
-
-        case MEASURE_MODE: {
-            bool value = (bool)atoi(data.substring(1).c_str());
-
-            meter->enableWattHours(value);
-
-            String payload = String(MEASURE_MODE);
-            payload += value;
-            sendClients(payload, PAGE_HOME, num);
-            break;
+        case SET_MEASURE_MODE: {
+            char ch = data.charAt(1);
+            if (isdigit(ch)) {
+                bool mode = (uint8_t) ch - CHR_ZERO;
+                meter->enableWattHoursCalculation(mode);
+                sendClients(data, PAGE_HOME, num);
+                break;
+            }
         }
     }
 }
@@ -238,8 +233,8 @@ void sendOnPageState(uint8_t num, uint8_t page) {
             http->sendTxt(num, payload.c_str());
 
             // WattHours
-            payload = String(MEASURE_MODE);
-            payload += String(meter->isWattHoursEnabled());
+            payload = String(SET_MEASURE_MODE);
+            payload += String(meter->isWattHoursCalculationEnabled());
             http->sendTxt(num, payload.c_str());
             break;
         }
@@ -295,7 +290,7 @@ void sendOnPageState(uint8_t num, uint8_t page) {
 }
 
 void update_wifi_led() {
-    if (wireless::isWiFiActive()) {        
+    if (wireless::hasNetwork()) {
         if (get_http_clients_count() > 0) {
             wifi_led->blink();
         } else {
@@ -309,7 +304,6 @@ void update_wifi_led() {
 #ifndef DISABLE_LCD
 void update_display() {
     if (!display->isConnected()) return;
-
     String str;
     if (state == POWER_OFF) {
         if (WiFi.getMode() == WIFI_STA) {
@@ -318,9 +312,7 @@ void update_display() {
                 display->setItem(1, "IP >", WiFi.localIP().toString().c_str());
             } else
                 display->setItem(1, "RSSI>", String(WiFi.RSSI()).c_str());
-        }
-
-        else if (WiFi.getMode() == WIFI_AP) {
+        } else if (WiFi.getMode() == WIFI_AP) {
             display->setItem(0, "AP >", WiFi.softAPSSID().c_str());
             display->setItem(1, "1D>", WiFi.softAPPSK().c_str());
         }
@@ -352,7 +344,6 @@ void handle_power_button_press() {
         set_power_state((state == POWER_OFF) ? POWER_ON : POWER_OFF);
         powerBtnPressedHandled = false;
     }
-
     if (!digitalRead(POWER_BTN_PIN) && (powerBtnPressed)) {
         if (powerBtnLongPressCounter++ == 3) {
             power_led->setFreq(50);
@@ -368,15 +359,14 @@ void handle_power_button_press() {
 
 void send_multimeter_data_to_clients() {
     if (state == POWER_ON) {
-        if (network) {
+        if (wireless::hasNetwork()) {
             String data = meter->toString();
-#ifndef DISABLE_TELNET_SHELL
+#ifndef DISABLE_TELNET
             if (get_telnet_clients_count()) {
                 telnet->write(data.c_str());
                 telnet->write("\r");
             }
 #endif
-
 #ifndef DISABLE_HTTP
             if (get_http_clients_count()) {
                 String payload = String(DATA_PVI);
@@ -427,30 +417,30 @@ void setup() {
 
     memset(&clients[0], 0x00,
            (sizeof(WebClient) * WEBSOCKETS_SERVER_CLIENT_MAX));
-
-    config = new ConfigHelper();
-    meter = new Multimeter();
-
 #ifndef DISABLE_LCD
     display = new Display();
     display->setOutput(&USE_SERIAL);
     if (display->init()) display->turnOn();
 #endif
 
-    str_utils::printWelcomeTo(&USE_SERIAL);
+    onBootProgress(20, "CFG>");
+    config = new ConfigHelper();
+    config->init(FILE_CONFIG);
+
+    start_clock();
+
+    meter = new Multimeter();
+    meter->begin();
+
     USE_SERIAL.print("[wait]");
     USE_SERIAL.print(" ");
     delaySequence(3);
     USE_SERIAL.println();
-
-    onBootProgress(10, "VER>" FW_VERSION);
-    meter->begin();
-
-    onBootProgress(20, "CFG>");
-    config->init(FILE_CONFIG);
+    printWelcomeTo(&USE_SERIAL);
+    onBootProgress(30, "VER>" FW_VERSION);
 
     onBootProgress(40, "WIFI>");
-    start_wifi();
+    wireless::start_wifi();
 
     onBootProgress(80, "START>");
     switch (config->getBootPowerState()) {
@@ -474,72 +464,26 @@ void setup() {
 
     init_cli();
 
-    init_serial_shell(&USE_SERIAL);
+    start_serial_shell(&USE_SERIAL);
 
     onBootProgress(100, "");
 
     timer.setInterval(1000, [] {
         handle_power_button_press();
         update_wifi_led();
-        send_multimeter_data_to_clients();
+        //send_multimeter_data_to_clients();
 #ifndef DISABLE_LCD
         update_display();
 #endif
     });
 
     timer.setInterval(5000, [] { display_alt_line = !display_alt_line; });
-
     timer.setInterval(LOOP_STATS_INTERVAL, [] {
         loopMeasureTime = millis();
         loopCounter = 0;
         loopLongest = 0;
     });
-
     loopStartTime = millis();
-}
-
-void loop() {
-    // LEDs
-    wifi_led->loop();
-    power_led->loop();
-
-    // Multimeter
-    if (meter) meter->loop();
-
-#ifndef DISABLE_HTTP
-    if (http) http->loop();
-#endif
-#ifndef DISABLE_OTA_UPDATE
-    if (ota) ota->loop();
-#endif
-#ifndef DISABLE_NTP
-    if (ntp) ntp->loop();
-#endif
-#ifndef DISABLE_TELNET
-    if (telnet) telnet->loop();
-#endif
-#ifndef DISABLE_TELNET_SHELL
-    if (telnet_shell) telnet_shell->loop();
-#endif
-#ifndef DISABLE_SERIAL_SHELL
-    if (serial_shell) serial_shell->loop();
-#endif
-#ifndef DISABLE_NETWORK_DISCOVERY
-    if (network_discovery) network_discovery->loop();
-#endif
-#ifndef DISABLE_LCD
-    if (display) display->redraw();
-#endif
-    rtc.loop();
-
-    timer.run();
-
-    /* loop timings */
-    unsigned long LoopEndTime = millis();
-    unsigned long LoopTime = LoopEndTime - loopStartTime;
-    if (loopLongest < LoopTime) loopLongest = LoopTime;
-    loopCounter++;
-    loopStartTime = LoopEndTime;
 }
 
 void delaySequence(uint8_t sec) {
@@ -548,132 +492,6 @@ void delaySequence(uint8_t sec) {
         USE_SERIAL.print(" ");
         USE_SERIAL.flush();
         delay(1000);
-    }
-}
-
-void start_services() {
-    IPAddress host = hostIP();
-
-#ifndef DISABLE_HTTP
-    http = new WebService(host, HTTP_PORT, WEBSOCKET_PORT, WEB_ROOT);
-    http->setOutput(&USE_SERIAL);
-    http->setOnConnection(onClient);
-    http->setOnData(onClientData);
-    http->begin();
-#endif
-
-#ifndef DISABLE_OTA_UPDATE
-    USE_SERIAL.print(FPSTR(str_ota_update));
-    ota = new OTAUpdate();
-    ota->setOutput(&USE_SERIAL);
-    if (ota->begin(HOSTNAME, OTA_PORT)) {
-        USE_SERIAL.printf_P(strf_ip_port, HOSTNAME, OTA_PORT);
-    } else {
-        USE_SERIAL.print(FPSTR(str_failed));
-    }
-    USE_SERIAL.println();
-#endif
-
-#ifndef DISABLE_TELNET
-    setup_telnet();
-#endif
-
-#ifndef DISABLE_NETWORK_DISCOVERY
-    setup_network_discovery();
-#endif
-
-    setup_clock();
-}
-
-void start_wifi() {
-    const uint8_t wifi_mode = config->getWiFiMode();
-    const char *ap_ssid = config->getSSID_AP();
-    const char *ap_passwd = config->getPassword_AP();
-    IPAddress ap_ipaddr = config->getIPAddr_AP();
-
-    WiFi.hostname(HOSTNAME);
-    system_phy_set_max_tpw(config->getTPW());
-
-    if ((wifi_mode == WIFI_AP) || (wifi_mode == WIFI_AP_STA)) {
-        USE_SERIAL.printf_P(str_wifi);
-        USE_SERIAL.printf_P(strf_wifi_ap, ap_ssid,
-                            ap_ipaddr.toString().c_str());
-        if (startAP(ap_ssid, ap_passwd, ap_ipaddr)) {
-            USE_SERIAL.printf_P(str_ready);
-            network = true;
-        }
-    } else {
-        USE_SERIAL.printf_P(str_ready);
-    }
-
-    char safe_ssid[32];
-    strcpy(safe_ssid, APPNAME);
-    strcat(safe_ssid, getChipId().c_str());
-    USE_SERIAL.printf("[wifi] ap %s ip: %s ", safe_ssid,
-                      ap_ipaddr.toString().c_str());
-    if (startAP(safe_ssid, ap_passwd, ap_ipaddr)) {
-        USE_SERIAL.println("success");
-        network = true;
-    } else {
-        USE_SERIAL.println("failed");
-    }
-
-    if (network) start_services();
-
-    if (wifi_mode == WIFI_STA || wifi_mode == WIFI_AP_STA) {
-        disconnectedEventHandler = WiFi.onStationModeDisconnected(
-            [](const WiFiEventStationModeDisconnected &event) {
-                if (network) {
-                    USE_SERIAL.println("[wifi] sta disconnected");
-                    network = false;
-                }
-            });
-
-        gotIpEventHandler =
-            WiFi.onStationModeGotIP([](const WiFiEventStationModeGotIP &event) {
-                USE_SERIAL.printf_P(str_wifi);
-                USE_SERIAL.printf_P(str_sta_connected);
-                network = true;
-
-                uint8_t broadcast_if = wifi_get_broadcast_if();
-                char buf[32];
-                sprintf(buf, "[network] change broadcast if%d to if%d ",
-                        broadcast_if, 3);
-                USE_SERIAL.print(buf);
-                if (!wifi_set_broadcast_if(3)) {
-                    USE_SERIAL.print(' ');
-                    USE_SERIAL.println("failed");
-                }
-
-                start_services();
-            });
-
-        const char *ssid = config->getSSID();
-        const char *passwd = config->getPassword();
-        const bool dhcp = config->getDHCP();
-
-        USE_SERIAL.printf("[wifi] sta ");
-        USE_SERIAL.print(ssid);
-        if (dhcp) {
-            USE_SERIAL.print("dhcp on");
-            startSTA(ssid, passwd);
-        } else {
-            IPAddress ipaddr, subnet, gateway, dns;
-            ipaddr = config->getIPAddr();
-            subnet = config->getNetmask();
-            gateway = config->getGateway();
-            dns = config->getDNS();
-            USE_SERIAL.print(" ip ");
-            USE_SERIAL.println(ipaddr.toString().c_str());
-            USE_SERIAL.print(" subnet ");
-            USE_SERIAL.println(subnet.toString().c_str());
-            USE_SERIAL.print(" gateway ");
-            USE_SERIAL.println(gateway.toString().c_str());
-            USE_SERIAL.print(" dns ");
-            USE_SERIAL.print(dns.toString().c_str());
-            startSTA(ssid, passwd, ipaddr, subnet, gateway, dns);
-        }
-        USE_SERIAL.println();
     }
 }
 
@@ -696,4 +514,63 @@ static void ICACHE_RAM_ATTR powerButtonHandler() {
             powerBtnPressedHandled = true;
         }
     }
+}
+
+int quadraticRegression(double volt) {
+    double a = 0.0000006562;
+    double b = 0.0022084236;
+    float c = 4.08;
+    double d = b * b - a * (c - volt);
+    double root = (-b + sqrt(d)) / a;
+    if (root < 0)
+        root = 0;
+    else if (root > 255)
+        root = 255;
+    return root;
+}
+
+void loop() {
+    // Network related services
+    if (wireless::hasNetwork()) {
+#ifndef DISABLE_HTTP
+        if (http) http->loop();
+#endif
+#ifndef DISABLE_NETWORK_DISCOVERY
+        if (discovery) discovery->loop();
+#endif
+#ifndef DISABLE_OTA_UPDATE
+        if (ota) ota->loop();
+#endif
+#ifndef DISABLE_NTP
+        if (ntp) ntp->loop();
+#endif
+#ifndef DISABLE_TELNET
+        if (telnet) telnet->loop();
+#endif
+#ifndef DISABLE_TELNET_SHELL
+        if (t_sh) t_sh->loop();
+#endif
+    }
+    // LEDs
+    wifi_led->loop();
+    power_led->loop();
+    // Multimeter
+    if (meter) meter->loop();
+#ifndef DISABLE_SERIAL_SHELL
+    if (s_sh) s_sh->loop();
+#endif
+#ifndef DISABLE_LCD
+    if (display) display->redraw();
+#endif
+
+    rtc.loop();
+
+    timer.run();
+
+    /* loop timings */
+    unsigned long LoopEndTime = millis();
+    unsigned long LoopTime = LoopEndTime - loopStartTime;
+    if (loopLongest < LoopTime) loopLongest = LoopTime;
+    loopCounter++;
+    loopStartTime = LoopEndTime;
 }

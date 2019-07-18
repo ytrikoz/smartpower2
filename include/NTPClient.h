@@ -1,57 +1,47 @@
 #pragma once
+#include <Arduino.h>
+#include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 
 #include "Config.h"
-
 #include "consts.h"
 #include "str_utils.h"
+#include "types.h"
 
 // NTP time stamp is in the first 48 bytes of the message
 #define NTP_PACKET_SIZE 48
 
-typedef std::function<void(unsigned long epoch)> TimeSyncedEventHandler;
+typedef std::function<void(DateTime &)> NtpClientEventHandler;
 
 class NTPClient {
    public:
     NTPClient();
-
-    void begin();
+    bool begin();
+    void end();
     void loop();
-    void print();
-
-    void setOutput(Print* p);
     void setConfig(Config* config);
-    void setOnTimeSynced(TimeSyncedEventHandler handler);
-
-    void setSyncInterval(uint16_t seconds);
-    void setTimeServer(const char* fqdn);
+    void setOnTimeSynced(NtpClientEventHandler);
+    void setSyncInterval(uint16_t time_s);
+    void setTimeServer(const char* server);
     void setTimeZone(uint8_t zone);
-
-    unsigned long getLastUpdated();
-
+    void setOutput(Print* p);
+    void printDiag(Print* p);
    private:
-    unsigned long getEpochTime();
-    void syncTime();
-    void sendNTPpacket();
-    void onTimeSynced();
-
-    Print* output;
-
-    const char* server = DEF_NTP_POOL_SERVER;
-    int port = NTP_LOCAL_PORT;
+    void init();
+    void sync();
+    void send_udp_packet();
+    
     byte buffer[NTP_PACKET_SIZE];
-
-    bool active = false;
-    // In s
-    unsigned long epochTime = 0;
-    // In ms
-    unsigned long syncInterval = ONE_HOUR_ms;
-    // In ms
-    unsigned long lastUpdated = 0;
-    // In s
-    sint16_t timeOffset = 0;
-
-    TimeSyncedEventHandler timeSyncedEvent;
+    char server[STR_SIZE + 1];
+    int port;
+    bool active;
+    bool initialized;
+    unsigned long interval_ms;
+    unsigned long updated_ms;
+    DateTime time;
     WiFiUDP* udp;
+    NtpClientEventHandler onTimeSynced;
     WiFiEventHandler onDisconnected, onGotIp;
+    
+    Print* output = &USE_SERIAL;
 };

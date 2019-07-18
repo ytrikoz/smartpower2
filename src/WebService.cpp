@@ -1,23 +1,25 @@
 #include "WebService.h"
 
-WebService::WebService(IPAddress ip, int http_port, int websocket_port,
+#include "wireless.h"
+
+WebService::WebService(uint16_t http_port, uint16_t socket_port,
                        const char *root) {
-    #ifdef DEBUG_WEB_SERVICE
-        USE_DEBUG_SERIAL.printf("ipaddr=\"%s\"\r\n", ip.toString().c_str());
-    #endif
-    File f = SPIFFS.open(FILE_WEB_SETTINGS, "w");
-    f.printf("ipaddr=\"%s\"\r\n", ip.toString().c_str());
-    f.flush();
-    f.close();
-    
-    this->root = root;
+    this->http_port = http_port;
+    this->socket_port = socket_port;
+    strcpy(this->root, root);
+    active = false;
+}
 
+void WebService::begin() {
+    USE_SERIAL.printf_P(str_http);
+    IPAddress ip = wireless::hostIP();
+    USE_SERIAL.printf_P(strf_http_params, root, ip.toString().c_str(),
+                        http_port, socket_port);
     server = new ESP8266WebServer(ip, http_port);
-
     server->on("/upload", HTTP_POST, [this]() { server->send(200); },
-               [this]() { onFileUploading(); });
+               [this]() { fileUpload(); });
 
-    server->on("/filelist", HTTP_GET, [this]() { onGetFileList(); });
+    server->on("/filelist", HTTP_GET, [this]() { getFileList(); });
 
     server->on("/cli", HTTP_GET, [this]() {
         if (server->args() > 0) {
@@ -36,53 +38,59 @@ WebService::WebService(IPAddress ip, int http_port, int websocket_port,
         }
     });
 
-    server->on("/generate_204", HTTP_GET, [this]() { onNoContent(); });
+    server->on("/generate_204", HTTP_GET, [this]() { noContent(); });
 
     server->onNotFound([this]() {
-        output->printf("[http] -> %s", this->server->uri().c_str());
-        if (!this->getFileContent(server->uri())) {
-            output->println("404");
-            this->onNotFound();
-        }
+        String uri = server->uri();
+        #ifdef DEBUG_HTTP 
+        USE_DEBUG_SERIAL->printf_P(str_http);
+        #endif
+        if (!sendFile(uri)) {
+            char buf[128];
+            sprintf_P(buf, strf_http_file_not_found, server->uri().c_str(),
+                      (server->method() == HTTP_GET) ? "GET" : "POST",
+                      server->args());
+            server->send(404, "text/plan", buf);
+            #ifdef DEBUG_HTTP 
+            USE_DEBUG_SERIAL.printf_P(strf_file_not_found, uri.c_str();
+            USE_DEBUG_SERIAL.println();
+            #endif
+        }        
     });
 
-    socket = new WebSocketsServer(websocket_port);
+    socket = new WebSocketsServer(this->socket_port);
     socket->onEvent(
         [this](uint8_t num, WStype_t type, uint8_t *payload, size_t lenght) {
             socketEvent(num, type, payload, lenght);
         });
 
+    File f = SPIFFS.open(FILE_WEB_SETTINGS, "w");
+    f.printf("ipaddr=\"%s\"\r\n", ip.toString().c_str());
+    f.flush();
+    f.close();
+
     ssdp = new SSDPClass();
-    setup_ssdp(ssdp, http_port);
-    if (ssdp->begin()) {
-        server->on("/description.xml", HTTP_GET,
-                   [this]() { ssdp->schema(server->client()); });
-    }
-}
+    ssdp->setSchemaURL(F("description.xml"));
+    ssdp->setHTTPPort(http_port);
+    ssdp->setName(HOST_NAME);
+    ssdp->setModelName(APPNAME);
+    ssdp->setModelNumber(FW_VERSION);
+    ssdp->setSerialNumber(getChipId());
+    ssdp->setURL(F("index.html"));
+    ssdp->setModelURL(F(
+        "https://wiki.odroid.com/accessory/power_supply_battery/smartpower2"));
+    ssdp->setManufacturer(F("HardKernel"));
+    ssdp->setManufacturerURL(F("https://www.hardkernel.com"));
+    ssdp->setDeviceType(F("pnp:rootdevice"));
 
-void WebService::setOutput(Print *p) { this->output = p; }
+    server->on("/description.xml", HTTP_GET,
+               [this]() { ssdp->schema(server->client()); });
 
-void WebService::onNoContent() { server->send(204, "text/plan", "No Content"); }
+    USE_SERIAL.println();
 
-void WebService::onNotFound() {
-    String message = "File Not Found\n\n";
-    message += "URI: ";
-    message += server->uri();
-    message += "\nMethod: ";
-    message += (server->method() == HTTP_GET) ? "GET" : "POST";
-    message += "\nArguments: ";
-    message += server->args();
-    message += "\n";
-
-    for (uint8_t i = 0; i < server->args(); i++)
-        message += " " + server->argName(i) + ": " + server->arg(i) + "\n";
-
-    server->send(404, "text/plain", message);
-}
-
-void WebService::begin() {
     server->begin();
     socket->begin();
+
     active = true;
 }
 
@@ -93,48 +101,81 @@ void WebService::loop() {
 }
 
 void WebService::sendTxt(uint8_t num, const char *payload) {
-    output->printf("[ws] %d -> %s\r\n", num, payload);
+    #ifdef DEBUG_WEBSOCKET
+    output->printf_P(str_http);
+    output->printf_P(strf_client, num);
+    output->printf_P(strf_arrow_dest, payload);
+    output->println();
+    #endif 
     socket->sendTXT(num, payload, strlen(payload));
 }
 
+void WebService::setOutput(Print *p) { this->output = p; }
+
+void WebService::noContent() { server->send(204, "text/plan", "No Content"); }
+
 void WebService::socketEvent(uint8_t num, WStype_t type, uint8_t *payload,
                              size_t lenght) {
-    output->printf("[ws] %d ", num);
-
-    String data = (char *)&payload[0];
+    #ifdef DEBUG_WEBSOCKET
+    USE_DEBUG_SERIAL.printf_P(str_http);
+    USE_DEBUG_SERIAL.printf_P(strf_client, num);
+    #endif
     switch (type) {
         case WStype_CONNECTED:
-            output->println(F("connected"));
-            onConnection(num, true);
-            break;
-        case WStype_DISCONNECTED:
-            output->println("disconnected");
-            onConnection(num, false);
-            break;
-        case WStype_TEXT:
-            output->printf(" <- %s\r\n", data.c_str());
-            onData(num, data);
+            #ifdef DEBUG_WEBSOCKET
+            USE_DEBUG_SERIAL.printf_P(str_connected);
+            USE_DEBUG_SERIAL.println();
+            #endif
+            onConnectEvent(num);
             return;
+        case WStype_DISCONNECTED:
+            #ifdef DEBUG_WEBSOCKET
+            USE_DEBUG_SERIAL.printf_P(str_disconnected);
+            USE_DEBUG_SERIAL.println();
+            #endif
+            onDisconnectEvent(num);
+            return;
+        case WStype_TEXT: {
+            #ifdef DEBUG_WEBSOCKET
+            USE_DEBUG_SERIAL.printf_P(strf_arrow_src, (char *)&payload[0]);
+            USE_DEBUG_SERIAL.println();
+            #endif
+            onDataEvent(num, (char *)&payload[0]);
+            return;
+        }
         case WStype_BIN:
-            output->printf(" <- (binnary) %s\r\n", str_utils::formatSize(lenght).c_str());
+            #ifdef DEBUG_WEBSOCKET
+            USE_DEBUG_SERIAL.printf_P(strf_binnary,
+                             str_utils::formatSize(lenght).c_str());
             hexdump(payload, lenght);
-            break;
+            USE_DEBUG_SERIAL.println();
+            #endif
+            return;
         default:
-            output->printf(" <- (unhandled) %d\r\n", type);
-            break;
+            #ifdef DEBUG_WEBSOCKET
+            USE_DEBUG_SERIAL.printf_P(strf_unhandled, type);
+            USE_DEBUG_SERIAL.println();
+            #endif
+            return;
     }
 }
 
-bool WebService::getFileContent(const String uri) {
+bool WebService::sendFile(String uri) {
     String path = getFilePath(uri);
-    path += uri.endsWith("/") ? "index.html" : "";
 
-    return sendFile(path + ".gz") || sendFile(path);
+    return sendFileContent(path + ".gz") || sendFileContent(path);
 }
 
-String WebService::getFilePath(const String uri) { return String(root) + uri; }
+String WebService::getFilePath(String uri) {
+    String path = String(root);
+    path += uri;
+    if (uri.endsWith("/")) {
+        path.concat(F("index.html"));
+    }
+    return path;
+}
 
-bool WebService::sendFile(String path) {
+bool WebService::sendFileContent(String path) {
     if (SPIFFS.exists(path)) {
         String type;
         if (server->hasArg("download"))
@@ -145,20 +186,20 @@ bool WebService::sendFile(String path) {
         File f = SPIFFS.open(path, "r");
         size_t sent = server->streamFile(f, type);
         f.close();
-
-        output->print(path.c_str());
-        output->print(" ");
-        output->print(type.c_str());
-        output->print(" ");
-        output->print(str_utils::formatSize(sent).c_str());
-        output->println();
-
+#ifdef DEBUG_HTTP
+        USE_DEBUG_SERIAL.print(path.c_str());
+        USE_DEBUG_SERIAL.print(" ");
+        USE_DEBUG_SERIAL.print(type.c_str());
+        USE_DEBUG_SERIAL.print(" ");
+        USE_DEBUG_SERIAL.print(str_utils::formatSize(sent).c_str());
+        USE_DEBUG_SERIAL.println();
+#endif
         return true;
     }
     return false;
 }
 
-void WebService::onGetFileList() {
+void WebService::getFileList() {
     String path = server->hasArg("path") ? server->arg("path") : root;
     output->printf("[http] filelist %s\r\n", path.c_str());
     Dir dir = SPIFFS.openDir(path);
@@ -175,20 +216,20 @@ void WebService::onGetFileList() {
         entry.close();
     }
     output += "]";
-
     server->send(200, "text/json", output);
 }
 
-void WebService::onFileUploading() {
+void WebService::fileUpload() {
     File fsUploadFile;
     HTTPUpload &upload = server->upload();
     if (upload.status == UPLOAD_FILE_START) {
         int i, ac = server->args();
         for (i = 0; i < ac; i++) {
-            Serial.printf("[http] %d %s %s\r\n", i, server->argName(i).c_str(),
-                          server->arg(i).c_str());
+            output->printf_P(str_http);
+            output->printf("%d %s %s\r\n", i, server->argName(i).c_str(),
+                           server->arg(i).c_str());
+            output->println();
         }
-
         String filename = upload.filename;
         if (server->hasArg("path")) {
             String path = server->arg("path");
@@ -203,7 +244,7 @@ void WebService::onFileUploading() {
         }
         filename = getFilePath(filename);
 
-        output->printf("[http] upload \"%s\"\r\n", filename.c_str());
+        output->printf("[http] upload %s\r\n", filename.c_str());
         fsUploadFile = SPIFFS.open(filename, "w");
     } else if (upload.status == UPLOAD_FILE_WRITE) {
         // Write the received bytes to the file
@@ -215,8 +256,8 @@ void WebService::onFileUploading() {
         if (fsUploadFile) {
             // Close the file again
             fsUploadFile.close();
-            Serial.print("size: ");
-            Serial.println(upload.totalSize);
+            output->print("size: ");
+            output->println(upload.totalSize);
             // Redirect the client to the success page
             server->sendHeader("location", "/success.html");
             server->send(303);
@@ -225,6 +266,16 @@ void WebService::onFileUploading() {
         }
     }
 }
+
+void WebService::setOnClientConnection(SocketConnectionEventHandler h) {
+    onConnectEvent = h;
+}
+
+void WebService::setOnClientDisconnected(SocketConnectionEventHandler h) {
+    onDisconnectEvent = h;
+}
+
+void WebService::setOnClientData(SocketDataEventHandler h) { onDataEvent = h; }
 
 const char *WebService::getContentType(String filename) {
     if ((filename.endsWith(".htm")) || (filename.endsWith(".html"))) {
@@ -251,27 +302,4 @@ const char *WebService::getContentType(String filename) {
         return "application/x-gzip";
     }
     return "text/plain";
-}
-
-void WebService::setOnConnection(WebSocketConnectionCallback callback) {
-    onConnection = callback;
-}
-
-void WebService::setOnData(WebSocketDataCallback callback) {
-    onData = callback;
-}
-
-void WebService::setup_ssdp(SSDPClass *ssdp, uint16_t port) {
-    ssdp->setSchemaURL(F("description.xml"));
-    ssdp->setHTTPPort(port);
-    ssdp->setName(HOSTNAME);
-    ssdp->setModelName(APPNAME);
-    ssdp->setModelNumber(FW_VERSION);
-    ssdp->setSerialNumber(getChipId());
-    ssdp->setURL(F("index.html"));
-    ssdp->setModelURL(F(
-        "https://wiki.odroid.com/accessory/power_supply_battery/smartpower2"));
-    ssdp->setManufacturer(F("HardKernel"));
-    ssdp->setManufacturerURL(F("https://www.hardkernel.com"));
-    ssdp->setDeviceType(F("pnp:rootdevice"));
 }
