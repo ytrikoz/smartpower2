@@ -18,3 +18,4 @@ void onGetCommand(cmd *c);
 void onSystemCommand(cmd *c);
 void onSystemWifiScanCommand(cmd *c);
 void onSystemWifiDiagCommand(cmd* c);
+void onClockCommand(cmd* c);

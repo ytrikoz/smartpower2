@@ -1,30 +1,19 @@
 #include "Shell.h"
 #include "wireless.h"
 
-Shell::Shell() {
-    in_buf = new Buffer(INPUT_MAX_LENGTH);
-    cc_buf = new Buffer(32);    
-    prev_buf = new Buffer(INPUT_MAX_LENGTH);
-    echoEnabled = false;
-    welcomeEnabled = false;
-    state = ST_INACTIVE;
-}
-
-Shell::~Shell()
-{
-    delete[] in_buf;
-    delete[] cc_buf;
-    delete[] prev_buf;   
-}
+Shell::Shell()
+    : in_buf((size_t)INPUT_MAX_LENGTH),
+      cc_buf((size_t)32),
+      prev_buf((size_t)INPUT_MAX_LENGTH),
+      state(ST_INACTIVE),
+      echoEnabled(false),
+      welcomeEnabled(false) {}
 
 void Shell::setParser(SimpleCLI *parser) { this->parser = parser; }
 
 void Shell::setTermul(Termul *term) { this->t = term; }
 
-Termul *Shell::getTerm()
-{
-    return this->t;
-}
+Termul *Shell::getTerm() { return this->t; }
 
 void Shell::setOnQuit(QuitShellEventHandler eventHandler) {
     onQuitShellEvent = eventHandler;
@@ -39,22 +28,22 @@ void Shell::start() {
     t->println();
 }
 
-void Shell::enableWelcome(bool enabled) { welcomeEnabled = enabled;}
+void Shell::enableWelcome(bool enabled) { welcomeEnabled = enabled; }
 
 void Shell::enableEcho(bool enabled) { echoEnabled = enabled; }
 
 void Shell::onStart() {
     if (!onStartShellEvent) {
-        #ifdef DEBUG_SHELL
+#ifdef DEBUG_SHELL
         debug->println("[shell] OnStartShell not set");
-        #endif
+#endif
         return;
     }
 
     if (onStartShellEvent(t)) {
-        #ifdef DEBUG_SHELL
+#ifdef DEBUG_SHELL
         debug->println("[shell] OnStartShell");
-        #endif
+#endif
         state = ST_NORMAL;
         if (welcomeEnabled) {
             welcome();
@@ -73,7 +62,7 @@ void Shell::onCancel() {
 #ifdef DEBUG_SHELL
     debug->print("[shell] cancel");
 #endif
-    in_buf->clear();
+    in_buf.clear();
     t->clear_line();
 }
 
@@ -102,10 +91,10 @@ void Shell::loop() {
             continue;
         }
         // ESC SEQUENCE OR ESC KEY PRESS
-        if (state == ST_ESC_SEQ) { 
+        if (state == ST_ESC_SEQ) {
             if (ch == CHAR_ESC) {
-                 // ESC PRESSED TWICE
-                if (in_buf->empty()) {
+                // ESC PRESSED TWICE
+                if (in_buf.empty()) {
                     // QUIT
                     onQuit();
                     state = ST_INACTIVE;
@@ -116,12 +105,12 @@ void Shell::loop() {
                 }
             } else {
                 // ESC SEQUENCE RECEIVING
-                cc_buf->insert(ch);
-                if (cc_buf->length() >= 3) {
+                cc_buf.insert(ch);
+                if (cc_buf.length() >= 3) {
 #ifdef DEBUG_SHELL
                     debug->printf("[shell] esc seq: %d", cc_buf.get());
 #endif
-                    cc_buf->clear();
+                    cc_buf.clear();
                     state = ST_NORMAL;
                 }
             }
@@ -129,12 +118,12 @@ void Shell::loop() {
         }
 
         if (state == ST_CTRL_SEQ) {
-            cc_buf->insert(ch);
-            if (cc_buf->length() >= 2) {
+            cc_buf.insert(ch);
+            if (cc_buf.length() >= 2) {
 #ifdef DEBUG_SHELL
                 debug->printf("[shell] ctrl seq: %d", cc_buf.get());
 #endif
-                cc_buf->clear();
+                cc_buf.clear();
                 state = ST_NORMAL;
             }
             continue;
@@ -153,14 +142,13 @@ void Shell::onInput(const char ch) {
         return;
     }
 
-    if (ch == CHAR_TAB)
-    {
-        if (!prev_buf->empty()) {
-            in_buf->set(prev_buf);
+    if (ch == CHAR_TAB) {
+        if (!prev_buf.empty()) {
+            in_buf = prev_buf;
             t->println();
             prompt();
-            t->print(in_buf->get());          
-        }        
+            t->print(in_buf.c_str());
+        }
     }
 
     if (ch == 195) {
@@ -173,17 +161,17 @@ void Shell::onInput(const char ch) {
         debug->print("[CR]");
 #endif
         t->println();
-        if (!in_buf->empty()) {
-            parser->parse(in_buf->get());
+        if (!in_buf.empty()) {
+            parser->parse(in_buf.c_str());
             while (parser->available()) {
                 Command cmd = parser->getCmd();
-                // TODO History                
+                // TODO History
                 t->println();
-                cmd.run();                
+                cmd.run();
             }
-            prev_buf->set(in_buf->get());
-            prev_buf->insert('\x00');
-            in_buf->clear();
+            prev_buf = in_buf;
+            prev_buf.insert('\x00');
+            in_buf.clear();
         }
         prompt();
         return;
@@ -193,8 +181,8 @@ void Shell::onInput(const char ch) {
 #ifdef DEBUG_SHELL
         debug->printf("[DEL]");
 #endif
-        if (!in_buf->empty()) {
-            in_buf->del();
+        if (!in_buf.empty()) {
+            in_buf.del();
             t->del();
         }
         return;
@@ -204,7 +192,7 @@ void Shell::onInput(const char ch) {
 #ifdef DEBUG_SHELL
         debug->print(ch);
 #endif
-        in_buf->insert(ch);
+        in_buf.insert(ch);
         if (echoEnabled) {
             t->write(ch);
         }
@@ -222,7 +210,7 @@ void Shell::welcome() {
     t->println(decor);
     t->println(title);
     t->println(decor);
-    t->printf("echo: %s ", echoEnabled ? "yes": "no");    
+    t->printf("echo: %s ", echoEnabled ? "yes" : "no");
     t->println();
 }
 
@@ -231,7 +219,7 @@ void Shell::prompt() {
     strcpy(buf, rtc.getLocalFormated().c_str());
     uint8_t len = strlen(buf);
     buf[len] = CHAR_SP;
-    buf[len + 1] = '\x00';   
+    buf[len + 1] = '\x00';
     strcat(buf, wireless::hostName().c_str());
     strcat(buf, " > ");
     t->print(buf);

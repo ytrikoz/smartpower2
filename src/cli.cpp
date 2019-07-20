@@ -2,14 +2,15 @@
 
 #include "executors/ShowStatusCommand.h"
 #include "executors/ShowNtpCommand.h"
-
+#include "executors/ClockSetCommand.h"
 using namespace executors;
 
 Print* output;
-Command cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet, cmdGet, cmdRm;
+Command cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet, cmdGet, cmdRm, cmdClock;
 ShowStatusCommand showStatus;
 ShowNtpCommand showNtp;
-        
+ClockSetCommand clockSetCommand;
+
 bool is_cli_active() { return (output); }
 
 void init_cli() {
@@ -45,6 +46,11 @@ void init_cli() {
     cmdRm = cli->addCommand("rm");
     cmdRm.addPositionalArgument("file");
     cmdRm.setCallback(onRMCommand);
+    // Clock 
+    cmdClock = cli->addCommand("clock");
+    cmdClock.addPositionalArgument("action");
+    cmdClock.addPositionalArgument("param", "");
+    cmdClock.setCallback(onClockCommand);
 }
 
 bool start_cli(Print* p) {
@@ -132,6 +138,15 @@ void onSystemWifiDiagCommand(cmd* c)
 {
     WiFi.printDiag(*output);
     output->println();
+}
+
+void onClockCommand(cmd* c)
+{
+    Command cmd(c);
+    String action = cmd.getArgument("action").getValue();
+    String parameter = cmd.getArgument("param").getValue();
+    
+    clockSetCommand.Execute(output);
 }
 
 void onSystemWifiScanCommand(cmd* c) {

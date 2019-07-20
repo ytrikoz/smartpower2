@@ -8,9 +8,10 @@
 
 class SystemClock {
    public:
+    SystemClock();
     void begin();
     void loop();
-    void setTime(DateTime& time);
+    void setTime(EpochTime &epoch);
     void setConfig(Config *config);
     void setTimeZone(sint8_t timeZone);
     void setBackupInterval(uint16_t time_s);
@@ -26,21 +27,21 @@ class SystemClock {
     uint8_t getMinutes();
     uint8_t getSeconds();
    private:
-    void backup();
-    void restore();
-
-    Print *output;
-
-    FileStorage *backupAgent;
+    bool store(FileStorage *agent);
+    bool restore(FileStorage *agent);    
 
     bool active = false;
     bool synced = false;
-    sint16_t timeOffset_s = 0;
-    unsigned long lastUpdated_ms = 0;
-    unsigned long rolloverCounter = 0;
-    unsigned long epochTime_s = 0;
-    unsigned long lastBackup_ms = 0;
-    unsigned long backupInterval_ms = 0;
+    sint16_t timeOffset_s;
+    unsigned long backupInterval_ms;
+
+    unsigned long lastUpdated_ms;
+    unsigned long lastBackup_ms;
+    unsigned long rolloverCounter;
+
+    unsigned long epochTime_s;
+
+    Print *output;
 };
 
 extern SystemClock rtc;

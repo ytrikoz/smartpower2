@@ -11,7 +11,7 @@
 // NTP time stamp is in the first 48 bytes of the message
 #define NTP_PACKET_SIZE 48
 
-typedef std::function<void(DateTime &)> NtpClientEventHandler;
+typedef std::function<void(EpochTime &)> NtpClientEventHandler;
 
 class NTPClient {
    public:
@@ -38,7 +38,7 @@ class NTPClient {
     bool initialized;
     unsigned long interval_ms;
     unsigned long updated_ms;
-    DateTime time;
+    EpochTime epochTime;
     WiFiUDP* udp;
     NtpClientEventHandler onTimeSynced;
     WiFiEventHandler onDisconnected, onGotIp;

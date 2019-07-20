@@ -5,9 +5,9 @@ FileStorage::FileStorage(const char* name) {
     strcpy(filename, name); 
 }
 
-bool FileStorage::set(const char* buf) {
+bool FileStorage::put(const char* buf) {
 #ifdef DEBUG_FILE_STORAGE
-    debug->printf("[fs] %s -> ", filename);
+    DEBUG.printf("[fs] %s -> ", filename);
 #endif
     bool result = false;
     File f = SPIFFS.open(FILE_TIME_BACKUP, "w");
@@ -15,7 +15,7 @@ bool FileStorage::set(const char* buf) {
         f.println(buf);
         f.close();
 #ifdef DEBUG_FILE_STORAGE
-        debug->println(buf);
+        DEBUG.println(buf);
 #endif
         result = true;
     }
@@ -23,9 +23,9 @@ bool FileStorage::set(const char* buf) {
     return result;
 }
 
-bool FileStorage::restore(char* buf) {
+bool FileStorage::get(char* buf) {
 #ifdef DEBUG_FILE_STORAGE
-    debug->printf("[fs] %s <- ", filename);
+    DEBUG.printf("[fs] %s <- ", filename);
 #endif
     bool result = false;
     buf[0] = '\x00';
@@ -37,16 +37,16 @@ bool FileStorage::restore(char* buf) {
         }
         f.close();
  #ifdef DEBUG_FILE_STORAGE
-        debug->print(buf);
+        DEBUG.print(buf);
 #endif
     }
     else {
          #ifdef DEBUG_FILE_STORAGE
-        debug->printf_P(str_file_not_found);
+        DEBUG.printf_P(strf_file_not_found, filename);
         #endif
     }
     #ifdef DEBUG_FILE_STORAGE
-    debug->println();
+    DEBUG.println();
     #endif
     return result;
 }

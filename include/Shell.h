@@ -45,8 +45,7 @@ class Shell {
     SimpleCLI *parser;
     Termul *t;
     EOLCode eol;
-    Buffer *in_buf, *cc_buf;
-    Buffer *prev_buf;
+    Buffer in_buf, cc_buf, prev_buf;
     State state;
     bool echoEnabled;
     bool welcomeEnabled;

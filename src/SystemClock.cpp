@@ -1,6 +1,19 @@
 #include "SystemClock.h"
 
+#include "time_utils.h"
+
 SystemClock rtc;
+
+SystemClock::SystemClock() {
+    timeOffset_s = 0;
+    backupInterval_ms = 0;
+
+    lastUpdated_ms = 0;
+    lastBackup_ms = 0;
+    rolloverCounter = 0;
+
+    epochTime_s = 0;
+}
 
 void SystemClock::setConfig(Config *config) {
     setTimeZone(config->getSignedValue(TIME_ZONE));
@@ -8,12 +21,12 @@ void SystemClock::setConfig(Config *config) {
 }
 
 void SystemClock::setTimeZone(sint8_t timeZone_h) {
-    #ifdef DEBUG_SYSTEM_CLOCK 
-    USE_DEBUG_SERIAL.printf_P(str_clock);
-    USE_DEBUG_SERIAL.printf_P(strf_timezone, timeZone_h);
-    USE_DEBUG_SERIAL.println();
-    #endif
     timeOffset_s = timeZone_h * ONE_HOUR_s;
+#ifdef DEBUG_SYSTEM_CLOCK
+    DEBUG.print(FPSTR(str_clock));
+    DEBUG.print(FPSTR(str_timezone));
+    DEBUG.println(timeOffset_s);
+#endif
 }
 
 void SystemClock::setBackupInterval(uint16_t time_s) {
@@ -21,17 +34,22 @@ void SystemClock::setBackupInterval(uint16_t time_s) {
         time_s = TIME_BACKUP_INTERVAL_MIN_s;
     }
     backupInterval_ms = time_s * ONE_SECOND_ms;
-}
 
-bool SystemClock::isSynced() { return synced; }
+#ifdef DEBUG_SYSTEM_CLOCK
+    DEBUG.print(FPSTR(str_clock));
+    DEBUG.print(FPSTR(str_backup));
+    DEBUG.print(FPSTR(str_interval));
+    DEBUG.println(time_s);
+#endif
+}
 
 void SystemClock::begin() {
-    backupAgent = new FileStorage(FILE_TIME_BACKUP);
-    restore();
+    if (!restore(new FileStorage(FILE_TIME_BACKUP))) {
+        epochTime_s = getAppBuildTime();
+    }
+    lastUpdated_ms = millis();
     active = true;
 }
-
-void SystemClock::setOutput(Print *p) { output = p; }
 
 void SystemClock::loop() {
     if (!active) return;
@@ -47,52 +65,56 @@ void SystemClock::loop() {
         if (synced && backupInterval_ms > 0) {
             if (((now_ms - lastBackup_ms >= backupInterval_ms) ||
                  (lastBackup_ms == 0))) {
-                backup();
+                store(new FileStorage(FILE_TIME_BACKUP));
                 lastBackup_ms = now_ms;
             }
         }
     }
 }
 
-void SystemClock::backup() {
-    if (backupAgent) {
-        char buf[32];
-        backupAgent->set(itoa(getUTC(), buf, DEC));
-        #ifdef DEBUG_SYSTEM_CLOCK     
-            USE_DEBUG_SERIAL.printf_P(str_clock);
-            USE_DEBUG_SERIAL.printf_P(str_store);
-            USE_DEBUG_SERIAL.println(buf);
-        #endif
-        
+bool SystemClock::store(FileStorage *agent) {
+#ifdef DEBUG_SYSTEM_CLOCK
+    DEBUG.print(FPSTR(str_clock));
+    DEBUG.print(FPSTR(str_store));
+#endif
+    char buf[32];
+    if (agent->put(itoa(getUTC(), buf, DEC))) {
+#ifdef DEBUG_SYSTEM_CLOCK
+        DEBUG.println(buf);
+#endif
+        return true;
+    } else {
+#ifdef DEBUG_SYSTEM_CLOCK
+        DEBUG.println(FPSTR(str_failed));
+#endif
+        return false;
     }
 }
 
-void SystemClock::restore() {
-    if (backupAgent) {
-        char buf[16];
-        #ifdef DEBUG_SYSTEM_CLOCK  
-            USE_DEBUG_SERIAL.printf_P(str_clock);
-            USE_DEBUG_SERIAL.printf_P(str_restore);
-        #endif
-        if (backupAgent->restore(buf)) {
-            epochTime_s = atoi(buf);
-            lastUpdated_ms = millis();
-            #ifdef DEBUG_SYSTEM_CLOCK  
-                USE_DEBUG_SERIAL.println(getLocalFormated().c_str());
-            #endif
-        } else {
-            output->printf_P(str_clock);
-            output->printf_P(str_restore);
-            output->printf_P(str_failed);
-            output->println();
-        }
+bool SystemClock::restore(FileStorage *agent) {
+    char buf[16];
+    if (agent->get(buf)) {
+        epochTime_s = atoi(buf);
+#ifdef DEBUG_SYSTEM_CLOCK
+        DEBUG.print(FPSTR(str_clock));
+        DEBUG.print(FPSTR(str_restore));
+        DEBUG.println(epochTime_s);
+#endif
+        return true;
+    } else {
+#ifdef DEBUG_SYSTEM_CLOCK
+        DEBUG.print(FPSTR(str_clock));
+        DEBUG.print(FPSTR(str_restore));
+        DEBUG.println(FPSTR(str_failed));
+#endif
+        return false;
     }
 }
 
-void SystemClock::setTime(DateTime &time) {
+void SystemClock::setTime(EpochTime &epoch) {
     output->printf_P(str_clock);
     output->printf_P(str_synced);
-    epochTime_s = time.epochTime_s;
+    epochTime_s = epoch.get();
     lastUpdated_ms = millis();
     synced = true;
     output->println(getLocalFormated().c_str());
@@ -132,3 +154,7 @@ uint8_t SystemClock::getHours() { return ((getLocal() % 86400L) / 3600); }
 uint8_t SystemClock::getMinutes() { return ((getLocal() % 3600) / 60); }
 
 uint8_t SystemClock::getSeconds() { return (getLocal() % 60); }
+
+void SystemClock::setOutput(Print *p) { output = p; }
+
+bool SystemClock::isSynced() { return synced; }

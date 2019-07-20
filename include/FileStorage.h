@@ -6,12 +6,9 @@
 class FileStorage {
    public:
     FileStorage(const char* name);
-    bool set(const char* str);
-    bool restore(char* str);
+    bool put(const char* str);
+    bool get(char* str);
 
    private:
     char filename[FILENAME_MAX_LENGTH];
-#ifdef DEBUG_FILE_STORAGE
-    Print* debug = &USE_DEBUG_SERIAL;
-#endif
 };

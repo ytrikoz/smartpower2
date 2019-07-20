@@ -129,7 +129,7 @@ void start_ntp() {
     ntp = new NTPClient();
     ntp->setConfig(config->getData());
     ntp->setOutput(&USE_SERIAL);
-    ntp->setOnTimeSynced([](DateTime &time) { rtc.setTime(time); });
+    ntp->setOnTimeSynced([](EpochTime &time) { rtc.setTime(time); });
     ntp->begin();
 }
 

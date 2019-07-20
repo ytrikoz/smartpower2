@@ -25,7 +25,6 @@ void NTPClient::printDiag(Print *p) {
     p->printf_P(strf_s_d, "initialized", initialized);
     p->printf_P(strf_s_d, "interval", (int)interval_ms / 1000);
     p->printf_P(strf_s_d, "updated", (int)updated_ms / 1000);
-    p->printf_P(strf_s_d, "epoch", (int)time.epochTime_s);
     p->println();
 }
 
@@ -102,8 +101,7 @@ void NTPClient::sync() {
     unsigned long highWord = word(this->buffer[40], buffer[41]);
     unsigned long lowWord = word(this->buffer[42], buffer[43]);
 
-    time.epochTime_s =
-        (highWord << 16 | lowWord) - SEVENTY_YEARS_ms + (10 * (timeout + 1));
+    epochTime = EpochTime((highWord << 16 | lowWord) - SEVENTY_YEARS_ms + (10 * (timeout + 1)));
 
 #ifdef DEBUG_NTP
     USE_DEBUG_SERIAL.printf_P(str_ntp);
@@ -111,9 +109,7 @@ void NTPClient::sync() {
     USE_DEBUG_SERIAL.print(time.epochTime_s);
     USE_DEBUG_SERIAL.println();
 #endif
-    if (onTimeSynced) {
-        onTimeSynced(this->time);
-    }
+    if (onTimeSynced) { onTimeSynced(epochTime); };
 }
 
 void NTPClient::send_udp_packet() {

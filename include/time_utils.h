@@ -1,33 +1,25 @@
 #pragma once
+
 #include <pgmspace.h>
+#include "time.h"
 #include "Types.h"
 
-typedef struct {
-    char name[4];
-    uint8_t days;
-} Month;
+uint8_t getDaysInMonth(uint8_t month, uint16_t year);
+uint8_t getMonthNum(String str);
+bool isLeapYear(uint8_t year);
+bool isValidYear(int year);
+bool isValidMonth(uint8_t n);
+bool isValidHour(uint8_t hour);
+bool isValidMinute(uint8_t minute);
+bool isValidSecond(uint8_t second);
 
-static const Month months[] PROGMEM = {{"Jan", 31}, {"Feb", 28}, {"Mar", 31},
-                                       {"Apr", 30}, {"May", 31}, {"Jun", 30},
-                                       {"Jul", 31}, {"Aug", 31}, {"Sep", 30},
-                                       {"Oct", 31}, {"Nov", 30}, {"Dec", 31}};
+bool decodeDateStr(char *str, struct tm &tm);
+bool decodeTimeStr(char *str, struct tm &tm);
 
-static unsigned long toEpochTime(uint16_t days, uint8_t h, uint8_t m,
-                                 uint8_t s) {
-    return ((days * 24L + h) * 60 + m) * 60 + s;
-}
+long timePassed(unsigned long start_ms, unsigned long finish_ms);
 
-static uint8_t getMonthNumber(const char *str)
-{
-    String s = String(str);
-    for(uint8_t n = 0; n < 11; n++)
-        if (s.equalsIgnoreCase(months[i].name) == 1)
-}
-static unsigned long decodeDateStr(const char*, &DateTime dt)
-{
-    
-//Jul 18 2019
+long millisSince(unsigned long since_ms);
 
-}
+void encodeTime(unsigned long epoch_s, struct tm &tm);
 
-
+unsigned long getAppBuildTime();

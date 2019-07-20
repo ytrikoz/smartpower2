@@ -10,21 +10,20 @@
 
 //#define SERIAL_DEBUG
 
+#define DEBUG_SYSTEM_CLOCK
 //#define DEBUG_WIRELESS
 //#define DEBUG_NTP
 //#define DEBUG_TELNET
-//#define DEBUG_SYSTEM_CLOCK
-#define DEBUG_WEBSOCKET
+//#define DEBUG_WEBSOCKET
 //#define DEBUG_HTTP
 //#define DEBUG_LEDS
 //#define DEBUG_SHELL
 //#define DEBUG_CONFIG
-//#define DEBUG_FILE_STORAGE
+#define DEBUG_FILE_STORAGE
 //#define DEBUG_TIME_BACKUP
 //#define DEBUG_LCD
 
-#define USE_DEBUG_SERIAL Serial
-
+#define DEBUG Serial
 #define USE_SERIAL Serial
 
 //#define DISABLE_HTTP
@@ -37,22 +36,27 @@
 //#define DISABLE_NTP
 //#define DISABLE_NETWORK_DISCOVERY
 
+#define BUILD_DATE __DATE__
+#define BUILD_TIME __TIME__
 #define APPNAME "SmartPower2"
 #define FW_VERSION \
     "0.6.2"        \
-    " (" __DATE__ ")"
-#define BUILD_DATE_TIME __DATE__ __TIME__
-
-#define LOOP_STATS_INTERVAL 5000UL
-
-#define START_SHOWING_RESTART_COUNTER_ON 5
+    "(" BUILD_DATE ")"
+    
 #define ONE_MHz_hz 1000000UL
 #define ONE_SECOND_ms 1000
 #define ONE_MINUTE_s 60
+#define ONE_DAY_s 86400
 #define ONE_HOUR_s 3600
-#define MEASUREMENT_INTERVAL_ms 50
-#define ONE_HOUR_ms ONE_HOUR_s* ONE_SECOND_ms;
+#define ONE_HOUR_m 60
+#define ONE_DAY_h 24
+#define ONE_HOUR_ms ONE_HOUR_s * ONE_SECOND_ms;
 #define SEVENTY_YEARS_ms 2208988800UL
+#define MILLENIUM_s 946684800UL
+
+#define MEASUREMENT_INTERVAL_ms 50
+#define START_SHOWING_RESTART_COUNTER_ON 5
+#define LOOP_STATS_INTERVAL 5000UL
 
 #define FILENAME_MAX_LENGTH 31
 #define FILE_CONFIG "/cfg/settings.ini"
@@ -72,9 +76,9 @@
 #define WEB_ROOT "/www"
 #define NTP_REMOTE_PORT 123
 #define NTP_LOCAL_PORT 2390
-
 #define DEF_NTP_POOL_SERVER "pool.ntp.org"
 #define TIME_BACKUP_INTERVAL_MIN_s 600
+#define WOL_PORT 9
 
 #define DISPLAY_VIRTUAL_COLS 63
 #define DISPLAY_VIRTUAL_ROWS 4
@@ -159,8 +163,13 @@ static const char strf_passwd[] PROGMEM = "passwd %s ";
 static const char strf_ipaddr[] PROGMEM = "ipaddr %s ";
 static const char strf_unhandled[] PROGMEM = "unhandled %d";
 static const char strf_ntp[] PROGMEM = "[ntp] %s";
+static const char strf_epoch[] PROGMEM = "epoch %lu";
+static const char strf_interval[] PROGMEM = "interval %d";
 static const char strf_output_voltage[] PROGMEM = "output voltage %2.2f";
 
+static const char str_timezone[] PROGMEM = "timezone ";
+static const char str_backup[] PROGMEM = "backup ";
+static const char str_interval[] PROGMEM = "interval ";
 static const char str_dns[] PROGMEM = "[dns] ";
 static const char str_mdns[] PROGMEM = "[mdns] ";
 static const char str_ssid[] PROGMEM = "ssid ";
@@ -187,9 +196,12 @@ static const char str_http[] PROGMEM = "[http] ";
 static const char str_netbios[] PROGMEM = "[netbios] ";
 static const char str_update[] PROGMEM = "[update] ";
 static const char str_clock[] PROGMEM = "[clock] ";
+static const char str_time[] PROGMEM = "time ";
+static const char str_date[] PROGMEM = "date ";
 static const char str_telnet[] PROGMEM = "[telnet] ";
 static const char str_wifi[] PROGMEM = "[wifi] ";
 static const char str_sta[] PROGMEM = "sta ";
+static const char str_set[] PROGMEM = "set ";
 static const char str_disabled[] PROGMEM = "disabled ";
 static const char str_twp[] PROGMEM = "twp ";
 static const char str_got[] PROGMEM = "got ";
@@ -215,6 +227,7 @@ static const char str_avaible_system_actions[] PROGMEM =
 static const char str_network_not_found[] PROGMEM = "no networks found";
 static const char str_network_found[] PROGMEM = "%d networks found";
 static const char str_cli_hint[] PROGMEM = "[cli] press \"enter\" to start";
+static const char str_build_date[] PROGMEM = BUILD_DATE;
 
 #define PRINTLN_WIFI_NETWORK_DOWN     \
     USE_SERIAL.printf_P(str_wifi);    \
@@ -286,4 +299,4 @@ static const char str_cli_hint[] PROGMEM = "[cli] press \"enter\" to start";
     PRINT_IP                      \
     USE_SERIAL.println();
 
-typedef enum { EMPTY } Dummy;
+typedef enum { CONSTS_H } consts_h;
