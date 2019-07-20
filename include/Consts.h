@@ -13,7 +13,7 @@
 #define DEBUG_SYSTEM_CLOCK
 //#define DEBUG_WIRELESS
 //#define DEBUG_NTP
-//#define DEBUG_TELNET
+#define DEBUG_TELNET
 //#define DEBUG_WEBSOCKET
 //#define DEBUG_HTTP
 //#define DEBUG_LEDS
@@ -42,7 +42,7 @@
 #define FW_VERSION \
     "0.6.2"        \
     "(" BUILD_DATE ")"
-    
+
 #define ONE_MHz_hz 1000000UL
 #define ONE_SECOND_ms 1000
 #define ONE_MINUTE_s 60
@@ -50,7 +50,7 @@
 #define ONE_HOUR_s 3600
 #define ONE_HOUR_m 60
 #define ONE_DAY_h 24
-#define ONE_HOUR_ms ONE_HOUR_s * ONE_SECOND_ms;
+#define ONE_HOUR_ms ONE_HOUR_s* ONE_SECOND_ms;
 #define SEVENTY_YEARS_ms 2208988800UL
 #define MILLENIUM_s 946684800UL
 
@@ -139,8 +139,11 @@ static const char strf_timezone[] PROGMEM = "timezone %d ";
 static const char strf_mode[] PROGMEM = "mode %d ";
 static const char strf_host[] PROGMEM = "hostname %s ";
 static const char strf_tpw[] PROGMEM = "tpw %d ";
+static const char strf_ip[] PROGMEM = "ip %s ";
+
 static const char strf_config_param_changed[] PROGMEM =
     "%s сhanged '%s' -> '%s'";
+static const char strf_config_param_unchanged[] PROGMEM = "'%s' unchanged";
 static const char strf_unknown_command_item[] PROGMEM =
     "Unknown item '%s' for command '%s'";
 static const char strf_unknown_action_param[] PROGMEM =
@@ -170,6 +173,7 @@ static const char strf_output_voltage[] PROGMEM = "output voltage %2.2f";
 static const char str_timezone[] PROGMEM = "timezone ";
 static const char str_backup[] PROGMEM = "backup ";
 static const char str_interval[] PROGMEM = "interval ";
+static const char str_idle[] PROGMEM = "idle ";
 static const char str_dns[] PROGMEM = "[dns] ";
 static const char str_mdns[] PROGMEM = "[mdns] ";
 static const char str_ssid[] PROGMEM = "ssid ";
@@ -213,15 +217,26 @@ static const char str_dhcp_on[] PROGMEM = " dhcp on ";
 static const char str_restore[] PROGMEM = "restore ";
 static const char str_store[] PROGMEM = "store ";
 static const char str_synced[] PROGMEM = "synced ";
-static const char str_connected[] PROGMEM = "connected ";
-static const char str_disconnected[] PROGMEM = "disconnected ";
+
 static const char str_up[] PROGMEM = "up ";
 static const char str_down[] PROGMEM = "down ";
 static const char str_mode[] PROGMEM = "mode ";
 static const char str_network[] PROGMEM = "network ";
 static const char str_scanning[] PROGMEM = "scanning... ";
+static const char str_wrong[] PROGMEM = "wrong ";
+static const char str_password[] PROGMEM = "password ";
+static const char str_system_time[] PROGMEM = "System time ";
+static const char str_no[] PROGMEM = "no ";
+static const char str_yes[] PROGMEM = "yes ";
+static const char str_found[] PROGMEM = "found ";
+static const char str_connecting[] PROGMEM = "connecting ";
+static const char str_connection[] PROGMEM = "connection ";
+static const char str_connected[] PROGMEM = "connected ";
+static const char str_disconnected[] PROGMEM = "disconnected ";
+static const char str_reconnect[] PROGMEM = "reconnect ";
+
 static const char str_session_interrupted[] PROGMEM =
-    "Session interrupted by another connection";
+    "Interrupted by another connection";
 static const char str_avaible_system_actions[] PROGMEM =
     "Available actions are: reset, load, save, restart, power";
 static const char str_network_not_found[] PROGMEM = "no networks found";

@@ -7,6 +7,8 @@ class Buffer {
     Buffer(size_t capacity = 64);
     Buffer(const Buffer &b);
     Buffer &operator=(const Buffer &b);
+    char &operator[](unsigned int i);
+    char operator[](unsigned int i) const;
     ~Buffer();
     bool empty();
     int length();
@@ -114,3 +116,14 @@ inline void Buffer::clear() {
 inline bool Buffer::empty() { return (writePos == 0); }
 
 inline char* Buffer::c_str() { return buffer; }
+
+inline char &Buffer::operator[](unsigned int i)
+{
+    return buffer[i];
+}
+
+inline char Buffer::operator[](unsigned int i) const
+{
+    return buffer[i];
+}
+

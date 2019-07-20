@@ -20,6 +20,6 @@ long timePassed(unsigned long start_ms, unsigned long finish_ms);
 
 long millisSince(unsigned long since_ms);
 
-void encodeTime(unsigned long epoch_s, struct tm &tm);
+void epochToDateTime(unsigned long epoch_s, struct tm &tm);
 
 unsigned long getAppBuildTime();

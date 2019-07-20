@@ -97,7 +97,7 @@ long millisSince(unsigned long since_ms) {
     return timePassed(since_ms, millis());
 }
 
-void encodeTime(unsigned long epoch_s, struct tm &tm) {
+void epochToDateTime(unsigned long epoch_s, struct tm &tm) {
     // since 1970
     uint32_t time;
     time = (uint32_t)epoch_s;
@@ -149,7 +149,6 @@ unsigned long getAppBuildTime() {
     strcpy(time, BUILD_TIME);
     decodeTimeStr(time, tm);
 
-
-
+    
     return 0;
 }

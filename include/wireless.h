@@ -12,6 +12,12 @@ void setOnNetworkStateChange(NetworkStateChangeEventHandler);
 
 WirelessMode getWirelessMode();
 
+bool hasNetwork();
+String hostSSID();
+IPAddress hostIP();
+String hostIPInfo();
+String hostName();
+
 void start_wifi();
 
 void updateState();
@@ -19,11 +25,6 @@ void setNetworkState(NetworkState value);
 void onNetworkUp();
 void onNetworkDown();
 void printDiag(Print* p);
-
-extern bool hasNetwork();
-extern String hostSSID();
-extern IPAddress hostIP();
-extern String hostName();
 
 bool scanNetworks(const char* ssid);
 

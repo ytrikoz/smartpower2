@@ -22,7 +22,6 @@ String getVcc();
 String getHeapFree();
 String getHeapFrag();
 
-String getHostIPInfo();
 String getCpuFreq();
 String getFreeSketch();
 String getFlashMap();

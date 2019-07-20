@@ -1,73 +1,59 @@
 #include "TelnetServer.h"
 
-TelnetServer::TelnetServer(uint16_t port) {
-    this->port = port;
-
-    onDisconnected = WiFi.onStationModeDisconnected(
-        {[this](const WiFiEventStationModeDisconnected &event) {
-            stop();
-        }});
-    onGotIp = WiFi.onStationModeGotIP(
+TelnetServer::TelnetServer(uint16_t port)
+    : port(port), active(false), initialized(false), connected(false) {
+    staDisconnected = WiFi.onStationModeDisconnected(
+        {[this](const WiFiEventStationModeDisconnected &event) { stop(); }});
+    staGotIP = WiFi.onStationModeGotIP(
         {[this](const WiFiEventStationModeGotIP &event) { begin(); }});
-
-    active = false;
-    initialized = false;
-    connected = false;
 }
 
 void TelnetServer::setOutput(Print *p) { output = p; }
 
 void TelnetServer::begin() {
     if (!initialized) {
-        init();
-    }    
-    active = true;
+        output->printf_P(str_telnet);
+        output->printf_P(str_start);
+        output->printf_P(strf_port, port);
+        server = new WiFiServer(port);
+        server->setNoDelay(true);
+        server->begin();
+        initialized = server->status() != CLOSED;
+        if (initialized)
+            output->printf_P(str_success);
+        else
+            output->printf_P(str_failed);
+        output->println();
+    }
+    active = initialized;
 }
 
 void TelnetServer::stop() {
-    output->printf_P(str_telnet);    
-    output->printf_P(str_stopped);    
-    active = false;
+    if (initialized) {
+        output->printf_P(str_telnet);
+        output->printf_P(str_stopped);
+        server->stop();
+        active = false;
+    }
 }
 
-void TelnetServer::init() {
-    output->printf_P(str_telnet);    
-    output->printf_P(str_start);  
-    output->printf_P(strf_port, port);    
-
-    server = new WiFiServer(port);
-    server->setNoDelay(true);
-    server->begin();
-    
-    initialized = server->status() != CLOSED;
-    
-    if (initialized)
-        output->printf_P(str_success);
-    else
-        output->printf_P(str_failed);  
-    
-    output->println();
-}
-
-bool TelnetServer::hasClientConnected() {
-    return connected;
+bool TelnetServer::hasClientConnected() { 
+    return initialized & client & client.connected();
 }
 
 void TelnetServer::write(const char *payload) {
     if (hasClientConnected()) {
-    #ifdef DEBUG_TELNET
-        USE_DEBUG_SERIAL.printf_P(str_telnet);
-        USE_DEBUG_SERIAL.printf_P(str_arrow_dest);
-        USE_DEBUG_SERIAL.println(payload);
-    #endif
+#ifdef DEBUG_TELNET
+        DEBUG.printf_P(str_telnet);
+        DEBUG.printf_P(str_arrow_dest);
+        DEBUG.println(payload);
+#endif
         client.write(payload);
     }
 }
 
 void TelnetServer::loop() {
-    if (!active)
-        return;
-
+    if (!active) return;
     if (server->hasClient()) {
         if (!client) {
             client = server->available();
@@ -78,7 +64,7 @@ void TelnetServer::loop() {
             } else {
                 WiFiClient reject;
                 reject = server->available();
-                reject.write("connection is busy");
+                reject.write("Server is busy");
                 reject.stop();
             }
         }

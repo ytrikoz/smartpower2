@@ -258,31 +258,6 @@ uint8_t rssi2per(sint8_t rssi) {
     return r;
 }
 
-String getHostIPInfo() {
-    station_status_t status = wifi_station_get_connect_status();
-
-    String str = F("sta: ");
-    switch (status) {
-        case STATION_IDLE:
-            str += F("idle");
-        case STATION_CONNECTING:
-            str += F("connecting");
-        case STATION_WRONG_PASSWORD:
-            str += F("wrong password");
-        case STATION_NO_AP_FOUND:
-            str += F("no ap found");
-        case STATION_CONNECT_FAIL:
-            str += F("connect fail");
-        case STATION_GOT_IP: {
-            str += F("got ip ");
-            str += WiFi.localIP().toString();
-        }
-    }
-    str += F(", reconnect policy: ");
-    str += (wifi_station_get_reconnect_policy()) ? F("yes") : F("no");
-    return str;
-}
-
 String getNetworkInfoJson() {
     size_t size = JSON_ARRAY_SIZE(11) + 11 * JSON_OBJECT_SIZE(1) + 193;
 

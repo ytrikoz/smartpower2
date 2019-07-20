@@ -115,7 +115,7 @@ bool isNegative(String str) {
     return str.equals("off") || str.equals("-") || str.equals("no");
 }
 
-void onSystemCommandDone(String& action, String& param) {
+void onCommandDone(String& action, String& param) {
     output->print(action.c_str());
     output->print(' ');
     output->print(param.c_str());
@@ -214,7 +214,7 @@ void onSystemCommand(cmd* c) {
         output->println();
         return;
     }
-    onSystemCommandDone(action, param);
+    onCommandDone(action, param);
 }
 
 void onSetCommand(cmd* c) {
@@ -231,10 +231,10 @@ void onSetCommand(cmd* c) {
         if (runtime->setValue(param, value.c_str())) {
             onConfigParameterChanged(name.c_str(), old, value.c_str());
         } else {
-            output->print(F("no changes"));
+            output->printf_P(strf_config_param_unchanged, name.c_str());            
         }
     } else {
-        char buf[INPUT_MAX_LENGTH];
+        char buf[OUTPUT_MAX_LENGTH];
         sprintf_P(buf, strf_set_s, name.c_str());
         output->print(buf);
     }
@@ -251,7 +251,6 @@ void onGetCommand(cmd* c) {
     if (runtime->getParameter(name.c_str(), param, value_size)) {
         char value[value_size];
         strcpy(value, runtime->getStrValue(param));
-
         onGetConfigParameter(name.c_str(), value);
     } else {
         onUnknownConfigParameter(name.c_str());
@@ -262,7 +261,7 @@ void onShowCommand(cmd* c) {
     Command cmd(c);
     String item = cmd.getArgument("item").getValue();
     if (item.equals("ip")) {
-        output->println(getHostIPInfo().c_str());
+        output->println(wireless::hostIPInfo().c_str());
     } else if (item.equals("clients")) {
         char buf[INPUT_MAX_LENGTH];
         sprintf(buf, "wifi: %s", getConnectedStationInfo().c_str());

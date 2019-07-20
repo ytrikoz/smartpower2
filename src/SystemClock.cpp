@@ -21,23 +21,27 @@ void SystemClock::setConfig(Config *config) {
 }
 
 void SystemClock::setTimeZone(sint8_t timeZone_h) {
-    timeOffset_s = timeZone_h * ONE_HOUR_s;
 #ifdef DEBUG_SYSTEM_CLOCK
     DEBUG.print(FPSTR(str_clock));
     DEBUG.print(FPSTR(str_timezone));
+#endif
+    timeOffset_s = timeZone_h * ONE_HOUR_s;
+#ifdef DEBUG_SYSTEM_CLOCK
     DEBUG.println(timeOffset_s);
 #endif
 }
 
 void SystemClock::setBackupInterval(uint16_t time_s) {
+#ifdef DEBUG_SYSTEM_CLOCK
+    DEBUG.print(FPSTR(str_clock));
+    DEBUG.print(FPSTR(str_backup));
+#endif
+
     if ((time_s < TIME_BACKUP_INTERVAL_MIN_s) && (time_s != 0)) {
         time_s = TIME_BACKUP_INTERVAL_MIN_s;
     }
     backupInterval_ms = time_s * ONE_SECOND_ms;
-
 #ifdef DEBUG_SYSTEM_CLOCK
-    DEBUG.print(FPSTR(str_clock));
-    DEBUG.print(FPSTR(str_backup));
     DEBUG.print(FPSTR(str_interval));
     DEBUG.println(time_s);
 #endif
@@ -73,38 +77,24 @@ void SystemClock::loop() {
 }
 
 bool SystemClock::store(FileStorage *agent) {
-#ifdef DEBUG_SYSTEM_CLOCK
-    DEBUG.print(FPSTR(str_clock));
-    DEBUG.print(FPSTR(str_store));
-#endif
     char buf[32];
-    if (agent->put(itoa(getUTC(), buf, DEC))) {
-#ifdef DEBUG_SYSTEM_CLOCK
-        DEBUG.println(buf);
-#endif
-        return true;
-    } else {
-#ifdef DEBUG_SYSTEM_CLOCK
-        DEBUG.println(FPSTR(str_failed));
-#endif
-        return false;
-    }
+    return agent->put(itoa(getUTC(), buf, DEC));
 }
 
 bool SystemClock::restore(FileStorage *agent) {
+#ifdef DEBUG_SYSTEM_CLOCK
+    DEBUG.print(FPSTR(str_clock));
+    DEBUG.print(FPSTR(str_restore));
+#endif
     char buf[16];
     if (agent->get(buf)) {
         epochTime_s = atoi(buf);
 #ifdef DEBUG_SYSTEM_CLOCK
-        DEBUG.print(FPSTR(str_clock));
-        DEBUG.print(FPSTR(str_restore));
         DEBUG.println(epochTime_s);
 #endif
         return true;
     } else {
 #ifdef DEBUG_SYSTEM_CLOCK
-        DEBUG.print(FPSTR(str_clock));
-        DEBUG.print(FPSTR(str_restore));
         DEBUG.println(FPSTR(str_failed));
 #endif
         return false;
@@ -112,11 +102,12 @@ bool SystemClock::restore(FileStorage *agent) {
 }
 
 void SystemClock::setTime(EpochTime &epoch) {
-    output->printf_P(str_clock);
-    output->printf_P(str_synced);
+    output->print(FPSTR(str_clock));
+    output->print(FPSTR(str_system_time));
+    
     epochTime_s = epoch.get();
     lastUpdated_ms = millis();
-    synced = true;
+    synced = true;    
     output->println(getLocalFormated().c_str());
 }
 

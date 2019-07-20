@@ -65,7 +65,7 @@ IPAddress hostIP() {
 
 String hostName() {
     String str;
-     switch (getWirelessMode()) {
+    switch (getWirelessMode()) {
         case WLAN_OFF:
             break;
             str = "";
@@ -76,7 +76,7 @@ String hostName() {
         case WLAN_AP:
             str = HOST_NAME;
             break;
-    }   
+    }
     return str;
 }
 
@@ -161,18 +161,17 @@ bool isActive() {
     return WiFi.softAPgetStationNum() || WiFi.status() == WL_CONNECTED;
 }
 
-void start_safe_wifi_ap()
-{
+void start_safe_wifi_ap() {
     char ap_ssid[32];
     strcpy(ap_ssid, APPNAME);
     strcat(ap_ssid, getChipId().c_str());
     char ap_passwd[] = "12345678";
     IPAddress ap_ipaddr = IPAddress(192, 168, 4, 1);
-    
-    #ifdef DEBUG_WIRELESS
+
+#ifdef DEBUG_WIRELESS
     PRINT_WIFI_AP
     PRINT_WIFI_AP_CONFIG
-    #endif
+#endif
 
     if (startAP(ap_ssid, ap_passwd, ap_ipaddr)) {
         USE_SERIAL.printf_P(str_success);
@@ -182,45 +181,44 @@ void start_safe_wifi_ap()
 }
 
 void start_wifi() {
-
     mode = (WirelessMode)config->getWiFiMode();
     uint8_t tpw = config->getTPW();
     system_phy_set_max_tpw(tpw);
     WiFi.hostname(HOST_NAME);
 
-    #ifdef DEBUG_WIRELESS
+#ifdef DEBUG_WIRELESS
     PRINTLN_WIFI_CONFIG
-    #endif
+#endif
 
     if (mode == WLAN_AP) {
         const char *ap_ssid = config->getSSID_AP();
         const char *ap_passwd = config->getPassword_AP();
-        IPAddress ap_ipaddr = config->getIPAddr_AP();      
-    
-        #ifdef DEBUG_WIRELESS
+        IPAddress ap_ipaddr = config->getIPAddr_AP();
+
+#ifdef DEBUG_WIRELESS
         PRINT_WIFI_AP
         PRINT_WIFI_AP_CONFIG
-        #endif
-        
+#endif
+
         bool result = startAP(ap_ssid, ap_passwd, ap_ipaddr);
-        
-        #ifdef DEBUG_WIRELESS
-        if (result) 
+
+#ifdef DEBUG_WIRELESS
+        if (result)
             USE_SERIAL.printf_P(str_success);
         else
-            USE_SERIAL.printf_P(str_failed);             
+            USE_SERIAL.printf_P(str_failed);
         USE_SERIAL.println();
-        #endif
-        
-        if (result) 
+#endif
+
+        if (result)
             setNetworkState(NETWORK_UP);
-        else    
+        else
             setNetworkState(NETWORK_DOWN);
     }
 
     if (mode == WLAN_STA) {
         staConnectedEventHandler = WiFi.onStationModeConnected(
-            [](const WiFiEventStationModeConnected &e) {                
+            [](const WiFiEventStationModeConnected &e) {
                 PRINTLN_WIFI_STA_CONNECTED
             });
 
@@ -264,7 +262,7 @@ void updateState() {
         case WLAN_OFF:
             PRINTLN_WIFI_SWITCHED_OFF
             setNetworkState(NETWORK_DOWN);
-            break;        
+            break;
         case WIFI_AP:
             // ping ?
             break;
@@ -319,6 +317,69 @@ class WiFiStationStaticIP : public ESP8266WiFiSTAClass {
 void enableStaticStationIP(bool enabled) {
     WiFiStationStaticIP tmp;
     tmp.useStaticStationIP(enabled);
+}
+
+String hostIPInfo() {
+    char buf[OUTPUT_MAX_LENGTH];
+    memset(&buf, 0, OUTPUT_MAX_LENGTH);
+    if (network == NETWORK_DOWN) {
+        strcat_P(buf, str_wifi);
+        strcat_P(buf, str_down);
+        return String(buf);
+    }
+    strcat_P(buf, str_wifi);
+    switch (getWirelessMode()) {
+        case WLAN_OFF:
+            strcpy_P(buf, str_switched);
+            strcpy_P(buf, str_off);
+            break;
+        case WLAN_STA:
+        case WLAN_AP_STA:
+        {
+            strcpy_P(buf, str_sta);
+            station_status_t connection_status = wifi_station_get_connect_status();
+            switch (connection_status) {
+                case STATION_IDLE:
+                    strcat_P(buf, str_idle);
+                    break;
+                case STATION_CONNECTING:
+                    strcat_P(buf, str_connecting);
+                    break;
+                case STATION_WRONG_PASSWORD:
+                    strcat_P(buf, str_wrong);
+                    strcat_P(buf, str_password);
+                    break;
+                case STATION_NO_AP_FOUND:
+                    strcat_P(buf, str_no);
+                    strcat_P(buf, str_ap);
+                    strcat_P(buf, str_found);
+                    break;
+                case STATION_CONNECT_FAIL:
+                    strcat_P(buf, str_connection);
+                    strcat_P(buf, str_failed);
+                    break;
+                case STATION_GOT_IP: {
+                    strcat_P(buf, str_connected);
+                    strcat_P(buf, str_got);
+                    
+                    char tmp[32];
+                    sprintf_P(tmp, strf_ip,  WiFi.localIP().toString().c_str());
+                    strcat_P(buf, tmp);                 
+                    break;
+                }
+            }
+            break;
+        }
+        case WLAN_AP:
+            strcat_P(buf, str_ap);
+            char tmp[32];
+            sprintf_P(tmp, strf_ip, WiFi.softAPIP().toString().c_str());
+            strcat_P(buf, tmp);     
+            break;
+    }
+    strcat_P(buf, str_reconnect);
+    strcat_P(buf, wifi_station_get_reconnect_policy() ? str_yes : str_no);
+    return String(buf);
 }
 
 }  // namespace wireless

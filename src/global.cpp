@@ -46,6 +46,7 @@ void start_services() {
         start_ntp();
 #endif
     }
+    // any
 #ifndef DISABLE_TELNET
     start_telnet();
 #endif
@@ -71,7 +72,6 @@ void start_telnet() {
         USE_SERIAL.println();
         return true;
     });
-
     telnet->setOnCLientDisconnect([]() {
         USE_SERIAL.printf_P(str_telnet);
         USE_SERIAL.printf_P(str_disconnected);

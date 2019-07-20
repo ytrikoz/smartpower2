@@ -12,36 +12,28 @@ typedef std::function<void()> TelnetDisconnectEventHandler;
 
 class TelnetServer {
    public:
-    TelnetServer(uint16_t port);
+    TelnetServer(uint16_t port = TELNET_PORT);
     void setOutput(Print *p);
-
     void begin();
     void stop();
-    void write(const char *);
     void loop();
-
+    void write(const char *);
     bool hasClientConnected();
     void setOnClientConnect(TelnetConnectEventHandler handler);
     void setOnCLientDisconnect(TelnetDisconnectEventHandler handler);
 
    private:
     void init();
-    
     void onConnect();
     void onDisconnect();
-
-    bool active;
-    bool connected;
-    bool initialized;    
     uint16_t port;
-
+    bool active;
+    bool initialized;
+    bool connected;
     WiFiClient client;
     WiFiServer *server;
-
     TelnetConnectEventHandler onConnectEvent;
     TelnetDisconnectEventHandler onDisconnectEvent;
-
-    WiFiEventHandler onDisconnected, onGotIp;
-
+    WiFiEventHandler staDisconnected, staGotIP;
     Print *output = &USE_SERIAL;
 };
