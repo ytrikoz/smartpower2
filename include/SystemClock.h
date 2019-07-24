@@ -17,9 +17,9 @@ class SystemClock {
     void setBackupInterval(uint16_t time_s);
     void setOutput(Print *output);        
     bool isSynced();
-    uint32_t getUptime();
-    unsigned long getUTC();
-    unsigned long getLocal();
+    uint32_t getSystemUptime();
+    unsigned long getUtcEpoch();
+    unsigned long getLocalEpoch();
     String getLocalFormated();
     String getUptimeFormated();
     uint8_t getWeekDay();
@@ -34,13 +34,10 @@ class SystemClock {
     bool synced = false;
     sint16_t timeOffset_s;
     unsigned long backupInterval_ms;
-
     unsigned long lastUpdated_ms;
     unsigned long lastBackup_ms;
     unsigned long rolloverCounter;
-
     unsigned long epochTime_s;
-
     Print *output;
 };
 

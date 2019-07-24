@@ -1,9 +1,9 @@
 #pragma once
 #include <Arduino.h>
 
-#include "consts.h"
 #include "IPAddress.h"
 #include "Types.h"
+#include "consts.h"
 
 #define PARAM_COUNT 20
 #define PARAM_NAME_STR_SIZE 12
@@ -14,8 +14,13 @@
 #define NUMBER_SIZE 4
 #define LARGE_NUMBER_SIZE 9
 
-
 typedef std::function<void(Parameter)> ConfigEventHandler;
+
+typedef struct {
+    char name[PARAM_NAME_STR_SIZE];
+    size_t size;
+    const char *def;
+} Metadata;
 
 class Config {
    public:
@@ -43,7 +48,7 @@ class Config {
 
     bool getParameter(const char *name, Parameter &param);
     bool getParameter(const char *name, Parameter &param, size_t &size);
-    void getNameValuePair(Parameter param, char *str);
+    void getConfigLine(Parameter param, char *str);
     const char *getName(Parameter param);
     const size_t getValueSize(Parameter param);
 
@@ -54,21 +59,15 @@ class Config {
 
     char *values[PARAM_COUNT];
 
-    typedef struct {
-        char name[PARAM_NAME_STR_SIZE];
-        size_t size;
-        const char *def;
-    } Metadata;
-
     Metadata metadata[PARAM_COUNT] = {
         {"wifi", BOOL_SIZE, "2"},
-        {"ssid", STR_SIZE, ""},
-        {"passwd", STR_SIZE, ""},
+        {"ssid", STR_SIZE, "MyNetwork"},
+        {"passwd", STR_SIZE, "SomePassword"},
         {"dhcp", BOOL_SIZE, "1"},
-        {"ipaddr", IPADDR_SIZE, ""},
-        {"netmask", IPADDR_SIZE, ""},
-        {"gateway", IPADDR_SIZE, ""},
-        {"dns", IPADDR_SIZE, ""},
+        {"ipaddr", IPADDR_SIZE, "192.168.1.4"},
+        {"netmask", IPADDR_SIZE, "255.255.255.0"},
+        {"gateway", IPADDR_SIZE, "192.168.1.1"},
+        {"dns", IPADDR_SIZE, "192.168.1.1"},
         {"voltage", OUTPUT_VOLTAGE_SIZE, "5.0"},
         {"bootpwr", BOOL_SIZE, "0"},
         {"login", STR_SIZE, "admin"},
@@ -77,12 +76,9 @@ class Config {
         {"ap_passwd", STR_SIZE, "12345678"},
         {"ap_ipaddr", IPADDR_SIZE, "192.168.4.1"},
         {"time_zone", NUMBER_SIZE, "3"},
-        {"twp", NUMBER_SIZE, "82"}, 
+        {"twp", NUMBER_SIZE, "82"},
         {"ntp_sync", LARGE_NUMBER_SIZE, "3600"},
         {"ntp_pool", STR_SIZE, DEF_NTP_POOL_SERVER},
-        {"time_backup", LARGE_NUMBER_SIZE, "600"}};
-
-#ifdef DEBUG_CONFIG
-    Print *debug = &USE_DEBUG_SERIAL;
-#endif
+        {"time_backup", LARGE_NUMBER_SIZE, DEF_TIME_BACKUP_INTERVAL_s},
+    };
 };

@@ -63,6 +63,17 @@ double Multimeter::getWattHours() {
     return wattSeconds * ONE_HOUR_s;
 }
 
+String Multimeter::toString() {
+    String str = String(getVoltage(), 3);
+    str += ",";
+    str += String(getCurrent(), 3);
+    str += ",";
+    str += String(getPower(), 3);
+    str += ",";
+    str += String(getWattHours(), 3);
+    return str;
+}
+
 unsigned long Multimeter::getDuration_s()
 {
     return (finished_ms - started_ms) / ONE_SECOND_ms;

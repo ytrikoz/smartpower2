@@ -50,25 +50,25 @@ void SystemClock::setBackupInterval(uint16_t time_s) {
 void SystemClock::begin() {
     if (!restore(new FileStorage(FILE_TIME_BACKUP))) {
         epochTime_s = getAppBuildTime();
-    }
+        #ifdef DEBUG_SYSTEM_CLOCK
+        DEBUG.print(FPSTR(str_clock));
+        DEBUG.print(FPSTR(str_set));
+        DEBUG.println(epochTime_s);
+        #endif
+    }    
     lastUpdated_ms = millis();
     active = true;
 }
 
 void SystemClock::loop() {
     if (!active) return;
-
     unsigned long now_ms = millis();
-
     if (now_ms < lastUpdated_ms) rolloverCounter++;
-
     if (now_ms - lastUpdated_ms >= ONE_SECOND_ms) {
         lastUpdated_ms += ONE_SECOND_ms;
         epochTime_s += 1;
-
         if (synced && backupInterval_ms > 0) {
-            if (((now_ms - lastBackup_ms >= backupInterval_ms) ||
-                 (lastBackup_ms == 0))) {
+            if (((now_ms - lastBackup_ms >= backupInterval_ms) || (lastBackup_ms == 0))) {
                 store(new FileStorage(FILE_TIME_BACKUP));
                 lastBackup_ms = now_ms;
             }
@@ -78,23 +78,25 @@ void SystemClock::loop() {
 
 bool SystemClock::store(FileStorage *agent) {
     char buf[32];
-    return agent->put(itoa(getUTC(), buf, DEC));
+    return agent->put(itoa(getLocalEpoch(), buf, DEC));
 }
 
 bool SystemClock::restore(FileStorage *agent) {
 #ifdef DEBUG_SYSTEM_CLOCK
-    DEBUG.print(FPSTR(str_clock));
-    DEBUG.print(FPSTR(str_restore));
+        DEBUG.print(FPSTR(str_clock));
+        DEBUG.println(FPSTR(str_restore));   
 #endif
     char buf[16];
     if (agent->get(buf)) {
         epochTime_s = atoi(buf);
 #ifdef DEBUG_SYSTEM_CLOCK
+        DEBUG.print(FPSTR(str_clock));
         DEBUG.println(epochTime_s);
 #endif
         return true;
     } else {
 #ifdef DEBUG_SYSTEM_CLOCK
+        DEBUG.print(FPSTR(str_clock));
         DEBUG.println(FPSTR(str_failed));
 #endif
         return false;
@@ -113,7 +115,7 @@ void SystemClock::setTime(EpochTime &epoch) {
 
 String SystemClock::getLocalFormated() {
     String result = "";
-    unsigned long now_ms = getLocal();
+    unsigned long now_ms = getLocalEpoch();
     uint8_t hours = (now_ms % 86400L) / 3600;
     uint8_t minutes = (now_ms % 3600) / 60;
     uint8_t seconds = now_ms % 60;
@@ -122,29 +124,29 @@ String SystemClock::getLocalFormated() {
     return String(buf);
 }
 
-uint32_t SystemClock::getUptime() {
+uint32_t SystemClock::getSystemUptime() {
     return (0xFFFFFFFF / ONE_SECOND_ms) * rolloverCounter +
            (millis() / ONE_SECOND_ms);
 }
 
 String SystemClock::getUptimeFormated() {
-    uint32_t now_s = getUptime();
+    uint32_t now_s = getSystemUptime();
     char buf[16];
     sprintf_P(buf, strf_time, now_s / 3600 % 24, now_s / 60 % 60, now_s % 60);
     return String(buf);
 }
 
-unsigned long SystemClock::getUTC() { return epochTime_s; }
+unsigned long SystemClock::getUtcEpoch() { return epochTime_s; }
 
-unsigned long SystemClock::getLocal() { return timeOffset_s + getUTC(); }
+unsigned long SystemClock::getLocalEpoch() { return timeOffset_s + getUtcEpoch(); }
 
-uint8_t SystemClock::getWeekDay() { return (((getLocal() / 86400L) + 4) % 7); }
+uint8_t SystemClock::getWeekDay() { return (((getLocalEpoch() / 86400L) + 4) % 7); }
 
-uint8_t SystemClock::getHours() { return ((getLocal() % 86400L) / 3600); }
+uint8_t SystemClock::getHours() { return ((getLocalEpoch() % 86400L) / 3600); }
 
-uint8_t SystemClock::getMinutes() { return ((getLocal() % 3600) / 60); }
+uint8_t SystemClock::getMinutes() { return ((getLocalEpoch() % 3600) / 60); }
 
-uint8_t SystemClock::getSeconds() { return (getLocal() % 60); }
+uint8_t SystemClock::getSeconds() { return (getLocalEpoch() % 60); }
 
 void SystemClock::setOutput(Print *p) { output = p; }
 

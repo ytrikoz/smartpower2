@@ -10,4 +10,4 @@ class ShowStatusCommand : public Printable {
     size_t printTo(Print &p) const;
 };
 
-}
+}  // namespace executors

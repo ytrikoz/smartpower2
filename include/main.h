@@ -1,4 +1,5 @@
 //#include <GDBStub.h>
+
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <Wire.h>
@@ -36,6 +37,7 @@ static void ICACHE_RAM_ATTR powerButtonHandler();
 
 void setup(void);
 void loop(void);
+void loopTimings();
 void timerHandler();
 void setup_hardware();
 void sendClients(String, uint8_t);

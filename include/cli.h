@@ -1,12 +1,14 @@
 #pragma once
 
-#include "global.h"
 #include "Print.h"
+#include "global.h"
 
-void init_cli();
-bool start_cli(Print *output);
-void quit_cli();
-bool is_cli_active();
+namespace CLI {
+
+void init();
+bool open(Print *output);
+void close();
+bool active();
 
 void onCommandError(cmd_error *e);
 void onHelpCommand(cmd *c);
@@ -17,5 +19,18 @@ void onSetCommand(cmd *c);
 void onGetCommand(cmd *c);
 void onSystemCommand(cmd *c);
 void onSystemWifiScanCommand(cmd *c);
-void onSystemWifiDiagCommand(cmd* c);
-void onClockCommand(cmd* c);
+void onSystemWifiDiagCommand(cmd *c);
+void onClockCommand(cmd *c);
+
+void print_P(const char*);
+void onGetConfigParameter(const char*, const char*);
+void onConfigParameterChanged(const char*, const char*, const char*);
+void onUnknownCommandItem(const char*, const char*);
+void onUnknownConfigParameter(const char*);
+void onCommandDone(String&, String&);
+void onCommandResult(const char*, const char*);
+void onUnknownActionParameter(const char*, const char*);
+bool isPositive(String);
+bool isNegative(String);
+
+}  // namespace CLI

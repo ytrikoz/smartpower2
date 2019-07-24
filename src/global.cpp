@@ -1,19 +1,16 @@
 #include <global.h>
 
-#include "Termul.h"
-#include "str_utils.h"
+SimpleTimer timer;
+SimpleCLI *cli;
 
 NetworkService *discovery;
-SimpleTimer timer;
 Multimeter *meter;
 TelnetServer *telnet;
-Shell *t_sh;
-Termul *t_term;
-Shell *s_sh;
-Termul *s_term;
-NTPClient *ntp;
 ConfigHelper *config;
-SimpleCLI *cli;
+
+#ifndef DISABLE_NTP
+NTPClient *ntp;
+#endif
 #ifndef DISABLE_HTTP
 WebService *http;
 #endif
@@ -23,8 +20,13 @@ Display *display;
 #ifndef DISABLE_OTA_UPDATE
 OTAUpdate *ota;
 #endif
-#ifndef DISABLE_SERIAL_SHELL
-
+#ifndef DISABLE_CONSOLE_SHELL
+Termul *consoleTerm;
+Shell *consoleShell;
+#endif
+#ifndef DISABLE_TELNET_SHELL
+Shell *telnetShell;
+Termul *telnetTerm;
 #endif
 
 void start_services() {
@@ -81,42 +83,24 @@ void start_telnet() {
     telnet->begin();
 }
 
-bool start_telnet_shell(Stream *s) {
-    if (!t_term) {
-        t_term = new Termul();
-        t_term->setControlCodes(true);
-    }
-    t_term->setStream(s);
+void start_console_shell() {
+    consoleTerm = new Termul(&USE_SERIAL);
+    consoleTerm->enableEcho(true);
 
-    if (!t_sh) {
-        t_sh = new Shell();
-        t_sh->setParser(cli);
-        t_sh->setTermul(t_term);
-        t_sh->setOnStart(start_cli);
-        t_sh->setOnQuit(quit_cli);
-        t_sh->enableWelcome();
-    }
-    t_sh->start();
-
-    return true;
+    consoleShell = new Shell();
+    consoleShell->setParser(cli);
+    consoleShell->setTermul(consoleTerm);
 }
-
-void start_serial_shell(Stream *s) {
-    if (!s_term) {
-        s_term = new Termul();
-        s_term->setControlCodes(false);
-    }
-    s_term->setStream(s);
-
-    if (!s_sh) {
-        s_sh = new Shell();
-        s_sh->setParser(cli);
-        s_sh->setTermul(s_term);
-        s_sh->setOnStart(start_cli);
-        s_sh->setOnQuit(quit_cli);
-        s_sh->enableEcho(true);
-    }
-    s_sh->start();
+ 
+bool start_telnet_shell(Stream *s) {
+    telnetTerm = new Termul(s);
+    telnetTerm->enableControlCodes(true);
+    
+    telnetShell = new Shell();
+    telnetShell->setParser(cli);
+    telnetShell->enableWelcome();
+    telnetShell->setTermul(telnetTerm);
+    return true;
 }
 
 void start_clock() {
@@ -144,7 +128,7 @@ void start_http() {
 
 void start_discovery() {
     discovery = new NetworkService();
-    discovery->setOutput(&Serial);
+    discovery->setOutput(&USE_SERIAL);
     discovery->begin();
 }
 
@@ -152,18 +136,6 @@ void start_ota_update() {
     ota = new OTAUpdate();
     ota->setOutput(&USE_SERIAL);
     ota->begin(HOST_NAME, OTA_PORT);
-}
-
-void printWelcomeTo(Print *p) {
-    char title[SCREEN_WIDTH + 1];
-    strcpy(title, APPNAME " v" FW_VERSION);
-    uint8_t width = SCREEN_WIDTH / 2;
-    str_utils::addPaddingTo(title, str_utils::CENTER, width, ' ');
-    char decor[width + 1];
-    str_utils::strOfChar(decor, '#', width);
-    p->println(decor);
-    p->println(title);
-    p->println(decor);
 }
 
 uint8_t get_telnet_clients_count() {
@@ -179,3 +151,5 @@ String getLoopStat() {
     sprintf_P(buf, strf_show_status, get_lps(), get_longest_loop());
     return String(buf);
 }
+
+

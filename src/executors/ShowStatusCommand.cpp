@@ -5,8 +5,7 @@
 
 namespace executors {
 
-void ShowStatusCommand::Execute(Print *p)
-{
+void ShowStatusCommand::Execute(Print* p) {
     p->println(getLoopStat());
     p->println(getHeapStat());
 }
@@ -16,4 +15,4 @@ size_t ShowStatusCommand::printTo(Print& p) const {
     return res;
 }
 
-}
+}  // namespace executors

@@ -2,19 +2,19 @@
 
 #include "types.h"
 
+#include "mcurses.h"
 #include <IPAddress.h>
 #include <SimpleCLI.h>
 #include <SimpleTimer.h>
 #include "SystemClock.h"
 
-#include "cli.h"
+#include "Shell.h"
 #include "ConfigHelper.h"
 #include "Display.h"
 #include "Multimeter.h"
 #include "NTPClient.h"
 #include "NetworkService.h"
 #include "OTAUpdate.h"
-#include "Shell.h"
 #include "TelnetServer.h"
 #include "WebService.h"
 
@@ -27,8 +27,6 @@ extern Display *display;
 extern Multimeter *meter;
 extern NTPClient *ntp;
 extern OTAUpdate *ota;
-extern Shell *t_sh;
-extern Shell *s_sh;
 
 extern TelnetServer *telnet;
 extern WebService *http;
@@ -38,17 +36,19 @@ extern void onHttpClientDisconnect(uint8_t num);
 extern void onHttpClientData(uint8_t num, String data);
 
 extern String getLoopStat();
+extern Shell *telnetShell;
+extern Shell *consoleShell;
 
 extern void start_services();
-extern void start_serial_shell(Stream *);
-extern bool start_telnet_cli(Stream *);
+extern void start_console_shell();
+extern bool start_telnet_shell(Stream *s);
 extern void printWelcomeTo(Print *p);
 
 // main
 extern PowerState get_power_state();
 extern void set_power_state(PowerState state);
 extern void cancel_system_restart();
-extern bool start_telnet_shell(Stream *s);
+
 extern void setup_restart_timer(int s);
 uint8_t get_http_clients_count();
 uint8_t get_telnet_clients_count();

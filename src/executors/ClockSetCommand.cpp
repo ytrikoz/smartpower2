@@ -6,24 +6,20 @@
 
 namespace executors {
 
-void ClockSetCommand::Execute(Print *p)
-{       
+void ClockSetCommand::Execute(Print* p) {
     p->print(FPSTR(str_set));
     p->print(FPSTR(str_date));
 
     char date_str[32];
     strcpy_P(date_str, str_build_date);
-  
+
     tm tm;
-    if (decodeDateStr(date_str, tm))
-    {
+    if (decodeDateStr(date_str, tm)) {
         Date d = Date(tm);
         p->println(d);
-    } else 
-    {
+    } else {
         p->println("wrong format or date value");
     }
-
 }
 
 size_t ClockSetCommand::printTo(Print& p) const {
@@ -31,4 +27,4 @@ size_t ClockSetCommand::printTo(Print& p) const {
     return res;
 }
 
-}
+}  // namespace executors

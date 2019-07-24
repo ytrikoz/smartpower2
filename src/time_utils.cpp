@@ -1,18 +1,12 @@
 #include "time_utils.h"
 
-uint8_t getMonthNum(String str) {
-    for (uint8_t n = 0; n < 11; n++)
-        if (str.equalsIgnoreCase(calendar[n].name) == 1) return n + 1;
-    return 0;
-}
-
 bool isLeapYear(uint8_t year) {
     uint16_t today = 1970 + year;
     return (((today) > 0) && !((today) % 4) &&
             (((today) % 100) || !((today) % 400)));
 }
 
-bool isValidYear(int year) { return year > 1970 && year < 2040; }
+bool isValidYear(int year) { return year < 64; }
 
 bool isValidMonth(uint8_t n) { return (n >= 1) && (n <= 12); }
 
@@ -23,8 +17,7 @@ bool isValidMinute(uint8_t minute) { return minute > 0 && minute < 60; }
 bool isValidSecond(uint8_t second) { return second > 0 && second < 60; }
 
 bool isValidDate(int year, int month, int day) {
-    return (day > 0) && (day <= getDaysInMonth(month, year)) &&
-           (isValidYear(year));
+    return (day > 0) && (day <= getDaysInMonth(month, year)) && isValidYear(year);
 }
 
 uint8_t getDaysInMonth(uint8_t month, uint16_t year) {
@@ -33,9 +26,16 @@ uint8_t getDaysInMonth(uint8_t month, uint16_t year) {
     return calendar[month].days;
 }
 
+uint8_t getMonthNum(String str) {
+    for (uint8_t n = 0; n < 11; n++)
+        if (str.equalsIgnoreCase(calendar[n].name) == 1) return n + 1;
+    return 0;
+}
+
 bool decodeTimeStr(char *str, struct tm &tm) {
-    //uint8_t &hour, uint8_t &minute, uint8_t &second) 
-    uint8_t items = sscanf("%2d:%2d:%2d", str, &tm.tm_hour, &tm.tm_min, &tm.tm_sec);
+    // uint8_t &hour, uint8_t &minute, uint8_t &second)
+    uint8_t items =
+        sscanf("%2d:%2d:%2d", str, &tm.tm_hour, &tm.tm_min, &tm.tm_sec);
     if (items == 2) {
         tm.tm_sec = 0;
         items++;
@@ -48,15 +48,20 @@ bool decodeTimeStr(char *str, struct tm &tm) {
 }
 
 bool decodeDateStr(char *str, struct tm &tm) {
-    char monthStr[8];
-    uint8_t items = sscanf("%4s:%2d:%4d", str, monthStr, &tm.tm_mday, &tm.tm_year);
+    char month[8];
+    uint8_t items = sscanf("%4s:%2d:%4d", str, month, &tm.tm_mday, &tm.tm_year);
     if (items != 3) return false;
-    tm.tm_mon = getMonthNum(monthStr);
+    tm.tm_mon = getMonthNum(month);
     return isValidDate(tm.tm_year, tm.tm_mon, tm.tm_mday);
 }
 
-uint32_t getEpoch_s(int year, uint8_t month, uint8_t day, uint8_t hour,
-                    uint8_t minute, uint8_t second) {
+uint32_t getEpoch_s(tm tm) {
+    return getEpoch_s(tm.tm_year, tm.tm_mon, tm.tm_mday,
+                      tm.tm_hour, tm.tm_min, tm.tm_sec);
+}
+
+uint32_t getEpoch_s(int year, int month, int day, int hour, int minute,
+                    int second) {
     if (year < 1970 || month > 12 || day > 31 || hour > 23 || minute > 59 ||
         second > 59)
         return 0;
@@ -97,7 +102,7 @@ long millisSince(unsigned long since_ms) {
     return timePassed(since_ms, millis());
 }
 
-void epochToDateTime(unsigned long epoch_s, struct tm &tm) {
+void epochTotm(unsigned long epoch_s, struct tm &tm) {
     // since 1970
     uint32_t time;
     time = (uint32_t)epoch_s;
@@ -143,12 +148,18 @@ void epochToDateTime(unsigned long epoch_s, struct tm &tm) {
 unsigned long getAppBuildTime() {
     tm tm;
     char date[16];
-    strcpy(date, BUILD_DATE);
-    decodeDateStr(date, tm);
-    char time[16];
-    strcpy(time, BUILD_TIME);
-    decodeTimeStr(time, tm);
 
-    
-    return 0;
+    strcpy(date, BUILD_DATE);
+    if (!decodeDateStr(date, tm)) {
+        DEBUG.println("decodeDateStr error");
+        return 0;
+    }
+
+    strcpy(date, BUILD_TIME);
+    if (!decodeTimeStr(date, tm)) {
+        DEBUG.println("decodeTimeStr error");
+        return 0;
+    }
+
+    return getEpoch_s(tm);
 }

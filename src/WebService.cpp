@@ -184,9 +184,12 @@ bool WebService::sendFileContent(String path) {
             type = getContentType(path);
 
         File f = SPIFFS.open(path, "r");
+#ifndef DEBUG_HTTP
+        server->streamFile(f, type);
+        f.close();
+#else
         size_t sent = server->streamFile(f, type);
         f.close();
-#ifdef DEBUG_HTTP
         USE_DEBUG_SERIAL.print(path.c_str());
         USE_DEBUG_SERIAL.print(" ");
         USE_DEBUG_SERIAL.print(type.c_str());

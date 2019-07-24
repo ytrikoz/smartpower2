@@ -1,19 +1,28 @@
 #include "cli.h"
 
-#include "executors/ShowStatusCommand.h"
-#include "executors/ShowNtpCommand.h"
 #include "executors/ClockSetCommand.h"
-using namespace executors;
+#include "executors/ShowNtpCommand.h"
+#include "executors/ShowStatusCommand.h"
 
 Print* output;
+
 Command cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet, cmdGet, cmdRm, cmdClock;
-ShowStatusCommand showStatus;
-ShowNtpCommand showNtp;
-ClockSetCommand clockSetCommand;
+executors::ShowStatusCommand showStatus;
+executors::ShowNtpCommand showNtp;
+executors::ClockSetCommand clockSetCommand;
 
-bool is_cli_active() { return (output); }
+bool CLI::active() { return output != nullptr; }
 
-void init_cli() {
+bool CLI::open(Print* p) {
+    if (output != nullptr) {
+        output->print(FPSTR(str_session_interrupted));
+        output->println();
+    }
+    output = p;
+    return true;
+}
+
+void CLI::init() {
     cli = new SimpleCLI();
     // Error
     cli->setErrorCallback(onCommandError);
@@ -46,76 +55,68 @@ void init_cli() {
     cmdRm = cli->addCommand("rm");
     cmdRm.addPositionalArgument("file");
     cmdRm.setCallback(onRMCommand);
-    // Clock 
+    // Clock
     cmdClock = cli->addCommand("clock");
     cmdClock.addPositionalArgument("action");
     cmdClock.addPositionalArgument("param", "");
     cmdClock.setCallback(onClockCommand);
 }
 
-bool start_cli(Print* p) {
-    if (output) {
-        output->printf_P(str_session_interrupted);
-    } 
-    output = p;
-    return true;
-}
-
-void quit_cli() {
+void CLI::close() {
     output->printf_P(str_cli_hint);
     output->println();
     output = nullptr;
 }
 
-void print_P(PGM_P str) {
+void CLI::print_P(PGM_P str) {
     char buf[INPUT_MAX_LENGTH];
     strcpy_P(buf, str);
     output->print(buf);
 }
 
-void onGetConfigParameter(const char* name, const char* value) {
+void CLI::onGetConfigParameter(const char* name, const char* value) {
     char buf[INPUT_MAX_LENGTH];
     sprintf_P(buf, strf_config_param_value, name, value);
     output->println(buf);
 }
 
-void onConfigParameterChanged(const char* name, const char* old_value,
+void CLI::onConfigParameterChanged(const char* name, const char* old_value,
                               const char* new_value) {
-    char buf[INPUT_MAX_LENGTH];
-    sprintf_P(buf, strf_config_param_changed, name, old_value, new_value);
+    char buf[OUTPUT_MAX_LENGTH];
+    sprintf_P(buf, strf_config_param_changed, new_value, name);
     output->print(buf);
 }
 
-void onUnknownCommandItem(const char* command, const char* item) {
+void CLI::onUnknownCommandItem(const char* command, const char* item) {
     char buf[128];
     sprintf_P(buf, strf_unknown_command_item, item, command);
     output->println(buf);
 }
 
-void onUnknownConfigParameter(const char* param) {
+void CLI::onUnknownConfigParameter(const char* param) {
     char buf[128];
     sprintf_P(buf, strf_config_unknown_param, param);
     output->println(buf);
 }
 
-void onUnknownActionParameter(const char* param, const char* action) {
+void CLI::onUnknownActionParameter(const char* param, const char* action) {
     output->printf_P(strf_unknown_action_param, param, action);
 }
 
-void onCommandResult(PGM_P strP, const char* filename) {
+void CLI::onCommandResult(PGM_P strP, const char* filename) {
     output->printf_P(strP, filename);
     output->println();
 }
 
-bool isPositive(String str) {
+bool CLI::isPositive(String str) {
     return str.equals("on") || str.equals("+") || str.equals("yes");
 }
 
-bool isNegative(String str) {
+bool CLI::isNegative(String str) {
     return str.equals("off") || str.equals("-") || str.equals("no");
 }
 
-void onCommandDone(String& action, String& param) {
+void CLI::onCommandDone(String& action, String& param) {
     output->print(action.c_str());
     output->print(' ');
     output->print(param.c_str());
@@ -124,35 +125,34 @@ void onCommandDone(String& action, String& param) {
     output->println();
 }
 
-void onCommandError(cmd_error* e) {
+void CLI::onCommandError(cmd_error* e) {
     CommandError cmdError(e);
     output->println(cmdError.toString().c_str());
 }
 
-void onHelpCommand(cmd* c) {
+void CLI::onHelpCommand(cmd* c) {
     Command cmd(c);
     output->println(cli->toString().c_str());
 }
 
-void onSystemWifiDiagCommand(cmd* c)
-{
+void CLI::onSystemWifiDiagCommand(cmd* c) {
     WiFi.printDiag(*output);
     output->println();
 }
 
-void onClockCommand(cmd* c)
-{
+void CLI::onClockCommand(cmd* c) {
     Command cmd(c);
     String action = cmd.getArgument("action").getValue();
     String parameter = cmd.getArgument("param").getValue();
-    
+
     clockSetCommand.Execute(output);
 }
 
-void onSystemWifiScanCommand(cmd* c) {
+void CLI::onSystemWifiScanCommand(cmd* c) {
     Command cmd(c);
     output->printf_P(str_wifi);
-    output->printf_P(str_scanning);;
+    output->printf_P(str_scanning);
+    ;
     int8_t n = WiFi.scanNetworks();
     output->print(str_wifi);
     if (n == 0) {
@@ -170,7 +170,7 @@ void onSystemWifiScanCommand(cmd* c) {
     output->println();
 }
 
-void onSystemCommand(cmd* c) {
+void CLI::onSystemCommand(cmd* c) {
     Command cmd(c);
     String action = cmd.getArgument("action").getValue();
     String param = cmd.getArgument("param").getValue();
@@ -217,7 +217,7 @@ void onSystemCommand(cmd* c) {
     onCommandDone(action, param);
 }
 
-void onSetCommand(cmd* c) {
+void CLI::onSetCommand(cmd* c) {
     Command cmd(c);
     String name = cmd.getArgument("param").getValue();
     String value = cmd.getArgument("value").getValue();
@@ -231,7 +231,7 @@ void onSetCommand(cmd* c) {
         if (runtime->setValue(param, value.c_str())) {
             onConfigParameterChanged(name.c_str(), old, value.c_str());
         } else {
-            output->printf_P(strf_config_param_unchanged, name.c_str());            
+            output->printf_P(strf_config_param_unchanged, name.c_str());
         }
     } else {
         char buf[OUTPUT_MAX_LENGTH];
@@ -241,7 +241,7 @@ void onSetCommand(cmd* c) {
     output->println();
 }
 
-void onGetCommand(cmd* c) {
+void CLI::onGetCommand(cmd* c) {
     Command cmd(c);
     String name = cmd.getArgument("param").getValue();
 
@@ -257,7 +257,7 @@ void onGetCommand(cmd* c) {
     }
 }
 
-void onShowCommand(cmd* c) {
+void CLI::onShowCommand(cmd* c) {
     Command cmd(c);
     String item = cmd.getArgument("item").getValue();
     if (item.equals("ip")) {
@@ -285,13 +285,12 @@ void onShowCommand(cmd* c) {
         showStatus.Execute(output);
     } else if (item.equals("ntp")) {
         showNtp.Execute(output);
-    }
-    else {
+    } else {
         onUnknownCommandItem(cmd.getName().c_str(), item.c_str());
     }
 }
 
-void onPrintCommand(cmd* c) {
+void CLI::onPrintCommand(cmd* c) {
     Command cmd(c);
     String file = cmd.getArgument("file").getValue();
     if (SPIFFS.exists(file)) {
@@ -307,7 +306,7 @@ void onPrintCommand(cmd* c) {
     }
 }
 
-void onRMCommand(cmd* c) {
+void CLI::onRMCommand(cmd* c) {
     Command cmd(c);
     String file = cmd.getArgument("file").getValue();
     if (SPIFFS.exists(file)) {

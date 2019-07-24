@@ -4,6 +4,8 @@
 
 #include "str_utils.h"
 
+using namespace str_utils;
+
 ConfigHelper::ConfigHelper() {
     filename = new char[FILENAME_MAX_LENGTH];
     config = new Config();
@@ -22,10 +24,8 @@ void ConfigHelper::onConfigEvent(Parameter param) {
 Config *ConfigHelper::getData() { return config; }
 
 void ConfigHelper::init(const char *name) {
-    str_utils::setstr(this->filename, name, FILENAME_MAX_LENGTH);
-    if (!loadFile(filename)) {
-        reset();
-    }
+    setstr(this->filename, name, FILENAME_MAX_LENGTH);
+    if (!loadFile(filename)) reset();
 }
 
 bool ConfigHelper::loadFile(const char *name) {
@@ -58,10 +58,10 @@ bool ConfigHelper::loadFile(const char *name) {
 }
 
 void ConfigHelper::save() {
-#ifdef DEBUG_CONFIG
-    debug->printf("[config] synced %s\r\n", synced ? "yes" : "no");
-#endif
     if (!synced) {
+    #ifdef DEBUG_CONFIG
+    debug->printf("[config] sync");
+    #endif
         synced = saveFile(filename);
     }
 }
@@ -79,7 +79,7 @@ bool ConfigHelper::saveFile(const char *file) {
     }
     char str[64];
     for (uint8_t i = 0; i < PARAM_COUNT; i++) {
-        getData()->getNameValuePair(Parameter(i), str);
+        getData()->getConfigLine(Parameter(i), str);
 #ifdef DEBUG_CONFIG
         debug->printf("[config] -> %s\r\n", str);
 #endif
@@ -93,9 +93,7 @@ void ConfigHelper::reload() {
 #ifdef DEBUG_CONFIG
     debug->printf("[config] reload %s\r\n", filename);
 #endif
-    if (loadFile(filename)) {
-        synced = true;
-    }
+    if (loadFile(filename)) synced = true;
 }
 
 void ConfigHelper::reset() {
@@ -119,7 +117,6 @@ PowerState ConfigHelper::getLastPowerState() {
         f.close();
         return POWER_OFF;
     }
-
     File f = SPIFFS.open(FILE_LAST_POWER_STATE, "r");
     PowerState value = PowerState(f.readString().toInt());
     f.close();
@@ -155,9 +152,9 @@ bool ConfigHelper::setNetworkSTAConfig(uint8_t wifi, const char *ssid,
                                        const char *passwd, bool dhcp,
                                        const char *ipaddr, const char *netmask,
                                        const char *gateway, const char *dns) {
-    bool changes = setWiFiMode((WiFiMode_t) wifi) | setSSID(ssid) | setPassword(passwd) |
-                   setDHCP(dhcp) | setIPAddress(ipaddr) | setNetmask(netmask) |
-                   setGateway(gateway) | setDNS(dns);
+    bool changes = setWiFiMode((WiFiMode_t)wifi) | setSSID(ssid) |
+                   setPassword(passwd) | setDHCP(dhcp) | setIPAddress(ipaddr) |
+                   setNetmask(netmask) | setGateway(gateway) | setDNS(dns);
     return changes;
 }
 
@@ -196,7 +193,7 @@ bool ConfigHelper::setWiFiMode(uint8_t value) {
 }
 
 bool ConfigHelper::setWiFiMode(WiFiMode_t value) {
-    return getData()->setValue(WIFI, (uint8_t) value);
+    return getData()->setValue(WIFI, (uint8_t)value);
 }
 
 bool ConfigHelper::setSSID(const char *value) {
@@ -238,7 +235,10 @@ bool ConfigHelper::setOutputVoltage(float value) {
     return false;
 }
 
-WiFiMode_t ConfigHelper::getWiFiMode() {return (WiFiMode_t) getByteValue(WIFI);}
+WiFiMode_t ConfigHelper::getWiFiMode() {
+    return (WiFiMode_t) getByteValue(WIFI);
+}
+
 const char *ConfigHelper::getSSID() { return getStrValue(SSID); }
 const char *ConfigHelper::getSSID_AP() { return getStrValue(AP_SSID); }
 const char *ConfigHelper::getPassword() { return getStrValue(PASSWORD); }

@@ -5,13 +5,14 @@
 class Buffer {
    public:
     Buffer(size_t capacity = 64);
-    Buffer(const Buffer &b);
-    Buffer &operator=(const Buffer &b);
-    char &operator[](unsigned int i);
+    Buffer(const Buffer& b);
+    Buffer& operator=(const Buffer& b);
+    char& operator[](unsigned int i);
     char operator[](unsigned int i) const;
     ~Buffer();
     bool empty();
-    int length();
+    size_t length();
+    size_t size();
     void clear();
     void insert(const char ch);
     void set(const char* ch);
@@ -19,13 +20,14 @@ class Buffer {
     char* c_str();
     void next();
     void prev();
-    void rewind();
+    void first();
+    void last();
     void backsp();
     void del();
     void resize(size_t size);
 
    private:
-    size_t capacity;    
+    size_t capacity;
     char* buffer;
     size_t writePos;
     size_t readPos;
@@ -36,10 +38,7 @@ inline Buffer::Buffer(size_t size)
     clear();
 }
 inline Buffer::Buffer(const Buffer& b)
-    : capacity(b.capacity),
-      writePos(b.writePos),
-      readPos(b.readPos)
-{
+    : capacity(b.capacity), writePos(b.writePos), readPos(b.readPos) {
     buffer = new char[b.capacity];
     memcpy(buffer, b.buffer, writePos);
 }
@@ -59,51 +58,59 @@ inline void Buffer::resize(size_t size) {
 
 inline Buffer::~Buffer() { delete[] buffer; }
 
-inline Buffer &Buffer::operator=(const Buffer &b)
-{
+inline Buffer& Buffer::operator=(const Buffer& b) {
     delete[] buffer;
     readPos = b.readPos;
     writePos = b.writePos;
-  
     buffer = new char[b.capacity];
     memcpy(buffer, b.buffer, b.capacity);
     return (*this);
 }
 
-inline int Buffer::length() { return writePos; }
+inline void Buffer::set(const char* str) {
+    size_t len = strlen(str);
+    if (len > capacity - 2) len = capacity - 2;
+    strncpy(buffer, str, len);
+    buffer[len] = '\x00';
+}
+
+inline size_t Buffer::length() { return writePos; }
+
+inline size_t Buffer::size() { return this->capacity; };
 
 inline void Buffer::insert(const char ch) {
     if (writePos >= capacity - 2) return;
-
-    for (unsigned int i = capacity; i > writePos; i--) {
-        buffer[i] = buffer[i - 1];
-    }
-
+    for (unsigned int i = capacity; i > writePos; i--) 
+        buffer[i] = buffer[i - 1];    
     buffer[writePos] = ch;
     writePos++;
 }
 
 inline void Buffer::prev() {
-    if (readPos > 0) writePos--;
+    if (writePos > 0) writePos--;
 }
 
 inline void Buffer::next() {
-    if (readPos < capacity - 1) readPos++;
+    if (writePos < capacity - 1) writePos++;
 }
 
-inline void Buffer::rewind() { readPos = 0; }
+inline void Buffer::first() { writePos = 0; }
+
+inline void Buffer::last() { writePos = strlen(buffer); }
 
 inline void Buffer::backsp() {
     if (writePos == 0) return;
     writePos--;
-    for (unsigned int i = writePos; i < capacity; i++) buffer[i] = buffer[i + 1];
+    for (unsigned int i = writePos; i < capacity; i++)
+        buffer[i] = buffer[i + 1];
     buffer[writePos] = '\x00';
 }
 
 inline void Buffer::del() {
     if (writePos > capacity - 1) return;
     writePos--;
-    for (unsigned int i = writePos; i < capacity; i++) buffer[i] = buffer[i + 1];
+    for (unsigned int i = writePos; i < capacity; i++)
+        buffer[i] = buffer[i + 1];
     buffer[writePos] = '\x00';
 }
 
@@ -117,13 +124,6 @@ inline bool Buffer::empty() { return (writePos == 0); }
 
 inline char* Buffer::c_str() { return buffer; }
 
-inline char &Buffer::operator[](unsigned int i)
-{
-    return buffer[i];
-}
+inline char& Buffer::operator[](unsigned int i) { return buffer[i]; }
 
-inline char Buffer::operator[](unsigned int i) const
-{
-    return buffer[i];
-}
-
+inline char Buffer::operator[](unsigned int i) const { return buffer[i]; }

@@ -2,6 +2,18 @@
 
 namespace str_utils {
 
+void printWelcomeTo(Print *p) {
+    char title[SCREEN_WIDTH + 1];
+    strcpy(title, APPNAME " v" FW_VERSION);
+    uint8_t width = SCREEN_WIDTH / 2;
+    addPaddingTo(title, str_utils::CENTER, width, ' ');
+    char decor[width + 1];
+    strOfChar(decor, '#', width);
+    p->println(decor);
+    p->println(title);
+    p->println(decor);
+}
+
 String iptoa(IPAddress ip) {
     String res = "";
     for (int i = 0; i < 3; i++) {
@@ -55,7 +67,7 @@ String formatSize(size_t bytes) {
 
 String formatMac(uint8 hw[6]) {
     char buf[32];
-    sprintf_P(buf, strf_mac, hw[0], hw[1], hw[2], hw[3], hw[4], hw[5]);   
+    sprintf_P(buf, strf_mac, hw[0], hw[1], hw[2], hw[3], hw[4], hw[5]);
     return String(buf);
 }
 
@@ -94,21 +106,19 @@ void addPaddingTo(char *str, Align align, uint8_t width, const char ch) {
             str_start = (width - str_len) / 2;
             padd_start = 0;
             break;
-        }
+    }
     strcpy(orig_str, str);
     for (uint8_t i = padd_start; i < width; i++) {
-        if (i >= str_start && (i-str_start <= str_len+3)) {
-            str[i]=orig_str[i-str_start];
-        }
-        else {
+        if (i >= str_start && (i - str_start <= str_len + 3)) {
+            str[i] = orig_str[i - str_start];
+        } else {
             str[i] = ch;
         }
     }
 }
 
 // http://stackoverflow.com/a/35236734
-void stringToBytes(const char *str, char sep, byte *bytes,
-                              int len, int base) {
+void stringToBytes(const char *str, char sep, byte *bytes, int len, int base) {
     for (int i = 0; i < len; i++) {
         bytes[i] = strtoul(str, NULL, base);
         str = strchr(str, sep);

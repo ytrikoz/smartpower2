@@ -1,11 +1,12 @@
 #include "Config.h"
 
 #include "str_utils.h"
+using namespace str_utils;
 
 Config::Config() {
     for (uint8_t i = 0; i < PARAM_COUNT; i++) {
         values[i] = new char[metadata[i].size];
-        str_utils::setstr(values[i], '\x00', metadata[i].size);
+        setstr(values[i], '\x00', metadata[i].size);
     }
 }
 
@@ -17,7 +18,7 @@ Config::~Config() {
 
 void Config::setDefault() {
     for (int i = 0; i < PARAM_COUNT; i++) {
-        str_utils::setstr(values[i], metadata[i].def, metadata[i].size);
+        setstr(values[i], metadata[i].def, metadata[i].size);
     }
 }
 
@@ -66,17 +67,15 @@ bool Config::setValue(Parameter param, const char value) {
 bool Config::setValue(const char *name, const char *value) {
     bool result = false;
     Parameter param;
-    if (getParameter(name, param)) {
-        result = setValue(param, value);
-    }
+    if (getParameter(name, param)) result = setValue(param, value);
     return result;
 }
 
 bool Config::setValue(Parameter param, const char *value) {
     bool changed =
-        str_utils::setstr(values[param], value, metadata[param].size);
+        setstr(values[param], value, metadata[param].size);
 #ifdef DEBUG_CONFIG
-    debug->printf("[config] set #%d: %s\r\n", param, value);
+    DEBUG->printf("[config] set #%d: %s\r\n", param, value);
 #endif
     if (changed) onConfigChangeEvent(param);
     return changed;
@@ -92,7 +91,7 @@ void Config::setValue(String str) {
         setValue(param, str.substring(split + 2, str.length() - 2).c_str());
     } else {
 #ifdef DEBUG_CONFIG
-        debug->printf("[config] unknown param %s", buf);
+        DEBUG->printf("[config] unknown param %s", buf);
 #endif
     }
 }
@@ -114,7 +113,7 @@ bool Config::getBoolValue(Parameter param) {
 }
 
 IPAddress Config::getIPAddrValue(Parameter param) {
-    return str_utils::atoip(getStrValue(param));
+    return atoip(getStrValue(param));
 }
 
 bool Config::getParameter(const char *name, Parameter &param) {
@@ -135,7 +134,7 @@ bool Config::getParameter(const char *name, Parameter &param, size_t &size) {
     return false;
 }
 
-void Config::getNameValuePair(Parameter param, char *str) {
+void Config::getConfigLine(Parameter param, char *str) {
     sprintf(str, "%s=\"%s\"", getName(param), getStrValue(param));
 }
 

@@ -1,6 +1,7 @@
 #include "main.h"
 
 #include "global.h"
+#include "cli.h"
 #include "str_utils.h"
 
 #include "Consts.h"
@@ -58,13 +59,12 @@ uint8_t get_http_clients_count() {
     return result;
 }
 
-unsigned long volatile loopMeasureTime = 0;
+unsigned long volatile resetStatTime = 0;
 unsigned long volatile loopStartTime = 0;
 unsigned long volatile loopCounter = 0;
 unsigned long volatile loopLongest = 0;
-
 ulong get_lps() {
-    return loopCounter * ONE_SECOND_ms / (millis() - loopMeasureTime);
+    return loopCounter * ONE_SECOND_ms / (millis() - resetStatTime);
 }
 
 ulong get_longest_loop() { return loopLongest; }
@@ -81,12 +81,6 @@ void on_restart_sequence() {
     if (restartCount <= 0) {
         system_restart();
     }
-
-    if (restartCount <= START_SHOWING_RESTART_COUNTER_ON) {
-        USE_SERIAL.print(restartCount);
-        USE_SERIAL.print(' ');
-        USE_SERIAL.flush();
-    }
     restartCount--;
 }
 
@@ -95,23 +89,21 @@ void setup_restart_timer(int count) {
         timer.deleteTimer(restartTimer);
     }
     restartCount = count;
-    USE_SERIAL.print(F("System restart"));
+    USE_SERIAL.print(F("System restart "));
     if (restartCount > 0) {
-        USE_SERIAL.print(" in ");
-        USE_SERIAL.print(restartCount);
-        USE_SERIAL.println('s');
+        USE_SERIAL.printf(strf_in_second, restartCount);
+        USE_SERIAL.println();
     } else {
-        USE_SERIAL.print(' ');
-        USE_SERIAL.println("now!");
+        USE_SERIAL.println(F("now!"));
     }
     restartTimer = timer.setInterval(ONE_SECOND_ms, on_restart_sequence);
 }
 
 void set_output_voltage(float value) {
     USE_SERIAL.printf_P(str_power);
-    USE_SERIAL.printf_P(strf_output_voltage, value);    
+    USE_SERIAL.printf_P(strf_output_voltage, value);
     USE_SERIAL.println();
-    
+
     outputVoltage = value;
     mcp4652_write(WRITE_WIPER0, quadraticRegression(value));
 }
@@ -120,6 +112,7 @@ void onHttpClientConnect(uint8_t num) { clients[num].connected = true; }
 void onHttpClientDisconnect(uint8_t num) { clients[num].connected = false; }
 void onHttpClientData(uint8_t num, String data) {
     switch (data.charAt(0)) {
+        wifi_led->setFreq(10);
         case PAGE_STATE: {
             uint8_t page = data.charAt(1) - CHR_ZERO;
             clients[num].page = page;
@@ -128,7 +121,7 @@ void onHttpClientData(uint8_t num, String data) {
         }
         case POWER_ONOFF: {
             PowerState new_state = PowerState(data.substring(1).toInt());
-            
+
             set_power_state(new_state);
 
             String payload = String(POWER_ONOFF);
@@ -192,6 +185,7 @@ void onHttpClientData(uint8_t num, String data) {
             String _dns = data.substring(1, data.indexOf(','));
             
 
+
             if (config->setNetworkSTAConfig(_config_mode.toInt(), _ssid.c_str(),
                                             _password.c_str(), _dhcp.toInt(),
                                             _ipaddr.c_str(), _netmask.c_str(),
@@ -201,7 +195,7 @@ void onHttpClientData(uint8_t num, String data) {
         case SET_MEASURE_MODE: {
             char ch = data.charAt(1);
             if (isdigit(ch)) {
-                bool mode = (uint8_t) ch - CHR_ZERO;
+                bool mode = (uint8_t)ch - CHR_ZERO;
                 meter->enableWattHoursCalculation(mode);
                 sendClients(data, PAGE_HOME, num);
                 break;
@@ -291,7 +285,7 @@ void sendOnPageState(uint8_t num, uint8_t page) {
 
 void update_wifi_led() {
     if (wireless::hasNetwork()) {
-        if (get_http_clients_count() > 0) {
+        if (get_http_clients_count() > 0 || get_telnet_clients_count > 0) {
             wifi_led->blink();
         } else {
             wifi_led->turnOn();
@@ -301,7 +295,6 @@ void update_wifi_led() {
     }
 }
 
-#ifndef DISABLE_LCD
 void update_display() {
     if (!display->isConnected()) return;
     String str;
@@ -337,7 +330,6 @@ void update_display() {
         display->setItem(1, str.c_str());
     }
 }
-#endif
 
 void handle_power_button_press() {
     if (powerBtnPressedHandled) {
@@ -436,54 +428,50 @@ void setup() {
     USE_SERIAL.print(" ");
     delaySequence(3);
     USE_SERIAL.println();
-    printWelcomeTo(&USE_SERIAL);
+
     onBootProgress(30, "VER>" FW_VERSION);
+    str_utils::printWelcomeTo(&USE_SERIAL);
 
     onBootProgress(40, "WIFI>");
     wireless::start_wifi();
 
     onBootProgress(80, "START>");
     switch (config->getBootPowerState()) {
-        case BOOT_POWER_OFF: {
+        case BOOT_POWER_OFF:
             state = POWER_OFF;
             break;
-        }
-        case BOOT_POWER_ON: {
+
+        case BOOT_POWER_ON:
             state = POWER_ON;
             break;
-        }
-        case BOOT_POWER_LAST_STATE: {
+
+        case BOOT_POWER_LAST_STATE:
             state = config->getLastPowerState();
             break;
-        }
     }
-
     set_output_voltage(config->getOutputVoltage());
-
     set_power_state(state);
 
-    init_cli();
-
-    start_serial_shell(&USE_SERIAL);
-
+    CLI::init();
     onBootProgress(100, "");
+
+    timer.setInterval(100, [] {
+        send_multimeter_data_to_clients();
+    });
 
     timer.setInterval(1000, [] {
         handle_power_button_press();
         update_wifi_led();
-        //send_multimeter_data_to_clients();
 #ifndef DISABLE_LCD
         update_display();
 #endif
     });
 
     timer.setInterval(5000, [] { display_alt_line = !display_alt_line; });
-    timer.setInterval(LOOP_STATS_INTERVAL, [] {
-        loopMeasureTime = millis();
-        loopCounter = 0;
-        loopLongest = 0;
-    });
-    loopStartTime = millis();
+
+    #ifndef DISABLE_CONSOLE_SHELL
+    start_console_shell();
+    #endif
 }
 
 void delaySequence(uint8_t sec) {
@@ -530,7 +518,6 @@ int quadraticRegression(double volt) {
 }
 
 void loop() {
-    // Network related services
     if (wireless::hasNetwork()) {
 #ifndef DISABLE_HTTP
         if (http) http->loop();
@@ -548,7 +535,13 @@ void loop() {
         if (telnet) telnet->loop();
 #endif
 #ifndef DISABLE_TELNET_SHELL
-        if (t_sh) t_sh->loop();
+        if (telnetShell) telnetShell->loop();
+#endif
+#ifndef DISABLE_CONSOLE_SHELL
+        if (consoleShell) consoleShell->loop();
+#endif
+#ifndef DISABLE_LCD
+        if (display) display->redraw();
 #endif
     }
     // LEDs
@@ -556,21 +549,28 @@ void loop() {
     power_led->loop();
     // Multimeter
     if (meter) meter->loop();
-#ifndef DISABLE_SERIAL_SHELL
-    if (s_sh) s_sh->loop();
-#endif
-#ifndef DISABLE_LCD
-    if (display) display->redraw();
-#endif
-
+    // Clock
     rtc.loop();
-
+    // Tasks
     timer.run();
 
+    loopTimings();
+}
+
+void loopTimings() {
     /* loop timings */
     unsigned long LoopEndTime = millis();
+    if (LoopEndTime - resetStatTime > LOOP_STATS_INTERVAL) {
+        resetStatTime = LoopEndTime;
+        loopCounter = 0;
+        loopLongest = 0;
+    };
+
     unsigned long LoopTime = LoopEndTime - loopStartTime;
+
     if (loopLongest < LoopTime) loopLongest = LoopTime;
     loopCounter++;
+
     loopStartTime = LoopEndTime;
+    loopStartTime = millis();
 }

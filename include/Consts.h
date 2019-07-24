@@ -9,17 +9,17 @@
 #define NO_GLOBAL_ARDUINOOTA
 
 //#define SERIAL_DEBUG
-
-#define DEBUG_SYSTEM_CLOCK
+//#define DEBUG_SYSTEM_CLOCK
 //#define DEBUG_WIRELESS
 //#define DEBUG_NTP
-#define DEBUG_TELNET
+//#define DEBUG_TELNET
 //#define DEBUG_WEBSOCKET
 //#define DEBUG_HTTP
 //#define DEBUG_LEDS
 //#define DEBUG_SHELL
+//#define DEBUG_TERMUL
 //#define DEBUG_CONFIG
-#define DEBUG_FILE_STORAGE
+//#define DEBUG_FILE_STORAGE
 //#define DEBUG_TIME_BACKUP
 //#define DEBUG_LCD
 
@@ -31,7 +31,7 @@
 //#define DISABLE_TIME_BACKUP
 //#define DISABLE_TELNET
 //#define DISABLE_TELNET_SHELL
-//#define DISABLE_SERIAL_SHELL
+//#define DISABLE_CONSOLE_SHELL
 //#define DISABLE_OTA_UPDATE
 //#define DISABLE_NTP
 //#define DISABLE_NETWORK_DISCOVERY
@@ -76,7 +76,9 @@
 #define WEB_ROOT "/www"
 #define NTP_REMOTE_PORT 123
 #define NTP_LOCAL_PORT 2390
+
 #define DEF_NTP_POOL_SERVER "pool.ntp.org"
+#define DEF_TIME_BACKUP_INTERVAL_s "3600"
 #define TIME_BACKUP_INTERVAL_MIN_s 600
 #define WOL_PORT 9
 
@@ -89,36 +91,6 @@
 
 // slave address are 0x27 or 0x3f
 #define LCD_SLAVE_ADDRESS 0x3f
-
-#define CHR_ZERO '\x30'
-#define CHAR_NULL '\x00'
-#define CHAR_BEL '\x07'
-#define CHAR_BS '\x08'
-#define CHAR_TAB '\x09'
-#define CHAR_LF '\x0a'
-#define CHAR_LT '\x8b'
-#define CHAR_CR '\x0d'
-#define CHAR_SP '\x20'
-#define CHAR_DEL '\x7f'
-#define CHAR_BIN '\xFF'
-#define CHAR_CSI '\x9b'
-#define CHAR_ESC '\x1b'
-
-#define ESC_CURSOR_HOME "\x1b[H"
-#define ESC_SAVE_CURSOR "\x1b[s"
-#define ESC_UNSAVE_CURSOR "\x1b[u"
-#define ESC_SAVE_CURSOR_AND_ATTRS "\x1b[7"
-#define ESC_RESTORE_CURSOR_AND_ATTRS "\x1b[8"
-
-#define ESC_CLEAR "\x1b[2J"
-#define ESC_CLEAR_BOTTOM "\x1b[J"
-#define ESC_CLEAR_EOL "\x1b[0K"
-
-#define ESCF_CURSOR_BACKWARD "\x1b[%dD"
-#define ESC_CURSOR_UP "\x1b[1A"
-#define ESC_CURSOR_DOWN "\x1b[1B"
-#define ESC_CURSOR_FORWARD "\x1b[1C"
-#define ESC_CURSOR_BACKWARD "\x1b[1D"
 
 static const char strf_http_file_not_found[] PROGMEM =
     "File Not Found\n\nURI: %s\nMethod: %s\nArguments: %d\n";
@@ -140,9 +112,9 @@ static const char strf_mode[] PROGMEM = "mode %d ";
 static const char strf_host[] PROGMEM = "hostname %s ";
 static const char strf_tpw[] PROGMEM = "tpw %d ";
 static const char strf_ip[] PROGMEM = "ip %s ";
-
+static const char strf_in_second[] PROGMEM = "in %d second";
 static const char strf_config_param_changed[] PROGMEM =
-    "%s сhanged '%s' -> '%s'";
+    "The new value '%s' for the '%s' has been set!";
 static const char strf_config_param_unchanged[] PROGMEM = "'%s' unchanged";
 static const char strf_unknown_command_item[] PROGMEM =
     "Unknown item '%s' for command '%s'";
@@ -236,7 +208,7 @@ static const char str_disconnected[] PROGMEM = "disconnected ";
 static const char str_reconnect[] PROGMEM = "reconnect ";
 
 static const char str_session_interrupted[] PROGMEM =
-    "Interrupted by another connection";
+    "[cli] Your session was interrupted!";
 static const char str_avaible_system_actions[] PROGMEM =
     "Available actions are: reset, load, save, restart, power";
 static const char str_network_not_found[] PROGMEM = "no networks found";

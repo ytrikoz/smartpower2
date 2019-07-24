@@ -23,3 +23,6 @@ long millisSince(unsigned long since_ms);
 void epochToDateTime(unsigned long epoch_s, struct tm &tm);
 
 unsigned long getAppBuildTime();
+
+uint32_t getEpoch_s(tm dateTime);
+uint32_t getEpoch_s(int year, int month, int day, int hour,int minute, int second);
