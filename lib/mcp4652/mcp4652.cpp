@@ -12,9 +12,17 @@
 //     214, 216, 218, 220, 223, 224, 227, 229, 230, 233, 235, 238, 240, 241, 243,
 //     246, 248, 250, 253, 255};
 
+enum INA231_AVG {AVG_1 , AVG_4, AVG_16, AVG_64, AVG_128, AVG_256, AVG_512, AVG_1024};
+
+unsigned short get_ina231_config(INA231_AVG numOfAvg) {
+	unsigned short res;
+	res = 0x05FF & (uint8_t) numOfAvg << 8;
+	// defaul
+	return 0x45ff;
+}
+
 void mcp4652_init(void)
 {
-	unsigned char data = 0;
 	mcp4652_write(WRITE_TCON, 0x0B);
 	mcp4652_write(WRITE_WIPER0, 0xff);
 	mcp4652_write(WRITE_WIPER1, 0x00);
@@ -72,8 +80,7 @@ unsigned short ina231_read16(unsigned char pointer_addr)
 void ina231_configure(void)
 {
 	unsigned short config;
-
-	config = 0x45ff;
+	config = get_ina231_config(AVG_4);
 	ina231_write(INA231_REG_CONFIG, config);
 	config = 0x08bd;
 	ina231_write(INA231_REG_CALIBRATION, config);

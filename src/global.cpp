@@ -4,7 +4,7 @@ SimpleTimer timer;
 SimpleCLI *cli;
 
 NetworkService *discovery;
-Multimeter *meter;
+PSU *psu;
 TelnetServer *telnet;
 ConfigHelper *config;
 

@@ -41,10 +41,10 @@ void set_power_state(PowerState value) {
     USE_SERIAL.println(state == POWER_ON ? "on" : "off");
     digitalWrite(POWER_SWITCH_PIN, state);
     if (state == POWER_ON) {
-        meter->begin();
+        psu->begin();
         power_led->blink();
     } else if (state == POWER_OFF) {
-        meter->end();
+        psu->end();
         power_led->turnOn();
     }
     config->setLastPowerState(state);
@@ -112,7 +112,7 @@ void onHttpClientConnect(uint8_t num) { clients[num].connected = true; }
 void onHttpClientDisconnect(uint8_t num) { clients[num].connected = false; }
 void onHttpClientData(uint8_t num, String data) {
     switch (data.charAt(0)) {
-        wifi_led->setFreq(10);
+        wifi_led->blink(2, 10);
         case PAGE_STATE: {
             uint8_t page = data.charAt(1) - CHR_ZERO;
             clients[num].page = page;
@@ -196,7 +196,7 @@ void onHttpClientData(uint8_t num, String data) {
             char ch = data.charAt(1);
             if (isdigit(ch)) {
                 bool mode = (uint8_t)ch - CHR_ZERO;
-                meter->enableWattHoursCalculation(mode);
+                psu->enableWattHoursCalculation(mode);
                 sendClients(data, PAGE_HOME, num);
                 break;
             }
@@ -228,7 +228,7 @@ void sendOnPageState(uint8_t num, uint8_t page) {
 
             // WattHours
             payload = String(SET_MEASURE_MODE);
-            payload += String(meter->isWattHoursCalculationEnabled());
+            payload += String(psu->isWattHoursCalculationEnabled());
             http->sendTxt(num, payload.c_str());
             break;
         }
@@ -310,16 +310,16 @@ void update_display() {
             display->setItem(1, "1D>", WiFi.softAPPSK().c_str());
         }
     } else if (state == POWER_ON) {
-        String str = String(meter->getVoltage(), 3);
+        String str = String(psu->getVoltage(), 3);
         str += " V ";
-        str += String(meter->getCurrent(), 3);
+        str += String(psu->getCurrent(), 3);
         str += " A ";
         display->setItem(0, str.c_str());
 
-        double watt = meter->getPower();
+        double watt = psu->getPower();
         str = String(watt, (watt < 10) ? 3 : 2);
         str += " W ";
-        double rwatth = meter->getWattHours();
+        double rwatth = psu->getWattHours();
         if (rwatth < 1000) {
             str += String(rwatth, rwatth < 10 ? 3 : rwatth < 100 ? 2 : 1);
             str += " Wh";
@@ -338,8 +338,7 @@ void handle_power_button_press() {
     }
     if (!digitalRead(POWER_BTN_PIN) && (powerBtnPressed)) {
         if (powerBtnLongPressCounter++ == 3) {
-            power_led->setFreq(50);
-            power_led->blink(2);
+            power_led->blink(2, 10);
         }
         if (powerBtnLongPressCounter++ > 5) {
             setup_restart_timer(5);
@@ -349,10 +348,10 @@ void handle_power_button_press() {
     }
 }
 
-void send_multimeter_data_to_clients() {
+void send_psu_data_to_clients() {
     if (state == POWER_ON) {
         if (wireless::hasNetwork()) {
-            String data = meter->toString();
+            String data = psu->toString();
 #ifndef DISABLE_TELNET
             if (get_telnet_clients_count()) {
                 telnet->write(data.c_str());
@@ -379,9 +378,9 @@ void setup_hardware() {
     // Leds
     power_led = new Led(POWER_LED_PIN);
     wifi_led = new Led(WIFI_LED_PIN);
-    // Switch
+
     pinMode(POWER_SWITCH_PIN, OUTPUT);
-    ina231_configure();
+
     SPIFFS.begin();
 }
 
@@ -421,8 +420,9 @@ void setup() {
 
     start_clock();
 
-    meter = new Multimeter();
-    meter->begin();
+    psu = new PSU();
+    psu->init();
+    psu->begin();
 
     USE_SERIAL.print("[wait]");
     USE_SERIAL.print(" ");
@@ -456,7 +456,7 @@ void setup() {
     onBootProgress(100, "");
 
     timer.setInterval(100, [] {
-        send_multimeter_data_to_clients();
+        send_psu_data_to_clients();
     });
 
     timer.setInterval(1000, [] {
@@ -547,17 +547,17 @@ void loop() {
     // LEDs
     wifi_led->loop();
     power_led->loop();
-    // Multimeter
-    if (meter) meter->loop();
+    // PSU
+    if (psu) psu->loop();
     // Clock
     rtc.loop();
     // Tasks
     timer.run();
 
-    loopTimings();
+    calcLoopTimings();
 }
 
-void loopTimings() {
+void calcLoopTimings() {
     /* loop timings */
     unsigned long LoopEndTime = millis();
     if (LoopEndTime - resetStatTime > LOOP_STATS_INTERVAL) {

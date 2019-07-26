@@ -3,11 +3,12 @@
 #include <mcp4652.h>
 
 #include "types.h"
+#include "consts.h"
 
-class Multimeter {
+class PSU {
    public:
-    Multimeter();
-
+    PSU();
+    void init();    
     void begin();
     void end();
     void loop();
@@ -25,10 +26,11 @@ class Multimeter {
     unsigned long updated_ms;
     unsigned long started_ms, finished_ms;   
     bool active;
+    bool initialized;
     bool wattHoursCalculationEnabled;
 
-    float voltage;
-    float current;
-    float power;
-    double wattSeconds;
+    volatile float voltage;
+    volatile float current;
+    volatile float power;
+    volatile double wattSeconds;
 };

@@ -1,8 +1,8 @@
 #pragma once
 #include "Arduino.h"
 
-typedef enum { mode_off, mode_on, mode_blink } led_mode;
-typedef enum { state_off = HIGH, state_on = LOW } led_state;
+typedef enum { led_stay_off, led_stay_on, led_blink } LedMode;
+typedef enum { led_off = HIGH, led_on = LOW } LedState;
 
 class Led {
    public:
@@ -10,25 +10,19 @@ class Led {
     void loop();
     void turnOn();
     void turnOff();
-    void blink(uint8_t sec = 0);
-    void setFreq(uint8_t hz);
-
+    void blink(uint8_t sec = 0, uint8_t hz = 2);
    private:
+    void setMode(LedMode mode);
+    void setFreq(uint8_t hz);   
+    void refresh();
     uint8_t pin;
-    led_mode prev, curr;
-    led_state state;
-
+    LedMode activeMode, previosMode;
+    LedState state;
     bool changed;
 
-    // bink times per sec
-    uint8_t freq;
-    uint16_t intervalOn;
-    uint16_t intervalOff;
-
-    // blink unitl time (ms)
+    uint8_t blinkFreq, prevBlinkFreq;
+    uint16_t intervalOn, intervalOff;
     unsigned long blinkTime;
-    // last state update (ms)
-    unsigned long updated;
-
-    void refresh();
+    unsigned long blinkStart;
+    unsigned long lastUpdate;
 };

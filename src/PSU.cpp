@@ -1,9 +1,6 @@
-#include "Multimeter.h"
+#include "PSU.h"
 
-#include "consts.h"
-
-Multimeter::Multimeter() {
-    mcp4652_init();
+PSU::PSU() {
     voltage = 0;
     power = 0;
     current = 0;
@@ -12,18 +9,30 @@ Multimeter::Multimeter() {
     started_ms = 0;
     finished_ms = 0;
     active = false;
+    initialized = false;
 }
 
-void Multimeter::begin() {     
+void PSU::init() {
+    // meter
+    ina231_configure();
+    // pot
+    mcp4652_init();
+    
+    initialized = true;
+}
+
+void PSU::begin() {     
+    if (!initialized) return;
+
     started_ms = millis();
     updated_ms = started_ms - MEASUREMENT_INTERVAL_ms;
     finished_ms = started_ms;
     active = true; 
 }
 
-void Multimeter::end() { active = false; }
+void PSU::end() { active = false; }
 
-void Multimeter::loop() {
+void PSU::loop() {
     if (!active) return;
 
     unsigned long now_ms = millis();    
@@ -43,27 +52,27 @@ void Multimeter::loop() {
     }
 }
 
-void Multimeter::setWattHours(double value) {
+void PSU::setWattHours(double value) {
     this->wattSeconds = value / ONE_HOUR_s;
 }
 
-void Multimeter::enableWattHoursCalculation(bool enabled) {
+void PSU::enableWattHoursCalculation(bool enabled) {
     wattHoursCalculationEnabled = enabled;
 }
 
-bool Multimeter::isWattHoursCalculationEnabled() { return wattHoursCalculationEnabled; }
+bool PSU::isWattHoursCalculationEnabled() { return wattHoursCalculationEnabled; }
 
-float Multimeter::getVoltage() { return voltage; }
+float PSU::getVoltage() { return voltage; }
 
-float Multimeter::getCurrent() { return current; }
+float PSU::getCurrent() { return current; }
 
-float Multimeter::getPower() { return power; }
+float PSU::getPower() { return power; }
 
-double Multimeter::getWattHours() {
+double PSU::getWattHours() {
     return wattSeconds * ONE_HOUR_s;
 }
 
-String Multimeter::toString() {
+String PSU::toString() {
     String str = String(getVoltage(), 3);
     str += ",";
     str += String(getCurrent(), 3);
@@ -74,7 +83,7 @@ String Multimeter::toString() {
     return str;
 }
 
-unsigned long Multimeter::getDuration_s()
+unsigned long PSU::getDuration_s()
 {
     return (finished_ms - started_ms) / ONE_SECOND_ms;
 }

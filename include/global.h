@@ -11,7 +11,7 @@
 #include "Shell.h"
 #include "ConfigHelper.h"
 #include "Display.h"
-#include "Multimeter.h"
+#include "PSU.h"
 #include "NTPClient.h"
 #include "NetworkService.h"
 #include "OTAUpdate.h"
@@ -24,7 +24,7 @@ extern SimpleTimer timer;
 extern NetworkService *discovery;
 extern ConfigHelper *config;
 extern Display *display;
-extern Multimeter *meter;
+extern PSU *psu;
 extern NTPClient *ntp;
 extern OTAUpdate *ota;
 
