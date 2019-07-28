@@ -94,11 +94,10 @@ void start_telnet() {
     telnet->setOutput(&USE_SERIAL);
 #ifndef DISABLE_TELNET_CLI
     telnet->setOnClientConnect([](Stream *s) {
-        USE_SERIAL.printf_P(str_telnet);
-        USE_SERIAL.printf_P(str_connected);
-        USE_SERIAL.println();
+        USE_SERIAL.print(FPSTR(str_telnet));
+        USE_SERIAL.println(FPSTR(str_connected));
         start_telnet_shell(s);
-        refresh_wifi_status_led();        
+        refresh_wifi_status_led();
         return true;
     });
     telnet->setOnCLientDisconnect([]() {
@@ -128,6 +127,7 @@ bool start_telnet_shell(Stream *s) {
     telnetShell->setParser(cli);
     telnetShell->enableWelcome();
     telnetShell->setTermul(telnetTerm);
+
     return true;
 }
 
@@ -135,6 +135,14 @@ void start_clock() {
     rtc.setConfig(config->getConfig());
     rtc.setOutput(&USE_SERIAL);
     rtc.begin();
+}
+
+void start_psu() {
+    psu = new PSU();
+    psu->setConfig(config);
+    psu->setOnPowerOff([]() { power_led->setStyle(STAY_ON); });
+    psu->setOnPowerOn([]() { power_led->setStyle(BLINK_REGULAR); });
+    psu->begin();
 }
 
 void start_ntp() {
@@ -175,7 +183,7 @@ uint8_t get_telnet_clients_count() {
 }
 
 String getLoopStat() {
-    char buf[32];
+    char buf[64];
     sprintf_P(buf, strf_show_status, get_lps(), get_longest_loop());
     return String(buf);
 }

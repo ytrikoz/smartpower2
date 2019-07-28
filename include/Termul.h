@@ -61,7 +61,7 @@
 #define MAX_FN_KEY ((CHAR_KEY_F1 + 12) - 0x80)
 
 typedef std::function<void()> TermulEventHandler;
-typedef std::function<void(const char*)> TermulInputEventHandler;
+typedef std::function<void(const char *)> TermulInputEventHandler;
 
 class Termul : public Print {
    public:
@@ -94,10 +94,7 @@ class Termul : public Print {
     void attrset(uint16_t attr);
 
    private:
-    void onReadChar(int ch);
-    void onReadLine(const char *);
     void move(uint8_t y, uint8_t x);
-
     TermulEventHandler onTabPressed;
     TermulInputEventHandler onInputEvent;
     TermulEventHandler onStartEvent;
@@ -112,10 +109,10 @@ class Termul : public Print {
     Buffer *in_buf;
     char cc_buf[32] = {0};
     int cc_index = 0;
-    
+
     bool controlCodesEnabled = false;
     bool echoEnabled = false;
-    
+
     EOLCode eol = CRLF;
 
     const char *fn_keys[MAX_FN_KEY] = {
@@ -123,11 +120,11 @@ class Termul : public Print {
         "A",  // KEY_UP                   0x81                // Up arrow key
         "D",  // KEY_LEFT                 0x82                // Left arrow key
         "C",  // KEY_RIGHT                0x83                // Right arrow key
-        "1~",  // KEY_HOME                 0x84                // Home key
-        "3~",  // KEY_DC                   0x85                // Delete
-               // character key
-        "2~",  // KEY_IC                   0x86                // Ins
-               // char/toggle ins mode key
+        "1~",   // KEY_HOME                 0x84                // Home key
+        "3~",   // KEY_DC                   0x85                // Delete
+                // character key
+        "2~",   // KEY_IC                   0x86                // Ins
+                // char/toggle ins mode key
         "6~",   // KEY_NPAGE                0x87                // Next-page key
         "5~",   // KEY_PPAGE                0x88                // Previous-page
                 // key

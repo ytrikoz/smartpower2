@@ -56,11 +56,13 @@ extern ulong get_lps();
 extern ulong get_longest_loop();
 extern String get_system_time();
 
+void start_clock();
+void start_psu();
+
 void start_ntp();
 void start_http();
-void start_ota_update();
-void start_clock();
 void start_telnet();
+void start_ota_update();
 void start_discovery();
 
 void refresh_wifi_status_led();

@@ -308,16 +308,17 @@ void handle_power_button_press() {
 
 void send_psu_data_to_clients() {
     if (psu->getState() == POWER_ON) {
-        if (wireless::hasNetwork()) {
-            String data = psu->toString();
+        if (wireless::hasNetwork()) {           
 #ifndef DISABLE_TELNET
-            if (get_telnet_clients_count()) {
+            if (get_telnet_clients_count() && !telnetShell->isActive()) {
+                String data = psu->toString();
                 telnet->write(data.c_str());
                 telnet->write("\r");
             }
 #endif
 #ifndef DISABLE_HTTP
             if (get_http_clients_count()) {
+                String data = psu->toString();
                 String payload = String(DATA_PVI);
                 payload += data;
                 sendClients(payload, PAGE_HOME);
@@ -353,6 +354,14 @@ void onBootProgress(uint8_t per, const char *message) {
 #endif
 }
 
+void print_reset_reason()
+{
+    USE_SERIAL.print(F("[reset] reason: "));
+    USE_SERIAL.println(ESP.getResetReason());
+    USE_SERIAL.print(F("[reset] info: "));
+    USE_SERIAL.println(ESP.getResetInfo());
+}
+
 void setup() {
     USE_SERIAL.begin(115200);
     // gdbstub_init();
@@ -360,10 +369,8 @@ void setup() {
     USE_SERIAL.setDebugOutput(true);
 #endif
     USE_SERIAL.println();
-    USE_SERIAL.print(F("[reset] reason: "));
-    USE_SERIAL.println(ESP.getResetReason());
-    USE_SERIAL.print(F("[reset] info: "));
-    USE_SERIAL.println(ESP.getResetInfo());
+    
+    print_reset_reason();
 
     setup_hardware();
 
@@ -381,11 +388,7 @@ void setup() {
 
     start_clock();
 
-    psu = new PSU();
-    psu->setConfig(config);
-    psu->setOnPowerOff([]() { power_led->setStyle(STAY_ON); });
-    psu->setOnPowerOn([]() { power_led->setStyle(BLINK_REGULAR); });
-    psu->begin();
+    start_psu();
 
     USE_SERIAL.print("[wait]");
     USE_SERIAL.print(" ");
@@ -393,9 +396,11 @@ void setup() {
     USE_SERIAL.println();
 
     onBootProgress(30, "VER>" FW_VERSION);
+
     str_utils::printWelcomeTo(&USE_SERIAL);
 
     onBootProgress(40, "WIFI>");
+
     wireless::setOnNetworkStateChange(
         [](bool hasNetwork) { refresh_wifi_status_led(); });
     wireless::start_wifi();

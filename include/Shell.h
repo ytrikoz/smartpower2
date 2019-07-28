@@ -20,6 +20,7 @@ class Shell {
     void setTermul(Termul *term);
     Termul *getTerm();
     void loop();
+    bool isActive();
    private:
     void prompt();
     void welcome();
@@ -34,4 +35,5 @@ class Shell {
     char prevInput[INPUT_MAX_LENGTH];
 
     bool welcomeEnabled;
+    bool active;
 };

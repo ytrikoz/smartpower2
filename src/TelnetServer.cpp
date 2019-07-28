@@ -13,7 +13,6 @@ void TelnetServer::setOutput(Print *p) { output = p; }
 void TelnetServer::begin() {
     if (!initialized) {
         output->printf_P(str_telnet);
-        output->printf_P(str_start);
         output->printf_P(strf_port, port);
         server = new WiFiServer(port);
         server->setNoDelay(true);

@@ -2,7 +2,10 @@
 
 #include "cli.h"
 
-Shell::Shell() { memset(&prevInput, 0, sizeof(prevInput)); }
+Shell::Shell() {
+    memset(&prevInput, 0, sizeof(prevInput));
+    active = false;
+}
 
 void Shell::setParser(SimpleCLI* parser) { this->parser = parser; }
 
@@ -10,9 +13,11 @@ void Shell::setTermul(Termul* term) {
     term->setOnStart([this]() { this->onOpen(); });
     term->setOnQuit([this]() { this->onClose(); });
     term->setOnInput([this](const char* str) { this->onInput(str); });
-    term->setOnTab([this](){this->onTabPress(); });
+    term->setOnTab([this]() { this->onTabPress(); });
     this->t = term;
 }
+
+bool Shell::isActive() { return this->active; }
 
 Termul* Shell::getTerm() { return this->t; }
 
@@ -25,6 +30,7 @@ void Shell::onOpen() {
     if (CLI::open(t)) {
         if (welcomeEnabled) welcome();
         prompt();
+        active = true;
     } else {
         t->print(F("Access denied"));
     }
@@ -36,6 +42,7 @@ void Shell::onClose() {
 #endif
     t->println();
     CLI::close();
+    active = false;
 }
 
 void Shell::loop() {
@@ -46,15 +53,13 @@ void Shell::loop() {
 void Shell::onTabPress() {
 #ifdef DEBUG_SHELL
     DEBUG.printf("[shell] onTabPress()");
-#endif 
-    if (strlen(prevInput) > 0) {        
-        if (t->input()->length() > 0)
-        {
+#endif
+    if (strlen(prevInput) > 0) {
+        if (t->input()->length() > 0) {
             t->println();
             prompt();
-
         }
-        t->input()->set(prevInput);        
+        t->input()->set(prevInput);
         t->print(prevInput);
     }
 }
@@ -62,7 +67,7 @@ void Shell::onTabPress() {
 void Shell::onInput(const char* str) {
 #ifdef DEBUG_SHELL
     DEBUG.printf("[shell] onInput(%s)", str);
-#endif    
+#endif
     parser->parse(str);
     while (parser->available()) {
         t->println();
