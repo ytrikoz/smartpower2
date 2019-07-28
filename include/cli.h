@@ -18,8 +18,8 @@ void onShowCommand(cmd *c);
 void onSetCommand(cmd *c);
 void onGetCommand(cmd *c);
 void onSystemCommand(cmd *c);
-void onSystemWifiScanCommand(cmd *c);
-void onSystemWifiDiagCommand(cmd *c);
+void onWifiScanCommand(cmd *c);
+void onWifiDiagCommand(cmd *c);
 void onClockCommand(cmd *c);
 
 void print_P(const char*);

@@ -9,6 +9,7 @@
 #define NO_GLOBAL_ARDUINOOTA
 
 //#define SERIAL_DEBUG
+//#define DEBUG_CONFIG
 //#define DEBUG_SYSTEM_CLOCK
 //#define DEBUG_WIRELESS
 //#define DEBUG_NTP
@@ -18,7 +19,6 @@
 //#define DEBUG_LEDS
 //#define DEBUG_SHELL
 //#define DEBUG_TERMUL
-//#define DEBUG_CONFIG
 //#define DEBUG_FILE_STORAGE
 //#define DEBUG_TIME_BACKUP
 //#define DEBUG_LCD
@@ -40,7 +40,7 @@
 #define BUILD_TIME __TIME__
 #define APPNAME "SmartPower2"
 #define FW_VERSION \
-    "0.6.2"        \
+    "0.6.3"        \
     "(" BUILD_DATE ")"
 
 #define ONE_MHz_hz 1000000UL
@@ -143,9 +143,11 @@ static const char strf_interval[] PROGMEM = "interval %d";
 static const char strf_output_voltage[] PROGMEM = "output voltage %2.2f";
 
 static const char str_timezone[] PROGMEM = "timezone ";
+static const char str_as_default[] PROGMEM = "as default ";
 static const char str_backup[] PROGMEM = "backup ";
 static const char str_interval[] PROGMEM = "interval ";
 static const char str_idle[] PROGMEM = "idle ";
+static const char str_invalid[] PROGMEM = "invalid %s";
 static const char str_dns[] PROGMEM = "[dns] ";
 static const char str_mdns[] PROGMEM = "[mdns] ";
 static const char str_ssid[] PROGMEM = "ssid ";
@@ -161,13 +163,12 @@ static const char str_spiffs[] PROGMEM = "spiffs";
 static const char str_unknown[] PROGMEM = "unknown";
 static const char str_complete[] PROGMEM = "complete";
 static const char str_unset[] PROGMEM = "<unset> ";
-static const char str_invalid[] PROGMEM = "<invalid>";
 static const char str_unsecured[] PROGMEM = "<unsecured>";
 static const char str_host[] PROGMEM = "host ";
 static const char str_arrow_dest[] PROGMEM = "-> ";
 static const char str_lcd[] PROGMEM = "[lcd] ";
 static const char str_ntp[] PROGMEM = "[ntp] ";
-static const char str_power[] PROGMEM = "[power] ";
+static const char str_psu[] PROGMEM = "[psu] ";
 static const char str_http[] PROGMEM = "[http] ";
 static const char str_netbios[] PROGMEM = "[netbios] ";
 static const char str_update[] PROGMEM = "[update] ";
@@ -190,6 +191,7 @@ static const char str_restore[] PROGMEM = "restore ";
 static const char str_store[] PROGMEM = "store ";
 static const char str_synced[] PROGMEM = "synced ";
 
+static const char str_config[] PROGMEM = "[config] ";
 static const char str_up[] PROGMEM = "up ";
 static const char str_down[] PROGMEM = "down ";
 static const char str_mode[] PROGMEM = "mode ";
@@ -210,7 +212,7 @@ static const char str_reconnect[] PROGMEM = "reconnect ";
 static const char str_session_interrupted[] PROGMEM =
     "[cli] Your session was interrupted!";
 static const char str_avaible_system_actions[] PROGMEM =
-    "Available actions are: reset, load, save, restart, power";
+    "Available actions for'system' command are: 'reset', 'load', 'save', 'restart', 'power'.";
 static const char str_network_not_found[] PROGMEM = "no networks found";
 static const char str_network_found[] PROGMEM = "%d networks found";
 static const char str_cli_hint[] PROGMEM = "[cli] press \"enter\" to start";

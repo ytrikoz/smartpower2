@@ -10,6 +10,8 @@ PSU::PSU() {
     finished_ms = 0;
     active = false;
     initialized = false;
+    
+    pinMode(POWER_SWITCH_PIN, OUTPUT);
 }
 
 void PSU::init() {
@@ -17,20 +19,100 @@ void PSU::init() {
     ina231_configure();
     // pot
     mcp4652_init();
+
+    initialized = true;   
+}
+
+void PSU::togglePower()
+{
+    setState(state == POWER_OFF ? POWER_ON : POWER_OFF);
+}
+
+void PSU::setConfig(ConfigHelper *config)
+{
+    this->config = config;
+}
+
+void PSU::setOnPowerOn(PSUEventHandler h)
+{
+    onPowerOn = h;
+}
+
+void PSU::setOnPowerOff(PSUEventHandler h)
+{
+    onPowerOff = h;
+}
+
+void PSU::setState(PowerState value, bool forceUpdate) {
+    output->print(FPSTR(str_psu));
+    output->println(value == POWER_ON ? "on" : "off");
+    if ((forceUpdate) || (state != value)) {
+        state = value;
+        if (state == POWER_ON) {
+            startMeasure();  
+            if (onPowerOn) onPowerOn();
+        } else if (state == POWER_OFF) {            
+            endMeasure();
+            if (onPowerOff) onPowerOff();
+        }
+        digitalWrite(POWER_SWITCH_PIN, state);         
+        config->setLastPowerState(state);
+    }       
+}
+
+PowerState PSU::getState() { return state; }
+
+float PSU::getOutputVoltage()
+{
+    return outputVoltage;
+}
+
+void PSU::setOutputVoltage(float value)
+{
+    output->print(FPSTR(str_psu));
+    output->printf_P(strf_output_voltage, value);
     
-    initialized = true;
+    outputVoltage = value;    
+    mcp4652_write(WRITE_WIPER0, quadraticRegression(value));
+    
+    output->println();
 }
 
 void PSU::begin() {     
-    if (!initialized) return;
+    if (!initialized) {
+        init();
+    };
+    float outputVoltage = config->getOutputVoltage();
+    this->setOutputVoltage(outputVoltage);
+    
+    PowerState state;
+    switch (config->getBootPowerState()) {
+    case BOOT_POWER_OFF:
+        state = POWER_OFF;
+        break;
+    case BOOT_POWER_ON:
+        state = POWER_ON;
+        break;
+    case BOOT_POWER_LAST_STATE:
+        state = config->getLastPowerState();
+        break;
+    default:
+        state = POWER_OFF;
+    }
 
+    setState(state, true);
+}
+
+void PSU::startMeasure() {
     started_ms = millis();
     updated_ms = started_ms - MEASUREMENT_INTERVAL_ms;
     finished_ms = started_ms;
     active = true; 
 }
-
-void PSU::end() { active = false; }
+void PSU::endMeasure() {
+     active = false; 
+     
+}
 
 void PSU::loop() {
     if (!active) return;
@@ -57,19 +139,19 @@ void PSU::setWattHours(double value) {
 }
 
 void PSU::enableWattHoursCalculation(bool enabled) {
-    wattHoursCalculationEnabled = enabled;
+    this->wattHoursCalculationEnabled = enabled;
 }
 
-bool PSU::isWattHoursCalculationEnabled() { return wattHoursCalculationEnabled; }
+bool PSU::isWattHoursCalculationEnabled() { return this->wattHoursCalculationEnabled; }
 
-float PSU::getVoltage() { return voltage; }
+float PSU::getVoltage() { return this->voltage; }
 
-float PSU::getCurrent() { return current; }
+float PSU::getCurrent() { return this->current; }
 
-float PSU::getPower() { return power; }
+float PSU::getPower() { return this->power; }
 
 double PSU::getWattHours() {
-    return wattSeconds * ONE_HOUR_s;
+    return this->wattSeconds * ONE_HOUR_s;
 }
 
 String PSU::toString() {

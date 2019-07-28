@@ -16,12 +16,12 @@ ConfigHelper::~ConfigHelper() { delete[] filename; }
 
 void ConfigHelper::onConfigEvent(Parameter param) {
 #ifdef DEBUG_CONFIG
-    USE_DEBUG_SERIAL.printf("[config] param #%d changed\r\n", param);
+    debug->printf("[config] param #%d changed\r\n", param);
 #endif
     synced = false;
 }
 
-Config *ConfigHelper::getData() { return config; }
+Config *ConfigHelper::getConfig() { return config; }
 
 void ConfigHelper::init(const char *name) {
     setstr(this->filename, name, FILENAME_MAX_LENGTH);
@@ -45,7 +45,7 @@ bool ConfigHelper::loadFile(const char *name) {
 #ifdef DEBUG_CONFIG
             debug->printf("[config] <- %s\r\n", str.c_str());
 #endif
-            getData()->setValue(str);
+            config->setValue(str);
         }
         f.close();
         return true;
@@ -59,9 +59,9 @@ bool ConfigHelper::loadFile(const char *name) {
 
 void ConfigHelper::save() {
     if (!synced) {
-    #ifdef DEBUG_CONFIG
-    debug->printf("[config] sync");
-    #endif
+#ifdef DEBUG_CONFIG
+        debug->printf("[config] sync");
+#endif
         synced = saveFile(filename);
     }
 }
@@ -79,7 +79,7 @@ bool ConfigHelper::saveFile(const char *file) {
     }
     char str[64];
     for (uint8_t i = 0; i < PARAM_COUNT; i++) {
-        getData()->getConfigLine(Parameter(i), str);
+        config->getConfigLine(Parameter(i), str);
 #ifdef DEBUG_CONFIG
         debug->printf("[config] -> %s\r\n", str);
 #endif
@@ -97,16 +97,16 @@ void ConfigHelper::reload() {
 }
 
 void ConfigHelper::reset() {
-    getData()->setDefault();
+    config->setDefault();
     save();
 }
 
 bool ConfigHelper::setBootPowerState(BootPowerState value) {
-    return getData()->setValue(POWER, (uint8_t)(value));
+    return config->setValue(POWER, (uint8_t)(value));
 }
 
 BootPowerState ConfigHelper::getBootPowerState() {
-    return BootPowerState(getIntValue(POWER));
+    return BootPowerState(config->getByteValue(POWER));
 }
 
 PowerState ConfigHelper::getLastPowerState() {
@@ -136,7 +136,7 @@ String ConfigHelper::getConfigJson() {
     for (uint8_t i = 0; i < PARAM_COUNT; i++) {
         Parameter param = Parameter(i);
         JsonObject item = doc.createNestedObject();
-        item[getData()->getName(param)] = getData()->getStrValue(param);
+        item[config->getName(param)] = config->getStrValue(param);
     }
     String str;
     serializeJson(doc, str);
@@ -144,8 +144,8 @@ String ConfigHelper::getConfigJson() {
 }
 
 bool ConfigHelper::setNtpConfig(sint8_t timeZone_h, uint16_t sync_s) {
-    return getData()->setValue(TIME_ZONE, timeZone_h) |
-           getData()->setValue(NTP_SYNC_INTERVAL, sync_s);
+    return config->setValue(TIME_ZONE, timeZone_h) |
+           config->setValue(NTP_SYNC_INTERVAL, sync_s);
 }
 
 bool ConfigHelper::setNetworkSTAConfig(uint8_t wifi, const char *ssid,
@@ -162,46 +162,23 @@ bool ConfigHelper::setPowerConfig(BootPowerState state, float voltage) {
     return setBootPowerState(state) | setOutputVoltage(voltage);
 }
 
-const char *ConfigHelper::getStrValue(Parameter param) {
-    return getData()->getStrValue(param);
-}
-
-float ConfigHelper::getFloatValue(Parameter param) {
-    return atof(getStrValue(param));
-}
-
-uint8_t ConfigHelper::getByteValue(Parameter param) {
-    return atoi(getStrValue(param));
-}
-int ConfigHelper::getIntValue(Parameter param) {
-    return atoi(getStrValue(param));
-}
-
-bool ConfigHelper::getBoolValue(Parameter param) {
-    return (bool)atoi(getStrValue(param));
-}
-
-IPAddress ConfigHelper::getIPAddr(Parameter param) {
-    return str_utils::atoip(getStrValue(param));
-}
-
 bool ConfigHelper::setWiFiMode(uint8_t value) {
     if (value >= WIFI_OFF && value <= WIFI_AP_STA) {
-        return getData()->setValue(WIFI, value);
+        return config->setValue(WIFI, value);
     }
     return false;
 }
 
 bool ConfigHelper::setWiFiMode(WiFiMode_t value) {
-    return getData()->setValue(WIFI, (uint8_t)value);
+    return config->setValue(WIFI, (uint8_t)value);
 }
 
 bool ConfigHelper::setSSID(const char *value) {
-    return getData()->setValue(SSID, value);
+    return config->setValue(SSID, value);
 }
 
 bool ConfigHelper::setPassword(const char *value) {
-    return getData()->setValue(PASSWORD, value);
+    return config->setValue(PASSWORD, value);
 }
 
 bool ConfigHelper::setIPAddress(IPAddress value) {
@@ -209,50 +186,68 @@ bool ConfigHelper::setIPAddress(IPAddress value) {
 }
 
 bool ConfigHelper::setIPAddress(const char *value) {
-    return getData()->setValue(IPADDR, value);
+    return config->setValue(IPADDR, value);
 }
 
 bool ConfigHelper::setGateway(const char *value) {
-    return getData()->setValue(GATEWAY, value);
+    return config->setValue(GATEWAY, value);
 }
 
 bool ConfigHelper::setNetmask(const char *value) {
-    return getData()->setValue(NETMASK, value);
+    return config->setValue(NETMASK, value);
 }
 
 bool ConfigHelper::setDNS(const char *value) {
-    return getData()->setValue(DNS, value);
+    return config->setValue(DNS, value);
 }
 
 bool ConfigHelper::setDHCP(bool value) {
-    return getData()->setValue(DHCP, value);
+    return config->setValue(DHCP, value);
 }
 
 bool ConfigHelper::setOutputVoltage(float value) {
     if ((value > 4 && value < 6) | (value > 11 && value < 13)) {
-        return getData()->setValue(OUTPUT_VOLTAGE, value);
+        return config->setValue(OUTPUT_VOLTAGE, value);
     }
     return false;
 }
 
 WiFiMode_t ConfigHelper::getWiFiMode() {
-    return (WiFiMode_t) getByteValue(WIFI);
+    return (WiFiMode_t)config->getByteValue(WIFI);
 }
-
-const char *ConfigHelper::getSSID() { return getStrValue(SSID); }
-const char *ConfigHelper::getSSID_AP() { return getStrValue(AP_SSID); }
-const char *ConfigHelper::getPassword() { return getStrValue(PASSWORD); }
-const char *ConfigHelper::getPassword_AP() { return getStrValue(AP_PASSWORD); }
-IPAddress ConfigHelper::getIPAddr_AP() { return getIPAddr(AP_IPADDR); }
-bool ConfigHelper::getDHCP() { return getBoolValue(DHCP); }
-float ConfigHelper::getOutputVoltage() { return getFloatValue(OUTPUT_VOLTAGE); }
-IPAddress ConfigHelper::getDNS() { return getIPAddr(DNS); }
-IPAddress ConfigHelper::getNetmask() { return getIPAddr(NETMASK); }
-IPAddress ConfigHelper::getGateway() { return getIPAddr(NETMASK); }
-IPAddress ConfigHelper::getIPAddr() { return getIPAddr(IPADDR); }
-const char *ConfigHelper::getIPAddrStr() { return getStrValue(IPADDR); }
-const char *ConfigHelper::getNetmaskStr() { return getStrValue(NETMASK); }
-const char *ConfigHelper::getGatewayStr() { return getStrValue(GATEWAY); }
-const char *ConfigHelper::getDNSStr() { return getStrValue(DNS); }
+const char *ConfigHelper::getSSID() { return config->getStrValue(SSID); }
+const char *ConfigHelper::getSSID_AP() { return config->getStrValue(AP_SSID); }
+const char *ConfigHelper::getPassword() {
+    return config->getStrValue(PASSWORD);
+}
+const char *ConfigHelper::getPassword_AP() {
+    return config->getStrValue(AP_PASSWORD);
+}
+IPAddress ConfigHelper::getIPAddr_AP() {
+    return config->getIPAddrValue(AP_IPADDR);
+}
+bool ConfigHelper::getDHCP() { return config->getBoolValue(DHCP); }
+float ConfigHelper::getOutputVoltage() {
+    float res = config->getFloatValue(OUTPUT_VOLTAGE);
+    if (!(res > 4 && res < 6) && !(res > 11 && res < 13)) {
+        USE_SERIAL.print(FPSTR(str_config));
+        USE_SERIAL.print(FPSTR(str_invalid));
+        USE_SERIAL.printf_P(strf_output_voltage, res);
+        res = 5.0;
+    }
+    return res;
+}
+IPAddress ConfigHelper::getDNS() { return config->getIPAddrValue(DNS); }
+IPAddress ConfigHelper::getNetmask() { return config->getIPAddrValue(NETMASK); }
+IPAddress ConfigHelper::getGateway() { return config->getIPAddrValue(NETMASK); }
+IPAddress ConfigHelper::getIPAddr() { return config->getIPAddrValue(IPADDR); }
+const char *ConfigHelper::getIPAddrStr() { return config->getStrValue(IPADDR); }
+const char *ConfigHelper::getNetmaskStr() {
+    return config->getStrValue(NETMASK);
+}
+const char *ConfigHelper::getGatewayStr() {
+    return config->getStrValue(GATEWAY);
+}
+const char *ConfigHelper::getDNSStr() { return config->getStrValue(DNS); }
 // maximum value of RF Tx Power, unit: 0.25 dBm, range [0, 82]
-uint8_t ConfigHelper::getTPW() { return getByteValue(TPW); }
+uint8_t ConfigHelper::getTPW() { return config->getByteValue(TPW); }

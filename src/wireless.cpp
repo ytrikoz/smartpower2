@@ -18,14 +18,13 @@ WiFiEventHandler staGotIpEventHandler, staConnectedEventHandler,
 
 NetworkStateChangeEventHandler onNetworkStateChange;
 
-void printDiag(Print &p) {
-    p.printf_P(str_wifi);
-    p.printf_P(str_mode);
-    p.print(mode);
-    p.printf_P(str_network);
-    p.print(network);
-    p.println();
-    WiFi.printDiag(p);
+void printDiag(Print *p) {
+    p->printf_P(str_wifi);
+    p->printf_P(strf_mode, mode);
+    p->printf_P(str_network);
+    p->print(network);
+    p->println();
+    WiFi.printDiag(*p);
 }
 
 String hostSSID() {
@@ -279,6 +278,10 @@ void updateState() {
     }
 }
 
+void setOnNetworkStateChange(NetworkStateChangeEventHandler eventHandler) {
+    onNetworkStateChange = eventHandler;
+}
+
 void setNetworkState(NetworkState value) {
     if (network != value) {
         network = value;
@@ -292,16 +295,15 @@ void setNetworkState(NetworkState value) {
 
 void onNetworkUp() {
     PRINTLN_WIFI_NETWORK_UP
-
     lastNetworkUp = millis();
-
+    if (onNetworkStateChange) onNetworkStateChange(true);
     start_services();
 }
 
 void onNetworkDown() {
     PRINTLN_WIFI_NETWORK_DOWN
-
     lastNetworkDown = millis();
+    if (onNetworkStateChange) onNetworkStateChange(false);
 }
 
 WirelessMode getWirelessMode() { return mode = (WirelessMode)WiFi.getMode(); }

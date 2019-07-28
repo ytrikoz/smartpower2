@@ -1,28 +1,50 @@
 #pragma once
-#include "Arduino.h"
 
-typedef enum { led_stay_off, led_stay_on, led_blink } LedMode;
-typedef enum { led_off = HIGH, led_on = LOW } LedState;
+#include <Arduino.h>
+
+#include "consts.h"
+
+typedef enum { LIGHT_OFF = HIGH, LIGHT_ON = LOW } LedState;
+typedef enum {
+    STAY_OFF,
+    STAY_ON,
+    BLINK_REGULAR,
+    BLINK_ONE_ACCENT,
+    BLINK_TWO_ACCENT
+} LedStyle;
+
+typedef struct Pattern {
+   public:
+    LedState state;
+    unsigned long duration_ms;
+    Pattern() : state(LIGHT_OFF), duration_ms(0) {}
+    Pattern(LedState state, unsigned long duration_ms)
+        : state(state), duration_ms(duration_ms) {}
+} Pattern;
 
 class Led {
    public:
     Led(uint8_t pin);
     void loop();
+    void setStyle(LedStyle style);
+
+   private:
     void turnOn();
     void turnOff();
-    void blink(uint8_t sec = 0, uint8_t hz = 2);
-   private:
-    void setMode(LedMode mode);
-    void setFreq(uint8_t hz);   
+    void regularBlink();
+    void accentOneBlink();
+    void accentTwoBlink();
+    Pattern *getPattern();
+    void setNextState();
+    void setState(LedState value);
     void refresh();
-    uint8_t pin;
-    LedMode activeMode, previosMode;
-    LedState state;
-    bool changed;
 
-    uint8_t blinkFreq, prevBlinkFreq;
-    uint16_t intervalOn, intervalOff;
-    unsigned long blinkTime;
-    unsigned long blinkStart;
+    uint8_t pin;
+    LedStyle style;
+    LedState state;
     unsigned long lastUpdate;
+
+    size_t pattern_n;
+    size_t pattern_size;
+    Pattern *pattern;
 };

@@ -1,15 +1,20 @@
 #include "cli.h"
 
-#include "executors/ClockSetCommand.h"
-#include "executors/ShowNtpCommand.h"
-#include "executors/ShowStatusCommand.h"
+#include "commands/ClockSetCommand.h"
+#include "commands/ShowNtpCommand.h"
+#include "commands/ShowStatusCommand.h"
+#include "commands/ShowClientsCommand.h"
+#include "commands/ShowDiagCommand.h"
 
 Print* output;
 
 Command cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet, cmdGet, cmdRm, cmdClock;
-executors::ShowStatusCommand showStatus;
-executors::ShowNtpCommand showNtp;
-executors::ClockSetCommand clockSetCommand;
+
+commands::ShowClientsCommand showClients;
+commands::ShowStatusCommand showStatus;
+commands::ShowNtpCommand showNtp;
+commands::ShowDiagCommand showDiag;
+commands::ClockSetCommand clockSetCommand;
 
 bool CLI::active() { return output != nullptr; }
 
@@ -135,20 +140,15 @@ void CLI::onHelpCommand(cmd* c) {
     output->println(cli->toString().c_str());
 }
 
-void CLI::onSystemWifiDiagCommand(cmd* c) {
-    WiFi.printDiag(*output);
-    output->println();
-}
-
 void CLI::onClockCommand(cmd* c) {
     Command cmd(c);
     String action = cmd.getArgument("action").getValue();
     String parameter = cmd.getArgument("param").getValue();
-
+    
     clockSetCommand.Execute(output);
 }
 
-void CLI::onSystemWifiScanCommand(cmd* c) {
+void CLI::onWifiScanCommand(cmd* c) {
     Command cmd(c);
     output->printf_P(str_wifi);
     output->printf_P(str_scanning);
@@ -202,9 +202,9 @@ void CLI::onSystemCommand(cmd* c) {
         return;
     } else if (action.equals("power")) {
         if (isPositive(param)) {
-            set_power_state(POWER_ON);
+            psu->setState(POWER_ON);
         } else if (isNegative(param)) {
-            set_power_state(POWER_OFF);
+            psu->setState(POWER_OFF);
         } else {
             onUnknownActionParameter(param.c_str(), action.c_str());
         }
@@ -222,13 +222,13 @@ void CLI::onSetCommand(cmd* c) {
     String name = cmd.getArgument("param").getValue();
     String value = cmd.getArgument("value").getValue();
 
-    Config* runtime = config->getData();
+    Config* cfg = config->getConfig();
     Parameter param;
     size_t old_size;
-    if (runtime->getParameter(name.c_str(), param, old_size)) {
+    if (cfg->getParameter(name.c_str(), param, old_size)) {
         char old[old_size];
-        strcpy(old, runtime->getStrValue(param));
-        if (runtime->setValue(param, value.c_str())) {
+        strcpy(old, cfg->getStrValue(param));
+        if (cfg->setValue(param, value.c_str())) {
             onConfigParameterChanged(name.c_str(), old, value.c_str());
         } else {
             output->printf_P(strf_config_param_unchanged, name.c_str());
@@ -244,13 +244,12 @@ void CLI::onSetCommand(cmd* c) {
 void CLI::onGetCommand(cmd* c) {
     Command cmd(c);
     String name = cmd.getArgument("param").getValue();
-
-    Config* runtime = config->getData();
+    Config* cfg = config->getConfig();
     Parameter param;
     size_t value_size;
-    if (runtime->getParameter(name.c_str(), param, value_size)) {
+    if (cfg->getParameter(name.c_str(), param, value_size)) {
         char value[value_size];
-        strcpy(value, runtime->getStrValue(param));
+        strcpy(value, cfg->getStrValue(param));
         onGetConfigParameter(name.c_str(), value);
     } else {
         onUnknownConfigParameter(name.c_str());
@@ -263,18 +262,12 @@ void CLI::onShowCommand(cmd* c) {
     if (item.equals("ip")) {
         output->println(wireless::hostIPInfo().c_str());
     } else if (item.equals("clients")) {
-        char buf[INPUT_MAX_LENGTH];
-        sprintf(buf, "wifi: %s", getConnectedStationInfo().c_str());
-        output->println(buf);
-        sprintf(buf, "http: %d", get_http_clients_count());
-        output->println(buf);
-        sprintf(buf, "telnet: %d", get_telnet_clients_count());
-        output->println(buf);
-
-    } else if (item.equals("power")) {
-        char buf[INPUT_MAX_LENGTH];
-        sprintf(buf, "power %s", get_power_state() == POWER_ON ? "on" : "off");
-        output->println(buf);
+        showClients.Execute(output);
+    } else if (item.equals("power")) {        
+        output->print(FPSTR(str_psu));
+        char tmp[OUTPUT_MAX_LENGTH];
+        sprintf(tmp, "power is %s", psu->getState() == POWER_ON ? "on" : "off");
+        output->println(tmp);
     } else if (item.equals("network")) {
         output->println(getNetworkInfoJson().c_str());
     } else if (item.equals("info")) {
@@ -285,6 +278,8 @@ void CLI::onShowCommand(cmd* c) {
         showStatus.Execute(output);
     } else if (item.equals("ntp")) {
         showNtp.Execute(output);
+    } else if (item.equals("diag")) {
+        showDiag.Execute(output);
     } else {
         onUnknownCommandItem(cmd.getName().c_str(), item.c_str());
     }

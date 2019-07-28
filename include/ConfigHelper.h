@@ -63,18 +63,10 @@ class ConfigHelper {
     bool authorize(const char *login, const char *passwd);
 
     String getConfigJson();
-    Config *getData();
-
+    Config *getConfig();
    private:
     void onConfigEvent(Parameter param);
 
-    int getIntValue(Parameter param);
-    bool getBoolValue(Parameter param);
-    IPAddress getIPAddr(Parameter param);
-    const char *getStrValue(Parameter param);
-    float getFloatValue(Parameter param);
-    uint8_t getByteValue(Parameter param);
-    
     Config *config;
     char *filename;
 
@@ -83,6 +75,6 @@ class ConfigHelper {
 
     bool synced;
 #ifdef DEBUG_CONFIG
-    Print *debug = &USE_DEBUG_SERIAL;
+    Print *debug = &DEBUG;
 #endif
 };

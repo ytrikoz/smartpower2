@@ -8,6 +8,7 @@
 #include <SimpleTimer.h>
 #include "SystemClock.h"
 
+#include "Led.h"
 #include "Shell.h"
 #include "ConfigHelper.h"
 #include "Display.h"
@@ -17,6 +18,8 @@
 #include "OTAUpdate.h"
 #include "TelnetServer.h"
 #include "WebService.h"
+
+extern Led *wifi_led, *power_led;
 
 extern SimpleCLI *cli;
 extern SimpleTimer timer;
@@ -45,10 +48,7 @@ extern bool start_telnet_shell(Stream *s);
 extern void printWelcomeTo(Print *p);
 
 // main
-extern PowerState get_power_state();
-extern void set_power_state(PowerState state);
 extern void cancel_system_restart();
-
 extern void setup_restart_timer(int s);
 uint8_t get_http_clients_count();
 uint8_t get_telnet_clients_count();
@@ -62,3 +62,5 @@ void start_ota_update();
 void start_clock();
 void start_telnet();
 void start_discovery();
+
+void refresh_wifi_status_led();

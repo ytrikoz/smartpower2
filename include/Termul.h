@@ -66,6 +66,7 @@ typedef std::function<void(const char*)> TermulInputEventHandler;
 class Termul : public Print {
    public:
     Termul(Stream *s);
+    ~Termul();
     void setStream(Stream *s);
     void setEOL(EOLCode code);
     void enableControlCodes(bool enabled = true);
@@ -102,13 +103,13 @@ class Termul : public Print {
     TermulEventHandler onStartEvent;
     TermulEventHandler onQuitEvent;
 
-    unsigned long lastReadTime = 0;
+    unsigned long lastControlCodeRecived = 0;
     State state = ST_INACTIVE;
     uint8_t attr = '\xff';
     uint8_t curY = '\xff';
     uint8_t curX = '\xff';
     Stream *s;
-    Buffer *in_buf = new Buffer(INPUT_MAX_LENGTH);
+    Buffer *in_buf;
     char cc_buf[32] = {0};
     int cc_index = 0;
     

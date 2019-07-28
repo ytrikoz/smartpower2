@@ -2,102 +2,128 @@
 
 Led::Led(uint8_t pin) {
     this->pin = pin;
-    pinMode(pin, OUTPUT);
-
-    blinkTime = 0;
-    blinkFreq = 0;
-    state = led_off;
-    activeMode = led_stay_off;
+    pinMode(pin, OUTPUT);    
+    style = STAY_OFF;
+    state = LIGHT_OFF;    
+    turnOff();
     lastUpdate = 0;
-    changed = true;
+    digitalWrite(pin, state);
 }
 
 void Led::turnOn() {
-    #ifdef DEBUG_LEDS
-    DEBUG.printf("<led#%d turnOn()>", pin);
-    #endif
-    setMode(led_stay_on);
+#ifdef DEBUG_LEDS
+    DEBUG.printf("[led#%d] turnOn()", pin);
+    DEBUG.println();
+#endif
+    pattern_size = 1;
+    pattern = new Pattern[pattern_size];
+    pattern[0] = Pattern(LIGHT_ON, 1000.0);
 }
 
 void Led::turnOff() {
-    #ifdef DEBUG_LEDS
-    DEBUG.printf("<led#%d turnOff()>", pin);
-    #endif
-    setMode(led_stay_off);
-}
-
-void Led::blink(uint8_t sec, uint8_t hz) {
-    #ifdef DEBUG_LEDS
-        USE_DEBUG_SERIAL.printf("<led#%d blink %d &d>", pin, sec, hz);
-    #endif
-    if (sec > 0) {
-        blinkTime = sec * 1000;
-        blinkStart = millis();
-    } else {
-        blinkTime = 0;
-        blinkStart = 0;
-    }
-    setFreq(hz);
-    setMode(led_blink);
-}
-
-
-void Led::loop() {                      
-    if (activeMode == led_blink) {
-        unsigned long timePassed = millis() - lastUpdate;           
-        if ((state == led_on) && (timePassed >= intervalOn))
-            state = led_off;
-        else if ((state == led_off) && (timePassed >= intervalOff))
-            state = led_on;
-        else 
-            return;
-    
-        changed = true;
-        lastUpdate = millis();
-        refresh();
-    }
-}
-
-void Led::refresh() {
-    if (changed) {
-        #ifdef DEBUG_LEDS
-            DEBUG.printf("<led#%d mode %d>", pin, activeMode);
-        #endif
-        if (activeMode == led_stay_off) {
-            state = led_off;
-        } else if (activeMode == led_stay_on) {
-            state = led_on;            
-        }
-        digitalWrite(pin, state);
 #ifdef DEBUG_LEDS
-        DEBUG.printf("<led#%d->%d>", pin, state);
+    DEBUG.printf("[led#%d] turnOff()", pin);
+    DEBUG.println();
 #endif
-        changed = false;
-    }
+    pattern_size = 1;
+    pattern = new Pattern[pattern_size];
+    pattern[0] = Pattern(LIGHT_OFF, 1000.0);
 }
 
-void Led::setMode(LedMode mode) {
-    if (activeMode != mode) {
-        previosMode = activeMode;
-        activeMode = mode;
-        changed = true;
-    }    
+void Led::regularBlink() {
+#ifdef DEBUG_LEDS
+    DEBUG.printf("[led#%d] regularBlink()", pin);
+    DEBUG.println();
+#endif
+    delete[] pattern;
+
+    const uint8_t freq = 2;
+
+    pattern_size = 2;
+    pattern = new Pattern[pattern_size];
+    pattern[0] = Pattern(LIGHT_OFF, 500.0 / freq);
+    pattern[1] = Pattern(LIGHT_ON, 1000.0 / freq);
+    
 }
 
-void Led::setFreq(uint8_t hz) {
-    #ifdef DEBUG_LEDS
-        USE_DEBUG_SERIAL.printf("<led#%d freq %d on %d off %d>", pin, freq, intervalOn, intervalOff);
-    #endif
-    if (hz == 0) {
-        turnOff();
-        return;
+void Led::accentOneBlink() {
+#ifdef DEBUG_LEDS
+    DEBUG.printf("[led#%d] accentOneBlink()", pin);
+    DEBUG.println();
+#endif
+    delete[] pattern;
+
+    pattern_size = 3;
+    pattern = new Pattern[pattern_size];
+    pattern[0] = Pattern(LIGHT_ON, 1000);
+    pattern[1] = Pattern(LIGHT_OFF, 100);
+    pattern[2] = Pattern(LIGHT_ON, 100);
+}
+
+void Led::accentTwoBlink() {
+#ifdef DEBUG_LEDS
+    DEBUG.printf("[led#%d] accentTwoBlink()", pin);
+    DEBUG.println();
+#endif
+    delete[] pattern;
+
+    pattern_size = 4;
+    pattern = new Pattern[pattern_size];
+    pattern[0] = Pattern(LIGHT_ON, 1000);
+    pattern[1] = Pattern(LIGHT_OFF, 100);
+    pattern[2] = Pattern(LIGHT_ON, 100);
+    pattern[3] = Pattern(LIGHT_OFF, 100);
+}
+
+void Led::setStyle(LedStyle style) {
+    if (this->style == style) return;
+    switch (style) {
+        case STAY_OFF:
+            turnOff();
+            break;
+        case STAY_ON:
+            turnOn();
+            break;
+        case BLINK_REGULAR : 
+            regularBlink();
+            break;
+        case BLINK_ONE_ACCENT:
+            accentOneBlink();
+            break;
+        case BLINK_TWO_ACCENT:
+            accentTwoBlink();
+            break;
     }
-    if (hz != blinkFreq)
-    {
-        prevBlinkFreq = blinkFreq;
-     
-        blinkFreq = hz;
-        intervalOn = (500.0 / blinkFreq);
-        intervalOff = (1000.0 / blinkFreq);
-    }
+    this->style = style;
+    pattern_n = 0;
+}
+
+Pattern* Led::getPattern() { return &pattern[pattern_n]; }
+
+void Led::loop() {
+    LedState needs = getPattern()->state;
+    if (this->state != needs) setState(needs);    
+    unsigned long duration_ms = getPattern()->duration_ms;
+    if (( duration_ms != 0) && (millis() - lastUpdate >= duration_ms)) {
+        setNextState();
+        lastUpdate = millis();  
+    }      
+}
+
+void Led::setState(LedState value) {
+#ifdef DEBUG_LEDS
+    DEBUG.printf("[led#%d] setState(%d)", pin, state);
+    DEBUG.println();
+#endif
+    this->state = value;
+    digitalWrite(pin, value);
+}
+
+void Led::setNextState() {
+    if (pattern_n < pattern_size - 1)
+        pattern_n++;
+    else
+        pattern_n = 0;
+
+    setState(getPattern()->state);
 }

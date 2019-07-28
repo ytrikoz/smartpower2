@@ -4,27 +4,23 @@
 #include "IPAddress.h"
 #include "Types.h"
 
-typedef std::function<void()> NetworkStateChangeEventHandler;
+typedef std::function<void(bool hasNetwork)> NetworkStateChangeEventHandler;
 
 namespace wireless {
 
-void setOnNetworkStateChange(NetworkStateChangeEventHandler);
-
 WirelessMode getWirelessMode();
-
 bool hasNetwork();
 String hostSSID();
 IPAddress hostIP();
 String hostIPInfo();
 String hostName();
-
+void printDiag(Print* p);
 void start_wifi();
-
+void setOnNetworkStateChange(NetworkStateChangeEventHandler eventHandler);
 void updateState();
 void setNetworkState(NetworkState value);
 void onNetworkUp();
 void onNetworkDown();
-void printDiag(Print* p);
 
 bool scanNetworks(const char* ssid);
 

@@ -42,20 +42,20 @@ void WebService::begin() {
 
     server->onNotFound([this]() {
         String uri = server->uri();
-        #ifdef DEBUG_HTTP 
-        USE_DEBUG_SERIAL->printf_P(str_http);
-        #endif
+#ifdef DEBUG_HTTP
+        DEBUG.printf_P(str_http);
+#endif
         if (!sendFile(uri)) {
             char buf[128];
             sprintf_P(buf, strf_http_file_not_found, server->uri().c_str(),
                       (server->method() == HTTP_GET) ? "GET" : "POST",
                       server->args());
             server->send(404, "text/plan", buf);
-            #ifdef DEBUG_HTTP 
-            USE_DEBUG_SERIAL.printf_P(strf_file_not_found, uri.c_str();
-            USE_DEBUG_SERIAL.println();
-            #endif
-        }        
+#ifdef DEBUG_HTTP
+            DEBUG.printf_P(strf_file_not_found, uri.c_str());
+            DEBUG.println();
+#endif
+        }
     });
 
     socket = new WebSocketsServer(this->socket_port);
@@ -101,12 +101,12 @@ void WebService::loop() {
 }
 
 void WebService::sendTxt(uint8_t num, const char *payload) {
-    #ifdef DEBUG_WEBSOCKET
+#ifdef DEBUG_WEBSOCKET
     output->printf_P(str_http);
     output->printf_P(strf_client, num);
     output->printf_P(strf_arrow_dest, payload);
     output->println();
-    #endif 
+#endif
     socket->sendTXT(num, payload, strlen(payload));
 }
 
@@ -116,46 +116,45 @@ void WebService::noContent() { server->send(204, "text/plan", "No Content"); }
 
 void WebService::socketEvent(uint8_t num, WStype_t type, uint8_t *payload,
                              size_t lenght) {
-    #ifdef DEBUG_WEBSOCKET
-    USE_DEBUG_SERIAL.printf_P(str_http);
-    USE_DEBUG_SERIAL.printf_P(strf_client, num);
-    #endif
+#ifdef DEBUG_WEBSOCKET
+    DEBUG.printf_P(str_http);
+    DEBUG.printf_P(strf_client, num);
+#endif
     switch (type) {
         case WStype_CONNECTED:
-            #ifdef DEBUG_WEBSOCKET
-            USE_DEBUG_SERIAL.printf_P(str_connected);
-            USE_DEBUG_SERIAL.println();
-            #endif
+#ifdef DEBUG_WEBSOCKET
+            DEBUG.printf_P(str_connected);
+            DEBUG.println();
+#endif
             onConnectEvent(num);
             return;
         case WStype_DISCONNECTED:
-            #ifdef DEBUG_WEBSOCKET
-            USE_DEBUG_SERIAL.printf_P(str_disconnected);
-            USE_DEBUG_SERIAL.println();
-            #endif
+#ifdef DEBUG_WEBSOCKET
+            DEBUG.printf_P(str_disconnected);
+            DEBUG.println();
+#endif
             onDisconnectEvent(num);
             return;
         case WStype_TEXT: {
-            #ifdef DEBUG_WEBSOCKET
-            USE_DEBUG_SERIAL.printf_P(strf_arrow_src, (char *)&payload[0]);
-            USE_DEBUG_SERIAL.println();
-            #endif
+#ifdef DEBUG_WEBSOCKET
+            DEBUG.printf_P(strf_arrow_src, (char *)&payload[0]);
+            DEBUG.println();
+#endif
             onDataEvent(num, (char *)&payload[0]);
             return;
         }
         case WStype_BIN:
-            #ifdef DEBUG_WEBSOCKET
-            USE_DEBUG_SERIAL.printf_P(strf_binnary,
-                             str_utils::formatSize(lenght).c_str());
+#ifdef DEBUG_WEBSOCKET
+            DEBUG.printf_P(strf_binnary, str_utils::formatSize(lenght).c_str());
             hexdump(payload, lenght);
-            USE_DEBUG_SERIAL.println();
-            #endif
+            DEBUG.println();
+#endif
             return;
         default:
-            #ifdef DEBUG_WEBSOCKET
-            USE_DEBUG_SERIAL.printf_P(strf_unhandled, type);
-            USE_DEBUG_SERIAL.println();
-            #endif
+#ifdef DEBUG_WEBSOCKET
+            DEBUG.printf_P(strf_unhandled, type);
+            DEBUG.println();
+#endif
             return;
     }
 }
@@ -190,12 +189,12 @@ bool WebService::sendFileContent(String path) {
 #else
         size_t sent = server->streamFile(f, type);
         f.close();
-        USE_DEBUG_SERIAL.print(path.c_str());
-        USE_DEBUG_SERIAL.print(" ");
-        USE_DEBUG_SERIAL.print(type.c_str());
-        USE_DEBUG_SERIAL.print(" ");
-        USE_DEBUG_SERIAL.print(str_utils::formatSize(sent).c_str());
-        USE_DEBUG_SERIAL.println();
+        DEBUG.print(path.c_str());
+        DEBUG.print(" ");
+        DEBUG.print(type.c_str());
+        DEBUG.print(" ");
+        DEBUG.print(str_utils::formatSize(sent).c_str());
+        DEBUG.println();
 #endif
         return true;
     }

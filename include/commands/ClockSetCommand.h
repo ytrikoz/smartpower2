@@ -1,12 +1,19 @@
-#include "executors/ClockSetCommand.h"
+#pragma once
+
+#include <Arduino.h>
 
 #include "consts.h"
-#include "global.h"
 #include "time_utils.h"
 
-namespace executors {
+namespace commands {
 
-void ClockSetCommand::Execute(Print* p) {
+class ClockSetCommand : public Printable {
+   public:
+    void Execute(Print *p);
+    size_t printTo(Print &p) const;
+};
+
+inline void ClockSetCommand::Execute(Print* p) {
     p->print(FPSTR(str_set));
     p->print(FPSTR(str_date));
 
@@ -18,7 +25,7 @@ void ClockSetCommand::Execute(Print* p) {
         Date d = Date(tm);
         p->println(d);
     } else {
-        p->println("wrong format or date value");
+        p->println(FPSTR(str_invalid));
     }
 }
 

@@ -47,10 +47,14 @@ void Shell::onTabPress() {
 #ifdef DEBUG_SHELL
     DEBUG.printf("[shell] onTabPress()");
 #endif 
-    if (strlen(prevInput) > 0) {
-        t->input()->set(prevInput);
-        t->println();
-        prompt();
+    if (strlen(prevInput) > 0) {        
+        if (t->input()->length() > 0)
+        {
+            t->println();
+            prompt();
+
+        }
+        t->input()->set(prevInput);        
         t->print(prevInput);
     }
 }

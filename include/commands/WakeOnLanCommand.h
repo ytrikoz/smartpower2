@@ -1,11 +1,23 @@
-#include "executors\WakeOnLanCommand.h"
+#pragma once
+
+#include <Arduino.h>
+#include <ESP8266WiFi.h>
+#include <WiFiUdp.h>
 
 #include "consts.h"
-#include "global.h"
 
-namespace executors {
+namespace commands {
 
-void WakeOnLanCommand::Execute(Print *p)
+class WakeOnLanCommand : public Printable {
+   public:
+    void Execute(Print *p);
+    size_t printTo(Print &p) const;
+   private:
+    WiFiUDP *udp;
+    const char wol_preamble[6] = {'\xFF', '\xFF', '\xFF', '\xFF', '\xFF', '\xFF'};
+};
+
+inline void WakeOnLanCommand::Execute(Print *p)
 {
     IPAddress ipaddr;
     udp = new WiFiUDP();
@@ -26,9 +38,9 @@ void WakeOnLanCommand::Execute(Print *p)
     p->println();    
 }
 
-size_t WakeOnLanCommand::printTo(Print& p) const {
+inline size_t WakeOnLanCommand::printTo(Print& p) const {
     size_t res = p.println("wol");
     return res;
 }
 
-}
+}  // namespace executors

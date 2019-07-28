@@ -41,6 +41,7 @@ class Config {
 
     IPAddress getIPAddrValue(Parameter param);
     const char *getStrValue(Parameter param);
+    float getFloatValue(Parameter param);
     bool getBoolValue(Parameter param);
     uint8_t getByteValue(Parameter param);
     uint16_t getIntValue(Parameter param);

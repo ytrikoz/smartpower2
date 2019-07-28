@@ -1,5 +1,7 @@
 #include <global.h>
 
+Led *wifi_led, *power_led;
+
 SimpleTimer timer;
 SimpleCLI *cli;
 
@@ -28,6 +30,30 @@ Shell *consoleShell;
 Shell *telnetShell;
 Termul *telnetTerm;
 #endif
+
+void refresh_wifi_status_led() {
+    if (!wireless::hasNetwork()) {
+        wifi_led->setStyle(STAY_OFF);
+        return;
+    }
+    uint8_t displayStatus = 0;
+    if (get_http_clients_count() > 0) displayStatus++;
+    if (get_telnet_clients_count() > 0) displayStatus++;
+    switch (displayStatus) {
+        case 0:
+            wifi_led->setStyle(STAY_ON);
+            break;
+        case 1:
+            wifi_led->setStyle(BLINK_ONE_ACCENT);
+            break;
+        case 2:
+            wifi_led->setStyle(BLINK_TWO_ACCENT);
+            break;
+        default:           
+            break;
+    }
+}
+
 
 void start_services() {
     // only AP_STA
@@ -70,14 +96,16 @@ void start_telnet() {
     telnet->setOnClientConnect([](Stream *s) {
         USE_SERIAL.printf_P(str_telnet);
         USE_SERIAL.printf_P(str_connected);
-        start_telnet_shell(s);
         USE_SERIAL.println();
+        start_telnet_shell(s);
+        refresh_wifi_status_led();        
         return true;
     });
     telnet->setOnCLientDisconnect([]() {
         USE_SERIAL.printf_P(str_telnet);
-        USE_SERIAL.printf_P(str_disconnected);
+        USE_SERIAL.printf_P(str_disconnected);        
         USE_SERIAL.println();
+        refresh_wifi_status_led();
     });
 #endif
     telnet->begin();
@@ -104,14 +132,14 @@ bool start_telnet_shell(Stream *s) {
 }
 
 void start_clock() {
-    rtc.setConfig(config->getData());
+    rtc.setConfig(config->getConfig());
     rtc.setOutput(&USE_SERIAL);
     rtc.begin();
 }
 
 void start_ntp() {
     ntp = new NTPClient();
-    ntp->setConfig(config->getData());
+    ntp->setConfig(config->getConfig());
     ntp->setOutput(&USE_SERIAL);
     ntp->setOnTimeSynced([](EpochTime &time) { rtc.setTime(time); });
     ntp->begin();

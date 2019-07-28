@@ -1,8 +1,14 @@
 #include "Termul.h"
-#include "sysinfo.h"
 #include "mcurses.h"
+#include "sysinfo.h"
 
-Termul::Termul(Stream *s) { this->s = s; }
+Termul::Termul(Stream *s) {
+    this->s = s;
+    this->in_buf = new Buffer(INPUT_MAX_LENGTH);
+}
+
+Termul::~Termul() { delete[] in_buf; }
+
 void Termul::setStream(Stream *s) { this->s = s; }
 bool Termul::available() { return s->available(); }
 
@@ -35,44 +41,42 @@ void Termul::read() {
             if (ch == CHAR_CR) {
                 if (onStartEvent) onStartEvent();
                 state = ST_NORMAL;
-                continue;
             }
             // IGNORE
-            if (ch == CHAR_LF || ch == CHAR_NULL || ch == CHAR_BIN) continue;
+            continue;
+        }
+        if (ch == CHAR_LF || ch == CHAR_NULL || ch == CHAR_BIN) continue;
 #ifdef DEBUG_TERMUL
-            DEBUG.printf("#%d", int(ch));
+        DEBUG.printf("#%d", int(ch));
 #endif
-        }
-
-        if (millis() - lastReadTime > 50) {
-            cc_index = 0;
-            state = ST_NORMAL;
-        }
-        
         // ESC SEQUENCE
         if (state == ST_ESC_SEQ) {
-            if (ch == CHAR_ESC) {
-                if (in_buf->empty()) {
-                    // QUIT
-                    if (onQuitEvent) onQuitEvent();
-                    state = ST_INACTIVE;
-                    return;
-                } else {
-                    // CLEAR
-                    if (controlCodesEnabled) {
-                        clear_line();
+            if (millis() - lastControlCodeRecived > 100) {
+                if (ch == CHAR_ESC) {
+                    cc_index = 0;
+                    if (in_buf->empty()) {
+                        // QUIT
+                        if (onQuitEvent) onQuitEvent();
+                        state = ST_INACTIVE;
+                        return;
                     } else {
-                        println();
+                        // CLEAR
+                        if (controlCodesEnabled) {
+                            clear_line();
+                        } else {
+                            println();
+                        }
+                        in_buf->clear();
+                        state = ST_NORMAL;
+                        continue;
                     }
-                    in_buf->clear();
+                } else {
                     state = ST_NORMAL;
-                    continue;
                 }
             } else {
                 // ESC SEQUENCE RECEIVING
                 cc_buf[cc_index] = ch;
                 if ((ch == '[') || ((ch >= 'A' && ch <= 'Z') || ch == '~')) {
-                    lastReadTime = millis();
                     cc_index++;
                 }
                 cc_buf[cc_index] = '\x00';
@@ -85,6 +89,8 @@ void Termul::read() {
                         break;
                     }
                 }
+
+                lastControlCodeRecived = millis();
 
                 if (state == ST_NORMAL) {
 #ifdef DEBUG_TERMUL
@@ -109,7 +115,7 @@ void Termul::read() {
                 continue;
             }
             if (ch == CHAR_TAB) {
-                if (onTabPressed) onTabPressed();                
+                if (onTabPressed) onTabPressed();
                 continue;
             }
 
@@ -132,8 +138,10 @@ void Termul::read() {
                     break;
                 case CHAR_BS:
                 case CHAR_DEL:
-                    backsp();
-                    in_buf->backsp();                 
+                    if (in_buf->length() > 0) {
+                        backsp();
+                        in_buf->backsp();
+                    }
                     break;
                 default:
                     // printable ascii 7bit or printable 8bit ISO8859

@@ -75,7 +75,7 @@ bool Config::setValue(Parameter param, const char *value) {
     bool changed =
         setstr(values[param], value, metadata[param].size);
 #ifdef DEBUG_CONFIG
-    DEBUG->printf("[config] set #%d: %s\r\n", param, value);
+    DEBUG.printf("[config] -> #%d: %s\r\n", param, value);
 #endif
     if (changed) onConfigChangeEvent(param);
     return changed;
@@ -91,7 +91,7 @@ void Config::setValue(String str) {
         setValue(param, str.substring(split + 2, str.length() - 2).c_str());
     } else {
 #ifdef DEBUG_CONFIG
-        DEBUG->printf("[config] unknown param %s", buf);
+        DEBUG.printf("[config] unknown param %s", buf);
 #endif
     }
 }
@@ -106,6 +106,10 @@ sint8_t Config::getSignedValue(Parameter param) {
 
 uint16_t Config::getIntValue(Parameter param) {
     return atoi(getStrValue(param));
+}
+
+float Config::getFloatValue(Parameter param) {
+    return atof(getStrValue(param));
 }
 
 bool Config::getBoolValue(Parameter param) {
