@@ -308,7 +308,7 @@ void handle_power_button_press() {
 
 void send_psu_data_to_clients() {
     if (psu->getState() == POWER_ON) {
-        if (wireless::hasNetwork()) {           
+        if (wireless::hasNetwork()) {
 #ifndef DISABLE_TELNET
             if (get_telnet_clients_count() && !telnetShell->isActive()) {
                 String data = psu->toString();
@@ -354,8 +354,7 @@ void onBootProgress(uint8_t per, const char *message) {
 #endif
 }
 
-void print_reset_reason()
-{
+void print_reset_reason() {
     USE_SERIAL.print(F("[reset] reason: "));
     USE_SERIAL.println(ESP.getResetReason());
     USE_SERIAL.print(F("[reset] info: "));
@@ -369,7 +368,7 @@ void setup() {
     USE_SERIAL.setDebugOutput(true);
 #endif
     USE_SERIAL.println();
-    
+
     print_reset_reason();
 
     setup_hardware();

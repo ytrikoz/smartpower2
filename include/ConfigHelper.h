@@ -17,8 +17,6 @@ class ConfigHelper {
     void reset();
     
     WiFiMode_t getWiFiMode();
-    void setLastPowerState(PowerState state);
-    PowerState getLastPowerState();
     bool setBootPowerState(BootPowerState);
     bool setBootPowerState(uint8_t);
     BootPowerState getBootPowerState();

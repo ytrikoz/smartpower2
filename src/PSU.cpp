@@ -56,7 +56,7 @@ void PSU::setState(PowerState value, bool forceUpdate) {
             if (onPowerOff) onPowerOff();
         }
         digitalWrite(POWER_SWITCH_PIN, state);         
-        config->setLastPowerState(state);
+        setLastPowerState(state);
     }       
 }
 
@@ -94,13 +94,34 @@ void PSU::begin() {
         state = POWER_ON;
         break;
     case BOOT_POWER_LAST_STATE:
-        state = config->getLastPowerState();
+        state = getLastPowerState();
         break;
     default:
         state = POWER_OFF;
     }
 
     setState(state, true);
+}
+
+void PSU::setLastPowerState(PowerState state) {
+    File f = SPIFFS.open(FILE_LAST_POWER_STATE, "w");
+    f.println(state);
+    f.flush();
+    f.close();
+}
+
+PowerState PSU::getLastPowerState() {
+    if (!SPIFFS.exists(FILE_LAST_POWER_STATE)) {
+        File f = SPIFFS.open(FILE_LAST_POWER_STATE, "w");
+        f.println(POWER_OFF);
+        f.flush();
+        f.close();
+        return POWER_OFF;
+    }
+    File f = SPIFFS.open(FILE_LAST_POWER_STATE, "r");
+    PowerState value = PowerState(f.readString().toInt());
+    f.close();
+    return value;
 }
 
 void PSU::startMeasure() {
