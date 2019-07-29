@@ -272,15 +272,11 @@ void update_display() {
             display->setItem(1, "PWD> ", wireless::hostAPPassword().c_str());
         }
     } else if (psu->getState() == POWER_ON) {
-        char tmp[LCD_COLS + 1];
-        sprintf(tmp, "%1.3f V %1.3f A", psu->getVoltage(), psu->getCurrent());        
         String str = String(psu->getVoltage(), 3);
         str += " V ";
         str += String(psu->getCurrent(), 3);
         str += " A ";
         display->setItem(0, str.c_str());
-        display->setItem(0, tmp);
-
         double watt = psu->getPower();
         str = String(watt, (watt < 10) ? 3 : 2);
         str += " W ";

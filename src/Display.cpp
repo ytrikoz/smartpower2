@@ -49,7 +49,7 @@ bool Display::getAddr() {
     return false;
 }
 
-void Display::setItem(uint8_t row, const char *str) { setItem(row, "", str); }
+void Display::setItem(uint8_t row, const char *str) { setItem(row, NULL, str); }
 
 void Display::setItem(uint8_t row, const char *param, const char *value) {
     DisplayItem *i = &item[row];
