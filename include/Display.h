@@ -9,12 +9,7 @@
 
 #define LCD_ROWS 2
 #define LCD_COLS 16
-#define REFRESH_INTERVAL 250
-
-#define MAX_LABEL_LENGTH 4
-#define FPS_ITER 1
-#define DELAY_TIME 3500
-
+#define LCD_REFRESH_INTERVAL_ms 250
 typedef struct {
     bool updated = false;
     // fixed str part
@@ -29,30 +24,10 @@ typedef struct {
 } DisplayItem;
 
 class Display {
-   private:
-    Print *output;    
-    uint8_t addr;
-    LiquidCrystal_I2C *lcd;
-    DisplayItem item[LCD_ROWS];
-
-    unsigned long lastUpdated;
-    bool connected;
-    
-    bool getAddr();
-
-    void showByteXfer(unsigned long etime);
-    void showFPS(unsigned long etime, const char *type);
-    unsigned long timeFPS(uint8_t iter, uint8_t cols, uint8_t rows);
-
-    void show(const String &s);
-    void _print(String arg);
-    void _println(void);
-    void _println(String arg);
-
    public:
     Display();
-    void setOutput(Print *p);
     bool init();
+    void setOutput(Print *p);
     bool isConnected();
     void turnOn();
     void turnOff();
@@ -62,6 +37,15 @@ class Display {
     void setItem(uint8_t row, const char *str);
     void setItem(uint8_t row, const char *param, const char *value);
     const char *getParamStr(uint8_t row);
-    
+
     void redraw(boolean forced = false);
+
+   private:
+    Print *output;
+    uint8_t addr;
+    LiquidCrystal_I2C *lcd;
+    DisplayItem item[LCD_ROWS];
+    unsigned long lastUpdated;
+    bool connected;
+    bool getAddr();
 };

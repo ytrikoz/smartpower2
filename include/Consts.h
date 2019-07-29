@@ -10,6 +10,7 @@
 
 //#define SERIAL_DEBUG
 //#define DEBUG_CONFIG
+//#define DEBUG_DISPLAY
 //#define DEBUG_SYSTEM_CLOCK
 //#define DEBUG_WIRELESS
 //#define DEBUG_NTP
@@ -21,7 +22,6 @@
 //#define DEBUG_TERMUL
 //#define DEBUG_FILE_STORAGE
 //#define DEBUG_TIME_BACKUP
-//#define DEBUG_LCD
 
 #define DEBUG Serial
 #define USE_SERIAL Serial
@@ -96,6 +96,8 @@ static const char strf_http_file_not_found[] PROGMEM =
     "File Not Found\n\nURI: %s\nMethod: %s\nArguments: %d\n";
 static const char strf_time[] PROGMEM = "%02d:%02d:%02d";
 static const char strf_s_d[] PROGMEM = "%s:%d ";
+static const char strf_ip_port[] PROGMEM = "%s:%d ";
+static const char strf_every_ms[] PROGMEM = "every %lu ms";
 static const char strf_arrow_dest[] PROGMEM = "-> %s";
 static const char strf_arrow_src[] PROGMEM = "<- %s";
 static const char strf_binnary[] PROGMEM = "binnary %s";

@@ -6,30 +6,17 @@ SimpleTimer timer;
 SimpleCLI *cli;
 
 NetworkService *discovery;
-PSU *psu;
-TelnetServer *telnet;
 ConfigHelper *config;
-
-#ifndef DISABLE_NTP
-NTPClient *ntp;
-#endif
-#ifndef DISABLE_HTTP
-WebService *http;
-#endif
-#ifndef DISABLE_LCD
 Display *display;
-#endif
-#ifndef DISABLE_OTA_UPDATE
+PSU *psu;
+WebService *http;
+TelnetServer *telnet;
+NTPClient *ntp;
 OTAUpdate *ota;
-#endif
-#ifndef DISABLE_CONSOLE_SHELL
 Termul *consoleTerm;
-Shell *consoleShell;
-#endif
-#ifndef DISABLE_TELNET_SHELL
-Shell *telnetShell;
 Termul *telnetTerm;
-#endif
+Shell *telnetShell;
+Shell *consoleShell;
 
 void refresh_wifi_status_led() {
     if (!wireless::hasNetwork()) {
@@ -162,16 +149,16 @@ void start_http() {
     http->begin();
 }
 
-void start_discovery() {
-    discovery = new NetworkService();
-    discovery->setOutput(&USE_SERIAL);
-    discovery->begin();
-}
-
 void start_ota_update() {
     ota = new OTAUpdate();
     ota->setOutput(&USE_SERIAL);
     ota->begin(HOST_NAME, OTA_PORT);
+}
+
+void start_discovery() {
+    discovery = new NetworkService();
+    discovery->setOutput(&USE_SERIAL);
+    discovery->begin();
 }
 
 uint8_t get_telnet_clients_count() {

@@ -26,15 +26,15 @@
 
 void setup();
 void loop();
-
-extern void onHttpClientConnect(uint8_t);
-extern void onHttpClientDisconnect(uint8_t);
-extern void onHttpClientData(uint8_t num, String data);
+static void ICACHE_RAM_ATTR powerButtonHandler();
 
 extern ulong get_lps();
 extern ulong get_longest_loop();
 
-static void ICACHE_RAM_ATTR powerButtonHandler();
+void onHttpClientConnect(uint8_t);
+void onHttpClientDisconnect(uint8_t);
+void onHttpClientData(uint8_t num, String data);
+
 void handle_power_button_press();
 void calcLoopTimings();
 void setup_hardware();

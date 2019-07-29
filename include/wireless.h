@@ -14,7 +14,10 @@ String hostSSID();
 IPAddress hostIP();
 String hostIPInfo();
 String hostName();
+String RSSIInfo();
+String hostAPPassword();
 void printDiag(Print* p);
+
 void start_wifi();
 void setOnNetworkStateChange(NetworkStateChangeEventHandler eventHandler);
 void updateState();

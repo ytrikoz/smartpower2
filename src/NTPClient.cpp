@@ -11,11 +11,6 @@ NTPClient::NTPClient() {
 }
 
 void NTPClient::init() {
-    #ifdef DEBUG_NTP    
-    USE_DEBUG_SERIAL.printf_P(str_ntp);
-    USE_DEBUG_SERIAL.printf_P(strf_s_d, server, port);
-    USE_DEBUG_SERIAL.println(interval_ms / ONE_SECOND_ms);
-    #endif
     udp = new WiFiUDP();    
     initialized = true;
 }
@@ -56,14 +51,14 @@ bool NTPClient::begin() {
     if (!initialized) {
         init();
     }
-    output->printf_P(str_ntp);    
-    output->printf_P(str_start);    
-    active = udp->begin(NTP_LOCAL_PORT);
+    output->print(FPSTR(str_ntp));
+    output->printf_P(strf_ip_port, server, port);
+    output->printf_P(strf_every_ms, interval_ms / ONE_SECOND_ms);
+    active = udp->begin(port);
     if (active)
-        output->printf_P(str_success);
+        output->println();
     else
-        output->printf_P(str_failed);           
-    output->println();
+        output->println(FPSTR(str_failed));          
     return active;
 }
 

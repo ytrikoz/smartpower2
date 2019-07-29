@@ -9,6 +9,8 @@
 #include "SysInfo.h"
 #include "wireless.h"
 
+#include "TimeProfiler.h"
+
 #define I2C_SDA D2
 #define I2C_SCL D5
 #define POWER_LED_PIN D1
@@ -57,14 +59,12 @@ void cancel_system_restart() {
     }
 }
 void on_restart_sequence() {
-    if (restartCount <= 0) {
-        system_restart();
-    }
+    if (restartCount == 0) system_restart();
     restartCount--;
 }
 
-void setup_restart_timer(int count) {
-    if (restartTimer != 1) {
+void setup_restart_timer(uint8_t count) {
+    if (restartTimer != -1) {
         timer.deleteTimer(restartTimer);
     }
     restartCount = count;
@@ -260,22 +260,26 @@ void update_display() {
     if (!display->isConnected()) return;
     String str;
     if (psu->getState() == POWER_OFF) {
-        if (WiFi.getMode() == WIFI_STA) {
-            display->setItem(0, "STA >", WiFi.SSID().c_str());
+        if (wireless::getWirelessMode() == WLAN_STA) {
+            display->setItem(0, "STA> ", wireless::hostSSID().c_str());
             if (display_alt_line) {
-                display->setItem(1, "IP >", WiFi.localIP().toString().c_str());
-            } else
-                display->setItem(1, "RSSI>", String(WiFi.RSSI()).c_str());
-        } else if (WiFi.getMode() == WIFI_AP) {
-            display->setItem(0, "AP >", WiFi.softAPSSID().c_str());
-            display->setItem(1, "1D>", WiFi.softAPPSK().c_str());
+                display->setItem(1, "IP> ", wireless::hostIP().toString().c_str());
+            } else {
+                display->setItem(1, "RSSI> ", wireless::RSSIInfo().c_str());
+            }
+        } else if (wireless::getWirelessMode() == WLAN_AP) {
+            display->setItem(0, "AP> ", wireless::hostSSID().c_str());
+            display->setItem(1, "PWD> ", wireless::hostAPPassword().c_str());
         }
     } else if (psu->getState() == POWER_ON) {
+        char tmp[LCD_COLS + 1];
+        sprintf(tmp, "%1.3f V %1.3f A", psu->getVoltage(), psu->getCurrent());        
         String str = String(psu->getVoltage(), 3);
         str += " V ";
         str += String(psu->getCurrent(), 3);
         str += " A ";
         display->setItem(0, str.c_str());
+        display->setItem(0, tmp);
 
         double watt = psu->getPower();
         str = String(watt, (watt < 10) ? 3 : 2);
@@ -286,7 +290,7 @@ void update_display() {
             str += " Wh";
         } else {
             str += String(rwatth / 1000, 3);
-            str += "KWh";
+            str += "KWh"; 
         }
         display->setItem(1, str.c_str());
     }
@@ -373,8 +377,8 @@ void setup() {
 
     setup_hardware();
 
-    memset(&clients[0], 0x00,
-           (sizeof(WebClient) * WEBSOCKETS_SERVER_CLIENT_MAX));
+    memset(&clients[0], 0x00, sizeof(WebClient) * WEBSOCKETS_SERVER_CLIENT_MAX);
+
 #ifndef DISABLE_LCD
     display = new Display();
     display->setOutput(&USE_SERIAL);
@@ -389,10 +393,7 @@ void setup() {
 
     start_psu();
 
-    USE_SERIAL.print("[wait]");
-    USE_SERIAL.print(" ");
     delaySequence(3);
-    USE_SERIAL.println();
 
     onBootProgress(30, "VER>" FW_VERSION);
 
@@ -426,12 +427,15 @@ void setup() {
 }
 
 void delaySequence(uint8_t sec) {
+    USE_SERIAL.print("[wait]");
+    USE_SERIAL.print(" ");
     for (uint8_t t = sec; t > 0; t--) {
         USE_SERIAL.print(t);
         USE_SERIAL.print(" ");
         USE_SERIAL.flush();
         delay(1000);
     }
+    USE_SERIAL.println();
 }
 
 static void ICACHE_RAM_ATTR powerButtonHandler() {
@@ -465,7 +469,6 @@ void loop() {
     rtc.loop();
     // Tasks
     timer.run();
-
 #ifndef DISABLE_CONSOLE_SHELL
     if (consoleShell) consoleShell->loop();
 #endif

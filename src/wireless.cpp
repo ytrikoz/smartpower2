@@ -27,6 +27,10 @@ void printDiag(Print *p) {
     WiFi.printDiag(*p);
 }
 
+String hostAPPassword() {
+    return WiFi.softAPPSK();
+}
+
 String hostSSID() {
     String str;
     switch (getWirelessMode()) {
@@ -309,6 +313,13 @@ void onNetworkDown() {
 WirelessMode getWirelessMode() { return mode = (WirelessMode)WiFi.getMode(); }
 
 bool hasNetwork() { return (mode != WLAN_OFF) && (network == NETWORK_UP); }
+
+String RSSIInfo() {
+    sint8 rssi = wifi_station_get_rssi();
+    String str = String(rssi);
+    str += "dB";
+    return String(str);
+}
 
 // https://github.com/esp8266/Arduino/issues/4114
 class WiFiStationStaticIP : public ESP8266WiFiSTAClass {
