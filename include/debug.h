@@ -5,7 +5,7 @@
 //#define SERIAL_DEBUG
 //#define DEBUG_CONFIG
 //#define DEBUG_DISPLAY
-//#define DEBUG_SYSTEM_CLOCK
+#define DEBUG_SYSTEM_CLOCK
 //#define DEBUG_WIRELESS
 //#define DEBUG_NTP
 //#define DEBUG_TELNET

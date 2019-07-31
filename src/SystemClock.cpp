@@ -11,7 +11,7 @@ SystemClock::SystemClock() {
     lastUpdated_ms = 0;
     lastBackup_ms = 0;
     rolloverCounter = 0;
-
+    dateTime = tm();
     epochTime_s = 0;
 }
 
@@ -110,10 +110,10 @@ bool SystemClock::restore(FileStorage *agent) {
 
 void SystemClock::setTime(unsigned long epoch_s) {
     epochTime_s = epoch_s;
-    epoch_to_tm(epochTime_s, dateTime);
-    lastUpdated_ms = millis();    
-    synced = true;    
-    onSystemTimeChanged(getLocalFormated().c_str());
+    //epoch_to_tm(epochTime_s, dateTime);
+    //lastUpdated_ms = millis();    
+    //synced = true;    
+    //onSystemTimeChanged(getLocalFormated().c_str());
 }
 
 String SystemClock::getLocalFormated() {
