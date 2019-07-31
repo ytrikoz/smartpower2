@@ -10,12 +10,14 @@ typedef struct {
     uint16_t dayOfyear;
 } Month;
 
+static const char days[7][4] = {"Sun", "Mon", "Tue", "Wed",
+                                "Thu", "Fri", "Sat"};
 static const Month calendar[] = {
     {"Jan", 31, 0},   {"Feb", 28, 31},  {"Mar", 31, 59},  {"Apr", 30, 90},
     {"May", 31, 120}, {"Jun", 30, 151}, {"Jul", 31, 181}, {"Aug", 31, 212},
     {"Sep", 30, 243}, {"Oct", 31, 273}, {"Nov", 30, 304}, {"Dec", 31, 334}};
 
-typedef struct EpochTime : public Printable {
+struct EpochTime : public Printable {
    public:
     EpochTime() {
         this->epoch_s = 0;
@@ -40,12 +42,11 @@ typedef struct EpochTime : public Printable {
    private:
     unsigned long epoch_s;
     bool wasSet;
+};
 
-} EpochTime;
-
-typedef struct : public Printable {
+struct Time : public Printable {
    public:
-    void Time(uint8_t hours, uint8_t minutes, uint8_t seconds) {
+    Time(uint8_t hours, uint8_t minutes, uint8_t seconds) {
         this->hour = hour;
         this->minute = minute;
         this->seconds = seconds;
@@ -62,23 +63,21 @@ typedef struct : public Printable {
     uint8_t hour = 0;
     uint8_t minute = 0;
     uint8_t seconds = 0;
-} Time;
+};
 
-typedef struct Date : public Printable {
+struct Date : public Printable {
    public:
     Date(struct tm& tm) {
         this->day = tm.tm_mday;
         this->month = tm.tm_mon;
         this->month = tm.tm_year;
     }
-
     Date(uint8_t day, uint8_t month, int year) {
         this->day = day;
         this->month = month;
         this->year = year;
     }
     unsigned long get() { return 0; }
-
     size_t printTo(Print& p) const {
         size_t n = p.printf("%02d.%02d.%04d", day, month, year);
         return n;
@@ -88,9 +87,9 @@ typedef struct Date : public Printable {
     uint8_t day = 0;
     uint8_t month = 0;
     uint16_t year = 0;
-} Date;
+};
 
-typedef struct Measurement : public Printable {
+struct Measurement : public Printable {
     unsigned long updated_ms;
     float voltage;
     float current;
@@ -104,32 +103,27 @@ typedef struct Measurement : public Printable {
         p.println(buf);
         return size;
     }
-} Measurement;
+};
 
-typedef enum {
+enum BootPowerState {
     BOOT_POWER_OFF = 0,
     BOOT_POWER_ON = 1,
     BOOT_POWER_LAST_STATE = 2
-} BootPowerState;
+};
 
-typedef enum { POWER_ON = 0, POWER_OFF = 1 } PowerState;
+enum PowerState { POWER_ON = 0, POWER_OFF = 1 };
 
-typedef enum { CRLF, LFCR, LF, CR } EOLCode;
+enum EOLCode { CRLF, LFCR, LF, CR };
 
-typedef enum { MD_LEFT, MD_RIGHT, MD_UP, MD_DOWN } MoveDirection;
+enum MoveDirection { MD_LEFT, MD_RIGHT, MD_UP, MD_DOWN };
 
-typedef enum { ST_INACTIVE, ST_NORMAL, ST_ESC_SEQ, ST_CTRL_SEQ } State;
+enum State { ST_INACTIVE, ST_NORMAL, ST_ESC_SEQ, ST_CTRL_SEQ };
 
-typedef enum {
-    WLAN_OFF = 0,
-    WLAN_STA = 1,
-    WLAN_AP = 2,
-    WLAN_AP_STA = 3
-} WirelessMode;
+enum WirelessMode { WLAN_OFF = 0, WLAN_STA = 1, WLAN_AP = 2, WLAN_AP_STA = 3 };
 
-typedef enum { NETWORK_DOWN, NETWORK_UP } NetworkState;
+enum NetworkState { NETWORK_DOWN, NETWORK_UP };
 
-typedef enum {
+enum Parameter {
     WIFI,
     SSID,
     PASSWORD,
@@ -150,4 +144,4 @@ typedef enum {
     NTP_SYNC_INTERVAL,
     NTP_POOL_SERVER,
     TIME_BACKUP_INTERVAL
-} Parameter;
+};

@@ -44,6 +44,9 @@ unsigned long volatile resetStatTime = 0;
 unsigned long volatile loopStartTime = 0;
 unsigned long volatile loopCounter = 0;
 unsigned long volatile loopLongest = 0;
+
+float data[8] = {0, 2.101, 3.130, 4.450, 3.501, 4.030, 4.001};
+
 ulong get_lps() {
     return loopCounter * ONE_SECOND_ms / (millis() - resetStatTime);
 }
@@ -263,7 +266,8 @@ void update_display() {
         if (wireless::getWirelessMode() == WLAN_STA) {
             display->setItem(0, "STA> ", wireless::hostSSID().c_str());
             if (display_alt_line) {
-                display->setItem(1, "IP> ", wireless::hostIP().toString().c_str());
+                display->setItem(1, "IP> ",
+                                 wireless::hostIP().toString().c_str());
             } else {
                 display->setItem(1, "RSSI> ", wireless::RSSIInfo().c_str());
             }
@@ -286,7 +290,7 @@ void update_display() {
             str += " Wh";
         } else {
             str += String(rwatth / 1000, 3);
-            str += "KWh"; 
+            str += "KWh";
         }
         display->setItem(1, str.c_str());
     }
@@ -348,9 +352,10 @@ void setup_hardware() {
 
 void onBootProgress(uint8_t per, const char *message) {
 #ifndef DISABLE_LCD
-    if (display) display->onProgress(per, message);
+    if (display) display->drawBar(LCD_ROW_2, per);
 #else
     USE_SERIAL.printf_P(strf_boot_progress, message, per);
+    USE_SERIAL.println();
 #endif
 }
 
@@ -368,6 +373,8 @@ void setup() {
     USE_SERIAL.setDebugOutput(true);
 #endif
     USE_SERIAL.println();
+
+    delaySequence(3);
 
     print_reset_reason();
 
@@ -389,8 +396,17 @@ void setup() {
 
     start_psu();
 
-    delaySequence(3);
-
+    /*
+        randomSeed(analogRead(0));
+        float *data = new float[64];
+        for (uint8_t i = 0; i < 64; i++) {
+            data[i] = (float) random(4000, 4500);
+        }
+        if (display->init()) {
+            display->init_bargraph();
+            display->drawPlot(data, 64);
+        }
+     */
     onBootProgress(30, "VER>" FW_VERSION);
 
     str_utils::printWelcomeTo(&USE_SERIAL);

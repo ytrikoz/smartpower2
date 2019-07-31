@@ -87,7 +87,7 @@ void Shell::welcome() {
     uint8_t width = SCREEN_WIDTH / 2;
     str_utils::addPaddingTo(title, str_utils::CENTER, width, ' ');
     char decor[width + 1];
-    str_utils::strOfChar(decor, '#', width);
+    str_utils::str_of_char(decor, '#', width);
 
     t->println(decor);
     t->println(title);
@@ -96,7 +96,7 @@ void Shell::welcome() {
 
 void Shell::prompt() {
     char buf[OUTPUT_MAX_LENGTH + 1];
-    strcpy(buf, rtc.getLocalTimeFormated().c_str());
+    strcpy(buf, rtc.getLocalFormated().c_str());
     uint8_t len = strlen(buf);
     buf[len] = CHAR_SP;
     buf[len + 1] = '\x00';

@@ -11,15 +11,15 @@ NTPClient::NTPClient() {
 }
 
 void NTPClient::init() {
-    udp = new WiFiUDP();    
+    udp = new WiFiUDP();
     initialized = true;
 }
 
 void NTPClient::printDiag(Print *p) {
-    p->printf_P(strf_s_d, "active", active);
-    p->printf_P(strf_s_d, "initialized", initialized);
-    p->printf_P(strf_s_d, "interval", (int)interval_ms / 1000);
-    p->printf_P(strf_s_d, "updated", (int)updated_ms / 1000);
+    p->printf_P(strf_init, initialized);
+    p->printf_P(strf_active, active);    
+    p->printf_P(strf_every_sec, interval_ms / ONE_SECOND_ms);
+    p->printf_P(strf_synced, (int) (millis() - updated_ms) / ONE_SECOND_ms);
     p->println();
 }
 
@@ -41,8 +41,9 @@ void NTPClient::setTimeServer(const char *str) {
 
 void NTPClient::end() {
     if (active) {
-        output->printf_P(str_ntp);
-        output->printf_P(str_stopped);
+        udp->stop();
+        output->print(FPSTR(str_ntp));
+        output->println(FPSTR(str_stopped));
         active = false;
     }
 }
@@ -52,37 +53,37 @@ bool NTPClient::begin() {
         init();
     }
     output->print(FPSTR(str_ntp));
-    output->printf_P(strf_ip_port, server, port);
-    output->printf_P(strf_every_ms, interval_ms / ONE_SECOND_ms);
     active = udp->begin(port);
-    if (active)
+    if (active) {
+        output->printf_P(strf_ip_port, server, port);
+        output->printf_P(strf_every_ms, interval_ms / ONE_SECOND_ms);
         output->println();
-    else
-        output->println(FPSTR(str_failed));          
+    } else {
+        output->println(FPSTR(str_failed));
+    }
     return active;
 }
 
 void NTPClient::loop() {
     if (!active) return;
-
-    if ((updated_ms == 0) || (interval_ms > 0 && (millis() - updated_ms >= interval_ms))) sync();
+    if ((updated_ms == 0) ||
+        (interval_ms > 0 && (millis() - updated_ms >= interval_ms))) {
+        sync();
+    }
 }
 
 void NTPClient::sync() {
     send_udp_packet();
-
-    // data or timeout...
     uint8_t timeout = 0;
     int cb = 0;
     do {
         delay(10);
         cb = udp->parsePacket();
-        // timeout after 1000 ms
         if (timeout > 100) {
 #ifdef DEBUG_NTP
-            USE_DEBUG_SERIAL.printf_P(strf_ntp, (char *)pgm_read_ptr(str_got));
-            USE_DEBUG_SERIAL.print(time.epochTime_s);
-            USE_DEBUG_SERIAL.println();
+            DEBUG.printf_P(strf_ntp, (char *)pgm_read_ptr(str_got));
+            DEBUG.print(time.epochTime_s);
+            DEBUG.println();
 #endif
             return;
         }
@@ -96,7 +97,8 @@ void NTPClient::sync() {
     unsigned long highWord = word(this->buffer[40], buffer[41]);
     unsigned long lowWord = word(this->buffer[42], buffer[43]);
 
-    epochTime = EpochTime((highWord << 16 | lowWord) - SEVENTY_YEARS_ms + (10 * (timeout + 1)));
+    epochTime = EpochTime((highWord << 16 | lowWord) - SEVENTY_YEARS_ms +
+                          (10 * (timeout + 1)));
 
 #ifdef DEBUG_NTP
     USE_DEBUG_SERIAL.printf_P(str_ntp);
@@ -104,7 +106,9 @@ void NTPClient::sync() {
     USE_DEBUG_SERIAL.print(time.epochTime_s);
     USE_DEBUG_SERIAL.println();
 #endif
-    if (onTimeSynced) { onTimeSynced(epochTime); };
+    if (onTimeSynced) {
+        onTimeSynced(epochTime);
+    };
 }
 
 void NTPClient::send_udp_packet() {

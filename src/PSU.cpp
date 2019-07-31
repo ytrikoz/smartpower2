@@ -45,7 +45,9 @@ void PSU::setOnPowerOff(PSUEventHandler h)
 
 void PSU::setState(PowerState value, bool forceUpdate) {
     output->print(FPSTR(str_psu));
-    output->println(value == POWER_ON ? "on" : "off");
+    output->printf_P(strf_power, value == POWER_ON ? "on" : "off");
+    output->println();
+    
     if ((forceUpdate) || (state != value)) {
         state = value;
         if (state == POWER_ON) {
@@ -56,7 +58,7 @@ void PSU::setState(PowerState value, bool forceUpdate) {
             if (onPowerOff) onPowerOff();
         }
         digitalWrite(POWER_SWITCH_PIN, state);         
-        setLastPowerState(state);
+        storePowerState(state);
     }       
 }
 
@@ -94,7 +96,7 @@ void PSU::begin() {
         state = POWER_ON;
         break;
     case BOOT_POWER_LAST_STATE:
-        state = getLastPowerState();
+        state = restorePowerState();
         break;
     default:
         state = POWER_OFF;
@@ -103,19 +105,16 @@ void PSU::begin() {
     setState(state, true);
 }
 
-void PSU::setLastPowerState(PowerState state) {
+void PSU::storePowerState(PowerState state) {
     File f = SPIFFS.open(FILE_LAST_POWER_STATE, "w");
     f.println(state);
     f.flush();
     f.close();
 }
 
-PowerState PSU::getLastPowerState() {
+PowerState PSU::restorePowerState() {
     if (!SPIFFS.exists(FILE_LAST_POWER_STATE)) {
-        File f = SPIFFS.open(FILE_LAST_POWER_STATE, "w");
-        f.println(POWER_OFF);
-        f.flush();
-        f.close();
+        storePowerState(POWER_OFF);        
         return POWER_OFF;
     }
     File f = SPIFFS.open(FILE_LAST_POWER_STATE, "r");

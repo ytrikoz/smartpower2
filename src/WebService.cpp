@@ -2,6 +2,8 @@
 
 #include "wireless.h"
 
+File fsUploadFile;
+
 WebService::WebService(uint16_t http_port, uint16_t socket_port,
                        const char *root) {
     this->http_port = http_port;
@@ -19,7 +21,7 @@ void WebService::begin() {
     server->on("/upload", HTTP_POST, [this]() { server->send(200); },
                [this]() { fileUpload(); });
 
-    server->on("/filelist", HTTP_GET, [this]() { getFileList(); });
+    server->on("/filelist", HTTP_GET, [this]() { handleFileList(); });
 
     server->on("/cli", HTTP_GET, [this]() {
         if (server->args() > 0) {
@@ -201,9 +203,12 @@ bool WebService::sendFileContent(String path) {
     return false;
 }
 
-void WebService::getFileList() {
+void WebService::handleFileList() {
     String path = server->hasArg("path") ? server->arg("path") : root;
-    output->printf("[http] filelist %s\r\n", path.c_str());
+    if (!path.startsWith("/")) path = "/" + path;
+    output->print(FPSTR(str_http));
+    output->printf(strf_filelist, path.c_str());
+    output->println();
     Dir dir = SPIFFS.openDir(path);
     String output = "[";
     while (dir.next()) {
@@ -222,13 +227,13 @@ void WebService::getFileList() {
 }
 
 void WebService::fileUpload() {
-    File fsUploadFile;
     HTTPUpload &upload = server->upload();
     if (upload.status == UPLOAD_FILE_START) {
-        int i, ac = server->args();
+        int ac = server->args();
+        int i;
         for (i = 0; i < ac; i++) {
-            output->printf_P(str_http);
-            output->printf("%d %s %s\r\n", i, server->argName(i).c_str(),
+            output->print(FPSTR(str_http));
+            output->printf("%d %s=%s", i, server->argName(i).c_str(),
                            server->arg(i).c_str());
             output->println();
         }

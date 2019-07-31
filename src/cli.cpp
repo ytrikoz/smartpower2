@@ -5,6 +5,7 @@
 #include "commands/ShowStatusCommand.h"
 #include "commands/ShowClientsCommand.h"
 #include "commands/ShowDiagCommand.h"
+#include "commands/ShowClockCommand.h"
 
 Print* output;
 
@@ -14,7 +15,8 @@ commands::ShowClientsCommand showClients;
 commands::ShowStatusCommand showStatus;
 commands::ShowNtpCommand showNtp;
 commands::ShowDiagCommand showDiag;
-commands::ClockSetCommand clockSetCommand;
+commands::ClockSetCommand clockSet;
+commands::ShowClockCommand showClock;
 
 bool CLI::active() { return output != nullptr; }
 
@@ -145,7 +147,7 @@ void CLI::onClockCommand(cmd* c) {
     String action = cmd.getArgument("action").getValue();
     String parameter = cmd.getArgument("param").getValue();
     
-    clockSetCommand.Execute(output);
+    clockSet.Execute(output);
 }
 
 void CLI::onWifiScanCommand(cmd* c) {
@@ -197,7 +199,6 @@ void CLI::onSystemCommand(cmd* c) {
             return;
         }
     } else if (action.equals("restart")) {
-        output->println();
         setup_restart_timer(param.toInt());
         return;
     } else if (action.equals("power")) {
@@ -263,6 +264,8 @@ void CLI::onShowCommand(cmd* c) {
         output->println(wireless::hostIPInfo().c_str());
     } else if (item.equals("clients")) {
         showClients.Execute(output);
+    } else if (item.equals("clock")) {
+        showClock.Execute(output);    
     } else if (item.equals("power")) {        
         output->print(FPSTR(str_psu));
         char tmp[OUTPUT_MAX_LENGTH];
