@@ -8,22 +8,6 @@
 #define NO_GLOBAL_NETBIOS
 #define NO_GLOBAL_ARDUINOOTA
 
-//#define SERIAL_DEBUG
-//#define DEBUG_CONFIG
-//#define DEBUG_DISPLAY
-//#define DEBUG_SYSTEM_CLOCK
-//#define DEBUG_WIRELESS
-//#define DEBUG_NTP
-//#define DEBUG_TELNET
-//#define DEBUG_WEBSOCKET
-//#define DEBUG_HTTP
-//#define DEBUG_LEDS
-//#define DEBUG_SHELL
-//#define DEBUG_TERMUL
-//#define DEBUG_FILE_STORAGE
-//#define DEBUG_TIME_BACKUP
-
-#define DEBUG Serial
 #define USE_SERIAL Serial
 
 //#define DISABLE_HTTP
@@ -42,7 +26,7 @@
 #define FW_VERSION \
     "0.6.3"        \
     "(" BUILD_DATE ")"
-
+#define DATETIME_FORMAT "%02d/%02d/%04d %02d:%02d:%02d"
 #define ONE_MHz_hz 1000000UL
 #define ONE_SECOND_ms 1000
 #define ONE_MINUTE_s 60
@@ -89,18 +73,18 @@
 #define INPUT_MAX_LENGTH 128
 #define OUTPUT_MAX_LENGTH 128
 
-// slave address are 0x27 or 0x3f
-#define LCD_SLAVE_ADDRESS 0x3f
-
 static const char strf_http_file_not_found[] PROGMEM =
     "File Not Found\n\nURI: %s\nMethod: %s\nArguments: %d\n";
 static const char strf_time[] PROGMEM = "%02d:%02d:%02d";
 static const char strf_s_d[] PROGMEM = "%s:%d ";
 static const char strf_ip_port[] PROGMEM = "%s:%d ";
-static const char strf_every_ms[] PROGMEM = "every %lu ms";
+static const char strf_every_ms[] PROGMEM = "every %lu ms ";
+static const char strf_every_sec[] PROGMEM = "every %lu sec ";
 static const char strf_arrow_dest[] PROGMEM = "-> %s";
 static const char strf_arrow_src[] PROGMEM = "<- %s";
+static const char strf_active[] PROGMEM = "active %d";
 static const char strf_binnary[] PROGMEM = "binnary %s";
+static const char strf_init[] PROGMEM = "init %d";
 static const char strf_http_params[] PROGMEM = "%s <- %s:%d(%d)";
 static const char strf_wifi_params[] PROGMEM = "ssid %s ip %s ";
 static const char strf_wifi_scan_results[] PROGMEM = "#%d %s %d";
@@ -109,12 +93,13 @@ static const char strf_file_deleted[] PROGMEM = "File '%s' deleted";
 static const char strf_file_not_found[] PROGMEM = "File '%s' not found";
 static const char strf_config_param_value[] PROGMEM = "'%s'='%s'";
 static const char strf_show_status[] PROGMEM = "lps %lu max %lums ";
+static const char strf_synced[] PROGMEM = "synced %d ";
 static const char strf_timezone[] PROGMEM = "timezone %d ";
 static const char strf_mode[] PROGMEM = "mode %d ";
 static const char strf_host[] PROGMEM = "hostname %s ";
 static const char strf_tpw[] PROGMEM = "tpw %d ";
 static const char strf_ip[] PROGMEM = "ip %s ";
-static const char strf_in_second[] PROGMEM = "in %d second";
+static const char strf_in_second[] PROGMEM = "in %d seconds";
 static const char strf_config_param_changed[] PROGMEM =
     "The new value '%s' for the '%s' has been set!";
 static const char strf_config_param_unchanged[] PROGMEM = "'%s' unchanged";
@@ -143,6 +128,8 @@ static const char strf_ntp[] PROGMEM = "[ntp] %s";
 static const char strf_epoch[] PROGMEM = "epoch %lu";
 static const char strf_interval[] PROGMEM = "interval %d";
 static const char strf_output_voltage[] PROGMEM = "output voltage %2.2f";
+static const char strf_filelist[] PROGMEM = "filelist %s";
+static const char strf_power[] PROGMEM = "power is %s";
 
 static const char str_timezone[] PROGMEM = "timezone ";
 static const char str_as_default[] PROGMEM = "as default ";
@@ -150,11 +137,12 @@ static const char str_backup[] PROGMEM = "backup ";
 static const char str_interval[] PROGMEM = "interval ";
 static const char str_idle[] PROGMEM = "idle ";
 static const char str_invalid[] PROGMEM = "invalid %s";
+static const char str_config[] PROGMEM = "[config] ";
 static const char str_dns[] PROGMEM = "[dns] ";
+static const char str_done[] PROGMEM = "done ";
 static const char str_mdns[] PROGMEM = "[mdns] ";
 static const char str_ssid[] PROGMEM = "ssid ";
 static const char str_success[] PROGMEM = "success ";
-static const char str_done[] PROGMEM = "done ";
 static const char str_error[] PROGMEM = "error ";
 static const char str_start[] PROGMEM = "start ";
 static const char str_stopped[] PROGMEM = "stopped ";
@@ -192,8 +180,6 @@ static const char str_dhcp_on[] PROGMEM = " dhcp on ";
 static const char str_restore[] PROGMEM = "restore ";
 static const char str_store[] PROGMEM = "store ";
 static const char str_synced[] PROGMEM = "synced ";
-
-static const char str_config[] PROGMEM = "[config] ";
 static const char str_up[] PROGMEM = "up ";
 static const char str_down[] PROGMEM = "down ";
 static const char str_mode[] PROGMEM = "mode ";
@@ -201,7 +187,7 @@ static const char str_network[] PROGMEM = "network ";
 static const char str_scanning[] PROGMEM = "scanning... ";
 static const char str_wrong[] PROGMEM = "wrong ";
 static const char str_password[] PROGMEM = "password ";
-static const char str_system_time[] PROGMEM = "System time ";
+static const char str_system_time[] PROGMEM = "system time ";
 static const char str_no[] PROGMEM = "no ";
 static const char str_yes[] PROGMEM = "yes ";
 static const char str_found[] PROGMEM = "found ";

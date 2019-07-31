@@ -8,7 +8,7 @@ void printWelcomeTo(Print *p) {
     uint8_t width = SCREEN_WIDTH / 2;
     addPaddingTo(title, str_utils::CENTER, width, ' ');
     char decor[width + 1];
-    strOfChar(decor, '#', width);
+    str_of_char(decor, '#', width);
     p->println(decor);
     p->println(title);
     p->println(decor);
@@ -78,7 +78,7 @@ String formatInMHz(uint32_t hz) {
     return String(buf);
 }
 
-void strOfChar(char *str, char chr, uint8_t len) {
+void str_of_char(char *str, char chr, uint8_t len) {
     memset(&str[0], chr, sizeof(char) * len);
     str[len - 1] = '\x00';
 }

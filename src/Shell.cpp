@@ -87,7 +87,7 @@ void Shell::welcome() {
     uint8_t width = SCREEN_WIDTH / 2;
     str_utils::addPaddingTo(title, str_utils::CENTER, width, ' ');
     char decor[width + 1];
-    str_utils::strOfChar(decor, '#', width);
+    str_utils::str_of_char(decor, '#', width);
 
     t->println(decor);
     t->println(title);

@@ -40,8 +40,8 @@ class PSU {
     bool isWattHoursCalculationEnabled();
     
    private:
-    void setLastPowerState(PowerState state);
-    PowerState getLastPowerState();
+    void storePowerState(PowerState state);
+    PowerState restorePowerState();
     unsigned long updated_ms;
     unsigned long started_ms, finished_ms;
     bool active;

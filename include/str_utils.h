@@ -20,7 +20,7 @@ String formatSocket(IPAddress ip, int port);
 String formatSize(size_t bytes);
 String formatInMHz(uint32_t freq);
 
-void strOfChar(char *str, char chr, uint8_t size);
+void str_of_char(char *str, char chr, uint8_t size);
 
 void addPaddingTo(char *str, Align align, uint8_t line_width,
                   const char ch = ' ');

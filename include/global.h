@@ -48,7 +48,7 @@ void start_services();
 void refresh_wifi_status_led();
 uint8_t get_telnet_clients_count();
 void start_console_shell();
-
+void onSystemTimeChanged(const char* str);
 // main
 extern void onHttpClientConnect(uint8_t num);
 extern void onHttpClientDisconnect(uint8_t num);
