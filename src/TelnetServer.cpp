@@ -31,7 +31,6 @@ void TelnetServer::stop() {
     if (initialized) {
         output->printf_P(str_telnet);
         output->printf_P(str_stopped);
-        output->println();
         server->stop();
         active = false;
     }

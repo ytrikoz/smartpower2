@@ -5,6 +5,7 @@
 #include "SystemClock.h"
 #include "consts.h"
 #include "wireless.h"
+#include "time_utils.h"
 
 namespace commands {
 
@@ -16,12 +17,12 @@ class ShowClockCommand : public Printable {
 
 inline void commands::ShowClockCommand::Execute(Print* p) {
     p->print(FPSTR(str_clock));
-    p->print(FPSTR(str_time));    
-
+    p->print(FPSTR(str_time));
     char buf[32];
     struct tm dateTime = rtc.getDateTime();
-    
-    p->print(tmtoa(&dateTime, buf));
+    tmtoa(&dateTime, buf);
+    p->print(buf);    
+    p->print(' ');    
     p->printf_P(strf_synced, rtc.isSynced());   
     p->println();
 }

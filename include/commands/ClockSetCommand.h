@@ -19,8 +19,9 @@ inline void ClockSetCommand::Execute(Print* p) {
 
     char date_str[32];
     strcpy_P(date_str, str_build_date);
+
     tm tm;
-    if (str_to_date(date_str, tm)) {
+    if (decodeDateStr(date_str, tm)) {
         Date d = Date(tm);
         p->println(d);
     } else {

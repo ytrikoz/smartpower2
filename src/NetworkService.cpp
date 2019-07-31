@@ -59,8 +59,6 @@ void NetworkService::begin() {
 
 void NetworkService::stop() {
     dns->stop();
-    mdns->end();
-    netbios->end();
     active = false;
 }
 

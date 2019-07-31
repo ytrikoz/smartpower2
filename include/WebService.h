@@ -33,7 +33,7 @@ class WebService {
     String getFilePath(String uri);    
     const char *getContentType(String filename);
     void noContent();
-    void handleFileList();
+    void getFileList();
     void fileUpload();
 
     void socketEvent(uint8_t num, WStype_t type, uint8_t *payload,

@@ -122,7 +122,6 @@ void start_clock() {
     rtc.setConfig(config->getConfig());
     rtc.setOutput(&USE_SERIAL);
     rtc.begin();
-    rtc.setOnSystemTimeChanged(onSystemTimeChanged);
 }
 
 void start_psu() {
@@ -137,7 +136,7 @@ void start_ntp() {
     ntp = new NTPClient();
     ntp->setConfig(config->getConfig());
     ntp->setOutput(&USE_SERIAL);
-    ntp->setOnTimeSynced([](EpochTime &time) { rtc.setTime(time.get()); });
+    ntp->setOnTimeSynced([](EpochTime &time) { rtc.setTime(time); });
     ntp->begin();
 }
 
@@ -176,9 +175,4 @@ String getLoopStat() {
     return String(buf);
 }
 
-void onSystemTimeChanged(const char* str)
-{
-    USE_SERIAL.print(FPSTR(str_clock));
-    USE_SERIAL.print(FPSTR(str_system_time));
-    USE_SERIAL.println(str);
-}
+
