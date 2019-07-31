@@ -42,11 +42,8 @@
 #define FW_VERSION \
     "0.6.3"        \
     "(" BUILD_DATE ")"
-<<<<<<< HEAD
-#define DATETIME_FORMAT "%02d/%02d/%4d %02d:%02d:%02d"
-=======
 
->>>>>>> parent of 3475f20... 0:6:3: lcd fix
+#define DATETIME_FORMAT "%02d/%02d/%4d %02d:%02d:%02d"
 #define ONE_MHz_hz 1000000UL
 #define ONE_SECOND_ms 1000
 #define ONE_MINUTE_s 60

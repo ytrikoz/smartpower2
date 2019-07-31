@@ -110,11 +110,7 @@ void SystemClock::setTime(EpochTime &epoch) {
     epochTime_s = epoch.get();
     lastUpdated_ms = millis();
     synced = true;    
-<<<<<<< HEAD
     onSystemTimeChanged(getLocalTimeFormated().c_str());
-=======
-    output->println(getLocalFormated().c_str());
->>>>>>> parent of 3475f20... 0:6:3: lcd fix
 }
 
 String SystemClock::getLocalTimeFormated() {
