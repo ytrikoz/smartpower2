@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Print.h"
-#include "global.h"
+#include "Shell/ParameterlessCommand.h"
 
 namespace CLI {
 

@@ -5,15 +5,15 @@
 #include "consts.h"
 #include "time_utils.h"
 
-namespace commands {
+namespace shell {
 
-class ClockSetCommand : public Printable {
+class ClockSet : public Printable {
    public:
-    void Execute(Print *p);
-    size_t printTo(Print &p) const;
+    void Execute(Print* p);
+    size_t printTo(Print& p) const;
 };
 
-inline void ClockSetCommand::Execute(Print* p) {
+inline void ClockSet::Execute(Print* p) {
     p->print(FPSTR(str_set));
     p->print(FPSTR(str_date));
 
@@ -28,9 +28,11 @@ inline void ClockSetCommand::Execute(Print* p) {
     }
 }
 
-size_t ClockSetCommand::printTo(Print& p) const {
+size_t ClockSet::printTo(Print& p) const {
     size_t res = p.println("clock set");
     return res;
 }
 
-}  // namespace executors
+ClockSet *clockSet = new ClockSet();
+
+}  // namespace shell

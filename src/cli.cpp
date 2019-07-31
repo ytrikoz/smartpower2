@@ -1,22 +1,17 @@
 #include "cli.h"
 
-#include "commands/ClockSetCommand.h"
-#include "commands/ShowNtpCommand.h"
-#include "commands/ShowStatusCommand.h"
-#include "commands/ShowClientsCommand.h"
-#include "commands/ShowDiagCommand.h"
-#include "commands/ShowClockCommand.h"
+#include "Shell/ClockSet.h"
+#include "Shell/ParameterlessCommand.h"
+#include "Shell/ShowClients.h"
+#include "Shell/ShowClock.h"
+#include "Shell/ShowDiag.h"
+#include "Shell/ShowNtp.h"
+#include "Shell/ShowStatus.h"
+#include "Shell/ShowWifi.h"
 
 Print* output;
 
 Command cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet, cmdGet, cmdRm, cmdClock;
-
-commands::ShowClientsCommand showClients;
-commands::ShowStatusCommand showStatus;
-commands::ShowNtpCommand showNtp;
-commands::ShowDiagCommand showDiag;
-commands::ClockSetCommand clockSet;
-commands::ShowClockCommand showClock;
 
 bool CLI::active() { return output != nullptr; }
 
@@ -88,7 +83,7 @@ void CLI::onGetConfigParameter(const char* name, const char* value) {
 }
 
 void CLI::onConfigParameterChanged(const char* name, const char* old_value,
-                              const char* new_value) {
+                                   const char* new_value) {
     char buf[OUTPUT_MAX_LENGTH];
     sprintf_P(buf, strf_config_param_changed, new_value, name);
     output->print(buf);
@@ -142,30 +137,43 @@ void CLI::onHelpCommand(cmd* c) {
     output->println(cli->toString().c_str());
 }
 
+String getCommandAction(Command* c) {
+    return c->getArgument("action").getValue();
+}
+
+String getCommandParam(Command* c) {
+    return c->getArgument("param").getValue();
+}
+
+String getCommandItem(Command* c) { return c->getArgument("item").getValue(); }
+
+String getCommandValue(Command* c) {
+    return c->getArgument("value").getValue();
+}
+
 void CLI::onClockCommand(cmd* c) {
     Command cmd(c);
-    String action = cmd.getArgument("action").getValue();
-    String parameter = cmd.getArgument("param").getValue();
-    
-    clockSet.Execute(output);
+    String action = getCommandAction(&cmd);
+    String param = getCommandParam(&cmd);
+    if (action.equals("set")) {
+        shell::clockSet->Execute(output);
+    }
 }
 
 void CLI::onWifiScanCommand(cmd* c) {
     Command cmd(c);
-    output->printf_P(str_wifi);
-    output->printf_P(str_scanning);
-    ;
+    output->print(FPSTR(str_wifi));
+    output->print(FPSTR(str_scanning));
+
     int8_t n = WiFi.scanNetworks();
     output->print(str_wifi);
     if (n == 0) {
         output->print(str_network_not_found);
-    } else {
         output->println();
     }
-    output->println();
     for (int i = 0; i < n; ++i) {
         // Print SSID and RSSI for each network found
-        output->printf_P(str_wifi);
+        output->print(FPSTR(str_wifi));
         output->printf_P(strf_wifi_scan_results, i + 1, WiFi.SSID(i).c_str(),
                          WiFi.RSSI(i));
     }
@@ -174,8 +182,8 @@ void CLI::onWifiScanCommand(cmd* c) {
 
 void CLI::onSystemCommand(cmd* c) {
     Command cmd(c);
-    String action = cmd.getArgument("action").getValue();
-    String param = cmd.getArgument("param").getValue();
+    String action = getCommandAction(&cmd);
+    String param = getCommandParam(&cmd);
 
     if (action.equals("reset")) {
         if (param.equals("config")) {
@@ -220,8 +228,8 @@ void CLI::onSystemCommand(cmd* c) {
 
 void CLI::onSetCommand(cmd* c) {
     Command cmd(c);
-    String name = cmd.getArgument("param").getValue();
-    String value = cmd.getArgument("value").getValue();
+    String name = getCommandParam(&cmd);
+    String value = getCommandValue(&cmd);
 
     Config* cfg = config->getConfig();
     Parameter param;
@@ -244,7 +252,7 @@ void CLI::onSetCommand(cmd* c) {
 
 void CLI::onGetCommand(cmd* c) {
     Command cmd(c);
-    String name = cmd.getArgument("param").getValue();
+    String name = getCommandParam(&cmd);
     Config* cfg = config->getConfig();
     Parameter param;
     size_t value_size;
@@ -259,14 +267,12 @@ void CLI::onGetCommand(cmd* c) {
 
 void CLI::onShowCommand(cmd* c) {
     Command cmd(c);
-    String item = cmd.getArgument("item").getValue();
-    if (item.equals("ip")) {
-        output->println(wireless::hostIPInfo().c_str());
-    } else if (item.equals("clients")) {
-        showClients.Execute(output);
+    String item = getCommandItem(&cmd);
+    if (item.equals("clients")) {
+        shell::showClients->Execute(output);
     } else if (item.equals("clock")) {
-        showClock.Execute(output);    
-    } else if (item.equals("power")) {        
+        shell::showClock->Execute(output);
+    } else if (item.equals("power")) {
         output->print(FPSTR(str_psu));
         char tmp[OUTPUT_MAX_LENGTH];
         sprintf(tmp, "power is %s", psu->getState() == POWER_ON ? "on" : "off");
@@ -278,11 +284,13 @@ void CLI::onShowCommand(cmd* c) {
     } else if (item.equals("config")) {
         output->println(config->getConfigJson().c_str());
     } else if (item.equals("status")) {
-        showStatus.Execute(output);
+        shell::showStatus->Execute(output);
     } else if (item.equals("ntp")) {
-        showNtp.Execute(output);
+        shell::showNtp->Execute(output);
     } else if (item.equals("diag")) {
-        showDiag.Execute(output);
+        shell::showDiag->Execute(output);
+    } else if (item.equals("wifi")) {
+        shell::showWifi->Execute(output);
     } else {
         onUnknownCommandItem(cmd.getName().c_str(), item.c_str());
     }
