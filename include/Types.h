@@ -79,10 +79,9 @@ struct Date : public Printable {
     }
     unsigned long get() { return 0; }
     size_t printTo(Print& p) const {
-        size_t n = p.printf("%02d.%02d.%04d", day, month, year);
+        size_t n = p.printf("%02d/%02d/%4d", day, month, year);
         return n;
     }
-
    private:
     uint8_t day = 0;
     uint8_t month = 0;

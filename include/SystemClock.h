@@ -33,20 +33,20 @@ class SystemClock {
     tm getDateTime();
 
    private:
-    bool store(FileStorage *agent);
-    bool restore(FileStorage *agent);
+    bool store();
+    bool restore();
     SystemTimeChangedEvent onSystemTimeChanged;
+        
     bool active = false;
     bool synced = false;
+    unsigned long utcEpochTime_s;
     sint16_t timeOffset_s;
     unsigned long backupInterval_ms;
     unsigned long lastUpdated_ms;
     unsigned long lastBackup_ms;
     unsigned long rolloverCounter;
-    unsigned long epochTime_s;
+    FileStorage *storage;
     Print *output;
-
-    struct tm dateTime;
 };
 
 extern SystemClock rtc;

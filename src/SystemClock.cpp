@@ -5,17 +5,20 @@
 SystemClock rtc;
 
 SystemClock::SystemClock() {
+    storage = new FileStorage(FILE_TIME_BACKUP);
     timeOffset_s = 0;
     backupInterval_ms = 0;
-
     lastUpdated_ms = 0;
     lastBackup_ms = 0;
     rolloverCounter = 0;
-    dateTime = tm();
-    epochTime_s = 0;
+    utcEpochTime_s = 0;
 }
 
-tm SystemClock::getDateTime() { return dateTime; }
+tm SystemClock::getDateTime() {
+    struct tm dateTime;
+    epoch_to_tm(getLocalEpoch(), dateTime);
+    return dateTime;
+}
 
 void SystemClock::setConfig(Config *config) {
     setTimeZone(config->getSignedValue(TIME_ZONE));
@@ -53,75 +56,70 @@ void SystemClock::setOnSystemTimeChanged(SystemTimeChangedEvent e) {
 }
 
 void SystemClock::begin() {
-    if (!restore(new FileStorage(FILE_TIME_BACKUP))) {
-        epochTime_s = get_appbuild_epoch();
+    if (!restore()) {
+        unsigned long utc_epoch_s = get_appbuild_epoch();
 #ifdef DEBUG_SYSTEM_CLOCK
         DEBUG.print(FPSTR(str_clock));
-        DEBUG.print(FPSTR(str_set));
-        DEBUG.println(epochTime_s);
+        DEBUG.print(FPSTR(str_last_known));
+        DEBUG.println(utc_epoch_s);
 #endif
-        setTime(epochTime_s);
+        setTime(utc_epoch_s);
     }
-    lastUpdated_ms = millis();
     active = true;
 }
 
 void SystemClock::loop() {
     if (!active) return;
-    unsigned long now_ms = millis();
-    if (now_ms < lastUpdated_ms) rolloverCounter++;
-    if (now_ms - lastUpdated_ms >= ONE_SECOND_ms) {
+    unsigned long now_s = millis();
+    if (now_s < lastUpdated_ms) rolloverCounter++;
+    if (now_s - lastUpdated_ms >= ONE_SECOND_ms) {
         lastUpdated_ms += ONE_SECOND_ms;
-        epochTime_s += 1;
+        utcEpochTime_s += 1;
         if (synced && backupInterval_ms > 0) {
-            if (((now_ms - lastBackup_ms >= backupInterval_ms) ||
+            if (((now_s - lastBackup_ms >= backupInterval_ms) ||
                  (lastBackup_ms == 0))) {
-                store(new FileStorage(FILE_TIME_BACKUP));
-                lastBackup_ms = now_ms;
+                store();
             }
         }
     }
 }
 
-bool SystemClock::store(FileStorage *agent) {
-    char buf[32];
-    return agent->put(itoa(getLocalEpoch(), buf, DEC));
+bool SystemClock::store() {
+    lastBackup_ms = millis();
+    char buf[16];
+    bool res = storage->put(itoa(getUtcEpoch(), buf, DEC));
+    return res;
 }
 
-bool SystemClock::restore(FileStorage *agent) {
-#ifdef DEBUG_SYSTEM_CLOCK
-    DEBUG.print(FPSTR(str_clock));
-    DEBUG.print(FPSTR(str_restore));
-#endif
+bool SystemClock::restore() {
     char buf[16];
-    if (agent->get(buf)) {
-        epochTime_s = atoi(buf);
+    if (!storage->get(buf)) {
 #ifdef DEBUG_SYSTEM_CLOCK
-        DEBUG.println(epochTime_s);
-#endif
-        return true;
-    } else {
-#ifdef DEBUG_SYSTEM_CLOCK
+        DEBUG.print(FPSTR(str_clock));
+        DEBUG.print(FPSTR(str_restore));
         DEBUG.println(FPSTR(str_failed));
 #endif
         return false;
     }
+    unsigned long utc_epoch_s = atoi(buf);
+    setTime(utc_epoch_s);
+    return true;
 }
 
-void SystemClock::setTime(unsigned long epoch_s) {
-    epochTime_s = epoch_s;
-    //epoch_to_tm(epochTime_s, dateTime);
-    //lastUpdated_ms = millis();    
-    //synced = true;    
-    //onSystemTimeChanged(getLocalFormated().c_str());
+void SystemClock::setTime(unsigned long utc_epoch_s) {
+    utcEpochTime_s = utc_epoch_s;
+    synced = true;
+    if (onSystemTimeChanged) {
+        onSystemTimeChanged(getLocalFormated().c_str());
+    };   
 }
 
 String SystemClock::getLocalFormated() {
     String result = "";
-    unsigned long now_ms = getLocalEpoch();
-    uint8_t hours = (now_ms % 86400L) / 3600;
-    uint8_t minutes = (now_ms % 3600) / 60;
-    uint8_t seconds = now_ms % 60;
+    unsigned long now_s = getLocalEpoch();
+    uint8_t hours = (now_s % 86400L) / 3600;
+    uint8_t minutes = (now_s % 3600) / 60;
+    uint8_t seconds = now_s % 60;
     char buf[16];
     sprintf_P(buf, strf_time, hours, minutes, seconds);
     return String(buf);
@@ -139,7 +137,7 @@ String SystemClock::getUptimeFormated() {
     return String(buf);
 }
 
-unsigned long SystemClock::getUtcEpoch() { return epochTime_s; }
+unsigned long SystemClock::getUtcEpoch() { return utcEpochTime_s; }
 
 unsigned long SystemClock::getLocalEpoch() {
     return timeOffset_s + getUtcEpoch();

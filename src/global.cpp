@@ -121,8 +121,8 @@ bool start_telnet_shell(Stream *s) {
 void start_clock() {
     rtc.setConfig(config->getConfig());
     rtc.setOutput(&USE_SERIAL);
-    rtc.begin();
     rtc.setOnSystemTimeChanged(onSystemTimeChanged);
+    rtc.begin();
 }
 
 void start_psu() {
@@ -176,8 +176,7 @@ String getLoopStat() {
     return String(buf);
 }
 
-void onSystemTimeChanged(const char* str)
-{
+void onSystemTimeChanged(const char* str) {
     USE_SERIAL.print(FPSTR(str_clock));
     USE_SERIAL.print(FPSTR(str_system_time));
     USE_SERIAL.println(str);

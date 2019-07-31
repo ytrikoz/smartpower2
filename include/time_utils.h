@@ -5,7 +5,7 @@
 #include "Types.h"
 #include "time.h"
 
-#define DEBUG_TIME_UTILS
+// #define DEBUG_TIME_UTILS
 
 static const char stre_invalid_date[] PROGMEM =
     "%d/%d/%d - is not a valid date\r\n";
@@ -38,7 +38,7 @@ uint32_t get_epoch(tm dateTime);
 uint32_t get_epoch(int year, int month, int day, int hour, int minute,
                    int second);
 inline char *tmtoa(struct tm *tm, char *buf) {
-    sprintf(buf, DATETIME_FORMAT, tm->tm_mday, tm->tm_mon, 1900 + tm->tm_year,
+    sprintf(buf, DATETIME_FORMAT, tm->tm_mday, tm->tm_mon, tm->tm_year,
             tm->tm_hour, tm->tm_min, tm->tm_sec);
     return buf;
 }

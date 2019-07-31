@@ -20,6 +20,7 @@
 //#define DISABLE_NTP
 //#define DISABLE_NETWORK_DISCOVERY
 
+#define BUILD_TIMEZONE_h 3
 #define BUILD_DATE __DATE__
 #define BUILD_TIME __TIME__
 #define APPNAME "SmartPower2"
@@ -169,6 +170,7 @@ static const char str_telnet[] PROGMEM = "[telnet] ";
 static const char str_wifi[] PROGMEM = "[wifi] ";
 static const char str_sta[] PROGMEM = "sta ";
 static const char str_set[] PROGMEM = "set ";
+static const char str_last_known[] PROGMEM = "last known ";
 static const char str_disabled[] PROGMEM = "disabled ";
 static const char str_twp[] PROGMEM = "twp ";
 static const char str_got[] PROGMEM = "got ";
