@@ -8,6 +8,7 @@
 #include "consts.h"
 #include "str_utils.h"
 #include "sysinfo.h"
+#include "debug.h"
 
 typedef std::function<void(uint8_t)> SocketConnectionEventHandler;
 typedef std::function<void(uint8_t, String)> SocketDataEventHandler;

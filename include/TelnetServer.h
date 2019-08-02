@@ -6,6 +6,7 @@
 #include "consts.h"
 #include "str_utils.h"
 #include "wireless.h"
+#include "debug.h"
 
 typedef std::function<bool(Stream *)> TelnetConnectEventHandler;
 typedef std::function<void()> TelnetDisconnectEventHandler;
