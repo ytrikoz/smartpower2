@@ -1,13 +1,15 @@
 #include "Led.h"
+#include "sigma_delta.h"
 
 Led::Led(uint8_t pin) {
     this->pin = pin;
-    pinMode(pin, OUTPUT);    
+    pinMode(pin, OUTPUT);
     style = STAY_OFF;
-    state = LIGHT_OFF;    
+    state = LIGHT_OFF;
     turnOff();
-    lastUpdate = 0;
+    lastStateUpdated = 0;
     digitalWrite(pin, state);
+    shimmer = false;
 }
 
 void Led::turnOn() {
@@ -17,7 +19,7 @@ void Led::turnOn() {
 #endif
     pattern_size = 1;
     pattern = new Pattern[pattern_size];
-    pattern[0] = Pattern(LIGHT_ON, 1000.0);
+    pattern[0] = Pattern(LIGHT_ON, 0.0);
 }
 
 void Led::turnOff() {
@@ -27,7 +29,7 @@ void Led::turnOff() {
 #endif
     pattern_size = 1;
     pattern = new Pattern[pattern_size];
-    pattern[0] = Pattern(LIGHT_OFF, 1000.0);
+    pattern[0] = Pattern(LIGHT_OFF, 0.0);
 }
 
 void Led::regularBlink() {
@@ -43,7 +45,6 @@ void Led::regularBlink() {
     pattern = new Pattern[pattern_size];
     pattern[0] = Pattern(LIGHT_OFF, 500.0 / freq);
     pattern[1] = Pattern(LIGHT_ON, 1000.0 / freq);
-    
 }
 
 void Led::accentOneBlink() {
@@ -75,6 +76,16 @@ void Led::accentTwoBlink() {
     pattern[3] = Pattern(LIGHT_OFF, 100);
 }
 
+void Led::setShimmering(bool enabled) {
+    if (enabled) {
+        sigmaDeltaSetup(0, 1000);
+        sigmaDeltaAttachPin(pin);
+    } else {
+        sigmaDeltaDetachPin(pin);
+    }
+    shimmer = enabled;
+}
+
 void Led::setStyle(LedStyle style) {
     if (this->style == style) return;
     switch (style) {
@@ -84,7 +95,7 @@ void Led::setStyle(LedStyle style) {
         case STAY_ON:
             turnOn();
             break;
-        case BLINK_REGULAR : 
+        case BLINK_REGULAR:
             regularBlink();
             break;
         case BLINK_ONE_ACCENT:
@@ -98,16 +109,25 @@ void Led::setStyle(LedStyle style) {
     pattern_n = 0;
 }
 
-Pattern* Led::getPattern() { return &pattern[pattern_n]; }
-
 void Led::loop() {
     LedState needs = getPattern()->state;
-    if (this->state != needs) setState(needs);    
+    if (this->state != needs) setState(needs);
     unsigned long duration_ms = getPattern()->duration_ms;
-    if (( duration_ms != 0) && (millis() - lastUpdate >= duration_ms)) {
-        setNextState();
-        lastUpdate = millis();  
-    }      
+    unsigned long passed_ms = millis() - lastStateUpdated;
+    if (duration_ms != 0) {
+        if (passed_ms >= duration_ms) {
+            setNextState();
+        } else if ((shimmer) && (passed_ms - lastSigmaDeltaUpdated >= 5)) {
+            lastSigmaDeltaUpdated += 5;
+            uint8_t duty = 0;
+            if (getNextState() == LIGHT_OFF) {
+                duty = 255 - floor(((float) passed_ms / duration_ms) * 255);                
+            } else if (this->state == LIGHT_ON) {
+                duty = floor(((float) passed_ms / duration_ms) * 255);
+            }
+            sigmaDeltaWrite(0, duty);
+        }
+    }
 }
 
 void Led::setState(LedState value) {
@@ -115,8 +135,20 @@ void Led::setState(LedState value) {
     DEBUG.printf("[led#%d] setState(%d)", pin, state);
     DEBUG.println();
 #endif
+    if (!shimmer) digitalWrite(pin, value);
     this->state = value;
-    digitalWrite(pin, value);
+    lastSigmaDeltaUpdated = 0;
+    lastStateUpdated = millis();
+}
+
+Pattern* Led::getPattern() {
+    return &pattern[pattern_n];
+}
+
+LedState Led::getNextState() {
+    uint8_t n = pattern_n;
+    if (n >= pattern_size - 1) n = 0;    
+    return pattern[n].state;
 }
 
 void Led::setNextState() {

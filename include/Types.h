@@ -82,26 +82,34 @@ struct Date : public Printable {
         size_t n = p.printf("%02d/%02d/%4d", day, month, year);
         return n;
     }
+
    private:
     uint8_t day = 0;
     uint8_t month = 0;
     uint16_t year = 0;
 };
 
-struct Measurement : public Printable {
-    unsigned long updated_ms;
+class PSUInfo {
+    unsigned long time;
     float voltage;
     float current;
     float power;
     double wattSeconds;
-
-    size_t printTo(Print& p) const {
-        char buf[32];
-        size_t size = sprintf(buf, "%.3f,%.3f,%.3f,%.3f", voltage, current,
-                              power, wattSeconds * ONE_HOUR_s);
-        p.println(buf);
-        return size;
+   public:
+    PSUInfo() {
+        time = 0;
+        voltage = 0;
+        current = 0;
+        power = 0;
+        wattSeconds = 0;
     }
+    PSUInfo(unsigned long time_ms, float voltage, float current,
+                float power, double wattSeconds)
+        : time(time_ms),
+          voltage(voltage),
+          current(current),
+          power(power),
+          wattSeconds(wattSeconds){};
 };
 
 enum BootPowerState {

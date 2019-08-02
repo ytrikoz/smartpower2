@@ -345,7 +345,7 @@ void setup_hardware() {
     // Leds
     power_led = new Led(POWER_LED_PIN);
     power_led->setStyle(STAY_ON);
-
+    power_led->setShimmering(true);
     wifi_led = new Led(WIFI_LED_PIN);
     wifi_led->setStyle(STAY_OFF);
 }

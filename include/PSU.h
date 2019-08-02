@@ -6,6 +6,7 @@
 #include "types.h"
 
 #include "ConfigHelper.h"
+#include "MeasureHistory.h"
 
 #define POWER_SWITCH_PIN D6
 
@@ -52,7 +53,6 @@ class PSU {
     volatile float current;
     volatile float power;
     volatile double wattSeconds;
-
     ConfigHelper* config;
 
     PowerState state;

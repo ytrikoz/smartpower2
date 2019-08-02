@@ -27,6 +27,7 @@ class Led {
     Led(uint8_t pin);
     void loop();
     void setStyle(LedStyle style);
+    void setShimmering(bool enabled);
 
    private:
     void turnOn();
@@ -37,12 +38,15 @@ class Led {
     Pattern *getPattern();
     void setNextState();
     void setState(LedState value);
+    LedState getNextState();
     void refresh();
 
+    bool shimmer;
     uint8_t pin;
     LedStyle style;
     LedState state;
-    unsigned long lastUpdate;
+    unsigned long lastStateUpdated;
+    unsigned long lastSigmaDeltaUpdated;
 
     size_t pattern_n;
     size_t pattern_size;

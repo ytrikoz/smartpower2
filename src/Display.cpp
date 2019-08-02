@@ -1,10 +1,10 @@
 #include "Display.h"
 
-uint8_t char_blank[8] = {0b00000, 0b00000, 0b00000, 0b00000,
+uint8_t char_empty[8] = {0b00000, 0b00000, 0b00000, 0b00000,
                          0b00000, 0b00000, 0b00000, 0b00000};
 
-uint8_t char_full[8] = {0b11111, 0b11111, 0b11111, 0b11111,
-                        0b11111, 0b11111, 0b11111, 0b11111};
+uint8_t char_solid[8] = {0b11111, 0b11111, 0b11111, 0b11111,
+                         0b11111, 0b11111, 0b11111, 0b11111};
 
 uint8_t char_1_5[8] = {0b10000, 0b10000, 0b10000, 0b10000,
                        0b10000, 0b10000, 0b10000, 0b10000};
@@ -115,7 +115,7 @@ void Display::drawBar(uint8_t row, uint8_t per) {
     if (!connected) return;
 
     char buf[LCD_COLS + 1];
-    uint8_t bar_value = floor( (float) LCD_COLS * per / 100);
+    uint8_t bar_value = floor((float)LCD_COLS * per / 100);
     str_utils::str_of_char(buf, '#', bar_value + 1);
 
     setItem(row, buf);

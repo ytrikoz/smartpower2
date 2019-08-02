@@ -72,6 +72,7 @@ inline void Buffer::set(const char* str) {
     if (len > capacity - 2) len = capacity - 2;
     strncpy(buffer, str, len);
     buffer[len] = '\x00';
+    writePos = len;
 }
 
 inline size_t Buffer::length() { return writePos; }

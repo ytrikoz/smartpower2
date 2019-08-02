@@ -25,7 +25,7 @@
 #define BUILD_TIME __TIME__
 #define APPNAME "SmartPower2"
 #define FW_VERSION \
-    "0.6.3"        \
+    "0.6.4"        \
     "(" BUILD_DATE ")"
 #define DATETIME_FORMAT "%02d/%02d/%04d %02d:%02d:%02d"
 #define ONE_MHz_hz 1000000UL
