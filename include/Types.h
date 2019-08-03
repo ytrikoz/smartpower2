@@ -89,27 +89,33 @@ struct Date : public Printable {
     uint16_t year = 0;
 };
 
-class PSUInfo {
+struct PsuInfo {
     unsigned long time;
     float voltage;
     float current;
     float power;
     double wattSeconds;
    public:
-    PSUInfo() {
+    PsuInfo() {
         time = 0;
         voltage = 0;
         current = 0;
         power = 0;
         wattSeconds = 0;
     }
-    PSUInfo(unsigned long time_ms, float voltage, float current,
+    PsuInfo(unsigned long time_ms, float voltage, float current,
                 float power, double wattSeconds)
         : time(time_ms),
           voltage(voltage),
           current(current),
           power(power),
           wattSeconds(wattSeconds){};
+};
+
+
+class PsuInfoProvider {
+    public:
+        virtual PsuInfo getInfo();
 };
 
 enum BootPowerState {

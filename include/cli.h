@@ -12,6 +12,7 @@ bool active();
 void onCommandError(cmd_error *e);
 void onHelpCommand(cmd *c);
 void onPrintCommand(cmd *c);
+void onPowerCommand(cmd *c);
 void onRMCommand(cmd *c);
 void onShowCommand(cmd *c);
 void onSetCommand(cmd *c);

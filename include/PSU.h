@@ -3,18 +3,17 @@
 #include <mcp4652.h>
 
 #include "consts.h"
-#include "types.h"
+#include "Types.h"
 
 #include "ConfigHelper.h"
-#include "MeasureHistory.h"
 
 #define POWER_SWITCH_PIN D6
 
-typedef std::function<void()> PSUEventHandler;
+typedef std::function<void()> PsuEventHandler;
 
-class PSU {
+class Psu : public PsuInfoProvider {
    public:
-    PSU();
+    Psu();
     void init();
     void begin();
     void startMeasure();
@@ -25,8 +24,8 @@ class PSU {
     void setState(PowerState value, bool forceUpdate = false);
     PowerState getState();
     void setConfig(ConfigHelper*);
-    void setOnPowerOn(PSUEventHandler);
-    void setOnPowerOff(PSUEventHandler);
+    void setOnPowerOn(PsuEventHandler);
+    void setOnPowerOff(PsuEventHandler);
     void setOutputVoltage(float voltage);
     float getOutputVoltage();
 
@@ -40,25 +39,23 @@ class PSU {
     void enableWattHoursCalculation(bool enabled);
     bool isWattHoursCalculationEnabled();
     
+    PsuInfo getInfo();
    private:
     void storePowerState(PowerState state);
     PowerState restorePowerState();
-    unsigned long updated_ms;
-    unsigned long started_ms, finished_ms;
+    unsigned long updated_ms, statsUpdated_ms;
+    unsigned long started_ms;
     bool active;
     bool initialized;
     bool wattHoursCalculationEnabled;
 
-    volatile float voltage;
-    volatile float current;
-    volatile float power;
-    volatile double wattSeconds;
+    PsuInfo info;
     ConfigHelper* config;
 
     PowerState state;
     float outputVoltage;
     Print *output = &USE_SERIAL;
-    PSUEventHandler onPowerOn, onPowerOff;
+    PsuEventHandler onPowerOn, onPowerOff;
 
     static int quadraticRegression(double volt) {
         double a = 0.0000006562;
@@ -71,5 +68,5 @@ class PSU {
         else if (root > 255)
             root = 255;
         return root;
-    }
+    }    
 };

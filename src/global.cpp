@@ -8,7 +8,8 @@ SimpleCLI *cli;
 NetworkService *discovery;
 ConfigHelper *config;
 Display *display;
-PSU *psu;
+Psu *psu;
+PsuLogger *psuLog;
 WebService *http;
 TelnetServer *telnet;
 NTPClient *ntp;
@@ -36,11 +37,10 @@ void refresh_wifi_status_led() {
         case 2:
             wifi_led->setStyle(BLINK_TWO_ACCENT);
             break;
-        default:           
+        default:
             break;
     }
 }
-
 
 void start_services() {
     // only AP_STA
@@ -89,7 +89,7 @@ void start_telnet() {
     });
     telnet->setOnCLientDisconnect([]() {
         USE_SERIAL.printf_P(str_telnet);
-        USE_SERIAL.printf_P(str_disconnected);        
+        USE_SERIAL.printf_P(str_disconnected);
         USE_SERIAL.println();
         refresh_wifi_status_led();
     });
@@ -105,11 +105,11 @@ void start_console_shell() {
     consoleShell->setParser(cli);
     consoleShell->setTermul(consoleTerm);
 }
- 
+
 bool start_telnet_shell(Stream *s) {
     telnetTerm = new Termul(s);
     telnetTerm->enableControlCodes(true);
-    
+
     telnetShell = new Shell();
     telnetShell->setParser(cli);
     telnetShell->enableWelcome();
@@ -126,10 +126,21 @@ void start_clock() {
 }
 
 void start_psu() {
-    psu = new PSU();
+    psu = new Psu();
     psu->setConfig(config);
-    psu->setOnPowerOff([]() { power_led->setStyle(STAY_ON); });
-    psu->setOnPowerOn([]() { power_led->setStyle(BLINK_REGULAR); });
+    psuLog = new PsuLogger(psu, PSU_LOG_SIZE);
+    psu->setOnPowerOff([]() {
+        power_led->setStyle(STAY_ON);
+        USE_SERIAL.print(FPSTR(str_psu));
+        USE_SERIAL.print("duration ");
+        USE_SERIAL.println(psu->getDuration_s());
+        psuLog->printSummary();
+        psuLog->printFirst(10);
+    });
+    psu->setOnPowerOn([]() {
+        power_led->setStyle(BLINK_REGULAR);
+        psuLog->clear();
+    });
     psu->begin();
 }
 
@@ -176,8 +187,8 @@ String getLoopStat() {
     return String(buf);
 }
 
-void onSystemTimeChanged(const char* str) {
+void onSystemTimeChanged(const char *str) {
     USE_SERIAL.print(FPSTR(str_clock));
-    USE_SERIAL.print(FPSTR(str_system_time));
+    USE_SERIAL.print(FPSTR(str_set));
     USE_SERIAL.println(str);
 }

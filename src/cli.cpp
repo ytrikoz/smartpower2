@@ -11,7 +11,8 @@
 
 Print* output;
 
-Command cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet, cmdGet, cmdRm, cmdClock;
+Command cmdPower, cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet, cmdGet, cmdRm,
+    cmdClock;
 
 bool CLI::active() { return output != nullptr; }
 
@@ -19,7 +20,7 @@ bool CLI::open(Print* p) {
     if (output != nullptr) {
         output->print(FPSTR(str_session_interrupted));
         output->println();
-    }
+    }    
     output = p;
     return true;
 }
@@ -28,6 +29,8 @@ void CLI::init() {
     cli = new SimpleCLI();
     // Error
     cli->setErrorCallback(onCommandError);
+    // Power
+   cmdPower = cli->addSingleArgumentCommand("power", onPowerCommand);
     // Help
     cmdHelp = cli->addCommand("help");
     cmdHelp.setCallback(onHelpCommand);
@@ -65,7 +68,7 @@ void CLI::init() {
 }
 
 void CLI::close() {
-    output->printf_P(str_cli_hint);
+    output->print(FPSTR(str_cli_hint));
     output->println();
     output = nullptr;
 }
@@ -180,6 +183,27 @@ void CLI::onWifiScanCommand(cmd* c) {
     output->println();
 }
 
+void CLI::onPowerCommand(cmd* c) {
+    Command cmd(c);
+    Argument action = cmd.getArgument(0);
+    if (!action.isSet()){
+        output->print(FPSTR(str_psu));
+        output->printf_P(strf_power, psu->getState() == POWER_ON ? "on" : "off");
+        output->print(" duration ");
+        output->println(psu->getDuration_s());
+        psuLog->printLast(10);
+        return;
+    }
+    if (isPositive(action.getValue())) {
+        psu->setState(POWER_ON);
+    } else if (isNegative(action.getValue())) {
+        psu->setState(POWER_OFF);
+    } else {
+        output->printf_P(strf_unknown_action, action.getValue().c_str());
+        output->println();
+    };
+}
+
 void CLI::onSystemCommand(cmd* c) {
     Command cmd(c);
     String action = getCommandAction(&cmd);
@@ -208,15 +232,6 @@ void CLI::onSystemCommand(cmd* c) {
         }
     } else if (action.equals("restart")) {
         setup_restart_timer(param.toInt());
-        return;
-    } else if (action.equals("power")) {
-        if (isPositive(param)) {
-            psu->setState(POWER_ON);
-        } else if (isNegative(param)) {
-            psu->setState(POWER_OFF);
-        } else {
-            onUnknownActionParameter(param.c_str(), action.c_str());
-        }
         return;
     } else {
         print_P(str_avaible_system_actions);

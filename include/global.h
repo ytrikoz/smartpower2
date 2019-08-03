@@ -18,6 +18,7 @@
 #include "OTAUpdate.h"
 #include "TelnetServer.h"
 #include "WebService.h"
+#include "PsuLogger.h"
 
 extern Led *wifi_led, *power_led;
 
@@ -27,7 +28,8 @@ extern SimpleTimer timer;
 extern NetworkService *discovery;
 extern ConfigHelper *config;
 extern Display *display;
-extern PSU *psu;
+extern Psu *psu;
+extern PsuLogger *psuLog; 
 extern NTPClient *ntp;
 extern OTAUpdate *ota;
 extern TelnetServer *telnet;

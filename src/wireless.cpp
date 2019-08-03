@@ -27,9 +27,7 @@ void printDiag(Print *p) {
     WiFi.printDiag(*p);
 }
 
-String hostAPPassword() {
-    return WiFi.softAPPSK();
-}
+String hostAPPassword() { return WiFi.softAPPSK(); }
 
 String hostSSID() {
     String str;
@@ -118,9 +116,8 @@ void startSTA(const char *ssid, const char *passwd) {
 
 void startSTA(const char *ssid, const char *password, IPAddress ip,
               IPAddress subnet, IPAddress gateway, IPAddress dns) {
-    USE_SERIAL.printf_P(str_wifi);
-    USE_SERIAL.printf_P(str_sta);
-    USE_SERIAL.printf_P(str_arrow_dest);
+    PRINT_WIFI_STA
+    USE_SERIAL.print(FPSTR(str_arrow_dest));
     USE_SERIAL.print(ssid);
     if (ip.operator== IP4_ADDR_ANY) {
         USE_SERIAL.printf_P(str_dhcp_on);
@@ -138,10 +135,8 @@ void startSTA(const char *ssid, const char *password, IPAddress ip,
         WiFi.setAutoConnect(true);
         WiFi.setAutoReconnect(true);
     } else {
-        USE_SERIAL.printf_P(str_wifi);
-        USE_SERIAL.printf_P(str_sta);
-        USE_SERIAL.printf_P(str_failed);
-        USE_SERIAL.println();
+        PRINT_WIFI_STA
+        USE_SERIAL.println(FPSTR(str_failed));
     }
 }
 
@@ -347,10 +342,10 @@ String hostIPInfo() {
             strcpy_P(buf, str_off);
             break;
         case WLAN_STA:
-        case WLAN_AP_STA:
-        {
+        case WLAN_AP_STA: {
             strcpy_P(buf, str_sta);
-            station_status_t connection_status = wifi_station_get_connect_status();
+            station_status_t connection_status =
+                wifi_station_get_connect_status();
             switch (connection_status) {
                 case STATION_IDLE:
                     strcat_P(buf, str_idle);
@@ -374,10 +369,10 @@ String hostIPInfo() {
                 case STATION_GOT_IP: {
                     strcat_P(buf, str_connected);
                     strcat_P(buf, str_got);
-                    
+
                     char tmp[32];
-                    sprintf_P(tmp, strf_ip,  WiFi.localIP().toString().c_str());
-                    strcat_P(buf, tmp);                 
+                    sprintf_P(tmp, strf_ip, WiFi.localIP().toString().c_str());
+                    strcat_P(buf, tmp);
                     break;
                 }
             }
@@ -387,7 +382,7 @@ String hostIPInfo() {
             strcat_P(buf, str_ap);
             char tmp[32];
             sprintf_P(tmp, strf_ip, WiFi.softAPIP().toString().c_str());
-            strcat_P(buf, tmp);     
+            strcat_P(buf, tmp);
             break;
     }
     strcat_P(buf, str_reconnect);

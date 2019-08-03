@@ -11,7 +11,7 @@ class ShowNtp : public ParameterlessCommand {
 };
 
 inline void ShowNtp::Execute(Print* p) {
-    p->printf_P(str_ntp);
+    p->print(FPSTR(str_ntp));
     if (ntp) {
         ntp->printDiag(p);
     } else {
@@ -25,5 +25,5 @@ inline size_t ShowNtp::printTo(Print& p) const {
     return res;
 }
 
-ShowNtp *showNtp = new ShowNtp();
+ShowNtp* showNtp = new ShowNtp();
 }  // namespace shell

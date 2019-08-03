@@ -477,6 +477,8 @@ void loop() {
     power_led->loop();
     // PSU
     psu->loop();
+    // PSU Logger
+    psuLog->loop();
     // Clock
     rtc.loop();
     // Tasks
