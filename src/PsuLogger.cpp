@@ -99,7 +99,7 @@ void PsuLogger::printDiag(Print* p) {
     p->print(FPSTR(str_psu));
     p->print(provider->getStateDescription());
     if (provider->getState() == POWER_ON) {
-        p->printf_P(strf_for_d_sec, provider->getDuration());
+        p->printf_P(strf_for_lu_ms, provider->getDuration());
     }
     p->println();
 

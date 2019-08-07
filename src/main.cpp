@@ -70,11 +70,11 @@ void setup_restart_timer(uint8_t count) {
 
 void onHttpClientConnect(uint8_t num) {
     clients[num].connected = true;
-    refresh_wifi_status_led();
+    refresh_wifi_led();
 }
 void onHttpClientDisconnect(uint8_t num) {
     clients[num].connected = false;
-    refresh_wifi_status_led();
+    refresh_wifi_led();
 }
 
 void onHttpClientData(uint8_t num, String data) {
@@ -319,8 +319,56 @@ void send_psu_data_to_clients() {
     }
 }
 
-void setup_hardware() {
-    SPIFFS.begin();
+void display_boot_progress(float f, const char *str) {
+#ifndef DISABLE_LCD
+    if (display) display->drawBar(LCD_ROW_2, f);
+#else
+    USE_SERIAL.printf_P(strf_boot_progress, message, per);
+    USE_SERIAL.println();
+#endif
+}
+
+void print_reset_reason(Print *p) {
+    p->print(F("reset reason: "));
+    p->println(ESP.getResetReason());
+    p->print(F("reset info: "));
+    p->println(ESP.getResetInfo());
+}
+
+void print_boot_delay(Print* p) {
+    p->println();
+    p->print(FPSTR(str_wait));
+    p->print(" ");
+    for (uint8_t t = BOOT_WAIT_s; t > 0; t--) {
+        p->print(t);
+        p->print(" ");        
+        delay(1000);
+    }
+    p->println();
+    p->flush();
+}
+void print_welcome(Print *p) {
+    char title[SCREEN_WIDTH + 1];
+    strcpy(title, APPNAME " v" FW_VERSION);
+    uint8_t width = SCREEN_WIDTH / 2;
+    addPaddingTo(title, str_utils::CENTER, width, ' ');
+    char decor[width + 1];
+    str_utils::str_of_char(decor, '*', width);
+    p->println(decor);
+    p->println(title);
+    p->println(decor);
+}
+
+void setup() {
+    // gdbstub_init();
+    USE_SERIAL.begin(115200);
+#ifdef SERIAL_DEBUG
+    USE_SERIAL.setDebugOutput(true);
+#endif
+    print_boot_delay(&USE_SERIAL);
+    print_reset_reason(&USE_SERIAL);
+
+      SPIFFS.begin();
 
     Wire.begin(I2C_SDA, I2C_SCL);
 
@@ -332,39 +380,9 @@ void setup_hardware() {
     // Leds
     power_led = new Led(POWER_LED_PIN, LIGHT_ON, true);
     power_led->setMode(STAY_ON);
+
     wifi_led = new Led(WIFI_LED_PIN);
     wifi_led->setMode(STAY_OFF);
-}
-
-void onBootProgress(uint8_t per, const char *message) {
-#ifndef DISABLE_LCD
-    if (display) display->drawBar(LCD_ROW_2, per);
-#else
-    USE_SERIAL.printf_P(strf_boot_progress, message, per);
-    USE_SERIAL.println();
-#endif
-}
-
-void print_reset_reason() {
-    USE_SERIAL.print(F("[reset] reason: "));
-    USE_SERIAL.println(ESP.getResetReason());
-    USE_SERIAL.print(F("[reset] info: "));
-    USE_SERIAL.println(ESP.getResetInfo());
-}
-
-void setup() {
-    USE_SERIAL.begin(115200);
-    // gdbstub_init();
-#ifdef SERIAL_DEBUG
-    USE_SERIAL.setDebugOutput(true);
-#endif
-    USE_SERIAL.println();
-
-    delaySequence(3);
-
-    print_reset_reason();
-
-    setup_hardware();
 
     memset(&clients[0], 0x00, sizeof(WebClient) * WEBSOCKETS_SERVER_CLIENT_MAX);
 
@@ -374,66 +392,49 @@ void setup() {
     if (display->init()) display->turnOn();
 #endif
 
-    onBootProgress(20, "CFG>");
+    display_boot_progress(.2, "VER> " FW_VERSION);
+    delay(100);
+
     config = new ConfigHelper();
     config->init(FILE_CONFIG);
 
     start_clock();
-
     start_psu();
 
-    /*
-        randomSeed(analogRead(0));
-        float *data = new float[64];
-        for (uint8_t i = 0; i < 64; i++) {
-            data[i] = (float) random(4000, 4500);
-        }
-        if (display->init()) {
-            display->init_bargraph();
-            display->drawPlot(data, 64);
-        }
-     */
-    onBootProgress(30, "VER>" FW_VERSION);
+    display_boot_progress(.3);
+    delay(100);
 
-    str_utils::printWelcomeTo(&USE_SERIAL);
+    print_welcome(&USE_SERIAL);
+    delay(100);
 
-    onBootProgress(40, "WIFI>");
+    display_boot_progress(.4, "WIFI>");
+    delay(100);
 
     wireless::setOnNetworkStateChange(
-        [](bool hasNetwork) { refresh_wifi_status_led(); });
+        [](bool hasNetwork) { refresh_wifi_led(); });
     wireless::start_wifi();
 
-    onBootProgress(80, "START>");
+    display_boot_progress(.8, "INIT>");
+    delay(100);
 
     CLI::init();
-    onBootProgress(100, "");
+    #ifndef DISABLE_CONSOLE_SHELL
+    start_console_shell();
+    #endif
+    
+    display_boot_progress(1, "COMPLETE");
+    delay(100);
 
-    timer.setInterval(100, [] { send_psu_data_to_clients(); });
-
-    timer.setInterval(1000, [] {
-        handle_power_button_press();
-#ifndef DISABLE_LCD
-        update_display();
-#endif
+    timer.setInterval(1000, [] { 
+            send_psu_data_to_clients(),
+            handle_power_button_press();
+            #ifndef DISABLE_LCD
+                update_display();
+            #endif
     });
 
     timer.setInterval(5000, [] { display_alt_line = !display_alt_line; });
 
-#ifndef DISABLE_CONSOLE_SHELL
-    start_console_shell();
-#endif
-}
-
-void delaySequence(uint8_t sec) {
-    USE_SERIAL.print("[wait]");
-    USE_SERIAL.print(" ");
-    for (uint8_t t = sec; t > 0; t--) {
-        USE_SERIAL.print(t);
-        USE_SERIAL.print(" ");
-        USE_SERIAL.flush();
-        delay(1000);
-    }
-    USE_SERIAL.println();
 }
 
 static void ICACHE_RAM_ATTR powerButtonHandler() {
@@ -458,52 +459,73 @@ static void ICACHE_RAM_ATTR powerButtonHandler() {
 }
 
 void loop() {
-    // LEDs
-    wifi_led->loop();
-    power_led->loop();
-    // PSU
-    psu->loop();
-    // PSU Logger
-    psuLog->loop();
     // Clock
-    rtc.loop();
+    {
+        TimeProfiler("Clock");
+        rtc.loop();
+    }
+
+    // LEDs
+    {
+        TimeProfiler("Leds");
+        wifi_led->loop();
+        power_led->loop();
+    }
+
+    // PSU
+    {
+        TimeProfiler profiler = TimeProfiler("Psu");
+        psu->loop();
+        psuLog->loop();
+    }
+
     // Tasks
-    timer.run();
+    { timer.run(); }
+
+    {
 #ifndef DISABLE_CONSOLE_SHELL
-    if (consoleShell) consoleShell->loop();
-    delay(1);
+        if (consoleShell) consoleShell->loop();
+        delay(0);
 #endif
+    }
+
+    {
 #ifndef DISABLE_LCD
-    if (display) display->redraw();
-    delay(1);
+        TimeProfiler("display");
+        if (display) display->redraw();
+        delay(0);
 #endif
+    }
 
     if (wireless::hasNetwork()) {
+        {
 #ifndef DISABLE_HTTP
-        if (http) http->loop();
-        delay(1);
+            TimeProfiler profiler = TimeProfiler("http");
+            if (http) http->loop();
+            delay(0);
+        }
 #endif
 #ifndef DISABLE_NETWORK_DISCOVERY
         if (discovery) discovery->loop();
-        delay(1);
+        delay(0);
 #endif
 #ifndef DISABLE_OTA_UPDATE
         if (ota) ota->loop();
-        delay(1);
+        delay(0);
 #endif
 #ifndef DISABLE_NTP
         if (ntp) ntp->loop();
-        delay(1);
+        delay(0);
 #endif
 #ifndef DISABLE_TELNET
         if (telnet) telnet->loop();
-        delay(1);
+        delay(0);
 #endif
 #ifndef DISABLE_TELNET_SHELL
         if (telnetShell) telnetShell->loop();
-        delay(1);
+        delay(0);
 #endif
     }
-    delay(1);
+
     loopWD.run();
 }

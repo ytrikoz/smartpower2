@@ -41,7 +41,7 @@ void sendClients(String, uint8_t, uint8_t);
 void sendOnPageState(uint8_t num, uint8_t page);
 
 void update_display();
-void delaySequence(uint8_t sec);
-void onBootProgress(uint8_t per, const char *message = NULL);
+void print_boot_delay(Print* p);
+void display_boot_progress(float per, const char *message = NULL);
 
 ADC_MODE(ADC_VCC);

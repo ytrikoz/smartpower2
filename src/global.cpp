@@ -19,7 +19,7 @@ Termul *telnetTerm;
 Shell *telnetShell;
 Shell *consoleShell;
 
-void refresh_wifi_status_led() {
+void refresh_wifi_led() {
     uint8_t level;
     if (!wireless::hasNetwork()) {
         level = 0;
@@ -86,7 +86,7 @@ void start_telnet() {
         USE_SERIAL.println(FPSTR(str_connected));
 
         start_telnet_shell(s);
-        refresh_wifi_status_led();
+        refresh_wifi_led();
         return true;
     });
 
@@ -94,7 +94,7 @@ void start_telnet() {
         USE_SERIAL.print(FPSTR(str_telnet));
         USE_SERIAL.println(FPSTR(str_disconnected));
 
-        refresh_wifi_status_led();
+        refresh_wifi_led();
     });
 #endif
     telnet->begin();
@@ -149,7 +149,8 @@ void start_psu() {
 
         float *items = new float[logSize];
         psuLog->getVoltages(items);
-        display->drawPlot(items, logSize);
+        display->loadData(items, logSize);
+        display->drawPlot(0);
     });
 
     psu->setOnPowerOn([]() {

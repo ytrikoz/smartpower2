@@ -12,7 +12,7 @@ class ShowStatus : public ParameterlessCommand {
 
 inline void ShowStatus::Execute(Print* p) {
     p->println(getHeapStat());
-    loopWD.printDiag(p);    
+    loopWD.printDiag(p);
 }
 
 inline size_t ShowStatus::printTo(Print& p) const {

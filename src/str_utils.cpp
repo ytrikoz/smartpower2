@@ -55,17 +55,7 @@ bool setstr(char *desc, const char *src, uint8_t size) {
     return false;
 }
 
-void printWelcomeTo(Print *p) {
-    char title[SCREEN_WIDTH + 1];
-    strcpy(title, APPNAME " v" FW_VERSION);
-    uint8_t width = SCREEN_WIDTH / 2;
-    addPaddingTo(title, str_utils::CENTER, width, ' ');
-    char decor[width + 1];
-    str_of_char(decor, '#', width);
-    p->println(decor);
-    p->println(title);
-    p->println(decor);
-}
+
 
 String formatSize(size_t bytes) {
     if (bytes < 1024)
