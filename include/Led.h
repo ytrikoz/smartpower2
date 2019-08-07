@@ -3,52 +3,49 @@
 #include <Arduino.h>
 
 #include "consts.h"
+#include "debug.h"
+#include "sigma_delta.h"
+#include "time_utils.h"
 
-typedef enum { LIGHT_OFF = HIGH, LIGHT_ON = LOW } LedState;
-typedef enum {
-    STAY_OFF,
-    STAY_ON,
-    BLINK_REGULAR,
-    BLINK_ONE_ACCENT,
-    BLINK_TWO_ACCENT
-} LedStyle;
+enum LedState { LIGHT_OFF = HIGH, LIGHT_ON = LOW };
 
-typedef struct Pattern {
+enum LedMode { STAY_OFF, STAY_ON, BLINK, BLINK_ONE, BLINK_TWO };
+
+struct LedContract {
    public:
     LedState state;
-    unsigned long duration_ms;
-    Pattern() : state(LIGHT_OFF), duration_ms(0) {}
-    Pattern(LedState state, unsigned long duration_ms)
-        : state(state), duration_ms(duration_ms) {}
-} Pattern;
+    unsigned long stateTime;
+    LedContract() : state(LIGHT_OFF), stateTime(0) {}
+    LedContract(LedState state, unsigned long time)
+        : state(state), stateTime(time) {}
+};
 
 class Led {
    public:
-    Led(uint8_t pin);
+    Led(uint8_t pin, LedState state = LIGHT_OFF, bool shim = false);
     void loop();
-    void setStyle(LedStyle style);
-    void setShimmering(bool enabled);
+    void setMode(LedMode mode, bool force = false);
 
    private:
+    void updateState();
+    void setLed(LedState state);
+    LedContract *getContract();
+
     void turnOn();
     void turnOff();
-    void regularBlink();
-    void accentOneBlink();
-    void accentTwoBlink();
-    Pattern *getPattern();
-    void setNextState();
-    void setState(LedState value);
-    LedState getNextState();
+    void blink();
+    void blinkSeqOne();
+    void blinkSeqTwo();
+
+    void nextStep();
     void refresh();
 
-    bool shimmer;
+    bool shim;
     uint8_t pin;
-    LedStyle style;
+    LedMode mode;
     LedState state;
-    unsigned long lastStateUpdated;
-    unsigned long lastSigmaDeltaUpdated;
-
-    size_t pattern_n;
-    size_t pattern_size;
-    Pattern *pattern;
+    unsigned long stateUpdated = 0, shimUpdated = 0;
+    size_t step = 0;
+    size_t size = 1;
+    LedContract contract[4];
 };

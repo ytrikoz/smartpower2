@@ -45,7 +45,7 @@ void WebService::begin() {
     server->onNotFound([this]() {
         String uri = server->uri();
 #ifdef DEBUG_HTTP
-        DEBUG.printf_P(str_http);
+        DEBUG.print(FPSTR(str_http));
 #endif
         if (!sendFile(uri)) {
             char buf[128];
@@ -163,16 +163,14 @@ void WebService::socketEvent(uint8_t num, WStype_t type, uint8_t *payload,
 
 bool WebService::sendFile(String uri) {
     String path = getFilePath(uri);
-
     return sendFileContent(path + ".gz") || sendFileContent(path);
 }
+
 
 String WebService::getFilePath(String uri) {
     String path = String(root);
     path += uri;
-    if (uri.endsWith("/")) {
-        path.concat(F("index.html"));
-    }
+    if (uri.endsWith("/")) path.concat("index.html");
     return path;
 }
 

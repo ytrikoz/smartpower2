@@ -17,6 +17,8 @@
 #define WIFI_LED_PIN D4
 #define POWER_BTN_PIN D7
 
+LoopWatchDog loopWD;
+
 uint8_t volatile powerBtnLongPressCounter;
 unsigned long volatile powerBtnLastEvent = 0;
 bool volatile powerBtnPressed = false;
@@ -40,26 +42,13 @@ uint8_t get_http_clients_count() {
     return result;
 }
 
-unsigned long volatile resetStatTime = 0;
-unsigned long volatile loopStartTime = 0;
-unsigned long volatile loopCounter = 0;
-unsigned long volatile loopLongest = 0;
-
 float data[8] = {0, 2.101, 3.130, 4.450, 3.501, 4.030, 4.001};
-
-ulong get_lps() {
-    return loopCounter * ONE_SECOND_ms / (millis() - resetStatTime);
-}
-
-ulong get_longest_loop() { return loopLongest; }
 
 int restartTimer = -1;
 int restartCount = 0;
 
 void cancel_system_restart() {
-    if (restartTimer != -1) {
-        timer.disable(restartTimer);
-    }
+    if (restartTimer != -1) timer.disable(restartTimer);
 }
 void on_restart_sequence() {
     if (restartCount == 0) system_restart();
@@ -67,11 +56,9 @@ void on_restart_sequence() {
 }
 
 void setup_restart_timer(uint8_t count) {
-    if (restartTimer != -1) {
-        timer.deleteTimer(restartTimer);
-    }
+    USE_SERIAL.print(FPSTR(str_system_restart));
+    if (restartTimer != -1) timer.deleteTimer(restartTimer);
     restartCount = count;
-    USE_SERIAL.print(F("System restart "));
     if (restartCount > 0) {
         USE_SERIAL.printf(strf_in_second, restartCount);
         USE_SERIAL.println();
@@ -260,7 +247,7 @@ void sendOnPageState(uint8_t num, uint8_t page) {
 }
 
 void update_display() {
-    if (!display->isConnected()) return;
+    if (!display->init()) return;
     String str;
     if (psu->getState() == POWER_OFF) {
         if (wireless::getWirelessMode() == WLAN_STA) {
@@ -343,11 +330,10 @@ void setup_hardware() {
                     CHANGE);
 
     // Leds
-    power_led = new Led(POWER_LED_PIN);
-    power_led->setStyle(STAY_ON);
-    power_led->setShimmering(true);
+    power_led = new Led(POWER_LED_PIN, LIGHT_ON, true);
+    power_led->setMode(STAY_ON);
     wifi_led = new Led(WIFI_LED_PIN);
-    wifi_led->setStyle(STAY_OFF);
+    wifi_led->setMode(STAY_OFF);
 }
 
 void onBootProgress(uint8_t per, const char *message) {
@@ -485,46 +471,39 @@ void loop() {
     timer.run();
 #ifndef DISABLE_CONSOLE_SHELL
     if (consoleShell) consoleShell->loop();
+    delay(1);
 #endif
 #ifndef DISABLE_LCD
     if (display) display->redraw();
+    delay(1);
 #endif
 
     if (wireless::hasNetwork()) {
 #ifndef DISABLE_HTTP
         if (http) http->loop();
+        delay(1);
 #endif
 #ifndef DISABLE_NETWORK_DISCOVERY
         if (discovery) discovery->loop();
+        delay(1);
 #endif
 #ifndef DISABLE_OTA_UPDATE
         if (ota) ota->loop();
+        delay(1);
 #endif
 #ifndef DISABLE_NTP
         if (ntp) ntp->loop();
+        delay(1);
 #endif
 #ifndef DISABLE_TELNET
         if (telnet) telnet->loop();
+        delay(1);
 #endif
 #ifndef DISABLE_TELNET_SHELL
         if (telnetShell) telnetShell->loop();
+        delay(1);
 #endif
     }
-
-    calcLoopTimings();
-}
-
-void calcLoopTimings() {
-    unsigned long LoopEndTime = millis();
-    if (LoopEndTime - resetStatTime > LOOP_STATS_INTERVAL) {
-        resetStatTime = LoopEndTime;
-        loopCounter = 0;
-        loopLongest = 0;
-    };
-
-    unsigned long LoopTime = LoopEndTime - loopStartTime;
-
-    if (loopLongest < LoopTime) loopLongest = LoopTime;
-    loopCounter++;
-    loopStartTime = millis();
+    delay(1);
+    loopWD.run();
 }

@@ -54,15 +54,16 @@ bool Display::init() {
     if (!connected) {
         output->print(FPSTR(str_lcd));
         if (getAddr()) {
+            output->println(FPSTR(str_ready));
+
             lcd = new LiquidCrystal_I2C(addr, LCD_COLS, LCD_ROWS);
             lcd->init();
             lcd->clear();
+
             connected = true;
-        }
-        if (connected)
-            output->println(FPSTR(str_ready));
-        else
+        } else {
             output->println(FPSTR(str_unknown));
+        }
     }
     return connected;
 }
@@ -92,18 +93,19 @@ bool Display::getAddr() {
     return false;
 }
 
-void Display::setItem(uint8_t row, const char *str) { setItem(row, NULL, str); }
+void Display::setItem(uint8_t row, const char *str) {
+    setItem(row, nullptr, str);
+}
 
 void Display::setItem(uint8_t row, const char *param, const char *value) {
     DisplayItem *l = &item[row];
-    bool changed = str_utils::setstr(l->param, param, LCD_COLS + 1) |
-                   str_utils::setstr(l->value, value, DISPLAY_VIRTUAL_COLS + 1);
-#ifdef DEBUG_DISPLAY
-    DEBUG.printf("[display] setItem row:%d, changed:%d, '%s', '%s'", row,
-                 changed, l->param, l->value);
-    DEBUG.println();
-#endif
+    bool changed = str_utils::setstr(l->param, param, LCD_COLS + 1);
+    changed |= str_utils::setstr(l->value, value, DISPLAY_VIRTUAL_COLS + 1);
     if (changed) {
+#ifdef DEBUG_DISPLAY
+        DEBUG.printf("[display] setItem row: %d /%s %s/", row, l->param, l->value);
+        DEBUG.println();
+#endif
         l->index = 1;
         l->screen_X = 1;
         l->screen_Y = 1;
@@ -111,38 +113,22 @@ void Display::setItem(uint8_t row, const char *param, const char *value) {
     }
 }
 
-void Display::drawBar(uint8_t row, uint8_t per) {
-    if (!connected) return;
-
-    char buf[LCD_COLS + 1];
-    uint8_t bar_value = floor((float)LCD_COLS * per / 100);
-    str_utils::str_of_char(buf, '#', bar_value + 1);
-
-    setItem(row, buf);
-    redraw(true);
-}
-
 void Display::redraw(boolean forced) {
     if (!connected) return;
-
-    if ((!forced) && (lastUpdated != 0))
-        if (millis() - lastUpdated < LCD_REFRESH_INTERVAL_ms) return;
-
+    if (!forced)
+        if (millis_since(lastUpdated) < LCD_REFRESH_INTERVAL_ms) return;
     for (uint8_t row = 0; row <= LCD_ROWS - 1; row++) {
         DisplayItem *l = &item[row];
+        if (!l->updated) continue;
 #ifdef DEBUG_DISPLAY
-        DEBUG.printf(
-            "[display] redraw forced:%d, row:%d, updated:%d, param:'%s', "
-            "value:'%s'",
-            forced, row, l->updated, l->param, l->value);
+        DEBUG.printf("[display] redraw row: %d forced: %d", row, forced);
         DEBUG.println();
 #endif
-
-        if (!l->updated) continue;
-
         uint8_t _param_len = strlen(l->param);
         uint8_t _value_len = strlen(l->value);
         uint8_t _free_space = LCD_COLS - _param_len;
+
+        lastUpdated = millis();
 
         // Param
         lcd->setCursor(0, row);
@@ -202,7 +188,17 @@ void Display::redraw(boolean forced) {
         }
         l->index++;
     };
-    lastUpdated = millis();
+}
+
+void Display::drawBar(uint8_t row, uint8_t per) {
+    if (!connected) return;
+
+    char buf[LCD_COLS + 1];
+    uint8_t bar_value = floor((float)LCD_COLS * per / 100);
+    str_utils::str_of_char(buf, '#', bar_value + 1);
+
+    setItem(row, buf);
+    redraw(true);
 }
 
 void Display::initHorizontalBar() {
@@ -212,7 +208,8 @@ void Display::initHorizontalBar() {
     lcd->createChar(4, char_4_5);
 }
 
-void Display::initVerticalPlot() {
+void Display::prepareToPlot() {
+    lcd->createChar(0, char_solid);
     lcd->createChar(1, char_1_8);
     lcd->createChar(2, char_2_8);
     lcd->createChar(3, char_3_8);
@@ -222,62 +219,69 @@ void Display::initVerticalPlot() {
     lcd->createChar(7, char_7_8);
 }
 
-const uint8_t plot_width = 8;   // cols
-const uint8_t plot_height = 2;  // rows
-void Display::drawPlot(float *data, int data_size) {
-    float plot[plot_width] = {0};
-    float min_value = 0;
-    float max_value = 0;
-    int plot_element = floor((float)data_size / plot_width);
-    int data_start = data_size % plot_width;
-    DEBUG.printf("plot_element = %d, data_start = %d", plot_element,
-                 data_start);
+void Display::drawPlot(float *data, size_t data_size) {
+    float min_value = 32000;
+    float max_value = -32000;
+    int page_size = floor((float)data_size / PLOT_COLS);
+    int itemsLeft = data_size % PLOT_COLS;
+    int offset = 0;
+    DEBUG.printf("size %d => group by %d, left %d", data_size, page_size,
+                 itemsLeft);
     DEBUG.println();
-    for (uint8_t i = 0; i < plot_width; i++) {
-        float plot_element_value = 0;
-        for (uint8_t j = 0; j < plot_element; j++) {
-            plot_element_value += data[data_start + (i * plot_element) + j];
+    for (uint8_t page = 0; page < PLOT_COLS; page++) {
+        float page_sum = 0;
+        for (uint8_t n = 0; n < page_size; n++) {
+            page_sum += data[offset + (page * page_size) + n];
         }
-        plot[i] = floor(plot_element_value / plot_element);
-        if (min_value > plot[i] || min_value == 0) {
-            min_value = plot[i];
-        }
-        if (max_value < plot[i]) {
-            max_value = plot[i];
-        }
+        // avg value for group, min, max for set
+        float page_value = (page_sum / page_size);
+
+        DEBUG.printf("sum %.4f for %d items, avg %.4f", page_sum, page_size,
+                     page_value);
+        DEBUG.println();
+
+        if (min_value > page_value) min_value = page_value;
+        if (max_value < page_value) max_value = page_value;
+
+        plot[page] = page_value;
     }
 
-    DEBUG.printf("min_value = %2.4f, max_value = %2.4f", min_value, max_value);
+    DEBUG.printf("min = %2.4f, max = %2.4f", min_value, max_value);
     DEBUG.println();
 
-    drawPlot(plot, min_value, max_value, 0);
+    prepareToPlot();
+    lcd->clear();
+    drawPlot(min_value, max_value, 0);
 }
 
-void Display::drawPlot(float *plot, float min_value, float max_value,
-                       uint8_t start_pos) {
-    for (uint8_t i = 0; i < plot_width; i++) {
-        uint8_t plot_value = floor((float)(plot[i] - min_value) /
-                                   (max_value - min_value) * plot_height * 8);
-        DEBUG.printf("i = %d, data_value = %f, plot_value = %d", i, plot[i],
-                     plot_value);
-        DEBUG.println();
-        for (uint8_t row = LCD_ROWS - 1; row >= 0; row--) {
-            if (plot_value >= 8) {
-                // full fill
-                lcd->setCursor(i, row);
-                lcd->write(0);
-                plot_value = plot_value - 8;
-                continue;
-            }
-            if (plot_value > 0) {
-                lcd->setCursor(i, row);
-                lcd->write(plot_value);
-                plot_value = 0;
-                continue;
-            }
+float getPlotMapped(float value, float min_value, float max_value) {
+    return floor((value - min_value) / (max_value - min_value) * PLOT_ROWS * 8);
+}
 
-            if (plot_value == 0) {
-                lcd->setCursor(i, row);
+void Display::drawPlot(float min_value, float max_value, uint8_t start_pos) {
+    for (uint8_t i = 0; i < PLOT_COLS; i++) {
+        uint8_t mapped = getPlotMapped(plot[i], min_value, max_value);
+        DEBUG.printf("#%d %2.4f => %d", i, plot[i], mapped);
+        DEBUG.println();
+        uint8_t col = start_pos + i;
+        for (uint8_t row = LCD_ROWS; row > 0; row--) {
+            lcd->setCursor(col, row - 1);
+            if (mapped >= 8) {
+                DEBUG.printf("r%dc%d = 8", row, col);
+                DEBUG.println();
+                lcd->write(0);
+                mapped = mapped - 8;
+                continue;
+            }
+            if (mapped > 0 && mapped < 8) {
+                DEBUG.printf("r%dc%d = %d", row, col, mapped);
+                DEBUG.println();
+                lcd->write((uint8_t)mapped);
+                continue;
+            }
+            if (mapped == 0) {
+                DEBUG.printf("r%dc%d = 0", row, col);
+                DEBUG.println();
                 lcd->write(16);
                 continue;
             }

@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include <mcp4652.h>
 
+#include "time_utils.h"
 #include "consts.h"
 #include "Types.h"
 
@@ -14,37 +15,37 @@ typedef std::function<void()> PsuEventHandler;
 class Psu : public PsuInfoProvider {
    public:
     Psu();
-    void init();
     void begin();
-    void startMeasure();
-    void endMeasure();
+    void start();
+    void stop();
     void loop();
 
     void togglePower();
     void setState(PowerState value, bool forceUpdate = false);
-    PowerState getState();
     void setConfig(ConfigHelper*);
     void setOnPowerOn(PsuEventHandler);
     void setOnPowerOff(PsuEventHandler);
     void setOutputVoltage(float voltage);
     float getOutputVoltage();
-
+    
+    PsuInfo getInfo();
     String toString();
+    PowerState getState();
+    String getStateDescription();
     float getVoltage();
     float getCurrent();
     float getPower();
     double getWattHours();
-    unsigned long getDuration_s();
+    unsigned long getDuration();
     void setWattHours(double value);
     void enableWattHoursCalculation(bool enabled);
     bool isWattHoursCalculationEnabled();
-    
-    PsuInfo getInfo();
+
    private:
+    void init();
     void storePowerState(PowerState state);
     PowerState restorePowerState();
-    unsigned long updated_ms, statsUpdated_ms;
-    unsigned long started_ms;
+    unsigned long startedAt, updatedAt, calcedAt;
     bool active;
     bool initialized;
     bool wattHoursCalculationEnabled;

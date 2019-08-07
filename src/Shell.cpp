@@ -27,13 +27,10 @@ void Shell::onOpen() {
 #ifdef DEBUG_SHELL
     DEBUG.print("[shell] onOpen");
 #endif
-    if (CLI::open(t)) {
-        if (welcomeEnabled) welcome();
-        prompt();
-        active = true;
-    } else {
-        t->print(F("Access denied"));
-    }
+    CLI::open(t);
+    if (welcomeEnabled) welcome();
+    prompt();
+    active = true;
 }
 
 void Shell::onClose() {
@@ -104,3 +101,5 @@ void Shell::prompt() {
     strcat(buf, " > ");
     t->print(buf);
 }
+
+
