@@ -13,14 +13,12 @@ class ShowClients : public ParameterlessCommand {
 inline void ShowClients::Execute(Print* p) {
     if ((wireless::getWirelessMode() != WLAN_STA) && !getConnectedStationInfo().equals("")) {
         p->print(FPSTR(str_wifi_));
-        p->println(getConnectedStationInfo().c_str());
+        p->print(getConnectedStationInfo().c_str());
     }    
     p->print(FPSTR(str_http_));
-    p->print(FPSTR(str_two_dots));
     p->println(get_http_clients_count());
     
     p->print(FPSTR(str_telnet_));
-    p->print(FPSTR(str_two_dots));
     p->println(get_telnet_clients_count());
 }
 

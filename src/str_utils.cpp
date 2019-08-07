@@ -40,31 +40,19 @@ String iptoa(IPAddress ip) {
     return res;
 }
 
-bool setstr(char *desc, const char *src, uint8_t size) {
+bool setstr(char *dest, const char *src, uint8_t size) {
     if (src == nullptr) {
-        memset(desc, 0, size);
-    } else if (strcmp(src, desc) != 0) {
+        memset(dest, 0, size);
+    } else if (strcmp(src, dest) != 0) {
         uint8_t len = strlen(src);
         if (len != 0) {
-            if (len > (size - 1)) len = (size - 1);
-            memcpy(desc, src, len);
-            desc[len] = '\x00';
+            if (len > size - 1) len = size - 1;
+            memcpy(dest, src, len);
+            dest[len] = '\x00';
         }
         return true;
     }
     return false;
-}
-
-void printWelcomeTo(Print *p) {
-    char title[SCREEN_WIDTH + 1];
-    strcpy(title, APPNAME " v" FW_VERSION);
-    uint8_t width = SCREEN_WIDTH / 2;
-    addPaddingTo(title, str_utils::CENTER, width, ' ');
-    char decor[width + 1];
-    str_of_char(decor, '#', width);
-    p->println(decor);
-    p->println(title);
-    p->println(decor);
 }
 
 String formatSize(size_t bytes) {

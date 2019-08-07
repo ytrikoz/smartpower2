@@ -10,16 +10,7 @@
 
 #define USE_SERIAL Serial
 
-//#define DISABLE_HTTP
-//#define DISABLE_LCD
-//#define DISABLE_TIME_BACKUP
-//#define DISABLE_TELNET
-//#define DISABLE_TELNET_SHELL
-//#define DISABLE_CONSOLE_SHELL
-//#define DISABLE_OTA_UPDATE
-//#define DISABLE_NTP
-//#define DISABLE_NETWORK_DISCOVERY
-
+#define BOOT_WAIT_s 3
 #define BUILD_TIMEZONE_h 3
 #define BUILD_DATE __DATE__
 #define BUILD_TIME __TIME__
@@ -134,7 +125,8 @@ static const char strf_interval[] PROGMEM = "interval %d";
 static const char strf_output_voltage[] PROGMEM = "output voltage %.2f ";
 static const char strf_filelist[] PROGMEM = "filelist %s";
 static const char strf_power[] PROGMEM = "power %s ";
-static const char strf_for_d_sec[] PROGMEM = "for %lu sec ";
+static const char strf_for_lu_sec[] PROGMEM = "for %lu sec ";
+static const char strf_for_lu_ms[] PROGMEM = "for %lu ms ";
 static const char strf_lu_ms[] PROGMEM = "%lu ms "; 
 
 static const char str_as_default[] PROGMEM = "as default ";
@@ -220,4 +212,76 @@ static const char str_twp[] PROGMEM = "twp ";
 static const char str_wifi[] PROGMEM = "[wifi] ";
 static const char str_wifi_[] PROGMEM = "wifi ";
 static const char str_wrong[] PROGMEM = "wrong ";
+static const char str_wait[] PROGMEM = "wait";
 static const char str_yes[] PROGMEM = "yes ";
+
+#define PRINTLN_WIFI_NETWORK_DOWN     \
+    USE_SERIAL.printf_P(str_wifi);    \
+    USE_SERIAL.printf_P(str_network); \
+    USE_SERIAL.printf_P(str_down);    \
+    USE_SERIAL.println();
+
+#define PRINTLN_WIFI_NETWORK_UP       \
+    USE_SERIAL.printf_P(str_wifi);    \
+    USE_SERIAL.printf_P(str_network); \
+    USE_SERIAL.printf_P(str_up);      \
+    USE_SERIAL.println();
+
+#define PRINTLN_WIFI_SWITCHED_OFF      \
+    USE_SERIAL.printf_P(str_wifi);     \
+    USE_SERIAL.printf_P(str_switched); \
+    USE_SERIAL.printf_P(str_off);      \
+    USE_SERIAL.println();
+
+#define PRINT_SWITCHED_ON              \
+    USE_SERIAL.printf_P(str_switched); \
+    USE_SERIAL.printf_P(str_on);
+
+#define PRINT_IP                                                               \
+    USE_SERIAL.printf_P(strf_ip_params, ip.toString().c_str(),                 \
+                        subnet.toString().c_str(), gateway.toString().c_str(), \
+                        dns.toString().c_str());
+
+#define PRINT_WIFI_STA             \
+    USE_SERIAL.printf_P(str_wifi); \
+    USE_SERIAL.printf_P(str_sta);
+
+#define PRINTLN_WIFI_STA_CONNECTED      \
+    PRINT_WIFI_STA                      \
+    USE_SERIAL.printf_P(str_connected); \
+    PRINT_WIFI_STA_CONNECTION           \
+    USE_SERIAL.println();
+
+#define PRINTLN_WIFI_CONFIG                    \
+    USE_SERIAL.printf_P(str_wifi);             \
+    USE_SERIAL.printf_P(strf_mode, mode);      \
+    USE_SERIAL.printf_P(strf_tpw, tpw);        \
+    USE_SERIAL.printf_P(strf_host, HOST_NAME); \
+    USE_SERIAL.println();
+
+#define PRINT_WIFI_AP              \
+    USE_SERIAL.printf_P(str_wifi); \
+    USE_SERIAL.printf_P(str_ap);
+
+#define PRINT_WIFI_AP_CONFIG                 \
+    USE_SERIAL.printf_P(strf_ssid, ap_ssid); \
+    USE_SERIAL.printf_P(strf_ipaddr, ap_ipaddr.toString().c_str());
+
+#define PRINT_WIFI_STA_CONNECTION                                       \
+    USE_SERIAL.printf_P(strf_bssid, e.bssid[0], e.bssid[1], e.bssid[2], \
+                        e.bssid[3], e.bssid[4], e.bssid[5]);            \
+    USE_SERIAL.printf_P(strf_channel, e.channel);                       \
+    USE_SERIAL.printf_P(str_ssid);                                      \
+    USE_SERIAL.print(e.ssid);
+
+#define PRINTLN_WIFI_STA_DISCONNECTED      \
+    PRINT_WIFI_STA                         \
+    USE_SERIAL.printf_P(str_disconnected); \
+    USE_SERIAL.println();
+
+#define PRINTLN_WIFI_STA_GOT_IP   \
+    PRINT_WIFI_STA                \
+    USE_SERIAL.printf_P(str_got); \
+    PRINT_IP                      \
+    USE_SERIAL.println();
+

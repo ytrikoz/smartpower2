@@ -111,7 +111,7 @@ void SystemClock::setTime(unsigned long utc_epoch_s) {
     synced = true;
     if (onSystemTimeChanged) {
         onSystemTimeChanged(getLocalFormated().c_str());
-    };   
+    };
 }
 
 String SystemClock::getLocalFormated() {

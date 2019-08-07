@@ -28,7 +28,7 @@ class Led {
 
    private:
     void updateState();
-    void setLed(LedState state);
+    void setState(LedState state);    
     LedContract *getContract();
 
     void turnOn();
@@ -38,7 +38,6 @@ class Led {
     void blinkSeqTwo();
 
     void nextStep();
-    void refresh();
 
     bool shim;
     uint8_t pin;

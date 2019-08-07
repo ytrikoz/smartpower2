@@ -1,6 +1,8 @@
 #include "Led.h"
 
-#define LED_UPDATE_INTERVAL_ms 5
+#define LED_SHIM_INTERVAL_ms 5
+#define LED_OFF_DUTY_CYCLE 30
+#define LED_ON_DUTY_CYCLE 255
 
 Led::Led(uint8_t pin, LedState startState, bool shim) {
     this->pin = pin;
@@ -12,7 +14,7 @@ Led::Led(uint8_t pin, LedState startState, bool shim) {
     }
     LedMode startMode = (startState == LIGHT_ON ? STAY_ON : STAY_OFF);
     setMode(startMode, true);
-    setLed(startState);
+    setState(startState);
 }
 
 void Led::setMode(LedMode mode, bool force) {
@@ -89,49 +91,21 @@ void Led::blinkSeqTwo() {
     contract[3] = LedContract(LIGHT_OFF, 100);
 }
 
-void Led::loop() {
-    this->updateState();
-    long duration = getContract()->stateTime;
-    if (duration > 0 && millis_since(stateUpdated) >= duration) {
-        nextStep();
-    }
+
+uint8_t f_to_duty(float f, bool invert) {
+    uint8_t duty = LED_OFF_DUTY_CYCLE + floor(f * (LED_ON_DUTY_CYCLE - LED_OFF_DUTY_CYCLE));
+    if (invert) duty = 255 - duty;
+    return duty;
 }
 
-uint8_t per_to_duty(float per, bool invert) {
-    const uint8_t min_duty = 30;
-    const uint8_t max_duty = 255;
-    uint8_t res = floor(per * (max_duty - min_duty)) + min_duty;
-    if (invert) {
-        res = 255 - res;
-    }
-    return res;
-}
-
-void Led::updateState() {
-#ifdef DEBUG_LEDS
-    DEBUG.printf("[led#%d] updateState(%d)", pin, contractState);
-    DEBUG.println();
-#endif
-    LedState contractState = getContract()->state;
-    if (state != contractState) {
-        setLed(contractState);
-    } else if (shim && millis_since(shimUpdated) > LED_UPDATE_INTERVAL_ms) {
-        float per =
-            (float)(shimUpdated - stateUpdated) / getContract()->stateTime;
-        uint8_t duty = per_to_duty(per, getContract()->state == LIGHT_ON);
-        sigmaDeltaWrite(0, duty);
-        shimUpdated = millis();
-    }
-}
-
-void Led::setLed(LedState state) {
+void Led::setState(LedState state) {
 #ifdef DEBUG_LEDS
     DEBUG.printf("[led#%d] setState(%d)", pin, state);
     DEBUG.println();
 #endif
     this->state = state;
     if (shim) {
-        sigmaDeltaWrite(0, state == LIGHT_ON ? 255 : 30);
+        sigmaDeltaWrite(0, (state == LIGHT_ON) ? LED_ON_DUTY_CYCLE : LED_OFF_DUTY_CYCLE);
     } else {
         digitalWrite(pin, state);
     }
@@ -146,4 +120,31 @@ void Led::nextStep() {
         step++;
     else
         step = 0;
+}
+
+void Led::loop() {    
+    this->updateState();
+    long stateTime = getContract()->stateTime;    
+    if (stateTime == 0) return ;
+    if (millis_since(stateUpdated) >= stateTime) {
+        nextStep();
+    }
+}
+
+void Led::updateState() {
+#ifdef DEBUG_LEDS
+    DEBUG.printf("[led#%d] updateState(%d)", pin, contractState);
+    DEBUG.println();
+#endif
+    LedState contract = getContract()->state;
+    if (state != contract) {
+        setState(contract);
+        return;        
+    }     
+    if (shim && millis_since(shimUpdated) > LED_SHIM_INTERVAL_ms) {
+        float f = (float) millis_passed(stateUpdated, shimUpdated) / getContract()->stateTime;
+        uint8_t duty = f_to_duty(f, getContract()->state == LIGHT_ON);
+        sigmaDeltaWrite(0, duty);
+        shimUpdated = millis();
+    }
 }

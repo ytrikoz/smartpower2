@@ -105,7 +105,7 @@ void LoopWatchDog::run() {
     } else
         longWaitLoops++;
 
-    if (longestWait < (unsigned long)elapsed) longestWait = elapsed;
+    if (longestWait < (unsigned long) elapsed) longestWait = elapsed;
 
     if (captureTimeLeft < (unsigned long) elapsed) {
         captureTimeLeft = 0;        
