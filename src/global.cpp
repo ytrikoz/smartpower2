@@ -20,22 +20,25 @@ Shell *telnetShell;
 Shell *consoleShell;
 
 void refresh_wifi_status_led() {
+    uint8_t level;
     if (!wireless::hasNetwork()) {
-        wifi_led->setStyle(STAY_OFF);
-        return;
+        level = 0;
+    } else {
+        level = 1;
+        if (get_http_clients_count() || get_telnet_clients_count()) level++;
     }
-    uint8_t displayStatus = 0;
-    if (get_http_clients_count() > 0) displayStatus++;
-    if (get_telnet_clients_count() > 0) displayStatus++;
-    switch (displayStatus) {
+    switch (level) {
         case 0:
-            wifi_led->setStyle(STAY_ON);
-            break;
+            wifi_led->setMode(STAY_OFF);
+            return;
         case 1:
-            wifi_led->setStyle(BLINK_ONE_ACCENT);
+            wifi_led->setMode(STAY_ON);
             break;
         case 2:
-            wifi_led->setStyle(BLINK_TWO_ACCENT);
+            wifi_led->setMode(BLINK_ONE);
+            break;
+        case 3:
+            wifi_led->setMode(BLINK_TWO);
             break;
         default:
             break;
@@ -46,13 +49,11 @@ void start_services() {
     // only AP_STA
     if (wireless::getWirelessMode() == WLAN_AP_STA) {
         uint8_t broadcast_if = wifi_get_broadcast_if();
-        USE_SERIAL.printf_P(str_wifi);
+        USE_SERIAL.print(FPSTR(str_wifi));
         char buf[32];
         sprintf_P(buf, strf_set_broadcast, broadcast_if, 3);
         USE_SERIAL.print(buf);
-        if (!wifi_set_broadcast_if(3)) {
-            USE_SERIAL.printf_P(str_failed);
-        }
+        if (!wifi_set_broadcast_if(3)) USE_SERIAL.print(FPSTR(str_failed));
         USE_SERIAL.println();
     }
     // only STA
@@ -83,14 +84,16 @@ void start_telnet() {
     telnet->setOnClientConnect([](Stream *s) {
         USE_SERIAL.print(FPSTR(str_telnet));
         USE_SERIAL.println(FPSTR(str_connected));
+
         start_telnet_shell(s);
         refresh_wifi_status_led();
         return true;
     });
+
     telnet->setOnCLientDisconnect([]() {
-        USE_SERIAL.printf_P(str_telnet);
-        USE_SERIAL.printf_P(str_disconnected);
-        USE_SERIAL.println();
+        USE_SERIAL.print(FPSTR(str_telnet));
+        USE_SERIAL.println(FPSTR(str_disconnected));
+
         refresh_wifi_status_led();
     });
 #endif
@@ -129,18 +132,31 @@ void start_psu() {
     psu = new Psu();
     psu->setConfig(config);
     psuLog = new PsuLogger(psu, PSU_LOG_SIZE);
+
     psu->setOnPowerOff([]() {
-        power_led->setStyle(STAY_ON);
+        power_led->setMode(STAY_ON);
+        psuLog->end();
+
         USE_SERIAL.print(FPSTR(str_psu));
-        USE_SERIAL.print("duration ");
-        USE_SERIAL.println(psu->getDuration_s());
-        psuLog->printSummary();
-        psuLog->printFirst(10);
+        USE_SERIAL.print(FPSTR(str_duration));
+        USE_SERIAL.println(psu->getDuration());
+
+        size_t logSize = psuLog->size();
+        USE_SERIAL.print(FPSTR(str_psu));
+        USE_SERIAL.print(FPSTR(str_log));
+        USE_SERIAL.print(FPSTR(str_size));
+        USE_SERIAL.println(logSize);
+
+        float *items = new float[logSize];
+        psuLog->getVoltages(items);
+        display->drawPlot(items, logSize);
     });
+
     psu->setOnPowerOn([]() {
-        power_led->setStyle(BLINK_REGULAR);
-        psuLog->clear();
+        power_led->setMode(BLINK);
+        psuLog->begin();
     });
+
     psu->begin();
 }
 
@@ -179,12 +195,6 @@ uint8_t get_telnet_clients_count() {
 #else
     return 0;
 #endif
-}
-
-String getLoopStat() {
-    char buf[64];
-    sprintf_P(buf, strf_show_status, get_lps(), get_longest_loop());
-    return String(buf);
 }
 
 void onSystemTimeChanged(const char *str) {

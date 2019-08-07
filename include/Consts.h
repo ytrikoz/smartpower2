@@ -39,9 +39,9 @@
 #define SEVENTY_YEARS_ms 2208988800UL
 #define MILLENIUM_s 946684800UL
 
-#define MEASUREMENT_INTERVAL_ms 100
+#define MEASUREMENT_INTERVAL_ms 250
 #define START_SHOWING_RESTART_COUNTER_ON 5
-#define LOOP_STATS_INTERVAL 5000UL
+#define LOOP_STATS_INTERVAL 5000
 
 #define FILENAME_MAX_LENGTH 31
 #define FILE_CONFIG "/cfg/settings.ini"
@@ -68,7 +68,7 @@
 #define WOL_PORT 9
 
 #define PSU_LOG_SIZE 128
-#define PSU_LOG_INTERVAL_ms 1000
+#define PSU_LOG_INTERVAL_ms 200
 
 #define DISPLAY_VIRTUAL_COLS 63
 #define DISPLAY_VIRTUAL_ROWS 4
@@ -96,7 +96,6 @@ static const char strf_file_print[] PROGMEM = "Print '%s'";
 static const char strf_file_deleted[] PROGMEM = "File '%s' deleted";
 static const char strf_file_not_found[] PROGMEM = "File '%s' not found";
 static const char strf_config_param_value[] PROGMEM = "'%s'='%s'";
-static const char strf_show_status[] PROGMEM = "lps %lu max %lums ";
 static const char strf_synced[] PROGMEM = "synced %d ";
 static const char strf_timezone[] PROGMEM = "timezone %d ";
 static const char strf_mode[] PROGMEM = "mode %d ";
@@ -132,9 +131,11 @@ static const char strf_unhandled[] PROGMEM = "unhandled %d";
 static const char strf_ntp[] PROGMEM = "[ntp] %s";
 static const char strf_epoch[] PROGMEM = "epoch %lu";
 static const char strf_interval[] PROGMEM = "interval %d";
-static const char strf_output_voltage[] PROGMEM = "output voltage %2.2f";
+static const char strf_output_voltage[] PROGMEM = "output voltage %.2f ";
 static const char strf_filelist[] PROGMEM = "filelist %s";
-static const char strf_power[] PROGMEM = "power is %s";
+static const char strf_power[] PROGMEM = "power %s ";
+static const char strf_for_d_sec[] PROGMEM = "for %lu sec ";
+static const char strf_lu_ms[] PROGMEM = "%lu ms "; 
 
 static const char str_as_default[] PROGMEM = "as default ";
 static const char str_ap[] PROGMEM = "ap ";
@@ -142,6 +143,7 @@ static const char str_arrow_dest[] PROGMEM = "-> ";
 static const char str_avaible_system_actions[] PROGMEM = "Available actions for 'system' command are: 'reset', 'load', 'save', 'restart'.";
 static const char str_backup[] PROGMEM = "backup ";
 static const char str_build_date[] PROGMEM = BUILD_DATE;
+static const char str_capture[] PROGMEM = "capture ";
 static const char str_clients[] = "clients";
 static const char str_cli_hint[] PROGMEM = "[cli] press \"enter\" to start";
 static const char str_clock[] PROGMEM = "[clock] ";
@@ -157,13 +159,15 @@ static const char str_dhcp_on[] PROGMEM = " dhcp on ";
 static const char str_dns[] PROGMEM = "[dns] ";
 static const char str_done[] PROGMEM = "done ";
 static const char str_down[] PROGMEM = "down ";
+static const char str_duration[] PROGMEM = "duration ";
 static const char str_interval[] PROGMEM = "interval ";
 static const char str_idle[] PROGMEM = "idle ";
 static const char str_invalid[] PROGMEM = "invalid %s";
 static const char str_http[] PROGMEM = "[http] ";
-static const char str_http_[] PROGMEM = "http";
+static const char str_http_[] PROGMEM = "http ";
 static const char str_got[] PROGMEM = "got ";
 static const char str_last_known[] PROGMEM = "last known ";
+static const char str_log[] PROGMEM = "log ";
 static const char str_lcd[] PROGMEM = "[lcd] ";
 static const char str_mdns[] PROGMEM = "[mdns] ";
 static const char str_mode[] PROGMEM = "mode ";
@@ -173,6 +177,7 @@ static const char str_network_not_found[] PROGMEM = "no networks found";
 static const char str_network_found[] PROGMEM = "%d networks found";
 static const char str_no[] PROGMEM = "no ";
 static const char str_ntp[] PROGMEM = "[ntp] ";
+static const char str_elapsed[] PROGMEM = "elapsed ";
 static const char str_error[] PROGMEM = "error ";
 static const char str_failed[] PROGMEM = "failed ";
 static const char str_firmware[] PROGMEM = "firmware";
@@ -190,6 +195,7 @@ static const char str_unset[] PROGMEM = "<unset> ";
 static const char str_unsecured[] PROGMEM = "<unsecured>";
 static const char str_reconnect[] PROGMEM = "reconnect ";
 static const char str_restore[] PROGMEM = "restore ";
+static const char str_size[] PROGMEM = "size ";
 static const char str_spiffs[] PROGMEM = "spiffs";
 static const char str_session_interrupted[] PROGMEM =
     "[cli] Your session was interrupted!";
@@ -202,12 +208,13 @@ static const char str_store[] PROGMEM = "store ";
 static const char str_sta[] PROGMEM = "sta ";
 static const char str_set[] PROGMEM = "set ";
 static const char str_system_time[] PROGMEM = "system time ";
+static const char str_system_restart[] PROGMEM = "The system is going down for restart ";
 static const char str_synced[] PROGMEM = "synced ";
 static const char str_success[] PROGMEM = "success ";
 static const char str_timezone[] PROGMEM = "timezone ";
 static const char str_time[] PROGMEM = "time ";
 static const char str_telnet[] PROGMEM = "[telnet] ";
-static const char str_telnet_[] PROGMEM = "telnet";
+static const char str_telnet_[] PROGMEM = "telnet ";
 static const char str_two_dots[] PROGMEM = ": ";    
 static const char str_twp[] PROGMEM = "twp ";
 static const char str_wifi[] PROGMEM = "[wifi] ";

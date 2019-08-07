@@ -7,6 +7,7 @@
 #include "consts.h"
 #include "debug.h"
 #include "str_utils.h"
+#include "time_utils.h"
 
 // slave address are 0x27 or 0x3f
 #define LCD_SLAVE_ADDRESS 0x3f
@@ -16,6 +17,8 @@
 #define LCD_ROWS 2
 #define LCD_ROW_1 0
 #define LCD_ROW_2 1
+#define PLOT_COLS 8
+#define PLOT_ROWS 2
 
 enum GraphType { HORIZONTAL_BAR, VERTICAL_PLOT };
 
@@ -47,24 +50,23 @@ class Display {
                 initHorizontalBar();
                 break;
             case VERTICAL_PLOT:
-                initVerticalPlot();
+                prepareToPlot();
                 break;
             default:
                 break;
         }
     }
     void initHorizontalBar();
-    void initVerticalPlot();
-    void drawPlot(float *data, int data_size);
-    void drawPlot(float *plot, float min_value, float max_value,
-                  uint8_t start_pos);
+    void prepareToPlot();
+    void drawPlot(float *data, size_t size);
+    void drawPlot(float min_value, float max_value, uint8_t start_pos);
     void setItem(uint8_t row, const char *str);
     void setItem(uint8_t row, const char *param, const char *value);
     void redraw(boolean forced = false);
    private:
     bool getAddr();
 
-
+    float plot[PLOT_COLS] = {0};
     Print *output;
     uint8_t addr;
     LiquidCrystal_I2C *lcd;

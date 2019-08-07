@@ -37,8 +37,8 @@ bool is_valid_date(int day, int month, int year) {
 
 bool is_valid_passed(uint8_t hour, uint8_t minute, uint8_t seconds) {
     bool res = is_valid_hour(hour) && is_valid_minute(minute) &&
-           is_valid_seconds(seconds);
-    
+               is_valid_seconds(seconds);
+
     if (!res) {
         USE_SERIAL.printf_P(stre_invalid_time, hour, minute, seconds);
         USE_SERIAL.println();
@@ -88,58 +88,53 @@ uint32_t get_epoch(tm datepassed) {
 
 uint32_t get_epoch(int year, int month, int day, int hour, int minute,
                    int second) {
-    if (!is_valid_date(day, month, year) || !is_valid_passed(hour, minute, second)) return 0;
-    uint16_t month2date[] = {0,   31,  59,  90,  120, 151, 181,
-                             212, 243, 273, 304, 334, 365};
+    if (!is_valid_date(day, month, year) ||
+        !is_valid_passed(hour, minute, second))
+        return 0;
+
     uint32_t unixdays = (year - 1970) * 365 + ((year - 1969) / 4);
-    unixdays += month2date[month - 1] + (day - 1) +
+    unixdays += calendar[month].days + (day - 1) +
                 ((year % 4 == 0 && month > 2) ? 1 : 0);
     return unixdays * ONE_DAY_s + hour * ONE_HOUR_s + minute * ONE_MINUTE_s +
            second;
 }
 
-long millis_passed(unsigned long start_ms, unsigned long finish_ms) {
+long millis_since(unsigned long sinse) {
+    return millis_passed(sinse, millis());
+}
+
+long millis_passed(unsigned long start, unsigned long finish) {
     long result = 0;
-    if (start_ms >= finish_ms) {
-        unsigned long passed_ms = finish_ms - start_ms;
-        if (passed_ms <= 2147483647L) {
-            result = static_cast<long>(passed_ms);
-        } else {
-            result =
-                static_cast<long>((2147483647L - finish_ms) + start_ms + 1u);
-            result = -1 * result;
+    if (start <= finish) {
+        unsigned long passed = finish - start;
+        if (passed <= __LONG_MAX__) {
+            result = static_cast<long>(passed);
+        } else {    
+            result = static_cast<long>((__LONG_MAX__ - finish) + start + 1u);
         }
     } else {
-        unsigned long passed_ms = start_ms - finish_ms;
-        if (passed_ms <= __LONG_MAX__) {
-            result = static_cast<long>(passed_ms);
+        unsigned long passed = start - finish;
+        if (passed <= __LONG_MAX__) {
+            result = static_cast<long>(passed);
             result = -1 * result;
         } else {
-            result =
-                static_cast<long>((2147483647L - start_ms) + finish_ms + 1u);
+            result = static_cast<long>((__LONG_MAX__ - start) + finish + 1u);           
+            result = -1 * result;
         }
     }
     return result;
 }
 
-long millis_since(unsigned long passed_ms) {
-    return millis_passed(passed_ms, millis());
-}
-
-void month_to_str(uint8_t monthN, char *buf)
-{
-    
-
-}
+void month_to_str(uint8_t monthN, char *buf) {}
 
 void epoch_to_tm(unsigned long epoch_s, struct tm &tm) {
-    #ifdef DEBUG_passed_UTILS
-        USE_SERIAL.printf("epoch_to_tm (%lu) ", epoch_s);
-    #endif
+#ifdef DEBUG_passed_UTILS
+    USE_SERIAL.printf("epoch_to_tm (%lu) ", epoch_s);
+#endif
     // seconds since 1970-01-01 00:00:00
     unsigned long passed = epoch_s;
 
-    tm.tm_sec = passed % ONE_MINUTE_s;    
+    tm.tm_sec = passed % ONE_MINUTE_s;
     passed = passed / ONE_MINUTE_s;
 
     tm.tm_min = passed % ONE_HOUR_m;
@@ -149,13 +144,13 @@ void epoch_to_tm(unsigned long epoch_s, struct tm &tm) {
     passed = passed / ONE_DAY_h;
 
     tm.tm_wday = ((passed + 4) % 7) + 1;
-    
+
     int year = 0;
     unsigned long days = 0;
     while ((unsigned)(days += is_leap_year(year) ? 366 : 365) <= passed) year++;
     tm.tm_year = 1970 + year;
     passed = passed - (days - (is_leap_year(year) ? 366 : 365));
-    uint8_t monthN;    
+    uint8_t monthN;
     for (monthN = 1; monthN <= 12; monthN++) {
         uint8_t monthDays = get_days_in_month(monthN, year);
         if (passed >= monthDays)
@@ -166,10 +161,12 @@ void epoch_to_tm(unsigned long epoch_s, struct tm &tm) {
     tm.tm_mon = monthN;
     tm.tm_mday = passed + 1;
 
-    #ifdef DEBUG_passed_UTILS
-        USE_SERIAL.printf("year %d month %d day %d weekday %d passed %02d:%02d:%02d ", tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_wday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-        USE_SERIAL.println();        
-    #endif
+#ifdef DEBUG_passed_UTILS
+    USE_SERIAL.printf(
+        "year %d month %d day %d weekday %d passed %02d:%02d:%02d ", tm.tm_year,
+        tm.tm_mon, tm.tm_mday, tm.tm_wday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+    USE_SERIAL.println();
+#endif
 }
 
 unsigned long get_appbuild_epoch() {

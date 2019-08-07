@@ -1,10 +1,9 @@
 //#include <GDBStub.h>
-
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <Wire.h>
 #include <HardwareSerial.h>
-
+#include "LoopWatchDog.h"
 #include "Types.h"
 
 #define PAGE_HOME 1
@@ -24,19 +23,17 @@
 #define TAG_SYSTEM_INFO 'S'
 #define TAG_NETWORK_INFO 'N'
 
+extern LoopWatchDog loopWD;
+
 void setup();
 void loop();
 static void ICACHE_RAM_ATTR powerButtonHandler();
-
-extern ulong get_lps();
-extern ulong get_longest_loop();
 
 void onHttpClientConnect(uint8_t);
 void onHttpClientDisconnect(uint8_t);
 void onHttpClientData(uint8_t num, String data);
 
 void handle_power_button_press();
-void calcLoopTimings();
 void setup_hardware();
 
 void sendClients(String, uint8_t);

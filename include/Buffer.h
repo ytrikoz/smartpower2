@@ -81,8 +81,8 @@ inline size_t Buffer::size() { return this->capacity; };
 
 inline void Buffer::insert(const char ch) {
     if (writePos >= capacity - 2) return;
-    for (unsigned int i = capacity; i > writePos; i--) 
-        buffer[i] = buffer[i - 1];    
+    for (unsigned int i = capacity; i > writePos; i--)
+        buffer[i] = buffer[i - 1];
     buffer[writePos] = ch;
     writePos++;
 }

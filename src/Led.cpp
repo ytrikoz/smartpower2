@@ -1,15 +1,41 @@
 #include "Led.h"
-#include "sigma_delta.h"
 
-Led::Led(uint8_t pin) {
+#define LED_UPDATE_INTERVAL_ms 5
+
+Led::Led(uint8_t pin, LedState startState, bool shim) {
     this->pin = pin;
+    this->shim = shim;
     pinMode(pin, OUTPUT);
-    style = STAY_OFF;
-    state = LIGHT_OFF;
-    turnOff();
-    lastStateUpdated = 0;
-    digitalWrite(pin, state);
-    shimmer = false;
+    if (shim) {
+        sigmaDeltaSetup(0, 1000);
+        sigmaDeltaAttachPin(pin);
+    }
+    LedMode startMode = (startState == LIGHT_ON ? STAY_ON : STAY_OFF);
+    setMode(startMode, true);
+    setLed(startState);
+}
+
+void Led::setMode(LedMode mode, bool force) {
+    if (!force && this->mode == mode) return;
+    this->mode = mode;
+    step = 0;
+    switch (mode) {
+        case STAY_OFF:
+            turnOff();
+            break;
+        case STAY_ON:
+            turnOn();
+            break;
+        case BLINK:
+            blink();
+            break;
+        case BLINK_ONE:
+            blinkSeqOne();
+            break;
+        case BLINK_TWO:
+            blinkSeqTwo();
+            break;
+    }
 }
 
 void Led::turnOn() {
@@ -17,9 +43,8 @@ void Led::turnOn() {
     DEBUG.printf("[led#%d] turnOn()", pin);
     DEBUG.println();
 #endif
-    pattern_size = 1;
-    pattern = new Pattern[pattern_size];
-    pattern[0] = Pattern(LIGHT_ON, 0.0);
+    size = 1;
+    contract[0] = LedContract(LIGHT_ON, 0);
 }
 
 void Led::turnOff() {
@@ -27,135 +52,98 @@ void Led::turnOff() {
     DEBUG.printf("[led#%d] turnOff()", pin);
     DEBUG.println();
 #endif
-    pattern_size = 1;
-    pattern = new Pattern[pattern_size];
-    pattern[0] = Pattern(LIGHT_OFF, 0.0);
+    size = 1;
+    contract[0] = LedContract(LIGHT_OFF, 0);
 }
 
-void Led::regularBlink() {
+void Led::blink() {
 #ifdef DEBUG_LEDS
-    DEBUG.printf("[led#%d] regularBlink()", pin);
+    DEBUG.printf("[led#%d] blink()", pin);
     DEBUG.println();
 #endif
-    delete[] pattern;
-
-    const uint8_t freq = 2;
-
-    pattern_size = 2;
-    pattern = new Pattern[pattern_size];
-    pattern[0] = Pattern(LIGHT_OFF, 500.0 / freq);
-    pattern[1] = Pattern(LIGHT_ON, 1000.0 / freq);
+    size = 2;
+    contract[0] = LedContract(LIGHT_OFF, floor((float)500 / 2));
+    contract[1] = LedContract(LIGHT_ON, floor((float)1000 / 2));
 }
 
-void Led::accentOneBlink() {
+void Led::blinkSeqOne() {
 #ifdef DEBUG_LEDS
-    DEBUG.printf("[led#%d] accentOneBlink()", pin);
+    DEBUG.printf("[led#%d] blinkSeqOne()", pin);
     DEBUG.println();
 #endif
-    delete[] pattern;
-
-    pattern_size = 3;
-    pattern = new Pattern[pattern_size];
-    pattern[0] = Pattern(LIGHT_ON, 1000);
-    pattern[1] = Pattern(LIGHT_OFF, 100);
-    pattern[2] = Pattern(LIGHT_ON, 100);
+    size = 3;
+    contract[0] = LedContract(LIGHT_ON, 1000);
+    contract[1] = LedContract(LIGHT_OFF, 100);
+    contract[2] = LedContract(LIGHT_ON, 100);
 }
 
-void Led::accentTwoBlink() {
+void Led::blinkSeqTwo() {
 #ifdef DEBUG_LEDS
-    DEBUG.printf("[led#%d] accentTwoBlink()", pin);
+    DEBUG.printf("[led#%d] blinkSeqTwo()", pin);
     DEBUG.println();
 #endif
-    delete[] pattern;
-
-    pattern_size = 4;
-    pattern = new Pattern[pattern_size];
-    pattern[0] = Pattern(LIGHT_ON, 1000);
-    pattern[1] = Pattern(LIGHT_OFF, 100);
-    pattern[2] = Pattern(LIGHT_ON, 100);
-    pattern[3] = Pattern(LIGHT_OFF, 100);
-}
-
-void Led::setShimmering(bool enabled) {
-    if (enabled) {
-        sigmaDeltaSetup(0, 1000);
-        sigmaDeltaAttachPin(pin);
-    } else {
-        sigmaDeltaDetachPin(pin);
-    }
-    shimmer = enabled;
-}
-
-void Led::setStyle(LedStyle style) {
-    if (this->style == style) return;
-    switch (style) {
-        case STAY_OFF:
-            turnOff();
-            break;
-        case STAY_ON:
-            turnOn();
-            break;
-        case BLINK_REGULAR:
-            regularBlink();
-            break;
-        case BLINK_ONE_ACCENT:
-            accentOneBlink();
-            break;
-        case BLINK_TWO_ACCENT:
-            accentTwoBlink();
-            break;
-    }
-    this->style = style;
-    pattern_n = 0;
+    size = 4;
+    contract[0] = LedContract(LIGHT_ON, 1000);
+    contract[1] = LedContract(LIGHT_OFF, 100);
+    contract[2] = LedContract(LIGHT_ON, 100);
+    contract[3] = LedContract(LIGHT_OFF, 100);
 }
 
 void Led::loop() {
-    LedState needs = getPattern()->state;
-    if (this->state != needs) setState(needs);
-    unsigned long duration_ms = getPattern()->duration_ms;
-    unsigned long passed_ms = millis() - lastStateUpdated;
-    if (duration_ms != 0) {
-        if (passed_ms >= duration_ms) {
-            setNextState();
-        } else if ((shimmer) && (passed_ms - lastSigmaDeltaUpdated >= 5)) {
-            lastSigmaDeltaUpdated += 5;
-            uint8_t duty = 0;
-            if (getNextState() == LIGHT_OFF) {
-                duty = 255 - floor(((float) passed_ms / duration_ms) * 255);                
-            } else if (this->state == LIGHT_ON) {
-                duty = floor(((float) passed_ms / duration_ms) * 255);
-            }
-            sigmaDeltaWrite(0, duty);
-        }
+    this->updateState();
+    long duration = getContract()->stateTime;
+    if (duration > 0 && millis_since(stateUpdated) >= duration) {
+        nextStep();
     }
 }
 
-void Led::setState(LedState value) {
+uint8_t per_to_duty(float per, bool invert) {
+    const uint8_t min_duty = 30;
+    const uint8_t max_duty = 255;
+    uint8_t res = floor(per * (max_duty - min_duty)) + min_duty;
+    if (invert) {
+        res = 255 - res;
+    }
+    return res;
+}
+
+void Led::updateState() {
+#ifdef DEBUG_LEDS
+    DEBUG.printf("[led#%d] updateState(%d)", pin, contractState);
+    DEBUG.println();
+#endif
+    LedState contractState = getContract()->state;
+    if (state != contractState) {
+        setLed(contractState);
+    } else if (shim && millis_since(shimUpdated) > LED_UPDATE_INTERVAL_ms) {
+        float per =
+            (float)(shimUpdated - stateUpdated) / getContract()->stateTime;
+        uint8_t duty = per_to_duty(per, getContract()->state == LIGHT_ON);
+        sigmaDeltaWrite(0, duty);
+        shimUpdated = millis();
+    }
+}
+
+void Led::setLed(LedState state) {
 #ifdef DEBUG_LEDS
     DEBUG.printf("[led#%d] setState(%d)", pin, state);
     DEBUG.println();
 #endif
-    if (!shimmer) digitalWrite(pin, value);
-    this->state = value;
-    lastSigmaDeltaUpdated = 0;
-    lastStateUpdated = millis();
+    this->state = state;
+    if (shim) {
+        sigmaDeltaWrite(0, state == LIGHT_ON ? 255 : 30);
+    } else {
+        digitalWrite(pin, state);
+    }
+    stateUpdated = millis();
+    shimUpdated = stateUpdated;
 }
 
-Pattern* Led::getPattern() {
-    return &pattern[pattern_n];
-}
+LedContract* Led::getContract() { return &contract[step]; }
 
-LedState Led::getNextState() {
-    uint8_t n = pattern_n;
-    if (n >= pattern_size - 1) n = 0;    
-    return pattern[n].state;
-}
-
-void Led::setNextState() {
-    if (pattern_n < pattern_size - 1)
-        pattern_n++;
+void Led::nextStep() {
+    if (step < size - 1)
+        step++;
     else
-        pattern_n = 0;
-
-    setState(getPattern()->state);
+        step = 0;
 }

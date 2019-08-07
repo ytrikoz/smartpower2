@@ -32,12 +32,12 @@ void NetworkService::begin() {
         output->print(dns_name);
         output->print(' ');
         output->printf_P(strf_arrow_dest,
-                         str_utils::formatSocket(ip, dns_port).c_str());
+                         str_utils::getSocketStr(ip, dns_port).c_str());
     } else {
         output->printf_P(str_failed);
-    }    
+    }
     output->println();
-    
+
     output->printf_P(str_mdns);
     if (begin_mdns(host_name, telnet_port, http_port, ota_port)) {
         output->printf_P(str_ready);

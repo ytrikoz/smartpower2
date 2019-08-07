@@ -27,9 +27,8 @@ bool is_valid_day(uint8_t n);
 bool str_to_date(char *str, struct tm &tm);
 bool str_to_time(char *str, struct tm &tm);
 
-long timePassed(unsigned long start_ms, unsigned long finish_ms);
-
-long millisSince(unsigned long since_ms);
+ long millis_since(unsigned long since);
+ long millis_passed(unsigned long start, unsigned long finish);
 
 void epoch_to_tm(unsigned long epoch_s, struct tm &tm);
 

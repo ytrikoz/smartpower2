@@ -1,5 +1,7 @@
 #include "cli.h"
 
+#include "str_utils.h"
+
 #include "Shell/ClockSet.h"
 #include "Shell/ParameterlessCommand.h"
 #include "Shell/ShowClients.h"
@@ -9,28 +11,32 @@
 #include "Shell/ShowStatus.h"
 #include "Shell/ShowWifi.h"
 
+namespace CLI {
+
 Print* output;
 
 Command cmdPower, cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet, cmdGet, cmdRm,
     cmdClock;
 
-bool CLI::active() { return output != nullptr; }
+bool active() { return output != nullptr; }
 
-bool CLI::open(Print* p) {
+void open(Print* p) {
     if (output != nullptr) {
         output->print(FPSTR(str_session_interrupted));
         output->println();
-    }    
+    }
     output = p;
-    return true;
 }
 
-void CLI::init() {
+void init() {
     cli = new SimpleCLI();
     // Error
     cli->setErrorCallback(onCommandError);
     // Power
-   cmdPower = cli->addSingleArgumentCommand("power", onPowerCommand);
+    cmdPower = cli->addCommand("power");
+    cmdPower.addPositionalArgument("action");
+    cmdPower.addPositionalArgument("param", "");
+    cmdPower.setCallback(handlePowerCommand);
     // Help
     cmdHelp = cli->addCommand("help");
     cmdHelp.setCallback(onHelpCommand);
@@ -59,7 +65,7 @@ void CLI::init() {
     // Rm
     cmdRm = cli->addCommand("rm");
     cmdRm.addPositionalArgument("file");
-    cmdRm.setCallback(onRMCommand);
+    cmdRm.setCallback(onFileRemoveCommand);
     // Clock
     cmdClock = cli->addCommand("clock");
     cmdClock.addPositionalArgument("action");
@@ -67,75 +73,67 @@ void CLI::init() {
     cmdClock.setCallback(onClockCommand);
 }
 
-void CLI::close() {
+void close() {
     output->print(FPSTR(str_cli_hint));
     output->println();
     output = nullptr;
 }
 
-void CLI::print_P(PGM_P str) {
-    char buf[INPUT_MAX_LENGTH];
-    strcpy_P(buf, str);
-    output->print(buf);
-}
-
-void CLI::onGetConfigParameter(const char* name, const char* value) {
+void onGetConfigParameter(const char* name, const char* value) {
     char buf[INPUT_MAX_LENGTH];
     sprintf_P(buf, strf_config_param_value, name, value);
     output->println(buf);
 }
 
-void CLI::onConfigParameterChanged(const char* name, const char* old_value,
+void onConfigParameterChanged(const char* name, const char* old_value,
                                    const char* new_value) {
     char buf[OUTPUT_MAX_LENGTH];
     sprintf_P(buf, strf_config_param_changed, new_value, name);
     output->print(buf);
 }
 
-void CLI::onUnknownCommandItem(const char* command, const char* item) {
+void unknownCommandItem(const char* command, const char* item) {
     char buf[128];
     sprintf_P(buf, strf_unknown_command_item, item, command);
     output->println(buf);
 }
 
-void CLI::onUnknownConfigParameter(const char* param) {
+void unknownConfigParam(const char* param) {
     char buf[128];
     sprintf_P(buf, strf_config_unknown_param, param);
     output->println(buf);
 }
 
-void CLI::onUnknownActionParameter(const char* param, const char* action) {
+void unknownActionParam(const char* param, const char* action) {
     output->printf_P(strf_unknown_action_param, param, action);
 }
 
-void CLI::onCommandResult(PGM_P strP, const char* filename) {
+void unknownAction(String actionStr)
+{
+    output->printf_P(strf_unknown_action, actionStr.c_str());
+    output->println();
+}
+
+void onCommandResult(PGM_P strP, const char* filename) {
     output->printf_P(strP, filename);
     output->println();
 }
 
-bool CLI::isPositive(String str) {
-    return str.equals("on") || str.equals("+") || str.equals("yes");
-}
-
-bool CLI::isNegative(String str) {
-    return str.equals("off") || str.equals("-") || str.equals("no");
-}
-
-void CLI::onCommandDone(String& action, String& param) {
+void onCommandDone(String& action, String& param) {
     output->print(action.c_str());
     output->print(' ');
     output->print(param.c_str());
     output->print(": ");
-    print_P(str_done);
+    output->print(str_done);
     output->println();
 }
 
-void CLI::onCommandError(cmd_error* e) {
+void onCommandError(cmd_error* e) {
     CommandError cmdError(e);
     output->println(cmdError.toString().c_str());
 }
 
-void CLI::onHelpCommand(cmd* c) {
+void onHelpCommand(cmd* c) {
     Command cmd(c);
     output->println(cli->toString().c_str());
 }
@@ -148,13 +146,36 @@ String getCommandParam(Command* c) {
     return c->getArgument("param").getValue();
 }
 
+String getCommandFile(Command* c) {
+       return c->getArgument("action").getValue();
+}
+
 String getCommandItem(Command* c) { return c->getArgument("item").getValue(); }
 
 String getCommandValue(Command* c) {
     return c->getArgument("value").getValue();
 }
 
-void CLI::onClockCommand(cmd* c) {
+void handlePowerCommand(cmd* c) {
+    Command cmd(c);
+    String action = getCommandAction(&cmd);
+    String param = getCommandParam(&cmd);
+
+    if (action.equals("status")) {
+        psuLog->printDiag(output);
+    } else if (action.equals("log")) {
+        size_t num = param.equals("") ? 8: atoi(param.c_str());
+        psuLog->printLast(num);        
+    } else if (str_utils::isMeanYes(action)) {
+        psu->setState(POWER_ON);
+    } else if (str_utils::isMeanNo(action)) {
+        psu->setState(POWER_OFF);
+    } else {
+        unknownAction(action);        
+    };
+}
+
+void onClockCommand(cmd* c) {
     Command cmd(c);
     String action = getCommandAction(&cmd);
     String param = getCommandParam(&cmd);
@@ -163,7 +184,7 @@ void CLI::onClockCommand(cmd* c) {
     }
 }
 
-void CLI::onWifiScanCommand(cmd* c) {
+void onWifiScanCommand(cmd* c) {
     Command cmd(c);
     output->print(FPSTR(str_wifi));
     output->print(FPSTR(str_scanning));
@@ -183,28 +204,7 @@ void CLI::onWifiScanCommand(cmd* c) {
     output->println();
 }
 
-void CLI::onPowerCommand(cmd* c) {
-    Command cmd(c);
-    Argument action = cmd.getArgument(0);
-    if (!action.isSet()){
-        output->print(FPSTR(str_psu));
-        output->printf_P(strf_power, psu->getState() == POWER_ON ? "on" : "off");
-        output->print(" duration ");
-        output->println(psu->getDuration_s());
-        psuLog->printLast(10);
-        return;
-    }
-    if (isPositive(action.getValue())) {
-        psu->setState(POWER_ON);
-    } else if (isNegative(action.getValue())) {
-        psu->setState(POWER_OFF);
-    } else {
-        output->printf_P(strf_unknown_action, action.getValue().c_str());
-        output->println();
-    };
-}
-
-void CLI::onSystemCommand(cmd* c) {
+void onSystemCommand(cmd* c) {
     Command cmd(c);
     String action = getCommandAction(&cmd);
     String param = getCommandParam(&cmd);
@@ -213,35 +213,35 @@ void CLI::onSystemCommand(cmd* c) {
         if (param.equals("config")) {
             config->reset();
         } else {
-            onUnknownActionParameter(param.c_str(), action.c_str());
+            unknownActionParam(param.c_str(), action.c_str());
             return;
         }
     } else if (action.equals("save")) {
         if (param.equals("config")) {
             config->save();
         } else {
-            onUnknownActionParameter(param.c_str(), action.c_str());
+            unknownActionParam(param.c_str(), action.c_str());
             return;
         }
     } else if (action.equals("load")) {
         if (param.equals("config")) {
             config->reload();
         } else {
-            onUnknownActionParameter(param.c_str(), action.c_str());
+            unknownActionParam(param.c_str(), action.c_str());
             return;
         }
     } else if (action.equals("restart")) {
         setup_restart_timer(param.toInt());
         return;
     } else {
-        print_P(str_avaible_system_actions);
+        output->print(FPSTR(str_avaible_system_actions));
         output->println();
         return;
     }
     onCommandDone(action, param);
 }
 
-void CLI::onSetCommand(cmd* c) {
+void onSetCommand(cmd* c) {
     Command cmd(c);
     String name = getCommandParam(&cmd);
     String value = getCommandValue(&cmd);
@@ -265,7 +265,7 @@ void CLI::onSetCommand(cmd* c) {
     output->println();
 }
 
-void CLI::onGetCommand(cmd* c) {
+void onGetCommand(cmd* c) {
     Command cmd(c);
     String name = getCommandParam(&cmd);
     Config* cfg = config->getConfig();
@@ -276,11 +276,11 @@ void CLI::onGetCommand(cmd* c) {
         strcpy(value, cfg->getStrValue(param));
         onGetConfigParameter(name.c_str(), value);
     } else {
-        onUnknownConfigParameter(name.c_str());
+        unknownConfigParam(name.c_str());
     }
 }
 
-void CLI::onShowCommand(cmd* c) {
+void onShowCommand(cmd* c) {
     Command cmd(c);
     String item = getCommandItem(&cmd);
     if (item.equals("clients")) {
@@ -289,9 +289,7 @@ void CLI::onShowCommand(cmd* c) {
         shell::showClock->Execute(output);
     } else if (item.equals("power")) {
         output->print(FPSTR(str_psu));
-        char tmp[OUTPUT_MAX_LENGTH];
-        sprintf(tmp, "power is %s", psu->getState() == POWER_ON ? "on" : "off");
-        output->println(tmp);
+        output->println(psu->getStateDescription());
     } else if (item.equals("network")) {
         output->println(getNetworkInfoJson().c_str());
     } else if (item.equals("info")) {
@@ -307,13 +305,13 @@ void CLI::onShowCommand(cmd* c) {
     } else if (item.equals("wifi")) {
         shell::showWifi->Execute(output);
     } else {
-        onUnknownCommandItem(cmd.getName().c_str(), item.c_str());
+        unknownCommandItem(cmd.getName().c_str(), item.c_str());
     }
 }
 
-void CLI::onPrintCommand(cmd* c) {
+void onPrintCommand(cmd* c) {
     Command cmd(c);
-    String file = cmd.getArgument("file").getValue();
+    String file = getCommandFile(&cmd);
     if (SPIFFS.exists(file)) {
         File f = SPIFFS.open(file, "r");
         onCommandResult(strf_file_print, file.c_str());
@@ -327,7 +325,7 @@ void CLI::onPrintCommand(cmd* c) {
     }
 }
 
-void CLI::onRMCommand(cmd* c) {
+void onFileRemoveCommand(cmd* c) {
     Command cmd(c);
     String file = cmd.getArgument("file").getValue();
     if (SPIFFS.exists(file)) {
@@ -338,3 +336,4 @@ void CLI::onRMCommand(cmd* c) {
         onCommandResult(strf_file_not_found, file.c_str());
     }
 }
+}  // namespace CLI

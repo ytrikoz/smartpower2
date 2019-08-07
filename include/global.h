@@ -1,11 +1,11 @@
 #pragma once
 
-#include "types.h"
-
-#include "mcurses.h"
 #include <IPAddress.h>
 #include <SimpleCLI.h>
 #include <SimpleTimer.h>
+
+#include "mcurses.h"
+#include "types.h"
 #include "SystemClock.h"
 
 #include "Led.h"
@@ -19,6 +19,8 @@
 #include "TelnetServer.h"
 #include "WebService.h"
 #include "PsuLogger.h"
+
+#include "LoopWatchDog.h"
 
 extern Led *wifi_led, *power_led;
 
@@ -37,7 +39,6 @@ extern WebService *http;
 extern Shell *telnetShell;
 extern Shell *consoleShell;
 
-String getLoopStat();
 void start_clock();
 void start_psu();
 void start_ntp();
@@ -58,5 +59,4 @@ extern void onHttpClientData(uint8_t num, String data);
 extern void cancel_system_restart();
 extern void setup_restart_timer(uint8_t count);
 extern uint8_t get_http_clients_count();
-extern ulong get_lps();
-extern ulong get_longest_loop();
+extern LoopWatchDog loopWD;

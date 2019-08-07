@@ -2,26 +2,17 @@
 
 namespace str_utils {
 
-void printWelcomeTo(Print *p) {
-    char title[SCREEN_WIDTH + 1];
-    strcpy(title, APPNAME " v" FW_VERSION);
-    uint8_t width = SCREEN_WIDTH / 2;
-    addPaddingTo(title, str_utils::CENTER, width, ' ');
-    char decor[width + 1];
-    str_of_char(decor, '#', width);
-    p->println(decor);
-    p->println(title);
-    p->println(decor);
+void str_of_char(char *str, char chr, uint8_t len) {
+    memset(&str[0], chr, sizeof(char) * len);
+    str[len - 1] = '\x00';
 }
 
-String iptoa(IPAddress ip) {
-    String res = "";
-    for (int i = 0; i < 3; i++) {
-        res += String((ip >> (8 * i)) & 0xFF) + ".";
-    }
-    res += String(((ip >> 8 * 3)) & 0xFF);
+bool isMeanYes(String &s) {
+    return s.equals("on") || s.equals("+") || s.equals("yes");
+}
 
-    return res;
+bool isMeanNo(String &s) {
+    return s.equals("off") || s.equals("-") || s.equals("no");
 }
 
 IPAddress atoip(const char *input) {
@@ -39,8 +30,18 @@ IPAddress atoip(const char *input) {
     return IPAddress(parts[0], parts[1], parts[2], parts[3]);
 }
 
+String iptoa(IPAddress ip) {
+    String res = "";
+    for (int i = 0; i < 3; i++) {
+        res += String((ip >> (8 * i)) & 0xFF) + ".";
+    }
+    res += String(((ip >> 8 * 3)) & 0xFF);
+
+    return res;
+}
+
 bool setstr(char *desc, const char *src, uint8_t size) {
-    if (src == NULL) {
+    if (src == nullptr) {
         memset(desc, 0, size);
     } else if (strcmp(src, desc) != 0) {
         uint8_t len = strlen(src);
@@ -52,6 +53,18 @@ bool setstr(char *desc, const char *src, uint8_t size) {
         return true;
     }
     return false;
+}
+
+void printWelcomeTo(Print *p) {
+    char title[SCREEN_WIDTH + 1];
+    strcpy(title, APPNAME " v" FW_VERSION);
+    uint8_t width = SCREEN_WIDTH / 2;
+    addPaddingTo(title, str_utils::CENTER, width, ' ');
+    char decor[width + 1];
+    str_of_char(decor, '#', width);
+    p->println(decor);
+    p->println(title);
+    p->println(decor);
 }
 
 String formatSize(size_t bytes) {
@@ -71,16 +84,11 @@ String formatMac(uint8 hw[6]) {
     return String(buf);
 }
 
-String formatInMHz(uint32_t hz) {
+String formatInMHz(uint32_t value) {
     char buf[8];
-    itoa(hz / ONE_MHz_hz, buf, DEC);
+    itoa(value / ONE_MHz_hz, buf, DEC);
     strcat(buf, "MHz");
     return String(buf);
-}
-
-void str_of_char(char *str, char chr, uint8_t len) {
-    memset(&str[0], chr, sizeof(char) * len);
-    str[len - 1] = '\x00';
 }
 
 void addPaddingTo(char *str, Align align, uint8_t width, const char ch) {
@@ -129,15 +137,16 @@ void stringToBytes(const char *str, char sep, byte *bytes, int len, int base) {
     }
 }
 
-String formatSocket(IPAddress ip, int port) {
-    char str[32];
-    strcpy_P(str, ip.toString().c_str());
-    uint8_t len = strlen(str);
-    str[len] = ':';
-    str[len + 1] = '\x00';
-    char buf[8];
-    strcat(str, itoa(port, buf, DEC));
-    return String(str);
+String getSocketStr(IPAddress ip, int port) {
+    char buf[32];
+    strcpy(buf, iptoa(ip).c_str());
+    size_t len = strlen(buf);
+    buf[len++] = ':';
+    buf[len++] = '\x00';
+
+    char tmp[8];
+    strcat(buf, itoa(port, tmp, DEC));
+    return String(buf);
 }
 
 bool isVaildIp(const char *ipStr) {
