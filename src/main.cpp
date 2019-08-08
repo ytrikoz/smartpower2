@@ -464,8 +464,10 @@ void loop() {
     }
     delay(0);
 #endif
+    }
 
     if (wireless::hasNetwork()) {
+        {
 #ifndef DISABLE_HTTP
         {
 #ifdef DEBUG_LOOP

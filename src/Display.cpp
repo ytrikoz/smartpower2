@@ -13,6 +13,7 @@ void Display::setOutput(Print *p) { output = p; }
 
 bool Display::init() {
     if (!connected) {
+        memset(&item[0], 0, sizeof(DisplayItem) * LCD_ROWS);
         output->print(FPSTR(str_lcd));
         if (connect()) {
             memset(&item[0], 0, sizeof(DisplayItem) * LCD_ROWS);
@@ -143,6 +144,7 @@ void Display::render(boolean forced) {
             str_of_char(buf, ' ', _free_space - strlen(buf) + 1);
             lcd->print(buf);
         }
+
         l->index++;
         lastUpdated = millis();
     };
