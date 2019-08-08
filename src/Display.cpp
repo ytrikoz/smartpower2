@@ -151,14 +151,14 @@ void Display::render(boolean forced) {
 }
 
 void Display::drawBar(uint8_t row, float size) {
-    if (!ini) return;
+    if (!connected) return;
 
     uint8_t width = floor(LCD_COLS * size);
     str_of_char(buf, '#', width + 1);
 
     setLine(row, buf);
 
-    redraw(true);
+    render(true);
 }
 
 void Display::load_bar_bank() {

@@ -216,9 +216,9 @@ void sendPageState(uint8_t n, uint8_t page) {
     }
 }
 
-void load_screen_network(){ 
+void load_screen_network() {
     display->setLine(0, "STA> ", wireless::hostSSID().c_str());
-    display->setLine(1, "IP> ", wireless::hostIP().toString().c_str());            
+    display->setLine(1, "IP> ", wireless::hostIP().toString().c_str());
     display->setLine(1, "RSSI> ", wireless::RSSIInfo().c_str());
 };
 
@@ -226,8 +226,8 @@ void update_display() {
     if (!display->init()) return;
     if (psu->getState() == POWER_OFF) {
         if (wireless::getWirelessMode() == WLAN_STA) {
-        load_screen_network();
-   
+            load_screen_network();
+
         } else if (wireless::getWirelessMode() == WLAN_AP) {
             display->setLine(0, "AP> ", wireless::hostSSID().c_str());
             display->setLine(1, "PWD> ", wireless::hostAPPassword().c_str());
@@ -460,14 +460,12 @@ void loop() {
 #ifdef DEBUG_LOOP
         TimeProfiler _tp_display = TimeProfiler("lcd", 24);
 #endif
-        if (display) display->redraw();
+        if (display) display->render();
     }
     delay(0);
 #endif
-    }
 
     if (wireless::hasNetwork()) {
-        {
 #ifndef DISABLE_HTTP
         {
 #ifdef DEBUG_LOOP
