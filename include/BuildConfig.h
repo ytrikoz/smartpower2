@@ -4,6 +4,7 @@
 
 //#define SERIAL_DEBUG
 
+//#define DEBUG_LOOP
 //#define DEBUG_PLOT
 //#define DEBUG_DISPLAY
 //#define DEBUG_CONFIG

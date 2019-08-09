@@ -16,14 +16,7 @@ class TimeProfiler {
 	unsigned long total;
 };
 
-inline TimeProfiler::TimeProfiler(const char* label, uint16_t limit) 
-{
-	this->label = new char[16];
-	strcpy(this->label, label);
-    this->limit = limit;
-    this->p = &USE_SERIAL;
-    start = millis();
-}
+
 
 inline void TimeProfiler::finish(){
     printResults(p);
@@ -34,12 +27,23 @@ inline void TimeProfiler::printResults(Print* p)
 
 }
 
+inline TimeProfiler::TimeProfiler(const char* label, uint16_t limit) 
+{
+	this->label = new char[16];
+	strcpy(this->label, label);
+    this->limit = limit;
+    // default
+    this->p = &USE_SERIAL;
+    start = millis();
+}
+
 inline TimeProfiler::~TimeProfiler() {
-	long passed = millis_since(start);	
-    if (passed >= limit) {
-        Serial.print(label);
-        Serial.printf_P(strf_for_lu_ms, passed);
-        Serial.println();
+	long time = millis_since(start);	
+    if (time > limit) {
+        p->print(label);
+        p->print(' ');
+        p->printf_P(strf_lu_ms, time);
+        p->println();
     }
 	delete[] label;
 }

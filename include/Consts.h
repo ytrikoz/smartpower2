@@ -10,7 +10,7 @@
 
 #define USE_SERIAL Serial
 
-#define BOOT_WAIT_s 3
+#define BOOT_WAIT_s 5
 #define BUILD_TIMEZONE_h 3
 #define BUILD_DATE __DATE__
 #define BUILD_TIME __TIME__
@@ -174,6 +174,7 @@ static const char str_error[] PROGMEM = "error ";
 static const char str_failed[] PROGMEM = "failed ";
 static const char str_firmware[] PROGMEM = "firmware";
 static const char str_found[] PROGMEM = "found ";
+static const char str_not_found[] PROGMEM = "not found ";
 static const char str_ready[] PROGMEM = "ready";
 static const char str_host[] PROGMEM = "host ";
 static const char str_on[] PROGMEM = "on ";

@@ -32,16 +32,13 @@ void sendToClients(String, uint8_t);
 void sendToClients(String, uint8_t, uint8_t);
 void sendPageState(uint8_t n, uint8_t page);
 
-void update_display();
-
 void print_boot_delay(Print* p);
-void display_boot_progress(float per, const char *message = NULL);
+void display_boot_progress(uint8_t per, const char *str = NULL);
 
-void handle_power_button_press();
-static void ICACHE_RAM_ATTR powerButtonHandler();
+void power_button_event_handler();
+static void ICACHE_RAM_ATTR power_button_state_change();
 
-ADC_MODE(ADC_VCC);
+// ADC_MODE(ADC_VCC);
 
 void setup();
 void loop();
-

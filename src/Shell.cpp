@@ -83,12 +83,12 @@ void Shell::welcome() {
     strcpy(title, APPNAME " v" FW_VERSION);
     uint8_t width = SCREEN_WIDTH / 2;
     str_utils::addPaddingTo(title, str_utils::CENTER, width, ' ');
-    char decor[width + 1];
-    str_utils::str_of_char(decor, '#', width);
+    char tmp[width + 1];
+    str_utils::strfill(tmp, '#', width);
 
-    t->println(decor);
+    t->println(tmp);
     t->println(title);
-    t->println(decor);
+    t->println(tmp);
 }
 
 void Shell::prompt() {

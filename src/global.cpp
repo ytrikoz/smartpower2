@@ -29,16 +29,16 @@ void refresh_wifi_led() {
     }
     switch (level) {
         case 0:
-            wifi_led->setMode(STAY_OFF);
+            wifi_led->set(STAY_OFF);
             return;
         case 1:
-            wifi_led->setMode(STAY_ON);
+            wifi_led->set(STAY_ON);
             break;
         case 2:
-            wifi_led->setMode(BLINK_ONE);
+            wifi_led->set(BLINK_ONE);
             break;
         case 3:
-            wifi_led->setMode(BLINK_TWO);
+            wifi_led->set(BLINK_TWO);
             break;
         default:
             break;
@@ -134,7 +134,7 @@ void start_psu() {
     psuLog = new PsuLogger(psu, PSU_LOG_SIZE);
 
     psu->setOnPowerOff([]() {
-        power_led->setMode(STAY_ON);
+        power_led->set(STAY_ON);
         psuLog->end();
 
         USE_SERIAL.print(FPSTR(str_psu));
@@ -154,7 +154,7 @@ void start_psu() {
     });
 
     psu->setOnPowerOn([]() {
-        power_led->setMode(BLINK);
+        power_led->set(BLINK);
         psuLog->begin();
     });
 
@@ -202,4 +202,49 @@ void onSystemTimeChanged(const char *str) {
     USE_SERIAL.print(FPSTR(str_clock));
     USE_SERIAL.print(FPSTR(str_set));
     USE_SERIAL.println(str);
+}
+
+void load_screen_psu_pvi() {
+    String str = String(psu->getVoltage(), 3);
+    str += " V ";
+    str += String(psu->getCurrent(), 3);
+    str += " A ";
+    display->setLine(0, str.c_str());
+
+    double watt = psu->getPower();
+    str = String(watt, (watt < 10) ? 3 : 2);
+    str += " W ";
+    double rwatth = psu->getWattHours();
+    if (rwatth < 1000) {
+        str += String(rwatth, rwatth < 10 ? 3 : rwatth < 100 ? 2 : 1);
+        str += " Wh";
+    } else {
+        str += String(rwatth / 1000, 3);
+        str += "KWh";
+    }
+    display->setLine(1, str.c_str());
+}
+
+void load_screen_sta_wifi() {
+    display->setLine(0, "STA> ", wireless::hostSSID().c_str());
+    display->setLine(1, "IP> ", wireless::hostIP().toString().c_str());
+    display->setLine(2, "RSSI> ", wireless::RSSIInfo().c_str());
+};
+
+void load_screen_ap_wifi() {
+    display->setLine(0, "AP> ", wireless::hostSSID().c_str());
+    display->setLine(1, "PWD> ", wireless::hostAPPassword().c_str());
+};
+
+void update_display() {
+    if ((!display) || !display->ready()) return;
+    if (psu->getState() == POWER_OFF) {
+        if (wireless::getWirelessMode() == WLAN_STA) {
+            load_screen_sta_wifi();
+        } else if (wireless::getWirelessMode() == WLAN_AP) {
+            load_screen_ap_wifi();
+        }
+    } else if (psu->getState() == POWER_ON) {
+        load_screen_psu_pvi();
+    }
 }

@@ -8,7 +8,6 @@
 #include "time_utils.h"
 
 enum LedState { LIGHT_OFF = HIGH, LIGHT_ON = LOW };
-
 enum LedMode { STAY_OFF, STAY_ON, BLINK, BLINK_ONE, BLINK_TWO };
 
 struct LedContract {
@@ -23,9 +22,8 @@ struct LedContract {
 class Led {
    public:
     Led(uint8_t pin, LedState state = LIGHT_OFF, bool shim = false);
+    void set(LedMode mode);
     void loop();
-    void setMode(LedMode mode, bool force = false);
-
    private:
     void updateState();
     void setState(LedState state);    
@@ -39,7 +37,7 @@ class Led {
 
     void nextStep();
 
-    bool shim;
+    bool shimEnabled;
     uint8_t pin;
     LedMode mode;
     LedState state;

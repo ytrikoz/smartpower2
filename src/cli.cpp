@@ -124,7 +124,7 @@ void onCommandDone(String& action, String& param) {
     output->print(' ');
     output->print(param.c_str());
     output->print(": ");
-    output->print(str_done);
+    output->print(FPSTR(str_done));
     output->println();
 }
 

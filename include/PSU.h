@@ -23,8 +23,10 @@ class Psu : public PsuInfoProvider {
     void togglePower();
     void setState(PowerState value, bool forceUpdate = false);
     void setConfig(ConfigHelper*);
-    void setOnPowerOn(PsuEventHandler);
+    
+    void setOnPowerOn(PsuEventHandler);    
     void setOnPowerOff(PsuEventHandler);
+
     void setOutputVoltage(float voltage);
     float getOutputVoltage();
     

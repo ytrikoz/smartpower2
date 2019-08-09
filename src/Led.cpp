@@ -1,26 +1,22 @@
 #include "Led.h"
 
-#define LED_SHIM_INTERVAL_ms 5
+#define LED_SHIM_INTERVAL_ms 10
 #define LED_OFF_DUTY_CYCLE 30
 #define LED_ON_DUTY_CYCLE 255
 
-Led::Led(uint8_t pin, LedState startState, bool shim) {
+Led::Led(uint8_t pin, LedState startState, bool enableShim) {
     this->pin = pin;
-    this->shim = shim;
+    this->shimEnabled = enableShim;
     pinMode(pin, OUTPUT);
-    if (shim) {
+    if (enableShim) {
         sigmaDeltaSetup(0, 1000);
         sigmaDeltaAttachPin(pin);
     }
-    LedMode startMode = (startState == LIGHT_ON ? STAY_ON : STAY_OFF);
-    setMode(startMode, true);
+    set((startState == LIGHT_ON ? STAY_ON : STAY_OFF));
     setState(startState);
 }
 
-void Led::setMode(LedMode mode, bool force) {
-    if (!force && this->mode == mode) return;
-    this->mode = mode;
-    step = 0;
+void Led::set(LedMode mode) {
     switch (mode) {
         case STAY_OFF:
             turnOff();
@@ -38,6 +34,8 @@ void Led::setMode(LedMode mode, bool force) {
             blinkSeqTwo();
             break;
     }
+    this->mode = mode;
+    step = 0;
 }
 
 void Led::turnOn() {
@@ -104,7 +102,7 @@ void Led::setState(LedState state) {
     DEBUG.println();
 #endif
     this->state = state;
-    if (shim) {
+    if (shimEnabled) {
         sigmaDeltaWrite(0, (state == LIGHT_ON) ? LED_ON_DUTY_CYCLE : LED_OFF_DUTY_CYCLE);
     } else {
         digitalWrite(pin, state);
@@ -141,7 +139,7 @@ void Led::updateState() {
         setState(contract);
         return;        
     }     
-    if (shim && millis_since(shimUpdated) > LED_SHIM_INTERVAL_ms) {
+    if (shimEnabled && millis_since(shimUpdated) > LED_SHIM_INTERVAL_ms) {
         float f = (float) millis_passed(stateUpdated, shimUpdated) / getContract()->stateTime;
         uint8_t duty = f_to_duty(f, getContract()->state == LIGHT_ON);
         sigmaDeltaWrite(0, duty);

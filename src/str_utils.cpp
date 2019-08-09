@@ -2,7 +2,7 @@
 
 namespace str_utils {
 
-void str_of_char(char *str, char chr, uint8_t len) {
+void strfill(char *str, char chr, uint8_t len) {
     memset(&str[0], chr, sizeof(char) * len);
     str[len - 1] = '\x00';
 }

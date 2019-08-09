@@ -1,5 +1,6 @@
 #include "main.h"
 
+#include "BuildConfig.h"
 #include "cli.h"
 #include "global.h"
 #include "str_utils.h"
@@ -18,12 +19,6 @@
 #define POWER_BTN_PIN D7
 
 LoopWatchDog loopWD;
-
-uint8_t volatile powerBtnLongPressCounter;
-unsigned long volatile powerBtnLastEvent = 0;
-bool volatile powerBtnPressed = false;
-bool volatile powerBtnReleased = true;
-bool volatile powerBtnPressEvent = false;
 
 typedef struct {
     bool connected = false;
@@ -216,43 +211,6 @@ void sendPageState(uint8_t n, uint8_t page) {
     }
 }
 
-void load_screen_network() {
-    display->setLine(0, "STA> ", wireless::hostSSID().c_str());
-    display->setLine(1, "IP> ", wireless::hostIP().toString().c_str());
-    display->setLine(1, "RSSI> ", wireless::RSSIInfo().c_str());
-};
-
-void update_display() {
-    if (!display->init()) return;
-    if (psu->getState() == POWER_OFF) {
-        if (wireless::getWirelessMode() == WLAN_STA) {
-            load_screen_network();
-
-        } else if (wireless::getWirelessMode() == WLAN_AP) {
-            display->setLine(0, "AP> ", wireless::hostSSID().c_str());
-            display->setLine(1, "PWD> ", wireless::hostAPPassword().c_str());
-        }
-    } else if (psu->getState() == POWER_ON) {
-        String str = String(psu->getVoltage(), 3);
-        str += " V ";
-        str += String(psu->getCurrent(), 3);
-        str += " A ";
-        display->setLine(0, str.c_str());
-        double watt = psu->getPower();
-        str = String(watt, (watt < 10) ? 3 : 2);
-        str += " W ";
-        double rwatth = psu->getWattHours();
-        if (rwatth < 1000) {
-            str += String(rwatth, rwatth < 10 ? 3 : rwatth < 100 ? 2 : 1);
-            str += " Wh";
-        } else {
-            str += String(rwatth / 1000, 3);
-            str += "KWh";
-        }
-        display->setLine(1, str.c_str());
-    }
-}
-
 void send_psu_data_to_clients() {
     if (psu->getState() == POWER_ON) {
         if (wireless::hasNetwork()) {
@@ -275,9 +233,19 @@ void send_psu_data_to_clients() {
     }
 }
 
-void display_boot_progress(float f, const char *str) {
+uint8_t boot_progress = 0;
+void display_boot_progress(uint8_t per, const char *str) {
 #ifndef DISABLE_LCD
-    if (display) display->drawBar(LCD_ROW_2, f);
+    if (display) 
+    {
+        if (str != NULL) display->drawText(LCD_ROW_1, str);
+        display->drawBar(LCD_ROW_2, per);
+    }
+    while(per - boot_progress > 0) 
+    {
+        boot_progress += 10;
+        delay(200);
+    }    
 #else
     USE_SERIAL.printf_P(strf_boot_progress, message, per);
     USE_SERIAL.println();
@@ -291,7 +259,7 @@ void print_reset_reason(Print *p) {
     p->println(ESP.getResetInfo());
 }
 
-void print_boot_delay(Print *p) {
+void delay_print(Print *p) {
     p->println();
     p->print(FPSTR(str_wait));
     p->print(" ");
@@ -303,13 +271,14 @@ void print_boot_delay(Print *p) {
     p->println();
     p->flush();
 }
+
 void print_welcome(Print *p) {
     char title[SCREEN_WIDTH + 1];
     strcpy(title, APPNAME " v" FW_VERSION);
     uint8_t width = SCREEN_WIDTH / 2;
     addPaddingTo(title, str_utils::CENTER, width, ' ');
     char decor[width + 1];
-    str_utils::str_of_char(decor, '*', width);
+    str_utils::strfill(decor, '*', width + 1);
     p->println(decor);
     p->println(title);
     p->println(decor);
@@ -321,35 +290,30 @@ void setup() {
 #ifdef SERIAL_DEBUG
     USE_SERIAL.setDebugOutput(true);
 #endif
-    print_boot_delay(&USE_SERIAL);
     print_reset_reason(&USE_SERIAL);
-
+    print_welcome(&USE_SERIAL);
+    delay(100);
     SPIFFS.begin();
-
     Wire.begin(I2C_SDA, I2C_SCL);
-
     // Button
     pinMode(POWER_BTN_PIN, INPUT);
-    attachInterrupt(digitalPinToInterrupt(POWER_BTN_PIN), powerButtonHandler,
-                    CHANGE);
-
+    attachInterrupt(digitalPinToInterrupt(POWER_BTN_PIN),
+                    power_button_state_change, CHANGE);
     // Leds
-    power_led = new Led(POWER_LED_PIN, LIGHT_ON, true);
-    power_led->setMode(STAY_ON);
-
+    power_led = new Led(POWER_LED_PIN, LIGHT_ON, false);
+    power_led->set(STAY_ON);
     wifi_led = new Led(WIFI_LED_PIN);
-    wifi_led->setMode(STAY_OFF);
-
+    wifi_led->set(STAY_OFF);
     memset(&clients[0], 0x00, sizeof(WebClient) * WEBSOCKETS_SERVER_CLIENT_MAX);
-
 #ifndef DISABLE_LCD
     display = new Display();
     display->setOutput(&USE_SERIAL);
-    if (display->init()) display->turnOn();
+    display->init();
+    display->turnOn();
 #endif
+    delay_print(&USE_SERIAL);
 
-    display_boot_progress(.2, "VER> " FW_VERSION);
-    delay(100);
+    display_boot_progress(20, "VER> " FW_VERSION);
 
     config = new ConfigHelper();
     config->init(FILE_CONFIG);
@@ -357,59 +321,32 @@ void setup() {
     start_clock();
     start_psu();
 
-    display_boot_progress(.3);
-    delay(100);
+    display_boot_progress(30);
 
-    print_welcome(&USE_SERIAL);
-    delay(100);
-
-    display_boot_progress(.4, "WIFI>");
-    delay(100);
+    display_boot_progress(40, "WIFI>");
 
     wireless::setOnNetworkStateChange(
         [](bool hasNetwork) { refresh_wifi_led(); });
     wireless::start_wifi();
 
-    display_boot_progress(.8, "INIT>");
-    delay(100);
+    display_boot_progress(80, "INIT>");
 
     CLI::init();
 #ifndef DISABLE_CONSOLE_SHELL
     start_console_shell();
 #endif
 
-    display_boot_progress(1, "COMPLETE");
-    delay(100);
+    display_boot_progress(100, "COMPLETE");
 
     timer.setInterval(1000, [] {
-        send_psu_data_to_clients(), handle_power_button_press();
+        send_psu_data_to_clients();
+        power_button_event_handler();
 #ifndef DISABLE_LCD
         update_display();
 #endif
     });
 
     timer.setInterval(5000, [] { display_alt_line = !display_alt_line; });
-}
-
-static void ICACHE_RAM_ATTR powerButtonHandler() {
-    bool lock = (millis() - powerBtnLastEvent) < 30;
-    if (!lock) {
-        if (!digitalRead(POWER_BTN_PIN) && !powerBtnPressed) {
-            lock = true;
-            powerBtnLastEvent = millis();
-            powerBtnPressed = true;
-            powerBtnReleased = false;
-        }
-    }
-    if (!lock) {
-        if (digitalRead(POWER_BTN_PIN) && (!powerBtnReleased)) {
-            lock = true;
-            powerBtnLastEvent = millis();
-            powerBtnPressed = false;
-            powerBtnReleased = true;
-            powerBtnPressEvent = true;
-        }
-    }
 }
 
 void loop() {
@@ -441,13 +378,17 @@ void loop() {
     delay(0);
     // Tasks
     {
+#ifdef DEBUG_LOOP
         TimeProfiler _tp_timer = TimeProfiler("timer");
+#endif
         timer.run();
     }
     delay(0);
 #ifndef DISABLE_CONSOLE_SHELL
     {
+#ifdef DEBUG_LOOP
         TimeProfiler _tp_console = TimeProfiler("console");
+#endif
         if (consoleShell) consoleShell->loop();
     }
     delay(0);
@@ -460,7 +401,7 @@ void loop() {
 #ifdef DEBUG_LOOP
         TimeProfiler _tp_display = TimeProfiler("lcd", 24);
 #endif
-        if (display) display->render();
+        if (display) display->updateLCD();
     }
     delay(0);
 #endif
@@ -520,12 +461,38 @@ void loop() {
     loopWD.run();
 }
 
-void handle_power_button_press() {
+enum ButtonState { BTN_PRESSED, BTN_RELEASED };
+
+uint8_t volatile powerBtnLongPressCounter;
+unsigned long volatile power_btn_last_event = 0;
+ButtonState volatile power_btn_state = BTN_RELEASED;
+
+bool volatile powerBtnPressEvent = false;
+static void ICACHE_RAM_ATTR power_button_state_change() {
+    bool handled = (millis() - power_btn_last_event) < 100;
+    if (!handled) {
+        if (!digitalRead(POWER_BTN_PIN) && power_btn_state != BTN_PRESSED) {
+            power_btn_last_event = millis();
+            handled = true;
+            power_btn_state = BTN_PRESSED;
+        }
+    }
+    if (!handled) {
+        if (digitalRead(POWER_BTN_PIN) && power_btn_state != BTN_RELEASED) {
+            power_btn_last_event = millis();
+            handled = true;
+            power_btn_state = BTN_RELEASED;
+            powerBtnPressEvent = true;
+        }
+    }
+}
+
+void power_button_event_handler() {
     if (powerBtnPressEvent) {
         psu->togglePower();
         powerBtnPressEvent = false;
     }
-    if (!digitalRead(POWER_BTN_PIN) && (powerBtnPressed)) {
+    if (!digitalRead(POWER_BTN_PIN) && (power_btn_state)) {
         if (powerBtnLongPressCounter++ > 5) {
             setup_restart_timer(5);
         }

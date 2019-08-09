@@ -19,24 +19,23 @@ void LoopWatchDog::_printDiag(Print* p) {
 
     p->print(FPSTR(str_elapsed));
     p->printf_P(strf_lu_ms, elapsed);
-    p->print(F("loops "));
+    p->print(F("total "));
     p->print(loops);
     p->print((" lps "));
     p->println(lps);
-
-    p->print("<2ms: ");
-    p->println(loops2ms);
-    p->print("<4ms: ");
-    p->println(loops4ms);
-    p->print("<8ms: ");
-    p->println(loops8ms);
-    p->print("<16ms: ");
+    p->print(" 2ms ");
+    p->print(loops2ms);
+    p->print(" 4ms ");
+    p->print(loops4ms);
+    p->print(" 8ms ");
+    p->print(loops8ms);
+    p->print(" 16ms ");
     p->println(loops16ms);
 
     if (longWaitLoops > 0) {
-        p->print("over 16ms: ");
-        p->println(longWaitLoops);
-        p->print("longest: ");
+        p->print(" over 16ms ");
+        p->print(longWaitLoops);
+        p->print(" longest ");
         p->printf_P(strf_lu_ms, longestWait);
         p->println();
     }
@@ -46,16 +45,14 @@ void LoopWatchDog::printDiag(Print* p) {
     if (getState() == CAPTURE_IN_PROGRESS) {
         p->print("capturing ");
         p->printf_P(strf_lu_ms, captureTimeLeft);
-        p->print("left ");
         p->println();
         return;
     };
  
     if (getState() == CAPTURE_IDLE) {
         startCapture();    
-        p->print("capture started ");
+        p->print("capture for ");
         p->printf_P(strf_lu_ms, captureTimeLeft);
-        p->print("left");
         p->println();
         return;
     }
@@ -107,20 +104,13 @@ void LoopWatchDog::run() {
 
     if (longestWait < (unsigned long) elapsed) longestWait = elapsed;
 
-    if (captureTimeLeft < (unsigned long) elapsed) {
-        captureTimeLeft = 0;        
-    } else {
-        captureTimeLeft -= elapsed;
-    }
-
-    if (captureTimeLeft == 0)
-    {
-        USE_SERIAL.print("capture done!");
+    if (captureTimeLeft <= (unsigned long) elapsed) {
+        captureTimeLeft = 0;       
         captureFinish = millis();        
         state = CAPTURE_DONE;
-        return;
+        return; 
     }
-
+    captureTimeLeft -= elapsed;
     loopStarted = millis();
 }
 

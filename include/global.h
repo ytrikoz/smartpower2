@@ -49,6 +49,7 @@ void start_discovery();
 bool start_telnet_shell(Stream *s);
 void start_services();
 void refresh_wifi_led();
+void update_display();
 uint8_t get_telnet_clients_count();
 void start_console_shell();
 void onSystemTimeChanged(const char* str);

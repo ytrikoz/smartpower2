@@ -23,31 +23,31 @@
 
 enum GraphType { HORIZONTAL_BAR, VERTICAL_PLOT };
 
-struct DisplayItem {
-    bool updated = false;
-    // fixed part
-    char param[LCD_COLS + 1] = {0};
-    // scrolling part
-    char value[DISPLAY_VIRTUAL_COLS + 1] = {0};
-    // active virtual screen
+struct TextItem {
+    bool hasUpdates = false;
+    char fixed_str[LCD_COLS + 1] = {0};
+    char var_str[DISPLAY_VIRTUAL_COLS + 1] = {0};
+    uint8_t var_pos = 0;
+    // virtual screen
     uint8_t screen_X = 1;
     uint8_t screen_Y = 1;
-    // scrolling inline position
-    uint8_t index;
+    
 };
 
 struct PlotData {
-    float blocks[PLOT_COLS] = {0};
-    float minValue = 32000;
-    float maxValue = -32000;
+    float values[PLOT_COLS] = {0};
+    float min_value = 32000;
+    float max_value = -32000;
 };
 
 class Display {
    public:
     Display();
     bool init();
+    bool ready();
     void setOutput(Print *p);
-    void drawBar(uint8_t row, float size);
+    void drawText(uint8_t row, const char * str);
+    void drawBar(uint8_t row, uint8_t per);
     void drawPlot(uint8_t start);
     void turnOn();
     void turnOff();
@@ -67,81 +67,25 @@ class Display {
     void load_bar_bank();
     void load_plot_bank();
 
-    void loadData(float *data, size_t size);
-    void drawPlot(float min_value, float max_value, uint8_t start_pos);
+    void loadData(float *values, size_t size);
+    void drawPlot(float min_value, float max_value, uint8_t offset_x);
 
-    void setLine(uint8_t row, const char *str);
-    void setLine(uint8_t row, const char *param, const char *value);
-    
-    void render(boolean forced = false);
+    void setLine(uint8_t n, const char *str);
+    void setLine(uint8_t n, const char *fixed_str, const char *var_str);
+
+    void updateLCD(boolean forced = false);
 
    private:
     bool connect();
     uint8_t addr;
     bool connected;
-
-    char buf[LCD_COLS + 1];  
-    Print *output;
+    uint8_t get_row_for_update();
+    uint8_t row_for_update;
 
     LiquidCrystal_I2C *lcd;
-
-    PlotData *data = new PlotData();
-    DisplayItem item[LCD_ROWS];
-    unsigned long lastUpdated;
-  
+    Print *output;
+    PlotData *plot = new PlotData();
+    
+    TextItem line[DISPLAY_VIRTUAL_ROWS];
+    unsigned long updated;
 };
-
-static uint8_t char_empty[8] = {0b00000, 0b00000, 0b00000, 0b00000,
-                                0b00000, 0b00000, 0b00000, 0b00000};
-
-static uint8_t char_solid[8] = {0b11111, 0b11111, 0b11111, 0b11111,
-                                0b11111, 0b11111, 0b11111, 0b11111};
-
-static uint8_t char_1_5[8] = {0b10000, 0b10000, 0b10000, 0b10000,
-                              0b10000, 0b10000, 0b10000, 0b10000};
-
-static uint8_t char_2_5[8] = {0b11000, 0b11000, 0b11000, 0b11000,
-                              0b11000, 0b11000, 0b11000, 0b11000};
-
-static uint8_t char_3_5[8] = {0b11100, 0b11100, 0b11100, 0b11100,
-                              0b11100, 0b11100, 0b11100, 0b11100};
-
-static uint8_t char_4_5[8] = {0b11110, 0b11110, 0b11110, 0b11110,
-                              0b11110, 0b11110, 0b11110, 0b11110};
-
-static uint8_t char_1_8[8] = {0b00000, 0b00000, 0b00000, 0b00000,
-                              0b00000, 0b00000, 0b00000, 0b11111};
-
-static uint8_t char_2_8[8] = {0b00000, 0b00000, 0b00000, 0b00000,
-                              0b00000, 0b00000, 0b11111, 0b11111};
-
-static uint8_t char_3_8[8] = {0b00000, 0b00000, 0b00000, 0b00000,
-                              0b00000, 0b11111, 0b11111, 0b11111};
-
-static uint8_t char_4_8[8] = {0b00000, 0b00000, 0b00000, 0b00000,
-                              0b11111, 0b11111, 0b11111, 0b11111};
-
-static uint8_t char_5_8[8] = {0b00000, 0b00000, 0b00000, 0b11111,
-                              0b11111, 0b11111, 0b11111, 0b11111};
-
-static uint8_t char_6_8[8] = {0b00000, 0b00000, 0b11111, 0b11111,
-                              0b11111, 0b11111, 0b11111, 0b11111};
-
-static uint8_t char_7_8[8] = {0b00000, 0b11111, 0b11111, 0b11111,
-                              0b11111, 0b11111, 0b11111, 0b11111};
-
-static uint8_t char_bell[8] = {0x4, 0xe, 0xe, 0xe, 0x1f, 0x0, 0x4};
-
-static uint8_t char_note[8] = {0x2, 0x3, 0x2, 0xe, 0x1e, 0xc, 0x0};
-
-static uint8_t char_clock[8] = {0x0, 0xe, 0x15, 0x17, 0x11, 0xe, 0x0};
-
-static uint8_t char_heart[8] = {0x0, 0xa, 0x1f, 0x1f, 0xe, 0x4, 0x0};
-
-static uint8_t char_duck[8] = {0x0, 0xc, 0x1d, 0xf, 0xf, 0x6, 0x0};
-
-static uint8_t char_check[8] = {0x0, 0x1, 0x3, 0x16, 0x1c, 0x8, 0x0};
-
-static uint8_t _cross[8] = {0x0, 0x1b, 0xe, 0x4, 0xe, 0x1b, 0x0};
-
-static uint8_t _retarrow[8] = {0x1, 0x1, 0x5, 0x9, 0x1f, 0x8, 0x4};
