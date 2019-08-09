@@ -238,7 +238,9 @@ void display_boot_progress(uint8_t per, const char *str) {
 #ifndef DISABLE_LCD
     if (display) 
     {
-        if (str != NULL) display->drawText(LCD_ROW_1, str);
+        if (str != NULL) {            
+            display->drawText(LCD_ROW_1, str);
+        } 
         display->drawBar(LCD_ROW_2, per);
     }
     while(per - boot_progress > 0) 
@@ -276,7 +278,7 @@ void print_welcome(Print *p) {
     char title[SCREEN_WIDTH + 1];
     strcpy(title, APPNAME " v" FW_VERSION);
     uint8_t width = SCREEN_WIDTH / 2;
-    addPaddingTo(title, str_utils::CENTER, width, ' ');
+    str_utils::strwithpad(title, str_utils::CENTER, width, ' ');
     char decor[width + 1];
     str_utils::strfill(decor, '*', width + 1);
     p->println(decor);
@@ -290,6 +292,7 @@ void setup() {
 #ifdef SERIAL_DEBUG
     USE_SERIAL.setDebugOutput(true);
 #endif
+    USE_SERIAL.println();
     print_reset_reason(&USE_SERIAL);
     print_welcome(&USE_SERIAL);
     delay(100);
@@ -313,30 +316,29 @@ void setup() {
 #endif
     delay_print(&USE_SERIAL);
 
-    display_boot_progress(20, "VER> " FW_VERSION);
+    display_boot_progress(10, BUILD_DATE);
 
     config = new ConfigHelper();
     config->init(FILE_CONFIG);
 
     start_clock();
+
     start_psu();
 
-    display_boot_progress(30);
-
-    display_boot_progress(40, "WIFI>");
+    display_boot_progress(40, "<WIFI>");
 
     wireless::setOnNetworkStateChange(
         [](bool hasNetwork) { refresh_wifi_led(); });
     wireless::start_wifi();
 
-    display_boot_progress(80, "INIT>");
+    display_boot_progress(80, "<INIT>");
 
     CLI::init();
 #ifndef DISABLE_CONSOLE_SHELL
     start_console_shell();
 #endif
 
-    display_boot_progress(100, "COMPLETE");
+    display_boot_progress(100, "<COMPLETE>");
 
     timer.setInterval(1000, [] {
         send_psu_data_to_clients();

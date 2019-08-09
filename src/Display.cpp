@@ -222,7 +222,10 @@ void Display::drawBar(uint8_t row, uint8_t per) {
 void Display::drawText(uint8_t row, const char * str) {
     if (!connected) return;
     lcd->setCursor(0, row);
-    lcd->print(str);
+    char tmp[LCD_COLS + 1];
+    memcpy(tmp, str, strlen(str));
+    str_utils::strwithpad(tmp, str_utils::Align::CENTER, LCD_COLS);    
+    lcd->print(tmp);
 }
 
 void Display::load_bar_bank() {

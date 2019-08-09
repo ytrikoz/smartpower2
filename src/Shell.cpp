@@ -82,7 +82,7 @@ void Shell::welcome() {
     char title[SCREEN_WIDTH + 1];
     strcpy(title, APPNAME " v" FW_VERSION);
     uint8_t width = SCREEN_WIDTH / 2;
-    str_utils::addPaddingTo(title, str_utils::CENTER, width, ' ');
+    str_utils::strwithpad(title, str_utils::CENTER, width, ' ');
     char tmp[width + 1];
     str_utils::strfill(tmp, '#', width);
 

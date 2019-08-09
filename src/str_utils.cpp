@@ -79,7 +79,7 @@ String formatInMHz(uint32_t value) {
     return String(buf);
 }
 
-void addPaddingTo(char *str, Align align, uint8_t width, const char ch) {
+void strwithpad(char *str, Align align, uint8_t width, const char ch) {
     uint8_t str_len = strlen(str) + 1;
     if (str_len >= width) {
         return;

@@ -24,7 +24,7 @@ String getMacStr(uint8 hwaddr[6]);
 String formatSize(size_t bytes);
 String formatInMHz(uint32_t);
 
-void addPaddingTo(char *str, Align align, uint8_t line_width,
+void strwithpad(char *str, Align align, uint8_t line_width,
                   const char ch = ' ');
 
 }  // namespace str_utils
