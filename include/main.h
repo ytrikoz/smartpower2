@@ -4,7 +4,7 @@
 #include <Wire.h>
 #include <HardwareSerial.h>
 #include "LoopWatchDog.h"
-#include "Types.h"
+#include "types.h"
 
 #define PG_HOME 1
 #define PG_SETTINGS 2

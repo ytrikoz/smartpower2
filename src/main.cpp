@@ -5,9 +5,9 @@
 #include "global.h"
 #include "str_utils.h"
 
-#include "Consts.h"
+#include "consts.h"
 #include "Led.h"
-#include "SysInfo.h"
+#include "sysinfo.h"
 #include "wireless.h"
 
 #include "TimeProfiler.h"

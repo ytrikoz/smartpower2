@@ -1,4 +1,4 @@
-#include "Psu.h"
+#include "psu.h"
 
 Psu::Psu() {
     info = PsuInfo();

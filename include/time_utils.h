@@ -2,7 +2,7 @@
 
 #include <pgmspace.h>
 
-#include "Types.h"
+#include "types.h"
 #include "time.h"
 
 // #define DEBUG_TIME_UTILS

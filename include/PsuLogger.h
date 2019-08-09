@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Psu.h"
+#include "psu.h"
 #include <string.h>
-#include "Types.h"
+#include "types.h"
 #include "consts.h"
 
 class PsuLogger {

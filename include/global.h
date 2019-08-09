@@ -12,7 +12,7 @@
 #include "Shell.h"
 #include "ConfigHelper.h"
 #include "Display.h"
-#include "PSU.h"
+#include "psu.h"
 #include "NTPClient.h"
 #include "NetworkService.h"
 #include "OTAUpdate.h"

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Psu.h"
+#include "psu.h"
 #include "Shell/ParameterlessCommand.h"
 
 namespace CLI {

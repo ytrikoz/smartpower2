@@ -2,7 +2,7 @@
 #include <Arduino.h>
 
 #include "IPAddress.h"
-#include "Types.h"
+#include "types.h"
 #include "consts.h"
 
 #define PARAM_COUNT 20
