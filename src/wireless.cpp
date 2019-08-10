@@ -238,7 +238,9 @@ void start_wifi() {
 
         staDisconnectedEventHandler = WiFi.onStationModeDisconnected(
             [](const WiFiEventStationModeDisconnected &e) {
-                PRINTLN_WIFI_STA_DISCONNECTED
+                if (network == NETWORK_UP) {
+                    PRINTLN_WIFI_STA_DISCONNECTED
+                }                                
                 updateState();
             });
 

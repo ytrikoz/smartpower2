@@ -2,7 +2,7 @@
 
 #include "Actions/Actions.h"
 #include "Actions/ClockSet.h"
-#include "Actions/PowerSetAvg.h"
+#include "Actions/PowerAvg.h"
 #include "Actions/ShowClients.h"
 #include "Actions/ShowClock.h"
 #include "Actions/ShowDiag.h"
@@ -13,6 +13,8 @@
 #include "StrUtils.h"
 
 namespace Cli {
+
+using Actions::PowerAvg;
 
 Print* output;
 
@@ -176,9 +178,9 @@ void power(cmd* c) {
             psuLog->printLast(output, num);
         }
     } else if (action.equals("avg")) {        
-        size_t num = param.equals("") ? 3 : atoi(param.c_str());
-        Actions::powerSetAvg->setParam(num);
-        Actions::powerSetAvg->exec(output);
+        size_t num = param.equals("") ? 1 : atoi(param.c_str());
+        PowerAvg("avg", num).exec(output);
+
         onCommandDone();
     } else if (StrUtils::strpositiv(action)) {
         psu->setState(POWER_ON);
@@ -233,6 +235,7 @@ void onSystemCommand(cmd* c) {
     } else if (action.equals("save")) {
         if (param.equals("config")) {
             config->save();
+            onCommandDone(action, param);
         } else {
             unknownActionParam(param.c_str(), action.c_str());
             return;

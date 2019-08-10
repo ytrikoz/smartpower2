@@ -19,7 +19,7 @@ class WakeOnLanCommand : public Printable {
                                   '\xFF', '\xFF', '\xFF'};
 };
 
-inline void WakeOnLanCommand::Execute(Print *p) {
+void WakeOnLanCommand::Execute(Print *p) {
     IPAddress ipaddr;
     udp = new WiFiUDP();
     bool result = udp->begin(WOL_PORT);
@@ -37,11 +37,6 @@ inline void WakeOnLanCommand::Execute(Print *p) {
         free(mac);
     }
     p->println();
-}
-
-inline size_t WakeOnLanCommand::printTo(Print &p) const {
-    size_t res = p.println("wol");
-    return res;
 }
 
 }  // namespace Actions

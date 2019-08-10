@@ -8,15 +8,39 @@ namespace Actions {
 
 class EmptyParamAction : public Printable {
    public:
-    virtual void exec(Print* p);
-    virtual size_t printTo(Print& p) const;
+    EmptyParamAction();
+    EmptyParamAction(const char* name);
+    char* getName();
+    size_t printTo(Print& p) const;
+   protected:
+    char* name;
 };
 
-class NumericAction: public EmptyParamAction {
-    public:
-    virtual void setParam(long number);
+EmptyParamAction::EmptyParamAction() { this->name = new char[16]{0}; }
+
+EmptyParamAction::EmptyParamAction(const char* str) {
+    EmptyParamAction();
+    StrUtils::setstr(this->name, str, 16);
+}
+char* EmptyParamAction::getName() { return name; }
+
+size_t EmptyParamAction::printTo(Print& p) const {
+    size_t res = p.println(name);
+    return res;
+}
+
+class NumericAction : public EmptyParamAction {
+   public:
+    NumericAction(const char* str, int param);
     virtual void exec(Print* p);
-    virtual size_t printTo(Print& p) const;
+
+   protected:
+    int param;
 };
+
+NumericAction::NumericAction(const char* str, int param)
+    : EmptyParamAction(str) {
+    this->param = param;
+}
 
 }  // namespace Actions

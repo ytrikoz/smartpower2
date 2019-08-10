@@ -1,7 +1,6 @@
 #include "StrUtils.h"
 
-#include <Print.h>
-
+#include <Arduino.h>
 #include "Strings.h"
 
 namespace StrUtils {

@@ -7,10 +7,9 @@ namespace Actions {
 class ShowWifi : public EmptyParamAction {
    public:
     void exec(Print* p);
-    size_t printTo(Print& p) const;
 };
 
-inline void ShowWifi::exec(Print* p) {
+void ShowWifi::exec(Print* p) {
     p->print(FPSTR(str_wifi_));
     switch (Wireless::getWirelessMode()) {
         case WLAN_OFF:
@@ -38,11 +37,6 @@ inline void ShowWifi::exec(Print* p) {
     }
 
     p->println(Wireless::hostIPInfo().c_str());
-}
-
-inline size_t ShowWifi::printTo(Print& p) const {
-    size_t res = p.println("show wifi");
-    return res;
 }
 
 ShowWifi* showWifi = new ShowWifi();
