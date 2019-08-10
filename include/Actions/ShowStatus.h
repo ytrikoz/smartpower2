@@ -1,16 +1,16 @@
 #pragma once
 
-#include "ParameterlessAction.h"
+#include "Actions.h"
 
 namespace Actions {
 
-class ShowStatus : public ParameterlessAction {
+class ShowStatus : public EmptyParamAction {
    public:
-    void Execute(Print* p);
+    void exec(Print* p);
     size_t printTo(Print& p) const;
 };
 
-inline void ShowStatus::Execute(Print* p) {
+inline void ShowStatus::exec(Print* p) {
     p->println(getHeapStat());
     loopWD.printDiag(p);
 }

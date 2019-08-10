@@ -45,7 +45,6 @@ class Display {
     bool init();
     bool ready();
     void setOutput(Print *p);
-    void enableUpdates(bool enable);
     void drawTextCenter(uint8_t row, const char *str);
     void drawBar(uint8_t row, uint8_t per);
     void drawPlot(uint8_t start);
@@ -74,15 +73,20 @@ class Display {
     void setLine(uint8_t n, const char *fixed_str, const char *var_str);
 
     void updateLCD(boolean forced = false);
-    void lockUpdates(unsigned long period);
+    void lock(unsigned long period);
+    void lock();
+    void unlock();
+    bool locked();
    private:  
+
     bool connect();
     uint8_t addr;
     bool connected;
     bool active;
+    bool updates_locked();
     uint8_t get_row_for_update();
     uint8_t row_for_update;
-    unsigned long lockTime;
+    unsigned long lockTimeLeft;
     unsigned long lockUpdated;
     LiquidCrystal_I2C *lcd;
     Print *output;

@@ -38,7 +38,7 @@
 void editLine (char * str, uint8_t lineLength )
 {
     uint_fast8_t ch;
-    uint_fast8_t curlen = 0;
+    int curlen = 0;
     uint_fast8_t curpos = 0;
     uint_fast8_t starty;
     uint_fast8_t startx;

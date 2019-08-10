@@ -27,6 +27,7 @@ void onClockCommand(cmd *c);
 void onGetConfigParameter(const char *, const char *);
 void onConfigParameterChanged(const char *, const char *, const char *);
 void onCommandDone(String &action, String &param);
+void onCommandDone();
 void onFileResult(const char *, const char *);
 
 void unknownActionParam(const char *, const char *);

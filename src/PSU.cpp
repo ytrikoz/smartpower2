@@ -1,9 +1,11 @@
 #include "Psu.h"
 
-#include <mcp4652.h>
+#include <FS.h>
 
-#include "FS.h"
+#include "TimeProfiler.h"
 #include "TimeUtils.h"
+#include "ina231.h"
+#include "mcp4652.h"
 
 #define PSU_VOLTAGE_LOW 1
 
@@ -34,8 +36,8 @@ void Psu::setOnPowerOff(PsuEventHandler h) { onPowerOff = h; }
 
 void Psu::setOnPowerError(PsuEventHandler h) { onPowerError = h; }
 
-void Psu::setState(PowerState value, bool forceUpdate) {
-    if ((forceUpdate) || (state != value)) {
+void Psu::setState(PowerState value, bool force) {
+    if ((force) || (state != value)) {
         state = value;
         output->print(FPSTR(str_psu));
         output->printf_P(strf_arrow_dest, getStateStr().c_str());
@@ -46,9 +48,9 @@ void Psu::setState(PowerState value, bool forceUpdate) {
         storePowerState(state);
 
         if (state == POWER_ON) {
-            start();
+            onStart();
         } else if (state == POWER_OFF) {
-            stop();
+            onStop();
         }
     }
 }
@@ -109,7 +111,7 @@ PowerState Psu::restorePowerState() {
     return value;
 }
 
-void Psu::start() {
+void Psu::onStart() {
     startedAt = millis();
     updatedAt = startedAt;
     calcedAt = startedAt;
@@ -121,7 +123,7 @@ void Psu::start() {
     active = true;
 }
 
-void Psu::stop() {
+void Psu::onStop() {
     if (onPowerOff) onPowerOff();
 
     active = false;
@@ -129,22 +131,23 @@ void Psu::stop() {
 
 void Psu::loop() {
     if (!active) return;
-
-    if (millis_since(updatedAt) >= MEASUREMENT_INTERVAL_ms) {
+    unsigned long now = millis();
+    if (millis_passed(updatedAt, now) >= MEASUREMENT_INTERVAL_ms) {
         info.voltage = ina231_read_voltage();
         info.current = ina231_read_current();
-        updatedAt = millis();
+        updatedAt = now;
     }
 
-    if (millis_since(calcedAt) >= ONE_SECOND_ms) {
+    unsigned long sinceLastCalc = millis_passed(calcedAt, now);
+    if (sinceLastCalc >= ONE_SECOND_ms) {
         info.power = ina231_read_power();
-        if (wattHoursCalculationEnabled) {
-            info.wattSeconds += info.power;
-        }
+        if (wattHoursCalculationEnabled)
+            info.wattSeconds += info.power * sinceLastCalc / ONE_SECOND_ms;
         calcedAt = millis();
     }
 
-    if (updatedAt > 1000 && info.voltage <= PSU_VOLTAGE_LOW) {
+    if (millis_passed(startedAt, now) > 5000 &&
+        info.voltage <= PSU_VOLTAGE_LOW) {
         output->print(FPSTR(str_psu));
         output->print(FPSTR(str_error));
         output->print(FPSTR(stre_low_voltage));
@@ -203,6 +206,7 @@ void Psu::init() {
     ina231_configure();
     // pot
     mcp4652_init();
+
     initialized = true;
 }
 

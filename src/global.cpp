@@ -138,13 +138,13 @@ void start_psu() {
         psuLog->end();
 
         if (display) {
-            int log_size = psuLog->size();
-            float *items = new float[log_size];
+            int size = psuLog->size();
+            float *items = new float[size];
             psuLog->getVoltages(items);
 
-            display->loadData(items, log_size);
+            display->loadData(items, size);
             display->drawPlot(0);
-            display->lockUpdates(15000);
+            display->lock(15000);
             delete[] items;
         }
     });
@@ -152,7 +152,7 @@ void start_psu() {
     psu->setOnPowerOn([]() {
         power_led->set(BLINK);
         psuLog->begin();
-        if (display) display->enableUpdates(true);
+        if (display) display->unlock();
     });
 
     psu->setOnPowerError([]() { power_led->set(BLINK_ERROR); });

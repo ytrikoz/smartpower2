@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Arduino.h>
-
 #include <IPAddress.h>
 
 #include "CommonTypes.h"

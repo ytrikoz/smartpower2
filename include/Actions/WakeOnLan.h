@@ -4,7 +4,7 @@
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 
-#include "Consts.h"
+#include "Strings.h"
 
 namespace Actions {
 
@@ -33,7 +33,7 @@ inline void WakeOnLanCommand::Execute(Print *p) {
         udp->write(wol_preamble, preamble_size);
         for (uint8_t i = 0; i < 16; i++) udp->write(mac, mac_size);
         udp->endPacket();
-        p->printf_P(str_complete);
+        p->print(FPSTR(str_complete));
         free(mac);
     }
     p->println();

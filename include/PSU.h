@@ -13,8 +13,6 @@ class Psu : public PsuInfoProvider {
    public:
     Psu();
     void begin();
-    void start();
-    void stop();
     void loop();
 
     void togglePower();
@@ -43,6 +41,9 @@ class Psu : public PsuInfoProvider {
     
     void printDiag(Print* p);
    private:
+    void onStart();
+    void onStop();
+
     void clearError();
     void error(PsuStatus err);
     void init();

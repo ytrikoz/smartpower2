@@ -1,16 +1,16 @@
 #pragma once
 
-#include "ParameterlessAction.h"
+#include "Actions.h"
 
 namespace Actions {
 
-class ShowNtp : public ParameterlessAction {
+class ShowNtp : public EmptyParamAction {
    public:
-    void Execute(Print* p);
+    void exec(Print* p);
     size_t printTo(Print& p) const;
 };
 
-inline void ShowNtp::Execute(Print* p) {
+inline void ShowNtp::exec(Print* p) {
     p->print(FPSTR(str_ntp));
     if (ntp) {
         ntp->printDiag(p);

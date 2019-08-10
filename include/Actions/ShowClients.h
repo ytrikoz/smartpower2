@@ -1,16 +1,16 @@
 #pragma once
 
-#include "ParameterlessAction.h"
+#include "Actions.h"
 
 namespace Actions {
 
-class ShowClients : public ParameterlessAction {
+class ShowClients : public EmptyParamAction {
    public:
-    void Execute(Print* p);
+    void exec(Print* p);
     size_t printTo(Print& p) const;
 };
 
-inline void ShowClients::Execute(Print* p) {
+inline void ShowClients::exec(Print* p) {
     if ((Wireless::getWirelessMode() != WLAN_STA) &&
         !getConnectedStationInfo().equals("")) {
         p->print(FPSTR(str_wifi_));

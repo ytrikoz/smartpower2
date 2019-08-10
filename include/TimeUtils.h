@@ -3,9 +3,9 @@
 #include <pgmspace.h>
 #include <time.h>
 
+#include "BuildConfig.h"
 #include "Consts.h"
 #include "StrUtils.h"
-#include "BuildConfig.h"
 
 uint8_t get_days_in_month(uint8_t month, uint16_t year);
 uint8_t str_to_month(String str);

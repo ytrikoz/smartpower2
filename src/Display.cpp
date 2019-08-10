@@ -59,7 +59,7 @@ Display::Display() {
     addr = 0x00;
     connected = false;
     updated = 0;
-    lockTime = 0;
+    lockTimeLeft = 0;
 }
 
 void Display::setOutput(Print *p) { output = p; }
@@ -139,40 +139,43 @@ uint8_t Display::get_row_for_update() {
     return row_for_update;
 }
 
-void Display::enableUpdates(bool enable){
-    active = enable;
-    if (active)
-    {
-        lockTime = 0;
-    }
-    #ifdef DEBUG_DISPLAY
-    DEBUG.printf("[display] enableUpdates %T", enable);
-    DEBUG.println();
-    #endif
+void Display::unlock() {
+    active = true;
+    lockTimeLeft = 0;
 }
 
-void Display::lockUpdates(unsigned long period) {
-    #ifdef DEBUG_DISPLAY
-        DEBUG.printf("[display] lockUpdates %lu", period);
-        DEBUG.println();
+void Display::lock() {
+    active = false;
+    lockTimeLeft = 0;
+}
+
+void Display::lock(unsigned long period) {
+#ifdef DEBUG_DISPLAY
+    DEBUG.printf("[display] lockUpdates %lu", period);
+    DEBUG.println();
 #endif
-    lockTime = period;
+    lockTimeLeft = period;
     lockUpdated = millis();
+}
+
+bool Display::locked() {
+    unsigned long now = millis();
+    unsigned long passed = millis_passed(lockUpdated, now);
+    if (lockTimeLeft > passed) {
+        lockTimeLeft -= passed;
+    } else {
+        lockTimeLeft = 0;
+    }
+    lockUpdated = now;    
+    return (lockTimeLeft != 0);
 }
 
 void Display::updateLCD(boolean forced) {
     if (!connected) return;
     if (!active) return;
-
-    if (lockTime > millis_since(lockUpdated)) {
-        lockTime -= millis_since(lockUpdated);
-    } else {
-        lockTime = 0;
-    }
-    lockUpdated = millis();
-    if (lockTime > 0) return;
-
     if (!forced && (millis_since(updated) < LCD_REFRESH_INTERVAL_ms)) return;
+    if (locked()) return;
+
     uint8_t row = get_row_for_update();
     TextItem *l = &line[row];
     if (!l->hasUpdates) return;
@@ -262,10 +265,10 @@ void Display::drawTextCenter(uint8_t row, const char *str) {
     tmp[str_len] = '\x00';
     StrUtils::strwithpad(tmp, StrUtils::CENTER, LCD_COLS + 1);
     lcd->print(tmp);
-    #ifdef DEBUG_DISPLAY
-        DEBUG.printf("[display] drawTextCenter(%s)", tmp);
-        DEBUG.println();
-    #endif
+#ifdef DEBUG_DISPLAY
+    DEBUG.printf("[display] drawTextCenter(%s)", tmp);
+    DEBUG.println();
+#endif
 }
 
 void Display::load_bar_bank() {
@@ -348,17 +351,17 @@ void Display::drawPlot(uint8_t offset_x) {
 
     lcd->setCursor(9, LCD_ROW_1);
     char tmp[16];
-    const char* str  = dtostrf(plot->max_value, 5, 4, tmp);
+    const char *str = dtostrf(plot->max_value, 5, 4, tmp);
     lcd->print(str);
-    #ifdef DEBUG_DISPLAY
-        DEBUG.printf("[display] max_value %s", str);
-        DEBUG.println();
-    #endif
+#ifdef DEBUG_DISPLAY
+    DEBUG.printf("[display] max_value %s", str);
+    DEBUG.println();
+#endif
     str = dtostrf(plot->min_value, 5, 4, tmp);
     lcd->setCursor(9, LCD_ROW_2);
     lcd->print(str);
-    #ifdef DEBUG_DISPLAY
-        DEBUG.printf("[display] min_value %s", str);
-        DEBUG.println();
-    #endif
+#ifdef DEBUG_DISPLAY
+    DEBUG.printf("[display] min_value %s", str);
+    DEBUG.println();
+#endif
 }

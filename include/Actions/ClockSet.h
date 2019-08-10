@@ -7,11 +7,11 @@ namespace Actions {
 
 class ClockSet : public Printable {
    public:
-    void Execute(Print* p);
+    void exec(Print* p);
     size_t printTo(Print& p) const;
 };
 
-inline void ClockSet::Execute(Print* p) {
+inline void ClockSet::exec(Print* p) {
     p->print(FPSTR(str_set));
     p->print(FPSTR(str_date));
 

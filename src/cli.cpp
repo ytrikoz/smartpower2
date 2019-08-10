@@ -1,7 +1,8 @@
 #include "Cli.h"
 
+#include "Actions/Actions.h"
 #include "Actions/ClockSet.h"
-#include "Actions/ParameterlessAction.h"
+#include "Actions/PowerSetAvg.h"
 #include "Actions/ShowClients.h"
 #include "Actions/ShowClock.h"
 #include "Actions/ShowDiag.h"
@@ -123,9 +124,12 @@ void onCommandDone(String& action, String& param) {
     output->print(' ');
     output->print(param.c_str());
     output->print(": ");
+}
+
+void onCommandDone() {
     output->print(FPSTR(str_done));
     output->println();
-}
+};
 
 void onCommandError(cmd_error* e) {
     CommandError cmdError(e);
@@ -163,7 +167,7 @@ void power(cmd* c) {
     if (action.equals("status")) {
         psu->printDiag(output);
         psuLog->printDiag(output);
-    } else if (action.equals("log")) {        
+    } else if (action.equals("log")) {
         if (psuLog->size() == 0) {
             output->println(FPSTR(str_empty));
         } else {
@@ -171,6 +175,11 @@ void power(cmd* c) {
             if (num > psuLog->size()) num = psuLog->size();
             psuLog->printLast(output, num);
         }
+    } else if (action.equals("avg")) {        
+        size_t num = param.equals("") ? 3 : atoi(param.c_str());
+        Actions::powerSetAvg->setParam(num);
+        Actions::powerSetAvg->exec(output);
+        onCommandDone();
     } else if (StrUtils::strpositiv(action)) {
         psu->setState(POWER_ON);
     } else if (StrUtils::strnegativ(action)) {
@@ -178,14 +187,14 @@ void power(cmd* c) {
     } else {
         unknownAction(action);
     };
-}
+}  // namespace Cli
 
 void onClockCommand(cmd* c) {
     Command cmd(c);
     String action = getCommandAction(&cmd);
     String param = getCommandParam(&cmd);
     if (action.equals("set")) {
-        Actions::clockSet->Execute(output);
+        Actions::clockSet->exec(output);
     }
 }
 
@@ -289,11 +298,11 @@ void show(cmd* c) {
     Command cmd(c);
     String item = getCommandItem(&cmd);
     if (item.equals("clients")) {
-        Actions::showClients->Execute(output);
+        Actions::showClients->exec(output);
     } else if (item.equals("clock")) {
-        Actions::showClock->Execute(output);
+        Actions::showClock->exec(output);
     } else if (item.equals("power")) {
-        psu->printDiag(output);    
+        psu->printDiag(output);
     } else if (item.equals("log")) {
         psuLog->printDiag(output);
     } else if (item.equals("network")) {
@@ -303,13 +312,13 @@ void show(cmd* c) {
     } else if (item.equals("config")) {
         output->println(config->getConfigJson().c_str());
     } else if (item.equals("status")) {
-        Actions::showStatus->Execute(output);
+        Actions::showStatus->exec(output);
     } else if (item.equals("ntp")) {
-        Actions::showNtp->Execute(output);
+        Actions::showNtp->exec(output);
     } else if (item.equals("diag")) {
-        Actions::showDiag->Execute(output);
+        Actions::showDiag->exec(output);
     } else if (item.equals("wifi")) {
-        Actions::showWifi->Execute(output);
+        Actions::showWifi->exec(output);
     } else {
         unknownCommandItem(cmd.getName().c_str(), item.c_str());
     }

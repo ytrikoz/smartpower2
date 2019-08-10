@@ -7,41 +7,37 @@ class TimeProfiler {
     TimeProfiler(const char* label, uint16_t limit = 16);
     ~TimeProfiler();
     void finish();
-    void printResults(Print*);
    private:
+    void print(unsigned long time);
     Print* p;
     char* label;
     uint16_t limit;
     unsigned long start;
-	unsigned long total;
+    unsigned long total;
 };
 
-inline void TimeProfiler::finish(){
-    printResults(p);
+inline void TimeProfiler::finish() {  
+    long time =  micros() - start;
+    if (((limit > 0) && (time > limit)) || (limit == 0)) print(time);
 }
 
-inline TimeProfiler::TimeProfiler(const char* label, uint16_t limit) 
-{
-	this->label = new char[16];
-	strcpy(this->label, label);
+inline TimeProfiler::TimeProfiler(const char* label, uint16_t limit) {
+    this->label = new char[16];
+    strcpy(this->label, label);
     this->limit = limit;
     // default
     this->p = &USE_SERIAL;
-    start = millis();
+    start = micros();
 }
 
 inline TimeProfiler::~TimeProfiler() {
-    printResults(p);
-	delete[] label;
+    finish();
+    delete[] label;
 }
 
-inline void TimeProfiler::printResults(Print* p)
-{
-	long time = millis_since(start);	
-    if (time > limit) {
-        p->print(label);
-        p->print(' ');
-        p->printf_P(strf_lu_ms, time);
-        p->println();
-    }
+inline void TimeProfiler::print(unsigned long time) {
+    p->print(label);
+    p->print(' ');
+    p->print(time);
+    p->println();
 }

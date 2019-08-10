@@ -1,16 +1,16 @@
 #pragma once
 
-#include "ParameterlessAction.h"
+#include "Actions.h"
 
 namespace Actions {
 
-class ShowDiag : public ParameterlessAction {
+class ShowDiag : public EmptyParamAction {
    public:
-    void Execute(Print* p);
+    void exec(Print* p);
     size_t printTo(Print& p) const;
 };
 
-inline void ShowDiag::Execute(Print* p) { Wireless::printDiag(p); }
+inline void ShowDiag::exec(Print* p) { Wireless::printDiag(p); }
 
 inline size_t ShowDiag::printTo(Print& p) const {
     size_t res = p.println("show diag");

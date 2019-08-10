@@ -1,16 +1,16 @@
 #pragma once
 
-#include "ParameterlessAction.h"
+#include "Actions.h"
 
 namespace Actions {
 
-class ShowClock : public ParameterlessAction {
+class ShowClock : public EmptyParamAction {
    public:
-    void Execute(Print* p);
+    void exec(Print* p);
     size_t printTo(Print& p) const;
 };
 
-inline void ShowClock::Execute(Print* p) {
+inline void ShowClock::exec(Print* p) {
     p->print(FPSTR(str_clock));
     p->print(FPSTR(str_time));
     char buf[32];

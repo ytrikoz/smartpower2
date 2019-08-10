@@ -1,16 +1,16 @@
 #pragma once
 
-#include "ParameterlessAction.h"
+#include "Actions.h"
 
 namespace Actions {
 
-class ShowWifi : public ParameterlessAction {
+class ShowWifi : public EmptyParamAction {
    public:
-    void Execute(Print* p);
+    void exec(Print* p);
     size_t printTo(Print& p) const;
 };
 
-inline void ShowWifi::Execute(Print* p) {
+inline void ShowWifi::exec(Print* p) {
     p->print(FPSTR(str_wifi_));
     switch (Wireless::getWirelessMode()) {
         case WLAN_OFF:
