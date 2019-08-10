@@ -144,7 +144,7 @@ void Psu::loop() {
         calcedAt = millis();
     }
 
-    if (updatedAt > 0 && info.voltage <= PSU_VOLTAGE_LOW) {
+    if (updatedAt > 1000 && info.voltage <= PSU_VOLTAGE_LOW) {
         output->print(FPSTR(str_psu));
         output->print(FPSTR(str_error));
         output->print(FPSTR(stre_low_voltage));
