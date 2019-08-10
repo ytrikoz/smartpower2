@@ -141,6 +141,10 @@ uint8_t Display::get_row_for_update() {
 
 void Display::enableUpdates(bool enable){
     active = enable;
+    if (active)
+    {
+        lockTime = 0;
+    }
     #ifdef DEBUG_DISPLAY
     DEBUG.printf("[display] enableUpdates %T", enable);
     DEBUG.println();

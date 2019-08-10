@@ -144,7 +144,7 @@ void start_psu() {
 
             display->loadData(items, log_size);
             display->drawPlot(0);
-            display->enableUpdates(false);
+            display->lockUpdates(15000);
             delete[] items;
         }
     });

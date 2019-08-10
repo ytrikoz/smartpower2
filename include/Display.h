@@ -74,9 +74,8 @@ class Display {
     void setLine(uint8_t n, const char *fixed_str, const char *var_str);
 
     void updateLCD(boolean forced = false);
-
-   private:
     void lockUpdates(unsigned long period);
+   private:  
     bool connect();
     uint8_t addr;
     bool connected;
