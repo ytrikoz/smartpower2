@@ -1,11 +1,12 @@
 #pragma once
+
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 #include <FS.h>
 
-#include "consts.h"
-#include "str_utils.h"
+#include "Consts.h"
+#include "StrUtils.h"
 
 String getConnectedStationInfo();
 

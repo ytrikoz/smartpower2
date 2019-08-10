@@ -1,9 +1,6 @@
 #pragma once
 
 #include "Psu.h"
-#include <string.h>
-#include "Types.h"
-#include "consts.h"
 
 class PsuLogger {
    public:
@@ -16,12 +13,16 @@ class PsuLogger {
     void end();
     void clear();
     void loop();
-    void printFirst(uint16_t n);
-    void printLast(uint16_t n);
-    void printSummary();
+
     size_t getItems(PsuInfo& info);
     void getVoltages(float* voltages);
+
+    void printFirst(Print* p, uint16_t n);
+    void print(Print* p);
+    void printSummary(Print* p);
     void printDiag(Print* p);
+    void printLast(Print* p, uint16_t n);
+
    private:
     void add(PsuInfo item, unsigned long time_ms);
     Psu* provider;

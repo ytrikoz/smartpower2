@@ -3,24 +3,22 @@
 #include <IPAddress.h>
 #include <SimpleCLI.h>
 #include <SimpleTimer.h>
+#include <mcurses.h>
 
-#include "mcurses.h"
-#include "types.h"
-#include "SystemClock.h"
-
-#include "Led.h"
-#include "Shell.h"
+#include "CommonTypes.h"
 #include "ConfigHelper.h"
 #include "Display.h"
-#include "PSU.h"
-#include "NTPClient.h"
+#include "Led.h"
+#include "LoopWatchDog.h"
 #include "NetworkService.h"
+#include "NtpClient.h"
 #include "OTAUpdate.h"
+#include "Psu.h"
+#include "PsuLogger.h"
+#include "Shell.h"
+#include "SystemClock.h"
 #include "TelnetServer.h"
 #include "WebService.h"
-#include "PsuLogger.h"
-
-#include "LoopWatchDog.h"
 
 extern Led *wifi_led, *power_led;
 
@@ -31,8 +29,8 @@ extern NetworkService *discovery;
 extern ConfigHelper *config;
 extern Display *display;
 extern Psu *psu;
-extern PsuLogger *psuLog; 
-extern NTPClient *ntp;
+extern PsuLogger *psuLog;
+extern NtpClient *ntp;
 extern OTAUpdate *ota;
 extern TelnetServer *telnet;
 extern WebService *http;
@@ -52,7 +50,7 @@ void refresh_wifi_led();
 void update_display();
 uint8_t get_telnet_clients_count();
 void start_console_shell();
-void onSystemTimeChanged(const char* str);
+void onSystemTimeChanged(const char *str);
 // main
 extern void onHttpClientConnect(uint8_t num);
 extern void onHttpClientDisconnect(uint8_t num);

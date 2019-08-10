@@ -4,10 +4,9 @@
 #include <ESP8266NetBIOS.h>
 #include <ESP8266mDNS.h>
 
-#include "consts.h"
-#include "str_utils.h"
-#include "sysinfo.h"
-#include "wireless.h"
+#include "StrUtils.h"
+#include "SysInfo.h"
+#include "Wireless.h"
 
 class NetworkService {
    public:

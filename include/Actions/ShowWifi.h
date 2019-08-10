@@ -1,10 +1,10 @@
 #pragma once
 
-#include "ParameterlessCommand.h"
+#include "ParameterlessAction.h"
 
-namespace shell {
+namespace Actions {
 
-class ShowWifi : public ParameterlessCommand {
+class ShowWifi : public ParameterlessAction {
    public:
     void Execute(Print* p);
     size_t printTo(Print& p) const;
@@ -12,7 +12,7 @@ class ShowWifi : public ParameterlessCommand {
 
 inline void ShowWifi::Execute(Print* p) {
     p->print(FPSTR(str_wifi_));
-    switch (wireless::getWirelessMode()) {
+    switch (Wireless::getWirelessMode()) {
         case WLAN_OFF:
             p->println(FPSTR(str_off));
             return;
@@ -31,13 +31,13 @@ inline void ShowWifi::Execute(Print* p) {
     p->println();
 
     p->print(FPSTR(str_network));
-    if (wireless::hasNetwork()) {
+    if (Wireless::hasNetwork()) {
         p->println(FPSTR(str_up));
     } else {
         p->println(FPSTR(str_down));
     }
 
-     p->println(wireless::hostIPInfo().c_str());
+    p->println(Wireless::hostIPInfo().c_str());
 }
 
 inline size_t ShowWifi::printTo(Print& p) const {
@@ -47,4 +47,4 @@ inline size_t ShowWifi::printTo(Print& p) const {
 
 ShowWifi* showWifi = new ShowWifi();
 
-}  // namespace shell
+}  // namespace Actions

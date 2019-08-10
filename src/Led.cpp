@@ -1,111 +1,82 @@
 #include "Led.h"
 
-#define LED_SHIM_INTERVAL_ms 10
-#define LED_OFF_DUTY_CYCLE 30
-#define LED_ON_DUTY_CYCLE 255
+int per_to_pwm_duty(float per, bool backwards = false) {
+    int duty = floor(per * PWM_RANGE);
+    if (backwards) duty = PWM_RANGE - duty;
+    return duty;
+}
 
-Led::Led(uint8_t pin, LedState startState, bool enableShim) {
+Led::Led(uint8_t pin, LedState startState, bool shim) {
     this->pin = pin;
-    this->shimEnabled = enableShim;
+    this->shim = shim;
     pinMode(pin, OUTPUT);
-    if (enableShim) {
-        sigmaDeltaSetup(0, 1000);
-        sigmaDeltaAttachPin(pin);
-    }
+    if (shim) {     
+        analogWriteFreq(PWM_FREQ);
+        analogWriteRange(PWM_RANGE);    
+    }    
     set((startState == LIGHT_ON ? STAY_ON : STAY_OFF));
-    setState(startState);
 }
 
 void Led::set(LedMode mode) {
+    #ifdef DEBUG_LEDS
+    DEBUG.printf("[led#%d] set(%d)", pin, mode);
+    DEBUG.println();
+    #endif
     switch (mode) {
         case STAY_OFF:
-            turnOff();
+            size = 1;
+            contract[0] = LedContract(LIGHT_OFF, 0);
             break;
         case STAY_ON:
-            turnOn();
+            size = 1;
+            contract[0] = LedContract(LIGHT_ON, 0);
             break;
         case BLINK:
-            blink();
+            size = 2;
+            contract[0] = LedContract(LIGHT_ON, floor((float)1000 / 2));
+            contract[1] = LedContract(LIGHT_OFF, floor((float)500 / 2));            
             break;
         case BLINK_ONE:
-            blinkSeqOne();
+            size = 3;
+            contract[0] = LedContract(LIGHT_ON, 1000);
+            contract[1] = LedContract(LIGHT_OFF, 100);
+            contract[2] = LedContract(LIGHT_ON, 100);
             break;
         case BLINK_TWO:
-            blinkSeqTwo();
+            size = 4;
+            contract[0] = LedContract(LIGHT_ON, 1000);
+            contract[1] = LedContract(LIGHT_OFF, 100);
+            contract[2] = LedContract(LIGHT_ON, 100);
+            contract[3] = LedContract(LIGHT_OFF, 100);
+            break;
+        case BLINK_ERROR:
+            size = 4;
+            contract[0] = LedContract(LIGHT_ON, 100);
+            contract[1] = LedContract(LIGHT_OFF, 50);
+            contract[2] = LedContract(LIGHT_ON, 100);
+            contract[3] = LedContract(LIGHT_OFF, 50);
             break;
     }
     this->mode = mode;
     step = 0;
-}
-
-void Led::turnOn() {
-#ifdef DEBUG_LEDS
-    DEBUG.printf("[led#%d] turnOn()", pin);
-    DEBUG.println();
-#endif
-    size = 1;
-    contract[0] = LedContract(LIGHT_ON, 0);
-}
-
-void Led::turnOff() {
-#ifdef DEBUG_LEDS
-    DEBUG.printf("[led#%d] turnOff()", pin);
-    DEBUG.println();
-#endif
-    size = 1;
-    contract[0] = LedContract(LIGHT_OFF, 0);
-}
-
-void Led::blink() {
-#ifdef DEBUG_LEDS
-    DEBUG.printf("[led#%d] blink()", pin);
-    DEBUG.println();
-#endif
-    size = 2;
-    contract[0] = LedContract(LIGHT_OFF, floor((float)500 / 2));
-    contract[1] = LedContract(LIGHT_ON, floor((float)1000 / 2));
-}
-
-void Led::blinkSeqOne() {
-#ifdef DEBUG_LEDS
-    DEBUG.printf("[led#%d] blinkSeqOne()", pin);
-    DEBUG.println();
-#endif
-    size = 3;
-    contract[0] = LedContract(LIGHT_ON, 1000);
-    contract[1] = LedContract(LIGHT_OFF, 100);
-    contract[2] = LedContract(LIGHT_ON, 100);
-}
-
-void Led::blinkSeqTwo() {
-#ifdef DEBUG_LEDS
-    DEBUG.printf("[led#%d] blinkSeqTwo()", pin);
-    DEBUG.println();
-#endif
-    size = 4;
-    contract[0] = LedContract(LIGHT_ON, 1000);
-    contract[1] = LedContract(LIGHT_OFF, 100);
-    contract[2] = LedContract(LIGHT_ON, 100);
-    contract[3] = LedContract(LIGHT_OFF, 100);
-}
-
-
-uint8_t f_to_duty(float f, bool invert) {
-    uint8_t duty = LED_OFF_DUTY_CYCLE + floor(f * (LED_ON_DUTY_CYCLE - LED_OFF_DUTY_CYCLE));
-    if (invert) duty = 255 - duty;
-    return duty;
+    setState(getContract()->state);
 }
 
 void Led::setState(LedState state) {
-#ifdef DEBUG_LEDS
-    DEBUG.printf("[led#%d] setState(%d)", pin, state);
-    DEBUG.println();
-#endif
     this->state = state;
-    if (shimEnabled) {
-        sigmaDeltaWrite(0, (state == LIGHT_ON) ? LED_ON_DUTY_CYCLE : LED_OFF_DUTY_CYCLE);
+    if (shim) {
+        int duty = (state == LIGHT_ON) ?  per_to_pwm_duty(0): per_to_pwm_duty(1);
+        analogWrite(pin, duty);        
+        #ifdef DEBUG_LEDS
+        DEBUG.printf("[led#%d] analogWrite(%d)", pin, duty);
+        DEBUG.println();
+        #endif
     } else {
         digitalWrite(pin, state);
+        #ifdef DEBUG_LEDS
+        DEBUG.printf("[led#%d] digitalWrite(%d)", pin, state);
+        DEBUG.println();
+        #endif
     }
     stateUpdated = millis();
     shimUpdated = stateUpdated;
@@ -122,27 +93,26 @@ void Led::nextStep() {
 
 void Led::loop() {    
     this->updateState();
-    long stateTime = getContract()->stateTime;    
-    if (stateTime == 0) return ;
-    if (millis_since(stateUpdated) >= stateTime) {
-        nextStep();
-    }
+    if (millis_since(stateUpdated) >= getContract()->stateTime) nextStep();
 }
-
+ 
 void Led::updateState() {
-#ifdef DEBUG_LEDS
-    DEBUG.printf("[led#%d] updateState(%d)", pin, contractState);
-    DEBUG.println();
-#endif
     LedState contract = getContract()->state;
     if (state != contract) {
         setState(contract);
         return;        
-    }     
-    if (shimEnabled && millis_since(shimUpdated) > LED_SHIM_INTERVAL_ms) {
-        float f = (float) millis_passed(stateUpdated, shimUpdated) / getContract()->stateTime;
-        uint8_t duty = f_to_duty(f, getContract()->state == LIGHT_ON);
-        sigmaDeltaWrite(0, duty);
-        shimUpdated = millis();
+    }
+    if (getContract()->stateTime > 0) 
+    {
+        if (shim && millis_since(shimUpdated) > LED_SHIM_INTERVAL_ms) {
+            float per = ((float) millis_passed(stateUpdated, shimUpdated)) / getContract()->stateTime;
+            uint16_t duty = per_to_pwm_duty(per, getContract()->state == LIGHT_OFF);
+            analogWrite(pin, duty);
+            shimUpdated = millis();
+            #ifdef DEBUG_LEDS
+            DEBUG.printf("[led#%d] analogWrite(%d)", pin, duty);
+            DEBUG.println();
+            #endif
+        }
     }
 }

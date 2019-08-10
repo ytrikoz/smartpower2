@@ -1,6 +1,6 @@
 #include "NetworkService.h"
 
-#include "Config.h"
+#include "Consts.h"
 
 NetworkService::NetworkService() {
     dns = new DNSServer();
@@ -12,14 +12,14 @@ NetworkService::NetworkService() {
 void NetworkService::setOutput(Print *p) { output = p; }
 
 void NetworkService::begin() {
-    IPAddress ip = wireless::hostIP();
+    IPAddress ip = Wireless::hostIP();
     const uint16_t dns_port = DNS_PORT;
     const uint16_t telnet_port = TELNET_PORT;
     const uint16_t http_port = HTTP_PORT;
     const uint16_t ota_port = OTA_PORT;
-    char dns_name[STR_SIZE + 1];
-    char host_name[STR_SIZE + 1];
-    if (wireless::getWirelessMode() == WLAN_AP) {
+    char dns_name[PARAM_STR_SIZE + 1];
+    char host_name[PARAM_STR_SIZE + 1];
+    if (Wireless::getWirelessMode() == WLAN_AP) {
         strcpy(dns_name, HOST_DOMAIN);
     } else {
         strcpy(dns_name, HOST_NAME);
@@ -32,7 +32,7 @@ void NetworkService::begin() {
         output->print(dns_name);
         output->print(' ');
         output->printf_P(strf_arrow_dest,
-                         str_utils::getSocketStr(ip, dns_port).c_str());
+                         StrUtils::getSocketStr(ip, dns_port).c_str());
     } else {
         output->printf_P(str_failed);
     }

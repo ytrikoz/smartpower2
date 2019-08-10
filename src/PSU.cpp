@@ -1,5 +1,12 @@
 #include "Psu.h"
 
+#include <mcp4652.h>
+
+#include "FS.h"
+#include "TimeUtils.h"
+
+#define PSU_VOLTAGE_LOW 1
+
 Psu::Psu() {
     info = PsuInfo();
 
@@ -25,22 +32,24 @@ void Psu::setOnPowerOn(PsuEventHandler h) { onPowerOn = h; }
 
 void Psu::setOnPowerOff(PsuEventHandler h) { onPowerOff = h; }
 
-void Psu::setState(PowerState value, bool forceUpdate) {
-    output->print(FPSTR(str_psu));
-    output->printf_P(strf_power, value == POWER_ON ? "on " : "off ");
-    output->println();
+void Psu::setOnPowerError(PsuEventHandler h) { onPowerError = h; }
 
+void Psu::setState(PowerState value, bool forceUpdate) {
     if ((forceUpdate) || (state != value)) {
         state = value;
-        if (state == POWER_ON){
-           start();
-            if (onPowerOn) onPowerOn();
+        output->print(FPSTR(str_psu));
+        output->printf_P(strf_arrow_dest, getStateStr().c_str());
+        output->println();
+
+        digitalWrite(POWER_SWITCH_PIN, state);
+
+        storePowerState(state);
+
+        if (state == POWER_ON) {
+            start();
         } else if (state == POWER_OFF) {
             stop();
-            if (onPowerOff) onPowerOff();
         }
-        digitalWrite(POWER_SWITCH_PIN, state);
-        storePowerState(state);
     }
 }
 
@@ -50,9 +59,10 @@ float Psu::getOutputVoltage() { return outputVoltage; }
 
 void Psu::setOutputVoltage(float value) {
     output->print(FPSTR(str_psu));
+    output->print(FPSTR(str_set));
     output->printf_P(strf_output_voltage, value);
     output->println();
-    
+
     outputVoltage = value;
     mcp4652_write(WRITE_WIPER0, quadraticRegression(value));
 }
@@ -103,10 +113,19 @@ void Psu::start() {
     startedAt = millis();
     updatedAt = startedAt;
     calcedAt = startedAt;
+
+    clearError();
+
+    if (onPowerOn) onPowerOn();
+
     active = true;
 }
 
-void Psu::stop() { active = false; }
+void Psu::stop() {
+    if (onPowerOff) onPowerOff();
+
+    active = false;
+}
 
 void Psu::loop() {
     if (!active) return;
@@ -124,11 +143,28 @@ void Psu::loop() {
         }
         calcedAt = millis();
     }
+
+    if (updatedAt > 0 && info.voltage <= PSU_VOLTAGE_LOW) {
+        output->print(FPSTR(str_psu));
+        output->print(FPSTR(str_error));
+        output->print(FPSTR(stre_low_voltage));
+        output->print(info.voltage);
+        output->println();
+        error(PSU_ERROR_LOW_VOLTAGE);
+    }
 }
 
-void Psu::setWattHours(double value) {
-    info.wattSeconds = value / ONE_HOUR_s;
+void Psu::clearError() { status = PSU_OK; }
+
+void Psu::error(PsuStatus err) {
+    status = err;
+
+    setState(POWER_OFF);
+
+    if (onPowerError) onPowerError();
 }
+
+void Psu::setWattHours(double value) { info.wattSeconds = value / ONE_HOUR_s; }
 
 void Psu::enableWattHoursCalculation(bool enabled) {
     wattHoursCalculationEnabled = enabled;
@@ -154,7 +190,7 @@ String Psu::toString() {
     str += String(getPower(), 3);
     str += "W, ";
     str += String(getWattHours(), 3);
-    str += "Wh, ";
+    str += "Wh";
     return str;
 }
 
@@ -170,8 +206,29 @@ void Psu::init() {
     initialized = true;
 }
 
-String Psu::getStateDescription() {
-    char tmp[OUTPUT_MAX_LENGTH];
-    sprintf(tmp, "power is %s ", getState() == POWER_ON ? "ON" : "OFF");    
-    return String(tmp);
+String Psu::getStateStr() { return getState() == POWER_ON ? "ON " : "OFF "; }
+
+void Psu::printDiag(Print *p) {
+    p->print(FPSTR(str_psu));
+    switch (status) {
+        case PSU_OK:
+            p->print(getStateStr());
+            if (getState() == POWER_ON) {
+                p->printf_P(strf_output_voltage, getOutputVoltage());
+                p->printf_P(strf_lu_sec, getDuration());
+            } else if (getState() == POWER_OFF) {
+                p->printf_P(strf_lu_sec,
+                            millis_since(updatedAt) / ONE_SECOND_ms);
+            }
+            p->println();
+            break;
+        case PSU_ERROR_LOW_VOLTAGE:
+            p->print(FPSTR(str_error));
+            p->print(FPSTR(stre_low_voltage));
+            p->println(info.voltage);
+            break;
+        default:
+            break;
+            return;
+    }
 }

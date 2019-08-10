@@ -1,6 +1,7 @@
 #include "SystemClock.h"
-#include "debug.h"
-#include "time_utils.h"
+
+#include "BuildConfig.h"
+#include "TimeUtils.h"
 
 SystemClock rtc;
 

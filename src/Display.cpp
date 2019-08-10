@@ -52,13 +52,14 @@ uint8_t _cross[8] = {0x0, 0x1b, 0xe, 0x4, 0xe, 0x1b, 0x0};
 
 uint8_t _retarrow[8] = {0x1, 0x1, 0x5, 0x9, 0x1f, 0x8, 0x4};
 
-using str_utils::setstr;
-using str_utils::strfill;
+using StrUtils::setstr;
+using StrUtils::strfill;
 
 Display::Display() {
     addr = 0x00;
     connected = false;
     updated = 0;
+    lockTime = 0;
 }
 
 void Display::setOutput(Print *p) { output = p; }
@@ -70,7 +71,7 @@ bool Display::init() {
         output->print(FPSTR(str_lcd));
         if (connect()) {
             output->print(FPSTR(str_found));
-            output->print(addr, HEX);
+            output->println(addr, HEX);
 
             lcd = new LiquidCrystal_I2C(addr, LCD_COLS, LCD_ROWS);
             lcd->init();
@@ -138,17 +139,41 @@ uint8_t Display::get_row_for_update() {
     return row_for_update;
 }
 
+void Display::enableUpdates(bool enable){
+    active = enable;
+    #ifdef DEBUG_DISPLAY
+    DEBUG.printf("[display] enableUpdates %T", enable);
+    DEBUG.println();
+    #endif
+}
+
+void Display::lockUpdates(unsigned long period) {
+    #ifdef DEBUG_DISPLAY
+        DEBUG.printf("[display] lockUpdates %lu", period);
+        DEBUG.println();
+#endif
+    lockTime = period;
+    lockUpdated = millis();
+}
+
 void Display::updateLCD(boolean forced) {
     if (!connected) return;
+    if (!active) return;
+
+    if (lockTime > millis_since(lockUpdated)) {
+        lockTime -= millis_since(lockUpdated);
+    } else {
+        lockTime = 0;
+    }
+    lockUpdated = millis();
+    if (lockTime > 0) return;
+
     if (!forced && (millis_since(updated) < LCD_REFRESH_INTERVAL_ms)) return;
     uint8_t row = get_row_for_update();
     TextItem *l = &line[row];
     if (!l->hasUpdates) return;
     lcd->setCursor(0, row);
-#ifdef DEBUG_DISPLAY
-    DEBUG.printf("[updateLCD] redraw row: %d forced: %d", row, forced);
-    DEBUG.println();
-#endif
+
     updated = millis();
 
     uint8_t _fix_len = strlen(l->fixed_str);
@@ -169,7 +194,7 @@ void Display::updateLCD(boolean forced) {
         char tmp[_free_space + 1];
         memset(tmp, '\x20', _free_space);
         tmp[_free_space] = '\x00';
-        for (uint8_t n = 0; n < _var_len; ++n) tmp[n] = l->var_str[n];        
+        for (uint8_t n = 0; n < _var_len; ++n) tmp[n] = l->var_str[n];
         lcd->print(tmp);
         l->hasUpdates = false;
         return;
@@ -217,15 +242,26 @@ void Display::drawBar(uint8_t row, uint8_t per) {
     strfill(tmp, '#', cols + 1);
     lcd->setCursor(0, row);
     lcd->print(tmp);
+#ifdef DEBUG_DISPLAY
+    DEBUG.printf("[display] drawBar(%s) row: %d", tmp, row);
+    DEBUG.println();
+#endif
 }
 
-void Display::drawText(uint8_t row, const char * str) {
+void Display::drawTextCenter(uint8_t row, const char *str) {
     if (!connected) return;
     lcd->setCursor(0, row);
     char tmp[LCD_COLS + 1];
-    memcpy(tmp, str, strlen(str));
-    str_utils::strwithpad(tmp, str_utils::Align::CENTER, LCD_COLS);    
+    size_t str_len = strlen(str);
+    if (str_len > LCD_COLS + 1) str_len = LCD_COLS;
+    strncpy(tmp, str, str_len);
+    tmp[str_len] = '\x00';
+    StrUtils::strwithpad(tmp, StrUtils::CENTER, LCD_COLS + 1);
     lcd->print(tmp);
+    #ifdef DEBUG_DISPLAY
+        DEBUG.printf("[display] drawTextCenter(%s)", tmp);
+        DEBUG.println();
+    #endif
 }
 
 void Display::load_bar_bank() {
@@ -248,20 +284,19 @@ void Display::load_plot_bank() {
 
 void Display::loadData(float *values, size_t size) {
     int block_size = floor((float)size / PLOT_COLS);
-    int offset = 0;
+    int offset = size - block_size * PLOT_COLS;
 #ifdef DEBUG_PLOT
-    DEBUG.printf("per %d => group by %d, left %d", per, block_size);
+    DEBUG.printf("group by %d offset %d", block_size, offset);
     DEBUG.println();
 #endif
     for (uint8_t block = 0; block < PLOT_COLS; block++) {
         float block_sum = 0;
         for (uint8_t n = 0; n < block_size; n++) {
-            block_sum += plot->values[offset + (block * block_size) + n];
+            block_sum += values[offset + (block * block_size) + n];
         }
         float value = block_sum / block_size;
 #ifdef DEBUG_PLOT
-        DEBUG.printf("sum %.4f for %d items, avg %.4f", block_sum, block_size,
-                     value);
+        DEBUG.printf("#%d sum %.4f avg %.4f", block, block_sum, value);
         DEBUG.println();
 #endif
         if (plot->min_value > value) plot->min_value = value;
@@ -269,7 +304,7 @@ void Display::loadData(float *values, size_t size) {
         plot->values[block] = value;
     }
 #ifdef DEBUG_PLOT
-    DEBUG.printf("min = %2.4f, max = %2.4f", data->minvalue, data->maxvalue);
+    DEBUG.printf("min %2.4f max %2.4f", plot->min_value, plot->max_value);
     DEBUG.println();
 #endif
 }
@@ -285,22 +320,20 @@ void Display::drawPlot(uint8_t offset_x) {
     if (!connected) return;
     load_plot_bank();
     lcd->clear();
+
     for (uint8_t x = 0; x < PLOT_COLS; ++x) {
         uint8_t y = get_plot_y(plot, x);
         uint8_t col = offset_x + x;
         for (uint8_t row = LCD_ROWS; row > 0; row--) {
             lcd->setCursor(col, row - 1);
-            // Full
             if (y >= 8) {
-                lcd->write(0);
-                y = y - 8;
-                // Partial
+                lcd->write(0);  // Full
+                y -= 8;
             } else if (y > 0) {
-                lcd->write((uint8_t)y);
+                lcd->write((uint8_t)y);  // Partial
                 y = 0;
-                // Empty
             } else if (y == 0) {
-                lcd->write(16);
+                lcd->write(16);  // Empty
             }
 #ifdef DEBUG_PLOTS
             DEBUG.printf("#%d %2.4f => %d", i, plot[i], value);
@@ -308,4 +341,20 @@ void Display::drawPlot(uint8_t offset_x) {
 #endif
         }
     }
+
+    lcd->setCursor(9, LCD_ROW_1);
+    char tmp[16];
+    const char* str  = dtostrf(plot->max_value, 5, 4, tmp);
+    lcd->print(str);
+    #ifdef DEBUG_DISPLAY
+        DEBUG.printf("[display] max_value %s", str);
+        DEBUG.println();
+    #endif
+    str = dtostrf(plot->min_value, 5, 4, tmp);
+    lcd->setCursor(9, LCD_ROW_2);
+    lcd->print(str);
+    #ifdef DEBUG_DISPLAY
+        DEBUG.printf("[display] min_value %s", str);
+        DEBUG.println();
+    #endif
 }

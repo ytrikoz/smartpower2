@@ -2,13 +2,16 @@
 
 #include <Arduino.h>
 
-#include "consts.h"
-#include "debug.h"
-#include "sigma_delta.h"
-#include "time_utils.h"
+#include "BuildConfig.h"
+#include "Consts.h"
+#include "TimeUtils.h"
 
 enum LedState { LIGHT_OFF = HIGH, LIGHT_ON = LOW };
-enum LedMode { STAY_OFF, STAY_ON, BLINK, BLINK_ONE, BLINK_TWO };
+enum LedMode { STAY_OFF, STAY_ON, BLINK, BLINK_ONE, BLINK_TWO, BLINK_ERROR };
+
+#define LED_SHIM_INTERVAL_ms 50
+#define PWM_FREQ 500
+#define PWM_RANGE 100
 
 struct LedContract {
    public:
@@ -24,20 +27,15 @@ class Led {
     Led(uint8_t pin, LedState state = LIGHT_OFF, bool shim = false);
     void set(LedMode mode);
     void loop();
+
    private:
     void updateState();
-    void setState(LedState state);    
+    void setState(LedState state);
     LedContract *getContract();
-
-    void turnOn();
-    void turnOff();
-    void blink();
-    void blinkSeqOne();
-    void blinkSeqTwo();
 
     void nextStep();
 
-    bool shimEnabled;
+    bool shim;
     uint8_t pin;
     LedMode mode;
     LedState state;

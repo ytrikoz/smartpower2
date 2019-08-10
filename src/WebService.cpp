@@ -1,8 +1,11 @@
 #include "WebService.h"
 
-#include "wireless.h"
+#include "Wireless.h"
 
 File fsUploadFile;
+
+static const char stre_http_file_not_found[] PROGMEM =
+    "File Not Found\n\nURI: %s\nMethod: %s\nArguments: %d\n";
 
 WebService::WebService(uint16_t http_port, uint16_t socket_port,
                        const char *root) {
@@ -14,7 +17,7 @@ WebService::WebService(uint16_t http_port, uint16_t socket_port,
 
 void WebService::begin() {
     USE_SERIAL.printf_P(str_http);
-    IPAddress ip = wireless::hostIP();
+    IPAddress ip = Wireless::hostIP();
     USE_SERIAL.printf_P(strf_http_params, root, ip.toString().c_str(),
                         http_port, socket_port);
     server = new ESP8266WebServer(ip, http_port);
@@ -49,7 +52,7 @@ void WebService::begin() {
 #endif
         if (!sendFile(uri)) {
             char buf[128];
-            sprintf_P(buf, strf_http_file_not_found, server->uri().c_str(),
+            sprintf_P(buf, stre_http_file_not_found, server->uri().c_str(),
                       (server->method() == HTTP_GET) ? "GET" : "POST",
                       server->args());
             server->send(404, "text/plan", buf);
@@ -147,7 +150,7 @@ void WebService::socketEvent(uint8_t num, WStype_t type, uint8_t *payload,
         }
         case WStype_BIN:
 #ifdef DEBUG_WEBSOCKET
-            DEBUG.printf_P(strf_binnary, str_utils::formatSize(lenght).c_str());
+            DEBUG.printf_P(strf_binnary, StrUtils::formatSize(lenght).c_str());
             hexdump(payload, lenght);
             DEBUG.println();
 #endif
@@ -193,7 +196,7 @@ bool WebService::sendFileContent(String path) {
         DEBUG.print(" ");
         DEBUG.print(type.c_str());
         DEBUG.print(" ");
-        DEBUG.print(str_utils::formatSize(sent).c_str());
+        DEBUG.print(StrUtils::formatSize(sent).c_str());
         DEBUG.println();
 #endif
         return true;

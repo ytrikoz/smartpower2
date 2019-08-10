@@ -17,7 +17,7 @@ enum INA231_AVG {AVG_1 , AVG_4, AVG_16, AVG_64, AVG_128, AVG_256, AVG_512, AVG_1
 unsigned short get_ina231_config(INA231_AVG numOfAvg) {
 	unsigned short res;
 	res = 0x05FF & (uint8_t) numOfAvg << 8;
-	// defaul
+	// default
 	return 0x45ff;
 }
 

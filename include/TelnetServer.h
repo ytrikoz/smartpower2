@@ -3,10 +3,10 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266WiFi.h>
 
-#include "consts.h"
-#include "str_utils.h"
-#include "wireless.h"
-#include "debug.h"
+#include "BuildConfig.h"
+#include "Consts.h"
+#include "StrUtils.h"
+#include "Wireless.h"
 
 typedef std::function<bool(Stream *)> TelnetConnectEventHandler;
 typedef std::function<void()> TelnetDisconnectEventHandler;

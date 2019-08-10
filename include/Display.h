@@ -5,10 +5,10 @@
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
 
-#include "consts.h"
-#include "debug.h"
-#include "str_utils.h"
-#include "time_utils.h"
+#include "BuildConfig.h"
+#include "Strings.h"
+#include "StrUtils.h"
+#include "TimeUtils.h"
 
 // slave address are 0x27 or 0x3f
 #define LCD_SLAVE_ADDRESS 0x3f
@@ -31,7 +31,6 @@ struct TextItem {
     // virtual screen
     uint8_t screen_X = 1;
     uint8_t screen_Y = 1;
-    
 };
 
 struct PlotData {
@@ -46,7 +45,8 @@ class Display {
     bool init();
     bool ready();
     void setOutput(Print *p);
-    void drawText(uint8_t row, const char * str);
+    void enableUpdates(bool enable);
+    void drawTextCenter(uint8_t row, const char *str);
     void drawBar(uint8_t row, uint8_t per);
     void drawPlot(uint8_t start);
     void turnOn();
@@ -76,16 +76,19 @@ class Display {
     void updateLCD(boolean forced = false);
 
    private:
+    void lockUpdates(unsigned long period);
     bool connect();
     uint8_t addr;
     bool connected;
+    bool active;
     uint8_t get_row_for_update();
     uint8_t row_for_update;
-
+    unsigned long lockTime;
+    unsigned long lockUpdated;
     LiquidCrystal_I2C *lcd;
     Print *output;
     PlotData *plot = new PlotData();
-    
+
     TextItem line[DISPLAY_VIRTUAL_ROWS];
     unsigned long updated;
 };

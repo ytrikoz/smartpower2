@@ -1,10 +1,9 @@
 #pragma once
 
-#include <Print.h>
 #include "Buffer.h"
+#include "CommonTypes.h"
+#include "Strings.h"
 #include "SystemClock.h"
-#include "consts.h"
-#include "types.h"
 
 #define CHAR_NULL '\x00'
 #define CHAR_BEL '\x07'

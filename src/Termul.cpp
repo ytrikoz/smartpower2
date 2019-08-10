@@ -1,6 +1,8 @@
 #include "Termul.h"
-#include "mcurses.h"
-#include "sysinfo.h"
+
+#include <mcurses.h>
+
+#include "SysInfo.h"
 
 Termul::Termul(Stream *s) {
     this->s = s;
@@ -162,7 +164,7 @@ Buffer *Termul::input() { return this->in_buf; }
 
 void Termul::start() {
     if (controlCodesEnabled) initscr();
-    write_P(str_cli_hint);
+    write_P(str_shell_start_hint);
     println();
 }
 

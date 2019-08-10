@@ -1,6 +1,6 @@
 #include "OTAUpdate.h"
 
-#include "str_utils.h"
+#include "StrUtils.h"
 
 OTAUpdate::OTAUpdate() {
     ota = new ArduinoOTAClass();

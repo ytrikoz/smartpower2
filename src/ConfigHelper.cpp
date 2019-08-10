@@ -1,10 +1,10 @@
 #include "ConfigHelper.h"
 
 #include <ESP8266WiFiType.h>
+#include <FS.h>
+#include "StrUtils.h"
 
-#include "str_utils.h"
-
-using namespace str_utils;
+using namespace StrUtils;
 
 ConfigHelper::ConfigHelper() {
     filename = new char[FILENAME_MAX_LENGTH];

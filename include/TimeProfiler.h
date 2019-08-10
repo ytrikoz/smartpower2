@@ -16,15 +16,8 @@ class TimeProfiler {
 	unsigned long total;
 };
 
-
-
 inline void TimeProfiler::finish(){
     printResults(p);
-}
-
-inline void TimeProfiler::printResults(Print* p)
-{
-
 }
 
 inline TimeProfiler::TimeProfiler(const char* label, uint16_t limit) 
@@ -38,6 +31,12 @@ inline TimeProfiler::TimeProfiler(const char* label, uint16_t limit)
 }
 
 inline TimeProfiler::~TimeProfiler() {
+    printResults(p);
+	delete[] label;
+}
+
+inline void TimeProfiler::printResults(Print* p)
+{
 	long time = millis_since(start);	
     if (time > limit) {
         p->print(label);
@@ -45,5 +44,4 @@ inline TimeProfiler::~TimeProfiler() {
         p->printf_P(strf_lu_ms, time);
         p->println();
     }
-	delete[] label;
 }

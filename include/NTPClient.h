@@ -1,21 +1,20 @@
 #pragma once
+
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 
+#include "CommonTypes.h"
 #include "Config.h"
-#include "consts.h"
-#include "str_utils.h"
-#include "types.h"
+#include "StrUtils.h"
 
-// NTP time stamp is in the first 48 bytes of the message
 #define NTP_PACKET_SIZE 48
 
-typedef std::function<void(EpochTime &)> NtpClientEventHandler;
+typedef std::function<void(EpochTime&)> NtpClientEventHandler;
 
-class NTPClient {
+class NtpClient {
    public:
-    NTPClient();
+    NtpClient();
     bool begin();
     void end();
     void loop();
@@ -26,13 +25,14 @@ class NTPClient {
     void setTimeZone(uint8_t zone);
     void setOutput(Print* p);
     void printDiag(Print* p);
+
    private:
     void init();
     void sync();
     void send_udp_packet();
-    
+
     byte buffer[NTP_PACKET_SIZE];
-    char server[STR_SIZE + 1];
+    char server[PARAM_STR_SIZE + 1];
     int port;
     bool active;
     bool initialized;
@@ -42,6 +42,6 @@ class NTPClient {
     WiFiUDP* udp;
     NtpClientEventHandler onTimeSynced;
     WiFiEventHandler onDisconnected, onGotIp;
-    
+
     Print* output = &USE_SERIAL;
 };

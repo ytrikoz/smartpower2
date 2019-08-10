@@ -1,11 +1,9 @@
 #pragma once
 
-#include <Arduino.h>
+#include "CommonTypes.h"
+#include "TimeUtils.h"
 
-#include "consts.h"
-#include "time_utils.h"
-
-namespace shell {
+namespace Actions {
 
 class ClockSet : public Printable {
    public:
@@ -33,6 +31,6 @@ size_t ClockSet::printTo(Print& p) const {
     return res;
 }
 
-ClockSet *clockSet = new ClockSet();
+ClockSet* clockSet = new ClockSet();
 
-}  // namespace shell
+}  // namespace Actions

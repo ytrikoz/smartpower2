@@ -1,10 +1,10 @@
 #pragma once
 
-#include "ParameterlessCommand.h"
+#include "ParameterlessAction.h"
 
-namespace shell {
+namespace Actions {
 
-class ShowStatus : public ParameterlessCommand {
+class ShowStatus : public ParameterlessAction {
    public:
     void Execute(Print* p);
     size_t printTo(Print& p) const;
@@ -22,4 +22,4 @@ inline size_t ShowStatus::printTo(Print& p) const {
 
 ShowStatus* showStatus = new ShowStatus();
 
-}  // namespace shell
+}  // namespace Actions

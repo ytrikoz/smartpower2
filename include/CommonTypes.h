@@ -1,21 +1,15 @@
 #pragma once
 
-#include <Arduino.h>
+#include <Print.h>
+#include <time.h>
 
-#include "consts.h"
+#include "Strings.h"
 
 typedef struct {
     char name[4];
     uint8_t days;
     uint16_t dayOfyear;
 } Month;
-
-static const char days[7][4] = {"Sun", "Mon", "Tue", "Wed",
-                                "Thu", "Fri", "Sat"};
-static const Month calendar[] = {
-    {"Jan", 31, 0},   {"Feb", 28, 31},  {"Mar", 31, 59},  {"Apr", 30, 90},
-    {"May", 31, 120}, {"Jun", 30, 151}, {"Jul", 31, 181}, {"Aug", 31, 212},
-    {"Sep", 30, 273}, {"Oct", 31, 304}, {"Nov", 30, 334}, {"Dec", 31, 365}};
 
 struct EpochTime : public Printable {
    public:

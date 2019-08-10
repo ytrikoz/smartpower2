@@ -1,4 +1,4 @@
-#include "sysinfo.h"
+#include "SysInfo.h"
 
 const char *flashChipMode[] = {"QIO", "QOUT", "DIO", "DOUT"};
 const char *wifiPhyMode[] = {"b", "g", "n"};
@@ -22,12 +22,12 @@ String getCpuFreq() {
 }
 
 String getFreeSketch() {
-    String str = str_utils::formatSize(ESP.getFreeSketchSpace());
+    String str = StrUtils::formatSize(ESP.getFreeSketchSpace());
     return str;
 }
 
 String getSketchSize() {
-    String str = str_utils::formatSize(ESP.getSketchSize());
+    String str = StrUtils::formatSize(ESP.getSketchSize());
     return str;
 }
 
@@ -94,13 +94,13 @@ String getFlashMap() {
 String getFSUsedSpace() {
     FSInfo fsi;
     SPIFFS.info(fsi);
-    return str_utils::formatSize(fsi.usedBytes);
+    return StrUtils::formatSize(fsi.usedBytes);
 }
 
 String getFSTotalSpace() {
     FSInfo info;
     SPIFFS.info(info);
-    return str_utils::formatSize(info.totalBytes);
+    return StrUtils::formatSize(info.totalBytes);
 }
 
 String getFSFileList() {
@@ -121,7 +121,7 @@ String getFSFileList() {
         str += " ";
         str += "FileSize";
         str += ":";
-        str += str_utils::formatSize(fileSize);
+        str += StrUtils::formatSize(fileSize);
     }
     str += " ";
     str += "}";
@@ -177,10 +177,10 @@ String getSystemInfoJson() {
     item["flashMode"] = String(flashChipMode[ESP.getFlashChipMode()]);
 
     item = doc.createNestedObject();
-    item["ChipSpeed"] = str_utils::formatInMHz(ESP.getFlashChipSpeed());
+    item["ChipSpeed"] = StrUtils::formatInMHz(ESP.getFlashChipSpeed());
 
     item = doc.createNestedObject();
-    item["ChipSize"] = String(str_utils::formatSize(ESP.getFlashChipSize()));
+    item["ChipSize"] = String(StrUtils::formatSize(ESP.getFlashChipSize()));
 
     String str;
 
@@ -221,7 +221,7 @@ String getVcc() {
 }
 
 String getHeapFree() {
-    String str = str_utils::formatSize(ESP.getFreeHeap());
+    String str = StrUtils::formatSize(ESP.getFreeHeap());
     return str;
 }
 
@@ -309,8 +309,8 @@ String getHeapStat() {
     uint8_t frag;
     ESP.getHeapStats(&free, &max, &frag);
     char buf[64];
-    sprintf(buf, "free %s max %s frag %d%%", str_utils::formatSize(free).c_str(),
-            str_utils::formatSize(max).c_str(), frag);
+    sprintf(buf, "free %s max %s frag %d%%", StrUtils::formatSize(free).c_str(),
+            StrUtils::formatSize(max).c_str(), frag);
     return String(buf);
 }
 

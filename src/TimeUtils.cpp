@@ -1,4 +1,18 @@
-#include "time_utils.h"
+#include "TimeUtils.h"
+
+#include <Arduino.h>
+
+#include "CommonTypes.h"
+
+static const Month calendar[] = {
+    {"Jan", 31, 0},   {"Feb", 28, 31},  {"Mar", 31, 59},  {"Apr", 30, 90},
+    {"May", 31, 120}, {"Jun", 30, 151}, {"Jul", 31, 181}, {"Aug", 31, 212},
+    {"Sep", 30, 273}, {"Oct", 31, 304}, {"Nov", 30, 334}, {"Dec", 31, 365}};
+
+static const char stre_invalid_date[] PROGMEM =
+    "%d/%d/%d - is not a valid date\r\n";
+static const char stre_invalid_time[] PROGMEM =
+    "%2d:%2d:%2d - is not a valid time\r\n";
 
 bool is_leap_year(uint16_t year) {
     uint16_t today = (year < 100) ? 1970 + year : year;
@@ -99,17 +113,17 @@ uint32_t get_epoch(int year, int month, int day, int hour, int minute,
            second;
 }
 
-long millis_since(unsigned long sinse) {
+unsigned long millis_since(unsigned long sinse) {
     return millis_passed(sinse, millis());
 }
 
-long millis_passed(unsigned long start, unsigned long finish) {
-    long result = 0;
+unsigned long  millis_passed(unsigned long start, unsigned long finish) {
+    unsigned long result = 0;
     if (start <= finish) {
         unsigned long passed = finish - start;
         if (passed <= __LONG_MAX__) {
             result = static_cast<long>(passed);
-        } else {    
+        } else {
             result = static_cast<long>((__LONG_MAX__ - finish) + start + 1u);
         }
     } else {
@@ -118,7 +132,7 @@ long millis_passed(unsigned long start, unsigned long finish) {
             result = static_cast<long>(passed);
             result = -1 * result;
         } else {
-            result = static_cast<long>((__LONG_MAX__ - start) + finish + 1u);           
+            result = static_cast<long>((__LONG_MAX__ - start) + finish + 1u);
             result = -1 * result;
         }
     }
@@ -190,4 +204,10 @@ unsigned long get_appbuild_epoch() {
         return 0;
     }
     return get_epoch(tm) - BUILD_TIMEZONE_h * ONE_HOUR_s;
+}
+
+char *tmtoa(struct tm *tm, char *buf) {
+    sprintf(buf, DATETIME_FORMAT, tm->tm_mday, tm->tm_mon, tm->tm_year,
+            tm->tm_hour, tm->tm_min, tm->tm_sec);
+    return buf;
 }

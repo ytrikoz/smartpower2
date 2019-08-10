@@ -1,17 +1,17 @@
-#include "cli.h"
+#include "Cli.h"
 
-#include "str_utils.h"
+#include "Actions/ClockSet.h"
+#include "Actions/ParameterlessAction.h"
+#include "Actions/ShowClients.h"
+#include "Actions/ShowClock.h"
+#include "Actions/ShowDiag.h"
+#include "Actions/ShowNtp.h"
+#include "Actions/ShowStatus.h"
+#include "Actions/ShowWifi.h"
 
-#include "Shell/ClockSet.h"
-#include "Shell/ParameterlessCommand.h"
-#include "Shell/ShowClients.h"
-#include "Shell/ShowClock.h"
-#include "Shell/ShowDiag.h"
-#include "Shell/ShowNtp.h"
-#include "Shell/ShowStatus.h"
-#include "Shell/ShowWifi.h"
+#include "StrUtils.h"
 
-namespace CLI {
+namespace Cli {
 
 Print* output;
 
@@ -34,9 +34,9 @@ void init() {
     cli->setErrorCallback(onCommandError);
     // Power
     cmdPower = cli->addCommand("power");
-    cmdPower.addPositionalArgument("action");
+    cmdPower.addPositionalArgument("action", "status");
     cmdPower.addPositionalArgument("param", "");
-    cmdPower.setCallback(handlePowerCommand);
+    cmdPower.setCallback(Cli::power);
     // Help
     cmdHelp = cli->addCommand("help");
     cmdHelp.setCallback(onHelpCommand);
@@ -51,8 +51,8 @@ void init() {
     cmdSystem.setCallback(onSystemCommand);
     // Show
     cmdShow = cli->addCommand("show");
-    cmdShow.addPositionalArgument("item");
-    cmdShow.setCallback(onShowCommand);
+    cmdShow.addPositionalArgument("item", "status");
+    cmdShow.setCallback(show);
     // Set
     cmdSet = cli->addCommand("set");
     cmdSet.addPositionalArgument("param");
@@ -74,7 +74,7 @@ void init() {
 }
 
 void close() {
-    output->print(FPSTR(str_cli_hint));
+    output->print(FPSTR(str_shell_start_hint));
     output->println();
     output = nullptr;
 }
@@ -86,7 +86,7 @@ void onGetConfigParameter(const char* name, const char* value) {
 }
 
 void onConfigParameterChanged(const char* name, const char* old_value,
-                                   const char* new_value) {
+                              const char* new_value) {
     char buf[OUTPUT_MAX_LENGTH];
     sprintf_P(buf, strf_config_param_changed, new_value, name);
     output->print(buf);
@@ -108,14 +108,13 @@ void unknownActionParam(const char* param, const char* action) {
     output->printf_P(strf_unknown_action_param, param, action);
 }
 
-void unknownAction(String actionStr)
-{
+void unknownAction(String actionStr) {
     output->printf_P(strf_unknown_action, actionStr.c_str());
     output->println();
 }
 
-void onCommandResult(PGM_P strP, const char* filename) {
-    output->printf_P(strP, filename);
+void onFileResult(PGM_P str, const char* filename) {
+    output->printf_P(str, filename);
     output->println();
 }
 
@@ -147,7 +146,7 @@ String getCommandParam(Command* c) {
 }
 
 String getCommandFile(Command* c) {
-       return c->getArgument("action").getValue();
+    return c->getArgument("action").getValue();
 }
 
 String getCommandItem(Command* c) { return c->getArgument("item").getValue(); }
@@ -156,22 +155,28 @@ String getCommandValue(Command* c) {
     return c->getArgument("value").getValue();
 }
 
-void handlePowerCommand(cmd* c) {
+void power(cmd* c) {
     Command cmd(c);
     String action = getCommandAction(&cmd);
     String param = getCommandParam(&cmd);
 
     if (action.equals("status")) {
+        psu->printDiag(output);
         psuLog->printDiag(output);
-    } else if (action.equals("log")) {
-        size_t num = param.equals("") ? 8: atoi(param.c_str());
-        psuLog->printLast(num);        
-    } else if (str_utils::isMeanYes(action)) {
+    } else if (action.equals("log")) {        
+        if (psuLog->size() == 0) {
+            output->println(FPSTR(str_empty));
+        } else {
+            size_t num = param.equals("") ? 3 : atoi(param.c_str());
+            if (num > psuLog->size()) num = psuLog->size();
+            psuLog->printLast(output, num);
+        }
+    } else if (StrUtils::strpositiv(action)) {
         psu->setState(POWER_ON);
-    } else if (str_utils::isMeanNo(action)) {
+    } else if (StrUtils::strnegativ(action)) {
         psu->setState(POWER_OFF);
     } else {
-        unknownAction(action);        
+        unknownAction(action);
     };
 }
 
@@ -180,7 +185,7 @@ void onClockCommand(cmd* c) {
     String action = getCommandAction(&cmd);
     String param = getCommandParam(&cmd);
     if (action.equals("set")) {
-        shell::clockSet->Execute(output);
+        Actions::clockSet->Execute(output);
     }
 }
 
@@ -280,16 +285,17 @@ void onGetCommand(cmd* c) {
     }
 }
 
-void onShowCommand(cmd* c) {
+void show(cmd* c) {
     Command cmd(c);
     String item = getCommandItem(&cmd);
     if (item.equals("clients")) {
-        shell::showClients->Execute(output);
+        Actions::showClients->Execute(output);
     } else if (item.equals("clock")) {
-        shell::showClock->Execute(output);
+        Actions::showClock->Execute(output);
     } else if (item.equals("power")) {
-        output->print(FPSTR(str_psu));
-        output->println(psu->getStateDescription());
+        psu->printDiag(output);    
+    } else if (item.equals("log")) {
+        psuLog->printDiag(output);
     } else if (item.equals("network")) {
         output->println(getNetworkInfoJson().c_str());
     } else if (item.equals("info")) {
@@ -297,13 +303,13 @@ void onShowCommand(cmd* c) {
     } else if (item.equals("config")) {
         output->println(config->getConfigJson().c_str());
     } else if (item.equals("status")) {
-        shell::showStatus->Execute(output);
+        Actions::showStatus->Execute(output);
     } else if (item.equals("ntp")) {
-        shell::showNtp->Execute(output);
+        Actions::showNtp->Execute(output);
     } else if (item.equals("diag")) {
-        shell::showDiag->Execute(output);
+        Actions::showDiag->Execute(output);
     } else if (item.equals("wifi")) {
-        shell::showWifi->Execute(output);
+        Actions::showWifi->Execute(output);
     } else {
         unknownCommandItem(cmd.getName().c_str(), item.c_str());
     }
@@ -314,14 +320,14 @@ void onPrintCommand(cmd* c) {
     String file = getCommandFile(&cmd);
     if (SPIFFS.exists(file)) {
         File f = SPIFFS.open(file, "r");
-        onCommandResult(strf_file_print, file.c_str());
+        onFileResult(strf_file_print, file.c_str());
         while (f.available()) {
             output->println(f.readString().c_str());
         }
 
         f.close();
     } else {
-        onCommandResult(strf_file_not_found, file.c_str());
+        onFileResult(strf_file_not_found, file.c_str());
     }
 }
 
@@ -330,10 +336,10 @@ void onFileRemoveCommand(cmd* c) {
     String file = cmd.getArgument("file").getValue();
     if (SPIFFS.exists(file)) {
         if (SPIFFS.remove(file)) {
-            onCommandResult(strf_file_deleted, file.c_str());
+            onFileResult(strf_file_deleted, file.c_str());
         }
     } else {
-        onCommandResult(strf_file_not_found, file.c_str());
+        onFileResult(strf_file_not_found, file.c_str());
     }
 }
-}  // namespace CLI
+}  // namespace Cli

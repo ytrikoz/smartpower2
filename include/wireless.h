@@ -1,13 +1,14 @@
 #pragma once
 
 #include <Arduino.h>
-#include "IPAddress.h"
-#include "Types.h"
-#include "debug.h"
+
+#include <IPAddress.h>
+
+#include "CommonTypes.h"
 
 typedef std::function<void(bool hasNetwork)> NetworkStateChangeEventHandler;
 
-namespace wireless {
+namespace Wireless {
 
 WirelessMode getWirelessMode();
 bool hasNetwork();
@@ -46,4 +47,4 @@ void setupSTA(const char* ssid, const char* password);
 
 void useStaticStationIP(bool enabled);
 
-}  // namespace wireless
+}  // namespace Wireless

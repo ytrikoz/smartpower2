@@ -1,10 +1,4 @@
-//#include <GDBStub.h>
 #include <Arduino.h>
-#include <ESP8266WiFi.h>
-#include <Wire.h>
-#include <HardwareSerial.h>
-#include "LoopWatchDog.h"
-#include "Types.h"
 
 #define PG_HOME 1
 #define PG_SETTINGS 2
@@ -33,7 +27,7 @@ void sendToClients(String, uint8_t, uint8_t);
 void sendPageState(uint8_t n, uint8_t page);
 
 void print_boot_delay(Print* p);
-void display_boot_progress(uint8_t per, const char *str = NULL);
+void display_boot_progress(uint8_t per, const char* str = NULL);
 
 void power_button_event_handler();
 static void ICACHE_RAM_ATTR power_button_state_change();

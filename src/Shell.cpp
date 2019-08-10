@@ -1,6 +1,6 @@
 #include "Shell.h"
 
-#include "cli.h"
+#include "Cli.h"
 
 Shell::Shell() {
     memset(&prevInput, 0, sizeof(prevInput));
@@ -27,7 +27,7 @@ void Shell::onOpen() {
 #ifdef DEBUG_SHELL
     DEBUG.print("[shell] onOpen");
 #endif
-    CLI::open(t);
+    Cli::open(t);
     if (welcomeEnabled) welcome();
     prompt();
     active = true;
@@ -38,7 +38,7 @@ void Shell::onClose() {
     DEBUG.print("[shell] onClose");
 #endif
     t->println();
-    CLI::close();
+    Cli::close();
     active = false;
 }
 
@@ -82,9 +82,9 @@ void Shell::welcome() {
     char title[SCREEN_WIDTH + 1];
     strcpy(title, APPNAME " v" FW_VERSION);
     uint8_t width = SCREEN_WIDTH / 2;
-    str_utils::strwithpad(title, str_utils::CENTER, width, ' ');
+    StrUtils::strwithpad(title, StrUtils::CENTER, width, ' ');
     char tmp[width + 1];
-    str_utils::strfill(tmp, '#', width);
+    StrUtils::strfill(tmp, '#', width);
 
     t->println(tmp);
     t->println(title);
@@ -97,7 +97,7 @@ void Shell::prompt() {
     uint8_t len = strlen(buf);
     buf[len] = CHAR_SP;
     buf[len + 1] = '\x00';
-    strcat(buf, wireless::hostName().c_str());
+    strcat(buf, Wireless::hostName().c_str());
     strcat(buf, " > ");
     t->print(buf);
 }

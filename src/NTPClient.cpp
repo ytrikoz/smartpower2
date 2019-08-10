@@ -1,6 +1,6 @@
-#include "NTPClient.h"
+#include "NtpClient.h"
 
-NTPClient::NTPClient() {
+NtpClient::NtpClient() {
     active = false;
     initialized = false;
 
@@ -10,12 +10,12 @@ NTPClient::NTPClient() {
         {[this](const WiFiEventStationModeGotIP &event) { begin(); }});
 }
 
-void NTPClient::init() {
+void NtpClient::init() {
     udp = new WiFiUDP();
     initialized = true;
 }
 
-void NTPClient::printDiag(Print *p) {
+void NtpClient::printDiag(Print *p) {
     p->printf_P(strf_init, initialized);
     p->printf_P(strf_active, active);    
     p->printf_P(strf_every_sec, interval_ms / ONE_SECOND_ms);
@@ -23,23 +23,23 @@ void NTPClient::printDiag(Print *p) {
     p->println();
 }
 
-void NTPClient::setOutput(Print *p) { output = p; }
+void NtpClient::setOutput(Print *p) { output = p; }
 
-void NTPClient::setConfig(Config *config) {
+void NtpClient::setConfig(Config *config) {
     setSyncInterval(config->getIntValue(NTP_SYNC_INTERVAL));
     setTimeServer(config->getStrValue(NTP_POOL_SERVER));
 }
 
-void NTPClient::setSyncInterval(uint16_t time_s) {
+void NtpClient::setSyncInterval(uint16_t time_s) {
     interval_ms = time_s * ONE_SECOND_ms;
 }
 
-void NTPClient::setTimeServer(const char *str) {
+void NtpClient::setTimeServer(const char *str) {
     strcpy(server, str);
     port = NTP_REMOTE_PORT;
 }
 
-void NTPClient::end() {
+void NtpClient::end() {
     if (active) {
         udp->stop();
         output->print(FPSTR(str_ntp));
@@ -48,7 +48,7 @@ void NTPClient::end() {
     }
 }
 
-bool NTPClient::begin() {
+bool NtpClient::begin() {
     if (!initialized) {
         init();
     }
@@ -64,7 +64,7 @@ bool NTPClient::begin() {
     return active;
 }
 
-void NTPClient::loop() {
+void NtpClient::loop() {
     if (!active) return;
     if ((updated_ms == 0) ||
         (interval_ms > 0 && (millis() - updated_ms >= interval_ms))) {
@@ -72,7 +72,7 @@ void NTPClient::loop() {
     }
 }
 
-void NTPClient::sync() {
+void NtpClient::sync() {
     send_udp_packet();
     uint8_t timeout = 0;
     int cb = 0;
@@ -111,7 +111,7 @@ void NTPClient::sync() {
     };
 }
 
-void NTPClient::send_udp_packet() {
+void NtpClient::send_udp_packet() {
     // send an NTP request to the time server at the given address
     IPAddress serverIP;
     // Get a random server from the pool
@@ -141,4 +141,4 @@ void NTPClient::send_udp_packet() {
     udp->endPacket();
 }
 
-void NTPClient::setOnTimeSynced(NtpClientEventHandler h) { onTimeSynced = h; }
+void NtpClient::setOnTimeSynced(NtpClientEventHandler h) { onTimeSynced = h; }

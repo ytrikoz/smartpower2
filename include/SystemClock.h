@@ -1,10 +1,10 @@
 #pragma once
 #include <Arduino.h>
 
+#include "CommonTypes.h"
 #include "Config.h"
+#include "Consts.h"
 #include "FileStorage.h"
-#include "consts.h"
-#include "types.h"
 
 typedef std::function<void(const char *)> SystemTimeChangedEvent;
 
@@ -36,7 +36,7 @@ class SystemClock {
     bool store();
     bool restore();
     SystemTimeChangedEvent onSystemTimeChanged;
-        
+
     bool active = false;
     bool synced = false;
     unsigned long utcEpochTime_s;

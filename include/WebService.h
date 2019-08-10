@@ -1,14 +1,15 @@
 #pragma once
+
 #include <Arduino.h>
 #include <ESP8266SSDP.h>
 #include <ESP8266WebServer.h>
 #include <FS.h>
 #include <WebSocketsServer.h>
 
-#include "consts.h"
-#include "str_utils.h"
-#include "sysinfo.h"
-#include "debug.h"
+#include "BuildConfig.h"
+#include "Consts.h"
+#include "StrUtils.h"
+#include "SysInfo.h"
 
 typedef std::function<void(uint8_t)> SocketConnectionEventHandler;
 typedef std::function<void(uint8_t, String)> SocketDataEventHandler;
@@ -31,7 +32,7 @@ class WebService {
 
     bool sendFile(String uri);
     bool sendFileContent(String path);
-    String getFilePath(String uri);    
+    String getFilePath(String uri);
     const char *getContentType(String filename);
     void noContent();
     void handleFileList();

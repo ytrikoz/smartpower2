@@ -1,18 +1,9 @@
 #pragma once
+
 #include <Arduino.h>
+#include <IPAddress.h>
 
-#include "IPAddress.h"
-#include "Types.h"
-#include "consts.h"
-
-#define PARAM_COUNT 20
-#define PARAM_NAME_STR_SIZE 12
-#define BOOL_SIZE 2
-#define STR_SIZE 33
-#define IPADDR_SIZE 17
-#define OUTPUT_VOLTAGE_SIZE 8
-#define NUMBER_SIZE 4
-#define LARGE_NUMBER_SIZE 9
+#include "CommonTypes.h"
 
 typedef std::function<void(Parameter)> ConfigEventHandler;
 
@@ -61,25 +52,25 @@ class Config {
     char *values[PARAM_COUNT];
 
     Metadata metadata[PARAM_COUNT] = {
-        {"wifi", BOOL_SIZE, "2"},
-        {"ssid", STR_SIZE, "MyNetwork"},
-        {"passwd", STR_SIZE, "SomePassword"},
-        {"dhcp", BOOL_SIZE, "1"},
-        {"ipaddr", IPADDR_SIZE, "192.168.1.4"},
-        {"netmask", IPADDR_SIZE, "255.255.255.0"},
-        {"gateway", IPADDR_SIZE, "192.168.1.1"},
-        {"dns", IPADDR_SIZE, "192.168.1.1"},
-        {"voltage", OUTPUT_VOLTAGE_SIZE, "5.0"},
-        {"bootpwr", BOOL_SIZE, "0"},
-        {"login", STR_SIZE, "admin"},
-        {"password", STR_SIZE, "1234"},
-        {"ap_ssid", STR_SIZE, "SmartPower2"},
-        {"ap_passwd", STR_SIZE, "12345678"},
-        {"ap_ipaddr", IPADDR_SIZE, "192.168.4.1"},
-        {"time_zone", NUMBER_SIZE, "3"},
-        {"twp", NUMBER_SIZE, "82"},
-        {"ntp_sync", LARGE_NUMBER_SIZE, "3600"},
-        {"ntp_pool", STR_SIZE, DEF_NTP_POOL_SERVER},
-        {"time_backup", LARGE_NUMBER_SIZE, DEF_TIME_BACKUP_INTERVAL_s},
+        {"wifi", PARAM_BOOL_SIZE, "2"},
+        {"ssid", PARAM_STR_SIZE, "MyNetwork"},
+        {"passwd", PARAM_STR_SIZE, "SomePassword"},
+        {"dhcp", PARAM_BOOL_SIZE, "1"},
+        {"ipaddr", PARAM_IPADDR_SIZE, "192.168.1.4"},
+        {"netmask", PARAM_IPADDR_SIZE, "255.255.255.0"},
+        {"gateway", PARAM_IPADDR_SIZE, "192.168.1.1"},
+        {"dns", PARAM_IPADDR_SIZE, "192.168.1.1"},
+        {"voltage", PARAM_OUTPUT_VOLTAGE_SIZE, "5.0"},
+        {"bootpwr", PARAM_BOOL_SIZE, "0"},
+        {"login", PARAM_STR_SIZE, "admin"},
+        {"password", PARAM_STR_SIZE, "1234"},
+        {"ap_ssid", PARAM_STR_SIZE, "SmartPower2"},
+        {"ap_passwd", PARAM_STR_SIZE, "12345678"},
+        {"ap_ipaddr", PARAM_IPADDR_SIZE, "192.168.4.1"},
+        {"time_zone", PARAM_NUMBER_SIZE, "3"},
+        {"twp", PARAM_NUMBER_SIZE, "82"},
+        {"ntp_sync", PARAM_LARGE_NUMBER_SIZE, "3600"},
+        {"ntp_pool", PARAM_STR_SIZE, DEF_NTP_POOL_SERVER},
+        {"time_backup", PARAM_LARGE_NUMBER_SIZE, DEF_TIME_BACKUP_INTERVAL_s},
     };
 };

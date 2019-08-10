@@ -1,14 +1,11 @@
 #pragma once
-#include <Arduino.h>
-#include <mcp4652.h>
 
-#include "time_utils.h"
-#include "consts.h"
-#include "Types.h"
-
+#include "CommonTypes.h"
 #include "ConfigHelper.h"
 
 #define POWER_SWITCH_PIN D6
+
+enum PsuStatus {PSU_OK, PSU_ERROR_LOW_VOLTAGE};
 
 typedef std::function<void()> PsuEventHandler;
 
@@ -23,17 +20,18 @@ class Psu : public PsuInfoProvider {
     void togglePower();
     void setState(PowerState value, bool forceUpdate = false);
     void setConfig(ConfigHelper*);
-    
-    void setOnPowerOn(PsuEventHandler);    
+
+    void setOnPowerOn(PsuEventHandler);
     void setOnPowerOff(PsuEventHandler);
+    void setOnPowerError(PsuEventHandler);
 
     void setOutputVoltage(float voltage);
     float getOutputVoltage();
-    
+
     PsuInfo getInfo();
     String toString();
     PowerState getState();
-    String getStateDescription();
+    String getStateStr();    
     float getVoltage();
     float getCurrent();
     float getPower();
@@ -42,11 +40,15 @@ class Psu : public PsuInfoProvider {
     void setWattHours(double value);
     void enableWattHoursCalculation(bool enabled);
     bool isWattHoursCalculationEnabled();
-
+    
+    void printDiag(Print* p);
    private:
+    void clearError();
+    void error(PsuStatus err);
     void init();
     void storePowerState(PowerState state);
     PowerState restorePowerState();
+    PsuStatus status;
     unsigned long startedAt, updatedAt, calcedAt;
     bool active;
     bool initialized;
@@ -56,9 +58,10 @@ class Psu : public PsuInfoProvider {
     ConfigHelper* config;
 
     PowerState state;
+    
     float outputVoltage;
-    Print *output = &USE_SERIAL;
-    PsuEventHandler onPowerOn, onPowerOff;
+    Print* output = &USE_SERIAL;
+    PsuEventHandler onPowerOn, onPowerOff, onPowerError;
 
     static int quadraticRegression(double volt) {
         double a = 0.0000006562;
@@ -71,5 +74,5 @@ class Psu : public PsuInfoProvider {
         else if (root > 255)
             root = 255;
         return root;
-    }    
+    }
 };

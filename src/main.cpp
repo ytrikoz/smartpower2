@@ -1,16 +1,16 @@
 #include "main.h"
 
 #include "BuildConfig.h"
-#include "cli.h"
-#include "global.h"
-#include "str_utils.h"
-
+#include "Cli.h"
+#include "CommonTypes.h"
 #include "Consts.h"
+#include "Global.h"
 #include "Led.h"
+#include "LoopWatchDog.h"
+#include "StrUtils.h"
 #include "SysInfo.h"
-#include "wireless.h"
-
 #include "TimeProfiler.h"
+#include "Wireless.h"
 
 #define I2C_SDA D2
 #define I2C_SCL D5
@@ -37,14 +37,13 @@ uint8_t get_http_clients_count() {
     return result;
 }
 
-float data[8] = {0, 2.101, 3.130, 4.450, 3.501, 4.030, 4.001};
-
 int restartTimer = -1;
 int restartCount = 0;
 
 void cancel_system_restart() {
     if (restartTimer != -1) timer.disable(restartTimer);
 }
+
 void on_restart_sequence() {
     if (restartCount == 0) system_restart();
     restartCount--;
@@ -67,6 +66,7 @@ void onHttpClientConnect(uint8_t n) {
     clients[n].connected = true;
     refresh_wifi_led();
 }
+
 void onHttpClientDisconnect(uint8_t n) {
     clients[n].connected = false;
     refresh_wifi_led();
@@ -213,7 +213,7 @@ void sendPageState(uint8_t n, uint8_t page) {
 
 void send_psu_data_to_clients() {
     if (psu->getState() == POWER_ON) {
-        if (wireless::hasNetwork()) {
+        if (Wireless::hasNetwork()) {
 #ifndef DISABLE_TELNET
             if (get_telnet_clients_count() && !telnetShell->isActive()) {
                 String data = psu->toString();
@@ -223,10 +223,9 @@ void send_psu_data_to_clients() {
 #endif
 #ifndef DISABLE_HTTP
             if (get_http_clients_count()) {
-                String data = psu->toString();
-                String str = String(TAG_PVI);
-                str += data;
-                sendToClients(str, PG_HOME);
+                String data = String(TAG_PVI);
+                data += psu->toString();
+                sendToClients(data, PG_HOME);
             }
 #endif
         }
@@ -236,18 +235,16 @@ void send_psu_data_to_clients() {
 uint8_t boot_progress = 0;
 void display_boot_progress(uint8_t per, const char *str) {
 #ifndef DISABLE_LCD
-    if (display) 
-    {
-        if (str != NULL) {            
-            display->drawText(LCD_ROW_1, str);
-        } 
+    if (display) {
+        if (str != NULL) {
+            display->drawTextCenter(LCD_ROW_1, str);
+        }
         display->drawBar(LCD_ROW_2, per);
     }
-    while(per - boot_progress > 0) 
-    {
+    while (per - boot_progress > 0) {
         boot_progress += 10;
         delay(200);
-    }    
+    }
 #else
     USE_SERIAL.printf_P(strf_boot_progress, message, per);
     USE_SERIAL.println();
@@ -262,7 +259,6 @@ void print_reset_reason(Print *p) {
 }
 
 void delay_print(Print *p) {
-    p->println();
     p->print(FPSTR(str_wait));
     p->print(" ");
     for (uint8_t t = BOOT_WAIT_s; t > 0; t--) {
@@ -278,41 +274,42 @@ void print_welcome(Print *p) {
     char title[SCREEN_WIDTH + 1];
     strcpy(title, APPNAME " v" FW_VERSION);
     uint8_t width = SCREEN_WIDTH / 2;
-    str_utils::strwithpad(title, str_utils::CENTER, width, ' ');
+    StrUtils::strwithpad(title, StrUtils::CENTER, width);
     char decor[width + 1];
-    str_utils::strfill(decor, '*', width + 1);
+    StrUtils::strfill(decor, '*', width + 1);
     p->println(decor);
     p->println(title);
     p->println(decor);
 }
 
 void setup() {
-    // gdbstub_init();
     USE_SERIAL.begin(115200);
 #ifdef SERIAL_DEBUG
     USE_SERIAL.setDebugOutput(true);
 #endif
     USE_SERIAL.println();
-    print_reset_reason(&USE_SERIAL);
-    print_welcome(&USE_SERIAL);
-    delay(100);
-    SPIFFS.begin();
-    Wire.begin(I2C_SDA, I2C_SCL);
+
+    // Leds
+    power_led = new Led(POWER_LED_PIN, LIGHT_ON, true);
+    wifi_led = new Led(WIFI_LED_PIN);
+
     // Button
     pinMode(POWER_BTN_PIN, INPUT);
     attachInterrupt(digitalPinToInterrupt(POWER_BTN_PIN),
                     power_button_state_change, CHANGE);
-    // Leds
-    power_led = new Led(POWER_LED_PIN, LIGHT_ON, false);
-    power_led->set(STAY_ON);
-    wifi_led = new Led(WIFI_LED_PIN);
-    wifi_led->set(STAY_OFF);
+
+    print_reset_reason(&USE_SERIAL);
+    print_welcome(&USE_SERIAL);
+
+    SPIFFS.begin();
+
+    Wire.begin(I2C_SDA, I2C_SCL);
+
     memset(&clients[0], 0x00, sizeof(WebClient) * WEBSOCKETS_SERVER_CLIENT_MAX);
 #ifndef DISABLE_LCD
     display = new Display();
     display->setOutput(&USE_SERIAL);
-    display->init();
-    display->turnOn();
+    if (display->init()) display->turnOn();
 #endif
     delay_print(&USE_SERIAL);
 
@@ -327,13 +324,13 @@ void setup() {
 
     display_boot_progress(40, "<WIFI>");
 
-    wireless::setOnNetworkStateChange(
+    Wireless::setOnNetworkStateChange(
         [](bool hasNetwork) { refresh_wifi_led(); });
-    wireless::start_wifi();
+    Wireless::start_wifi();
 
     display_boot_progress(80, "<INIT>");
 
-    CLI::init();
+    Cli::init();
 #ifndef DISABLE_CONSOLE_SHELL
     start_console_shell();
 #endif
@@ -408,7 +405,7 @@ void loop() {
     delay(0);
 #endif
 
-    if (wireless::hasNetwork()) {
+    if (Wireless::hasNetwork()) {
 #ifndef DISABLE_HTTP
         {
 #ifdef DEBUG_LOOP

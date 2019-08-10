@@ -1,10 +1,10 @@
 #pragma once
 
-#include <FS.h>
-#include <ESP8266WiFi.h>
 #include <ArduinoJson.h>
+#include <ESP8266WiFi.h>
+
+#include "CommonTypes.h"
 #include "Config.h"
-#include "types.h"
 
 class ConfigHelper {
    public:
@@ -15,7 +15,7 @@ class ConfigHelper {
     void reload();
     void save();
     void reset();
-    
+
     WiFiMode_t getWiFiMode();
     bool setBootPowerState(BootPowerState);
     bool setBootPowerState(uint8_t);
@@ -62,6 +62,7 @@ class ConfigHelper {
 
     String getConfigJson();
     Config *getConfig();
+
    private:
     void onConfigEvent(Parameter param);
 

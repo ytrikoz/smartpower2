@@ -1,12 +1,15 @@
-#include "wireless.h"
+#include "Wireless.h"
 
-#include "consts.h"
-#include "global.h"
-#include "types.h"
+#include <Arduino.h>
 
-#include "user_interface.h"
+#include <ESP8266WiFi.h>
 
-namespace wireless {
+#include "BuildConfig.h"
+#include "ConfigHelper.h"
+#include "Global.h"
+#include "SysInfo.h"
+
+namespace Wireless {
 
 WirelessMode mode = WLAN_OFF;
 NetworkState network = NETWORK_DOWN;
@@ -390,4 +393,4 @@ String hostIPInfo() {
     return String(buf);
 }
 
-}  // namespace wireless
+}  // namespace Wireless

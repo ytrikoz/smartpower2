@@ -1,7 +1,7 @@
 #include "LoopWatchDog.h"
 
-#include "consts.h"
-#include "time_utils.h"
+#include "Strings.h"
+#include "TimeUtils.h"
 
 LoopWatchDog::LoopWatchDog() {
     resetStats();

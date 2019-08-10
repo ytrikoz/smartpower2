@@ -1,11 +1,10 @@
 #pragma once
 
-#include "ParameterlessCommand.h"
-#include "SystemClock.h"
+#include "ParameterlessAction.h"
 
-namespace shell {
+namespace Actions {
 
-class ShowClock : public ParameterlessCommand {
+class ShowClock : public ParameterlessAction {
    public:
     void Execute(Print* p);
     size_t printTo(Print& p) const;
@@ -25,6 +24,6 @@ inline size_t ShowClock::printTo(Print& p) const {
     return res;
 }
 
-ShowClock *showClock = new ShowClock();
+ShowClock* showClock = new ShowClock();
 
-}  // namespace shell
+}  // namespace Actions

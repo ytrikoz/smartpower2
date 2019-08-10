@@ -4,9 +4,9 @@
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 
-#include "consts.h"
+#include "Consts.h"
 
-namespace shell {
+namespace Actions {
 
 class WakeOnLanCommand : public Printable {
    public:
@@ -44,4 +44,4 @@ inline size_t WakeOnLanCommand::printTo(Print &p) const {
     return res;
 }
 
-}  // namespace shell
+}  // namespace Actions

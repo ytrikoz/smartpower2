@@ -1,7 +1,11 @@
 #include "Config.h"
 
-#include "str_utils.h"
-using namespace str_utils;
+#include <Arduino.h>
+
+#include "StrUtils.h"
+
+using StrUtils::setstr;
+using StrUtils::atoip;
 
 Config::Config() {
     for (uint8_t i = 0; i < PARAM_COUNT; i++) {

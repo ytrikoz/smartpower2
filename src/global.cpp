@@ -1,4 +1,4 @@
-#include <global.h>
+#include "Global.h"
 
 Led *wifi_led, *power_led;
 
@@ -12,7 +12,7 @@ Psu *psu;
 PsuLogger *psuLog;
 WebService *http;
 TelnetServer *telnet;
-NTPClient *ntp;
+NtpClient *ntp;
 OTAUpdate *ota;
 Termul *consoleTerm;
 Termul *telnetTerm;
@@ -21,7 +21,7 @@ Shell *consoleShell;
 
 void refresh_wifi_led() {
     uint8_t level;
-    if (!wireless::hasNetwork()) {
+    if (!Wireless::hasNetwork()) {
         level = 0;
     } else {
         level = 1;
@@ -47,7 +47,7 @@ void refresh_wifi_led() {
 
 void start_services() {
     // only AP_STA
-    if (wireless::getWirelessMode() == WLAN_AP_STA) {
+    if (Wireless::getWirelessMode() == WLAN_AP_STA) {
         uint8_t broadcast_if = wifi_get_broadcast_if();
         USE_SERIAL.print(FPSTR(str_wifi));
         char buf[32];
@@ -57,7 +57,7 @@ void start_services() {
         USE_SERIAL.println();
     }
     // only STA
-    if (wireless::getWirelessMode() == WLAN_STA) {
+    if (Wireless::getWirelessMode() == WLAN_STA) {
 #ifndef DISABLE_NTP
         start_ntp();
 #endif
@@ -137,32 +137,31 @@ void start_psu() {
         power_led->set(STAY_ON);
         psuLog->end();
 
-        USE_SERIAL.print(FPSTR(str_psu));
-        USE_SERIAL.print(FPSTR(str_duration));
-        USE_SERIAL.println(psu->getDuration());
+        if (display) {
+            int log_size = psuLog->size();
+            float *items = new float[log_size];
+            psuLog->getVoltages(items);
 
-        size_t logSize = psuLog->size();
-        USE_SERIAL.print(FPSTR(str_psu));
-        USE_SERIAL.print(FPSTR(str_log));
-        USE_SERIAL.print(FPSTR(str_size));
-        USE_SERIAL.println(logSize);
-
-        float *items = new float[logSize];
-        psuLog->getVoltages(items);
-        display->loadData(items, logSize);
-        display->drawPlot(0);
+            display->loadData(items, log_size);
+            display->drawPlot(0);
+            display->enableUpdates(false);
+            delete[] items;
+        }
     });
 
     psu->setOnPowerOn([]() {
         power_led->set(BLINK);
         psuLog->begin();
+        if (display) display->enableUpdates(true);
     });
+
+    psu->setOnPowerError([]() { power_led->set(BLINK_ERROR); });
 
     psu->begin();
 }
 
 void start_ntp() {
-    ntp = new NTPClient();
+    ntp = new NtpClient();
     ntp->setConfig(config->getConfig());
     ntp->setOutput(&USE_SERIAL);
     ntp->setOnTimeSynced([](EpochTime &time) { rtc.setTime(time.get()); });
@@ -226,22 +225,22 @@ void load_screen_psu_pvi() {
 }
 
 void load_screen_sta_wifi() {
-    display->setLine(0, "STA> ", wireless::hostSSID().c_str());
-    display->setLine(1, "IP> ", wireless::hostIP().toString().c_str());
-    display->setLine(2, "RSSI> ", wireless::RSSIInfo().c_str());
+    display->setLine(0, "STA> ", Wireless::hostSSID().c_str());
+    display->setLine(1, "IP> ", Wireless::hostIP().toString().c_str());
+    display->setLine(2, "RSSI> ", Wireless::RSSIInfo().c_str());
 };
 
 void load_screen_ap_wifi() {
-    display->setLine(0, "AP> ", wireless::hostSSID().c_str());
-    display->setLine(1, "PWD> ", wireless::hostAPPassword().c_str());
+    display->setLine(0, "AP> ", Wireless::hostSSID().c_str());
+    display->setLine(1, "PWD> ", Wireless::hostAPPassword().c_str());
 };
 
 void update_display() {
     if ((!display) || !display->ready()) return;
     if (psu->getState() == POWER_OFF) {
-        if (wireless::getWirelessMode() == WLAN_STA) {
+        if (Wireless::getWirelessMode() == WLAN_STA) {
             load_screen_sta_wifi();
-        } else if (wireless::getWirelessMode() == WLAN_AP) {
+        } else if (Wireless::getWirelessMode() == WLAN_AP) {
             load_screen_ap_wifi();
         }
     } else if (psu->getState() == POWER_ON) {

@@ -1,17 +1,21 @@
-#include "str_utils.h"
+#include "StrUtils.h"
 
-namespace str_utils {
+#include <Print.h>
+
+#include "Strings.h"
+
+namespace StrUtils {
 
 void strfill(char *str, char chr, uint8_t len) {
     memset(&str[0], chr, sizeof(char) * len);
     str[len - 1] = '\x00';
 }
 
-bool isMeanYes(String &s) {
+bool strpositiv(String &s) {
     return s.equals("on") || s.equals("+") || s.equals("yes");
 }
 
-bool isMeanNo(String &s) {
+bool strnegativ(String &s) {
     return s.equals("off") || s.equals("-") || s.equals("no");
 }
 
@@ -79,12 +83,13 @@ String formatInMHz(uint32_t value) {
     return String(buf);
 }
 
-void strwithpad(char *str, Align align, uint8_t width, const char ch) {
+void strwithpad(char *str, Align align, uint8_t size, const char ch) {
     uint8_t str_len = strlen(str) + 1;
-    if (str_len >= width) {
-        return;
+    if (str_len > size) {
+        str_len = size;        
     }
-    char orig_str[str_len + 1];
+    str[str_len] = '\x00';
+    char orig_str[str_len];
     uint8_t str_start = 0, padd_start = 0;
     switch (align) {
         // str...
@@ -95,26 +100,28 @@ void strwithpad(char *str, Align align, uint8_t width, const char ch) {
         // ...str
         case RIGHT:
             padd_start = 0;
-            str_start = width - str_len;
+            str_start = size - str_len;
             break;
         // ..str..
         case CENTER:
-            str_start = (width - str_len) / 2;
+            str_start = (size - str_len) / 2;
             padd_start = 0;
             break;
+            
     }
-    strcpy(orig_str, str);
-    for (uint8_t i = padd_start; i < width; i++) {
+    strncpy(orig_str, str, str_len);
+    for (uint8_t i = padd_start; i < size; i++) {
         if (i >= str_start && (i - str_start <= str_len + 3)) {
             str[i] = orig_str[i - str_start];
         } else {
             str[i] = ch;
         }
     }
+    str[size - 1] = '\x00';
 }
 
 // http://stackoverflow.com/a/35236734
-void stringToBytes(const char *str, char sep, byte *bytes, int len, int base) {
+void stringToBytes(const char *str, char sep, uint8_t *bytes, int len, int base) {
     for (int i = 0; i < len; i++) {
         bytes[i] = strtoul(str, NULL, base);
         str = strchr(str, sep);
@@ -145,4 +152,4 @@ bool isVaildIp(const char *ipStr) {
     return true;
 }
 
-}  // namespace str_utils
+}  // namespace StrUtils
