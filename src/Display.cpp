@@ -257,14 +257,16 @@ void Display::drawBar(uint8_t row, uint8_t per) {
 
 void Display::drawTextCenter(uint8_t row, const char *str) {
     if (!connected) return;
-    lcd->setCursor(0, row);
-    char tmp[LCD_COLS + 1];
+    
+    char buf[LCD_COLS + 1];
+
     size_t str_len = strlen(str);
-    if (str_len > LCD_COLS + 1) str_len = LCD_COLS;
-    strncpy(tmp, str, str_len);
-    tmp[str_len] = '\x00';
-    StrUtils::strwithpad(tmp, StrUtils::CENTER, LCD_COLS + 1);
-    lcd->print(tmp);
+    if (str_len > LCD_COLS) str_len = LCD_COLS;
+    strncpy(buf, str, str_len);
+    buf[str_len] = '\x00';
+    StrUtils::strwithpad(buf, StrUtils::CENTER, LCD_COLS + 1);
+    lcd->setCursor(0, row);
+    lcd->print(buf);
 #ifdef DEBUG_DISPLAY
     DEBUG.printf("[display] drawTextCenter(%s)", tmp);
     DEBUG.println();

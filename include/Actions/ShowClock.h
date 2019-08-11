@@ -10,14 +10,9 @@ class ShowClock : public EmptyParamAction {
 };
 
 void ShowClock::exec(Print* p) {
-    p->print(FPSTR(str_clock));
-    p->print(FPSTR(str_time));
     char buf[32];
     struct tm dateTime = rtc.getDateTime();
-    p->print(tmtoa(&dateTime, buf));
-    p->println();
+    p->println(tmtoa(&dateTime, buf));
 }
-
-ShowClock* showClock = new ShowClock();
 
 }  // namespace Actions

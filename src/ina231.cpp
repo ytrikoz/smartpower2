@@ -1,6 +1,7 @@
 #include <ina231.h>
 
 #include <Wire.h>
+#include <BuildConfig.h>
 
 void ina231_writeWord(uint8_t addr, uint16_t value) {
     uint8_t data[2];
@@ -31,8 +32,7 @@ uint16_t ina231_readWord(uint8_t addr) {
 }
 
 void ina231_configure(void) {
-    unsigned short config;
-    config = ina231_get_config();
+    uint16_t config = 0x45ff;
     ina231_writeWord(INA231_REG_CONFIG, config);
     config = 0x08bd;
     ina231_writeWord(INA231_REG_CALIBRATION, config);
@@ -42,8 +42,8 @@ void ina231_configure(void) {
 
 float ina231_read_voltage(void) {
     float LSB_V = 0.00125;
-    unsigned short bus_vol = ina231_readWord(INA231_REG_BUS_VOL);
-    return (float)(bus_vol * LSB_V);
+    uint16_t bus_vol = ina231_readWord(INA231_REG_BUS_VOL);
+    return (float) (bus_vol * LSB_V);
 }
 
 float ina231_read_current(void) {
@@ -63,15 +63,11 @@ float ina231_read_power(void) {
     return (float)(power * LSB_P);
 }
 
-uint16_t ina231_get_config() {
-    // unsigned short res = 0x05FF & (uint8_t)numOfAvg << 8;
-    // default
-    return 0x45ff;
-}
-
 void ina231_set_avg(uint8_t avg) {
     int16_t config_reg = ina231_readWord(INA231_REG_CONFIG);
+    DEBUG.print(config_reg, BIN);
     config_reg |= avg << 9;
+    DEBUG.print(config_reg, BIN);
     ina231_writeWord(INA231_REG_CONFIG, config_reg);
 }
 

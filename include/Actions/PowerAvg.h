@@ -12,7 +12,7 @@ class PowerAvg : public NumericAction {
     void exec(Print* p);
 };
 
-PowerAvg::PowerAvg(const char* str, int param): NumericAction(str, param) {}
+PowerAvg::PowerAvg(const char* str, int param) : NumericAction(str, param) {}
 
 void PowerAvg::exec(Print* p) { ina231_set_avg((uint8_t)param); }
 

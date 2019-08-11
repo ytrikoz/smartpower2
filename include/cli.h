@@ -11,18 +11,17 @@ bool active();
 
 void onCommandError(cmd_error *e);
 
-void power(cmd *c);
-void show(cmd *c);
-
-void onHelpCommand(cmd *c);
-void onPrintCommand(cmd *c);
-void onFileRemoveCommand(cmd *c);
-void onSetCommand(cmd *c);
-void onGetCommand(cmd *c);
-void onSystemCommand(cmd *c);
-void onWifiScanCommand(cmd *c);
-void onWifiDiagCommand(cmd *c);
-void onClockCommand(cmd *c);
+void onPower(cmd *c);
+void onShow(cmd *c);
+void onHelp(cmd *c);
+void onPrint(cmd *c);
+void onRemove(cmd *c);
+void onSet(cmd *c);
+void onGet(cmd *c);
+void onSystem(cmd *c);
+void onWifiScan(cmd *c);
+void onWifiDiag(cmd *c);
+void onClock(cmd *c);
 
 void onGetConfigParameter(const char *, const char *);
 void onConfigParameterChanged(const char *, const char *, const char *);

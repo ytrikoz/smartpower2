@@ -15,7 +15,8 @@ IPAddress atoip(const char *);
 bool setstr(char *dest, const char *src, uint8_t size);
 void strfill(char *str, char chr, uint8_t size);
 
-bool isValidIp(const char *);
+bool isip(const char *);
+bool isip(const String str);
 
 bool strpositiv(String &);
 bool strnegativ(String &);

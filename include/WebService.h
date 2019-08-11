@@ -24,6 +24,7 @@ class WebService {
     void begin();
     void loop();
     void sendTxt(uint8_t, const char *);
+    bool captivePortal();
 
    private:
     bool active = false;
@@ -35,17 +36,20 @@ class WebService {
     String getFilePath(String uri);
     const char *getContentType(String filename);
     void noContent();
+    void handleRoot();
+    void handleUri();
     void handleFileList();
+    void handleNotFound(String& uri);
     void fileUpload();
 
-    void socketEvent(uint8_t num, WStype_t type, uint8_t *payload,
-                     size_t lenght);
+    void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
+                        size_t lenght);
 
     SocketDataEventHandler onDataEvent;
     SocketConnectionEventHandler onConnectEvent, onDisconnectEvent;
 
     ESP8266WebServer *server;
-    WebSocketsServer *socket;
+    WebSocketsServer *websocket;
     SSDPClass *ssdp;
     Print *output;
 };

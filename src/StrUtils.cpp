@@ -109,6 +109,10 @@ void strwithpad(char *str, Align align, uint8_t size, const char ch) {
             
     }
     strncpy(orig_str, str, str_len);
+    
+    memset(str, ch, size + 1);
+    str[size] = '\x00';
+    
     for (uint8_t i = padd_start; i < size; i++) {
         if (i >= str_start && (i - str_start <= str_len + 3)) {
             str[i] = orig_str[i - str_start];
@@ -116,7 +120,6 @@ void strwithpad(char *str, Align align, uint8_t size, const char ch) {
             str[i] = ch;
         }
     }
-    str[size - 1] = '\x00';
 }
 
 // http://stackoverflow.com/a/35236734
@@ -143,12 +146,17 @@ String getSocketStr(IPAddress ip, int port) {
     return String(buf);
 }
 
-bool isVaildIp(const char *ipStr) {
-    for (size_t i = 0; i < strlen(ipStr); i++) {
-        int c = ipStr[i];
+bool isip(const char *str) {
+    for (size_t i = 0; i < strlen(str); i++) {
+        int c = str[i];
         if (c != '.' && (c < '0' || c > '9')) return false;
     }
     return true;
 }
+
+bool isip(const String str) {    
+    return isip(str.c_str());
+}
+
 
 }  // namespace StrUtils

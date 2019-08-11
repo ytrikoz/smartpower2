@@ -2,6 +2,9 @@
 
 #include "Wireless.h"
 
+using StrUtils::iptoa;
+using StrUtils::isip;
+
 File fsUploadFile;
 
 static const char stre_http_file_not_found[] PROGMEM =
@@ -44,29 +47,14 @@ void WebService::begin() {
     });
 
     server->on("/generate_204", HTTP_GET, [this]() { noContent(); });
+    server->on("/", [this]() { handleRoot(); });
 
-    server->onNotFound([this]() {
-        String uri = server->uri();
-#ifdef DEBUG_HTTP
-        DEBUG.print(FPSTR(str_http));
-#endif
-        if (!sendFile(uri)) {
-            char buf[128];
-            sprintf_P(buf, stre_http_file_not_found, server->uri().c_str(),
-                      (server->method() == HTTP_GET) ? "GET" : "POST",
-                      server->args());
-            server->send(404, "text/plan", buf);
-#ifdef DEBUG_HTTP
-            DEBUG.printf_P(strf_file_not_found, uri.c_str());
-            DEBUG.println();
-#endif
-        }
-    });
+    server->onNotFound([this]() { handleUri(); });
 
-    socket = new WebSocketsServer(this->socket_port);
-    socket->onEvent(
+    websocket = new WebSocketsServer(this->socket_port);
+    websocket->onEvent(
         [this](uint8_t num, WStype_t type, uint8_t *payload, size_t lenght) {
-            socketEvent(num, type, payload, lenght);
+            webSocketEvent(num, type, payload, lenght);
         });
 
     File f = SPIFFS.open(FILE_WEB_SETTINGS, "w");
@@ -94,15 +82,60 @@ void WebService::begin() {
     USE_SERIAL.println();
 
     server->begin();
-    socket->begin();
+    websocket->begin();
 
     active = true;
+}
+
+void WebService::handleRoot() {
+    if (captivePortal()) {  // If caprive portal redirect instead of displaying
+                            // the page.
+        return;
+    }
+    handleUri();
+#ifdef SIMPLE_DASH
+    server->sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    server->sendHeader("Pragma", "no-cache");
+    server->sendHeader("Expires", "-1");
+#endif
+}
+
+void WebService::handleUri() {
+    String uri = server->uri();
+    if (!sendFile(uri)) {
+        handleNotFound(uri);
+    }
+}
+
+void WebService::handleNotFound(String &uri) {
+#ifdef DEBUG_HTTP
+    DEBUG.print(FPSTR(str_http));
+    DEBUG.printf_P(strf_file_not_found, uri.c_str());
+    DEBUG.println();
+#endif
+    String str = F("File Not Found\n");
+    str += F("\nURI: ");
+    str += server->uri();
+    str += F("\nMethod: ");
+    str += (server->method() == HTTP_GET) ? "GET" : "POST";
+    str += F("\nArguments: ");
+    str += server->args();
+    str += '\n';
+
+    for (uint8_t i = 0; i < server->args(); i++)
+        str += server->argName(i) + ": " + server->arg(i) + '\n';
+
+    server->sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    server->sendHeader("Pragma", "no-cache");
+    server->sendHeader("Expires", "-1");
+    server->send(404, "text/plain", str);
 }
 
 void WebService::loop() {
     if (!active) return;
     server->handleClient();
-    socket->loop();
+    delay(2);    
+    websocket->loop();
 }
 
 void WebService::sendTxt(uint8_t num, const char *payload) {
@@ -112,15 +145,15 @@ void WebService::sendTxt(uint8_t num, const char *payload) {
     output->printf_P(strf_arrow_dest, payload);
     output->println();
 #endif
-    socket->sendTXT(num, payload, strlen(payload));
+    websocket->sendTXT(num, payload, strlen(payload));
 }
 
 void WebService::setOutput(Print *p) { this->output = p; }
 
 void WebService::noContent() { server->send(204, "text/plan", "No Content"); }
 
-void WebService::socketEvent(uint8_t num, WStype_t type, uint8_t *payload,
-                             size_t lenght) {
+void WebService::webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
+                                size_t lenght) {
 #ifdef DEBUG_WEBSOCKET
     DEBUG.printf_P(str_http);
     DEBUG.printf_P(strf_client, num);
@@ -168,7 +201,6 @@ bool WebService::sendFile(String uri) {
     String path = getFilePath(uri);
     return sendFileContent(path + ".gz") || sendFileContent(path);
 }
-
 
 String WebService::getFilePath(String uri) {
     String path = String(root);
@@ -273,6 +305,27 @@ void WebService::fileUpload() {
             server->send(500, "text/plain", "500: couldn't create file");
         }
     }
+}
+
+/** Redirect to captive portal if we got a request for another domain. Return
+ * true in that case so the page handler do not try to handle the request again.
+ */
+bool WebService::captivePortal() {
+    if (!isip(server->hostHeader()) &&
+        server->hostHeader() != (String(HOST_NAME) + ".local")) {
+        output->print(FPSTR(str_http));
+        output->println(FPSTR(str_request_redirected));
+        server->sendHeader(
+            "Location", String("http://") + iptoa(server->client().localIP()),
+            true);
+        server->send(302, "text/plain",
+                     "");  // Empty content inhibits Content-length header so we
+                           // have to close the websocket ourselves.
+        server->client()
+            .stop();  // Stop is needed because we sent no content length
+        return true;
+    }
+    return false;
 }
 
 void WebService::setOnClientConnection(SocketConnectionEventHandler h) {

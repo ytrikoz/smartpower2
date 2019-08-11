@@ -22,6 +22,4 @@ void ShowClients::exec(Print* p) {
     p->println(get_telnet_clients_count());
 }
 
-ShowClients* showClients = new ShowClients();
-
 }  // namespace Actions

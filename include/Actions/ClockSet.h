@@ -5,13 +5,12 @@
 
 namespace Actions {
 
-class ClockSet : public Printable {
+class ClockSet : public EmptyParamAction {
    public:
     void exec(Print* p);
-    size_t printTo(Print& p) const;
 };
 
-inline void ClockSet::exec(Print* p) {
+void ClockSet::exec(Print* p) {
     p->print(FPSTR(str_set));
     p->print(FPSTR(str_date));
 
@@ -25,12 +24,5 @@ inline void ClockSet::exec(Print* p) {
         p->println(FPSTR(str_invalid));
     }
 }
-
-size_t ClockSet::printTo(Print& p) const {
-    size_t res = p.println("clock set");
-    return res;
-}
-
-ClockSet* clockSet = new ClockSet();
 
 }  // namespace Actions

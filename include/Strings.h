@@ -100,6 +100,7 @@ static const char str_empty[] PROGMEM = "empty ";
 static const char str_got[] PROGMEM = "got ";
 static const char str_known[] PROGMEM = "known ";
 static const char str_last[] PROGMEM = "last ";
+static const char str_left[] PROGMEM = "left ";
 static const char str_log[] PROGMEM = "log ";
 static const char str_lcd[] PROGMEM = "[lcd] ";
 static const char str_mdns[] PROGMEM = "[mdns] ";
@@ -143,8 +144,10 @@ static const char str_store[] PROGMEM = "store ";
 static const char str_sta[] PROGMEM = "sta ";
 static const char str_set[] PROGMEM = "set ";
 static const char str_system_time[] PROGMEM = "system time ";
+
 static const char str_system_restart[] PROGMEM =
     "The system is going down for restart ";
+static const char str_request_redirected[] PROGMEM = "request redirected to captive portal ";
 static const char str_synced[] PROGMEM = "synced ";
 static const char str_success[] PROGMEM = "success ";
 static const char str_timezone[] PROGMEM = "timezone ";

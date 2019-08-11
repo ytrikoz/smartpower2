@@ -14,19 +14,16 @@
 
 namespace Cli {
 
-using Actions::PowerAvg;
-
-Print* output;
-
 Command cmdPower, cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet, cmdGet, cmdRm,
     cmdClock;
 
-bool active() { return output != nullptr; }
+Print* output;
+
+bool active() { return output != NULL; }
 
 void open(Print* p) {
-    if (output != nullptr) {
-        output->print(FPSTR(str_session_interrupted));
-        output->println();
+    if (output != NULL) {
+        output->println(FPSTR(str_session_interrupted));
     }
     output = p;
 }
@@ -39,41 +36,41 @@ void init() {
     cmdPower = cli->addCommand("power");
     cmdPower.addPositionalArgument("action", "status");
     cmdPower.addPositionalArgument("param", "");
-    cmdPower.setCallback(Cli::power);
+    cmdPower.setCallback(Cli::onPower);
     // Help
     cmdHelp = cli->addCommand("help");
-    cmdHelp.setCallback(onHelpCommand);
+    cmdHelp.setCallback(Cli::onHelp);
     // Print
     cmdPrint = cli->addCommand("print");
     cmdPrint.addPositionalArgument("file");
-    cmdPrint.setCallback(onPrintCommand);
+    cmdPrint.setCallback(Cli::onPrint);
     // System
     cmdSystem = cli->addCommand("system");
     cmdSystem.addPositionalArgument("action");
     cmdSystem.addPositionalArgument("param", "");
-    cmdSystem.setCallback(onSystemCommand);
+    cmdSystem.setCallback(Cli::onSystem);
     // Show
     cmdShow = cli->addCommand("show");
     cmdShow.addPositionalArgument("item", "status");
-    cmdShow.setCallback(show);
+    cmdShow.setCallback(Cli::onShow);
     // Set
     cmdSet = cli->addCommand("set");
     cmdSet.addPositionalArgument("param");
     cmdSet.addPositionalArgument("value");
-    cmdSet.setCallback(onSetCommand);
+    cmdSet.setCallback(Cli::onSet);
     // Get
     cmdGet = cli->addCommand("get");
     cmdGet.addPositionalArgument("param");
-    cmdGet.setCallback(onGetCommand);
-    // Rm
+    cmdGet.setCallback(Cli::onGet);
+    // rm
     cmdRm = cli->addCommand("rm");
     cmdRm.addPositionalArgument("file");
-    cmdRm.setCallback(onFileRemoveCommand);
+    cmdRm.setCallback(Cli::onRemove);
     // Clock
     cmdClock = cli->addCommand("clock");
     cmdClock.addPositionalArgument("action");
     cmdClock.addPositionalArgument("param", "");
-    cmdClock.setCallback(onClockCommand);
+    cmdClock.setCallback(Cli::onClock);
 }
 
 void close() {
@@ -138,7 +135,7 @@ void onCommandError(cmd_error* e) {
     output->println(cmdError.toString().c_str());
 }
 
-void onHelpCommand(cmd* c) {
+void onHelp(cmd* c) {
     Command cmd(c);
     output->println(cli->toString().c_str());
 }
@@ -161,7 +158,7 @@ String getCommandValue(Command* c) {
     return c->getArgument("value").getValue();
 }
 
-void power(cmd* c) {
+void onPower(cmd* c) {
     Command cmd(c);
     String action = getCommandAction(&cmd);
     String param = getCommandParam(&cmd);
@@ -177,9 +174,9 @@ void power(cmd* c) {
             if (num > psuLog->size()) num = psuLog->size();
             psuLog->printLast(output, num);
         }
-    } else if (action.equals("avg")) {        
+    } else if (action.equals("avg")) {
         size_t num = param.equals("") ? 1 : atoi(param.c_str());
-        PowerAvg("avg", num).exec(output);
+        Actions::PowerAvg("avg", num).exec(output);
 
         onCommandDone();
     } else if (StrUtils::strpositiv(action)) {
@@ -189,18 +186,18 @@ void power(cmd* c) {
     } else {
         unknownAction(action);
     };
-}  // namespace Cli
+}
 
-void onClockCommand(cmd* c) {
+void onClock(cmd* c) {
     Command cmd(c);
     String action = getCommandAction(&cmd);
     String param = getCommandParam(&cmd);
     if (action.equals("set")) {
-        Actions::clockSet->exec(output);
+        Actions::ClockSet().exec(output);
     }
 }
 
-void onWifiScanCommand(cmd* c) {
+void onWifiScan(cmd* c) {
     Command cmd(c);
     output->print(FPSTR(str_wifi));
     output->print(FPSTR(str_scanning));
@@ -220,7 +217,7 @@ void onWifiScanCommand(cmd* c) {
     output->println();
 }
 
-void onSystemCommand(cmd* c) {
+void onSystem(cmd* c) {
     Command cmd(c);
     String action = getCommandAction(&cmd);
     String param = getCommandParam(&cmd);
@@ -258,7 +255,7 @@ void onSystemCommand(cmd* c) {
     onCommandDone(action, param);
 }
 
-void onSetCommand(cmd* c) {
+void onSet(cmd* c) {
     Command cmd(c);
     String name = getCommandParam(&cmd);
     String value = getCommandValue(&cmd);
@@ -282,7 +279,7 @@ void onSetCommand(cmd* c) {
     output->println();
 }
 
-void onGetCommand(cmd* c) {
+void onGet(cmd* c) {
     Command cmd(c);
     String name = getCommandParam(&cmd);
     Config* cfg = config->getConfig();
@@ -297,13 +294,13 @@ void onGetCommand(cmd* c) {
     }
 }
 
-void show(cmd* c) {
+void onShow(cmd* c) {
     Command cmd(c);
     String item = getCommandItem(&cmd);
     if (item.equals("clients")) {
-        Actions::showClients->exec(output);
+        Actions::ShowClients().exec(output);
     } else if (item.equals("clock")) {
-        Actions::showClock->exec(output);
+        Actions::ShowClock().exec(output);
     } else if (item.equals("power")) {
         psu->printDiag(output);
     } else if (item.equals("log")) {
@@ -327,7 +324,7 @@ void show(cmd* c) {
     }
 }
 
-void onPrintCommand(cmd* c) {
+void onPrint(cmd* c) {
     Command cmd(c);
     String file = getCommandFile(&cmd);
     if (SPIFFS.exists(file)) {
@@ -343,7 +340,7 @@ void onPrintCommand(cmd* c) {
     }
 }
 
-void onFileRemoveCommand(cmd* c) {
+void onRemove(cmd* c) {
     Command cmd(c);
     String file = cmd.getArgument("file").getValue();
     if (SPIFFS.exists(file)) {

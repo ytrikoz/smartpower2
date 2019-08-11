@@ -43,15 +43,16 @@ void LoopWatchDog::_printDiag(Print* p) {
 
 void LoopWatchDog::printDiag(Print* p) {
     if (getState() == CAPTURE_IN_PROGRESS) {
-        p->print("capturing ");
+        p->print(FPSTR(str_capture));
         p->printf_P(strf_lu_ms, captureTimeLeft);
+        p->print(FPSTR(str_left));
         p->println();
         return;
     };
- 
     if (getState() == CAPTURE_IDLE) {
         startCapture();    
-        p->print("capture for ");
+        p->print(FPSTR(str_start));
+        p->print(FPSTR(str_capture));
         p->printf_P(strf_lu_ms, captureTimeLeft);
         p->println();
         return;
