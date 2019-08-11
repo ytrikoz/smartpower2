@@ -291,7 +291,7 @@ void setup() {
 
     // Leds
     power_led = new Led(POWER_LED_PIN, LIGHT_ON, true);
-    wifi_led = new Led(WIFI_LED_PIN);
+    wifi_led = new Led(WIFI_LED_PIN, LIGHT_OFF, true);
 
     // Button
     pinMode(POWER_BTN_PIN, INPUT);

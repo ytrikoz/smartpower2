@@ -22,11 +22,12 @@ WiFiEventHandler staGotIpEventHandler, staConnectedEventHandler,
 NetworkStateChangeEventHandler onNetworkStateChange;
 
 void printDiag(Print *p) {
-    p->printf_P(str_wifi);
+    p->print(FPSTR(str_wifi));
     p->printf_P(strf_mode, mode);
-    p->printf_P(str_network);
+    p->print(FPSTR(str_network));
     p->print(network);
     p->println();
+
     WiFi.printDiag(*p);
 }
 

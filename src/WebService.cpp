@@ -46,7 +46,12 @@ void WebService::begin() {
         }
     });
 
-    server->on("/generate_204", HTTP_GET, [this]() { noContent(); });
+    // Android captive portal.
+    // server->on("/generate_204", HTTP_GET, [this]() { noContent(); });
+    server->on("/generate_204", [this]() { handleRoot(); });
+    // Microsoft captive portal.
+    server->on("/fwlink", [this]() { handleRoot(); });
+    // Root
     server->on("/", [this]() { handleRoot(); });
 
     server->onNotFound([this]() { handleUri(); });
@@ -134,7 +139,7 @@ void WebService::handleNotFound(String &uri) {
 void WebService::loop() {
     if (!active) return;
     server->handleClient();
-    delay(2);    
+    delay(2);
     websocket->loop();
 }
 
