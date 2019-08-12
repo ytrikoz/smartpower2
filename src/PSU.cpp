@@ -37,21 +37,22 @@ void Psu::setOnPowerOff(PsuEventHandler h) { onPowerOff = h; }
 void Psu::setOnPowerError(PsuEventHandler h) { onPowerError = h; }
 
 void Psu::setState(PowerState value, bool force) {
-    if ((force) || (state != value)) {
-        state = value;
-        output->print(FPSTR(str_psu));
-        output->printf_P(strf_arrow_dest, getStateStr().c_str());
-        output->println();
+    if (!force && state == value) return;
 
-        digitalWrite(POWER_SWITCH_PIN, state);
+    state = value;
 
-        storePowerState(state);
+    output->print(FPSTR(str_psu));
+    output->printf_P(strf_arrow_dest, getStateStr().c_str());
+    output->println();
 
-        if (state == POWER_ON) {
-            onStart();
-        } else if (state == POWER_OFF) {
-            onStop();
-        }
+    digitalWrite(POWER_SWITCH_PIN, state);
+
+    storePowerState(state);
+
+    if (state == POWER_ON) {
+        onStart();
+    } else if (state == POWER_OFF) {
+        onStop();
     }
 }
 
@@ -150,7 +151,7 @@ void Psu::loop() {
         info.voltage <= PSU_VOLTAGE_LOW) {
         output->print(FPSTR(str_psu));
         output->print(FPSTR(str_error));
-        output->print(FPSTR(stre_low_voltage));
+        output->print(FPSTR(str_low_voltage));
         output->print(info.voltage);
         output->println();
         error(PSU_ERROR_LOW_VOLTAGE);
@@ -216,19 +217,18 @@ void Psu::printDiag(Print *p) {
     p->print(FPSTR(str_psu));
     switch (status) {
         case PSU_OK:
-            p->print(getStateStr());
+        p->print(getStateStr());    
             if (getState() == POWER_ON) {
                 p->printf_P(strf_output_voltage, getOutputVoltage());
                 p->printf_P(strf_lu_sec, getDuration());
             } else if (getState() == POWER_OFF) {
-                p->printf_P(strf_lu_sec,
-                            millis_since(updatedAt) / ONE_SECOND_ms);
+                p->printf_P(strf_lu_sec, millis_since(updatedAt) / ONE_SECOND_ms);
             }
             p->println();
             break;
         case PSU_ERROR_LOW_VOLTAGE:
             p->print(FPSTR(str_error));
-            p->print(FPSTR(stre_low_voltage));
+            p->print(FPSTR(str_low_voltage));
             p->println(info.voltage);
             break;
         default:

@@ -31,14 +31,14 @@ size_t EmptyParamAction::printTo(Print& p) const {
 
 class NumericAction : public EmptyParamAction {
    public:
-    NumericAction(const char* str, int param);
+    NumericAction(const char* str, size_t param);
     virtual void exec(Print* p);
 
    protected:
     int param;
 };
 
-NumericAction::NumericAction(const char* str, int param)
+NumericAction::NumericAction(const char* str, size_t param)
     : EmptyParamAction(str) {
     this->param = param;
 }

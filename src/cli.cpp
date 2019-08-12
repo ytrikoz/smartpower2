@@ -14,17 +14,15 @@
 
 namespace Cli {
 
-Command cmdPower, cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet, cmdGet, cmdRm,
-    cmdClock;
+Command cmdConfig, cmdPower, cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet,
+    cmdGet, cmdRm, cmdClock;
 
 Print* output;
 
 bool active() { return output != NULL; }
 
 void open(Print* p) {
-    if (output != NULL) {
-        output->println(FPSTR(str_session_interrupted));
-    }
+    if (output != NULL) output->println(FPSTR(str_session_interrupted));
     output = p;
 }
 
@@ -37,6 +35,11 @@ void init() {
     cmdPower.addPositionalArgument("action", "status");
     cmdPower.addPositionalArgument("param", "");
     cmdPower.setCallback(Cli::onPower);
+    // Config
+    cmdConfig = cli->addCommand("config");
+    cmdConfig.addPositionalArgument("action", "print");
+    cmdConfig.addPositionalArgument("param", "");
+    cmdConfig.setCallback(Cli::onConfig);
     // Help
     cmdHelp = cli->addCommand("help");
     cmdHelp.setCallback(Cli::onHelp);
@@ -79,6 +82,16 @@ void close() {
     output = nullptr;
 }
 
+String getActionStr(Command& c) { return c.getArgument("action").getValue(); }
+
+String getParamStr(Command& c) { return c.getArgument("param").getValue(); }
+
+String getCommandFile(Command& c) { return c.getArgument("action").getValue(); }
+
+String getCommandItem(Command& c) { return c.getArgument("item").getValue(); }
+
+String getCommandValue(Command& c) { return c.getArgument("value").getValue(); }
+
 void onGetConfigParameter(const char* name, const char* value) {
     char buf[INPUT_MAX_LENGTH];
     sprintf_P(buf, strf_config_param_value, name, value);
@@ -108,31 +121,76 @@ void unknownActionParam(const char* param, const char* action) {
     output->printf_P(strf_unknown_action_param, param, action);
 }
 
-void unknownAction(String actionStr) {
-    output->printf_P(strf_unknown_action, actionStr.c_str());
+void unknownAction(Command& c) {
+    const char* str = getActionStr(c).c_str();
+    output->printf_P(strf_unknown_action, str);
     output->println();
 }
 
-void onFileResult(PGM_P str, const char* filename) {
-    output->printf_P(str, filename);
+void print_done(Command& c) {
+    // String str = getActionStr(c);
+    // output->print(str.c_str());
+    // output->print(' ');
+    output->print(FPSTR(str_done));
     output->println();
-}
+};
 
-void onCommandDone(String& action, String& param) {
+void print_done(String& action, String& param) {
     output->print(action.c_str());
     output->print(' ');
     output->print(param.c_str());
     output->print(": ");
 }
 
-void onCommandDone() {
-    output->print(FPSTR(str_done));
+void onIOResult(PGM_P str, const char* filename) {
+    output->printf_P(str, filename);
     output->println();
-};
+}
 
 void onCommandError(cmd_error* e) {
     CommandError cmdError(e);
     output->println(cmdError.toString().c_str());
+}
+
+enum CommandAction {
+    ACTION_UNKNOWN,
+    ACTION_PRINT,
+    ACTION_RESET,
+    ACTION_SAVE,
+    ACTION_LOAD,
+    ACTION_APPLY,
+    ACTION_STATUS,
+    ACTION_LOG,
+    ACTION_AVG,
+    ACTION_ON,
+    ACTION_OFF
+};
+
+CommandAction getAction(Command& c) {
+    String str = c.getArgument("action").getValue();
+    str += ' ';
+    if (strcasecmp_P(str.c_str(), str_print) == 0) {
+        return ACTION_PRINT;
+    } else if (strcasecmp_P(str.c_str(), str_reset) == 0) {
+        return ACTION_RESET;
+    } else if (strcasecmp_P(str.c_str(), str_save) == 0) {
+        return ACTION_SAVE;
+    } else if (strcasecmp_P(str.c_str(), str_load) == 0) {
+        return ACTION_LOAD;
+    } else if (strcasecmp_P(str.c_str(), str_apply) == 0) {
+        return ACTION_APPLY;
+    } else if (strcasecmp_P(str.c_str(), str_status) == 0) {
+        return ACTION_STATUS;
+    } else if (strcasecmp_P(str.c_str(), str_log) == 0) {
+        return ACTION_LOG;
+    } else if (strcasecmp_P(str.c_str(), str_avg) == 0) {
+        return ACTION_AVG;
+    } else if (strcasecmp_P(str.c_str(), str_on) == 0) {
+        return ACTION_ON;
+    } else if (strcasecmp_P(str.c_str(), str_off) == 0) {
+       return ACTION_OFF;
+    }
+    return ACTION_UNKNOWN;
 }
 
 void onHelp(cmd* c) {
@@ -140,58 +198,75 @@ void onHelp(cmd* c) {
     output->println(cli->toString().c_str());
 }
 
-String getCommandAction(Command* c) {
-    return c->getArgument("action").getValue();
-}
-
-String getCommandParam(Command* c) {
-    return c->getArgument("param").getValue();
-}
-
-String getCommandFile(Command* c) {
-    return c->getArgument("action").getValue();
-}
-
-String getCommandItem(Command* c) { return c->getArgument("item").getValue(); }
-
-String getCommandValue(Command* c) {
-    return c->getArgument("value").getValue();
+void onConfig(cmd* c) {
+    Command cmd(c);
+    CommandAction action = getAction(cmd);
+    switch (action) {
+        case ACTION_PRINT:
+            config->printTo(output);
+            break;
+        case ACTION_RESET:
+            config->reset();
+            print_done(cmd);
+            break;
+        case ACTION_SAVE:
+            config->save();
+            print_done(cmd);
+            break;
+        case ACTION_LOAD:
+            config->reload();
+            print_done(cmd);
+            break;
+        case ACTION_APPLY:
+            config->save();
+            setup_restart_timer();
+            break;
+        default:
+            unknownAction(cmd);
+            return;
+    }
 }
 
 void onPower(cmd* c) {
     Command cmd(c);
-    String action = getCommandAction(&cmd);
-    String param = getCommandParam(&cmd);
+    CommandAction action = getAction(cmd);
+    String param = getParamStr(cmd);
+    switch (action) {
+        case ACTION_STATUS: {
+            psu->printDiag(output);
+            psuLog->printDiag(output);
 
-    if (action.equals("status")) {
-        psu->printDiag(output);
-        psuLog->printDiag(output);
-    } else if (action.equals("log")) {
-        if (psuLog->size() == 0) {
-            output->println(FPSTR(str_empty));
-        } else {
-            size_t num = param.equals("") ? 3 : atoi(param.c_str());
-            if (num > psuLog->size()) num = psuLog->size();
-            psuLog->printLast(output, num);
         }
-    } else if (action.equals("avg")) {
-        size_t num = param.equals("") ? 1 : atoi(param.c_str());
-        Actions::PowerAvg("avg", num).exec(output);
-
-        onCommandDone();
-    } else if (StrUtils::strpositiv(action)) {
-        psu->setState(POWER_ON);
-    } else if (StrUtils::strnegativ(action)) {
-        psu->setState(POWER_OFF);
-    } else {
-        unknownAction(action);
-    };
+        case ACTION_AVG: {
+            size_t num = param.equals("") ? 1 : atoi(param.c_str());
+            Actions::PowerAvg("avg", num).exec(output);
+            print_done(cmd);
+        }
+        case ACTION_LOG: {
+            if (psuLog->empty()) {
+                output->println(FPSTR(str_empty));
+            } else {
+                size_t num = param.equals("") ? 3 : atoi(param.c_str());
+                if (num > psuLog->size()) num = psuLog->size();
+                psuLog->printLast(output, num);
+            }
+        }
+        case ACTION_ON: {
+            psu->setState(POWER_ON);
+            break;
+        }
+        case ACTION_OFF: {
+            psu->setState(POWER_OFF);
+            break;
+        }
+        default: { unknownAction(cmd); }
+    }
 }
 
 void onClock(cmd* c) {
     Command cmd(c);
-    String action = getCommandAction(&cmd);
-    String param = getCommandParam(&cmd);
+    String action = getActionStr(cmd);
+    String param = getParamStr(cmd);
     if (action.equals("set")) {
         Actions::ClockSet().exec(output);
     }
@@ -219,32 +294,10 @@ void onWifiScan(cmd* c) {
 
 void onSystem(cmd* c) {
     Command cmd(c);
-    String action = getCommandAction(&cmd);
-    String param = getCommandParam(&cmd);
+    String action = getActionStr(cmd);
+    String param = getParamStr(cmd);
 
-    if (action.equals("reset")) {
-        if (param.equals("config")) {
-            config->reset();
-        } else {
-            unknownActionParam(param.c_str(), action.c_str());
-            return;
-        }
-    } else if (action.equals("save")) {
-        if (param.equals("config")) {
-            config->save();
-            onCommandDone(action, param);
-        } else {
-            unknownActionParam(param.c_str(), action.c_str());
-            return;
-        }
-    } else if (action.equals("load")) {
-        if (param.equals("config")) {
-            config->reload();
-        } else {
-            unknownActionParam(param.c_str(), action.c_str());
-            return;
-        }
-    } else if (action.equals("restart")) {
+    if (action.equals("restart")) {
         setup_restart_timer(param.toInt());
         return;
     } else {
@@ -252,13 +305,13 @@ void onSystem(cmd* c) {
         output->println();
         return;
     }
-    onCommandDone(action, param);
+    print_done(action, param);
 }
 
 void onSet(cmd* c) {
     Command cmd(c);
-    String name = getCommandParam(&cmd);
-    String value = getCommandValue(&cmd);
+    String name = getParamStr(cmd);
+    String value = getCommandValue(cmd);
 
     Config* cfg = config->getConfig();
     Parameter param;
@@ -281,7 +334,7 @@ void onSet(cmd* c) {
 
 void onGet(cmd* c) {
     Command cmd(c);
-    String name = getCommandParam(&cmd);
+    String name = getParamStr(cmd);
     Config* cfg = config->getConfig();
     Parameter param;
     size_t value_size;
@@ -296,7 +349,7 @@ void onGet(cmd* c) {
 
 void onShow(cmd* c) {
     Command cmd(c);
-    String item = getCommandItem(&cmd);
+    String item = getCommandItem(cmd);
     if (item.equals("clients")) {
         Actions::ShowClients().exec(output);
     } else if (item.equals("clock")) {
@@ -310,7 +363,7 @@ void onShow(cmd* c) {
     } else if (item.equals("info")) {
         output->println(getSystemInfoJson().c_str());
     } else if (item.equals("config")) {
-        output->println(config->getConfigJson().c_str());
+        ;
     } else if (item.equals("status")) {
         Actions::showStatus->exec(output);
     } else if (item.equals("ntp")) {
@@ -326,17 +379,16 @@ void onShow(cmd* c) {
 
 void onPrint(cmd* c) {
     Command cmd(c);
-    String file = getCommandFile(&cmd);
+    String file = getCommandFile(cmd);
     if (SPIFFS.exists(file)) {
         File f = SPIFFS.open(file, "r");
-        onFileResult(strf_file_print, file.c_str());
+        onIOResult(strf_file_print, file.c_str());
         while (f.available()) {
             output->println(f.readString().c_str());
         }
-
         f.close();
     } else {
-        onFileResult(strf_file_not_found, file.c_str());
+        onIOResult(strf_file_not_found, file.c_str());
     }
 }
 
@@ -345,10 +397,10 @@ void onRemove(cmd* c) {
     String file = cmd.getArgument("file").getValue();
     if (SPIFFS.exists(file)) {
         if (SPIFFS.remove(file)) {
-            onFileResult(strf_file_deleted, file.c_str());
+            onIOResult(strf_file_deleted, file.c_str());
         }
     } else {
-        onFileResult(strf_file_not_found, file.c_str());
+        onIOResult(strf_file_not_found, file.c_str());
     }
 }
 }  // namespace Cli

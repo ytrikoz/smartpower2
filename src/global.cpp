@@ -151,8 +151,12 @@ void start_psu() {
 
     psu->setOnPowerOn([]() {
         power_led->set(BLINK);
-        psuLog->begin();
+    
         if (display) display->unlock();
+
+        psuLog->begin();
+        
+                
     });
 
     psu->setOnPowerError([]() { power_led->set(BLINK_ERROR); });

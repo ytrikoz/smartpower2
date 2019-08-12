@@ -15,7 +15,7 @@
 
 //#define DEBUG_LEDS
 //#define DEBUG_LOOP
-//#define DEBUG_PLOT
+#define DEBUG_PLOT
 //#define DEBUG_DISPLAY
 //#define DEBUG_CONFIG
 //#define DEBUG_SYSTEM_CLOCK

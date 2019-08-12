@@ -60,9 +60,17 @@ bool ConfigHelper::loadFile(const char *name) {
 void ConfigHelper::save() {
     if (!synced) {
 #ifdef DEBUG_CONFIG
-        debug->printf("[config] sync");
+        debug->printf("[config] save()");
 #endif
         synced = saveFile(filename);
+    }
+}
+
+void ConfigHelper::printTo(Print *p) {
+    char buf[64];
+    for (uint8_t i = 0; i < PARAM_COUNT; ++i) {
+        config->getConfigLine(Parameter(i), buf);
+        p->println(buf);
     }
 }
 
@@ -72,26 +80,28 @@ bool ConfigHelper::saveFile(const char *file) {
 #endif
     File f = SPIFFS.open(file, "w");
     if (!f) {
-#ifdef DEBUG_CONFIG
-        debug->println("[config] file open failed");
-#endif
+        USE_SERIAL.print(FPSTR(str_config));
+        USE_SERIAL.print(FPSTR(str_file));
+        USE_SERIAL.print(FPSTR(str_write));
+        USE_SERIAL.print(FPSTR(str_error));
         return false;
     }
-    char str[64];
+    char buf[64];
     for (uint8_t i = 0; i < PARAM_COUNT; i++) {
-        config->getConfigLine(Parameter(i), str);
+        config->getConfigLine(Parameter(i), buf);
 #ifdef DEBUG_CONFIG
-        debug->printf("[config] -> %s\r\n", str);
+        debug->printf("[config] -> %s ", str);
 #endif
-        f.println(str);
+        f.println(buf);
     }
     f.flush();
     f.close();
     return true;
 }
+
 void ConfigHelper::reload() {
 #ifdef DEBUG_CONFIG
-    debug->printf("[config] reload %s\r\n", filename);
+    debug->printf("[config] reload %s %d ", filename, synced);
 #endif
     if (loadFile(filename)) synced = true;
 }
@@ -180,9 +190,7 @@ bool ConfigHelper::setDNS(const char *value) {
     return config->setValue(DNS, value);
 }
 
-bool ConfigHelper::setDHCP(bool value) {
-    return config->setValue(DHCP, value);
-}
+bool ConfigHelper::setDHCP(bool value) { return config->setValue(DHCP, value); }
 
 bool ConfigHelper::setOutputVoltage(float value) {
     if ((value > 4 && value < 6) | (value > 11 && value < 13)) {

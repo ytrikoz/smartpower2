@@ -21,8 +21,9 @@ Config::~Config() {
 }
 
 void Config::setDefault() {
-    for (int i = 0; i < PARAM_COUNT; i++) {
-        setstr(values[i], metadata[i].def, metadata[i].size);
+    for (int i = 0; i < PARAM_COUNT; ++i) {
+        if (setstr(values[i], metadata[i].def, metadata[i].size)) 
+            onConfigChangeEvent(Parameter(i));
     }
 }
 

@@ -13,7 +13,10 @@ class PsuLogger {
     void end();
     void clear();
     void loop();
-
+    
+    PsuInfo first();
+    PsuInfo last();
+    
     size_t getItems(PsuInfo& info);
     void getVoltages(float* voltages);
 

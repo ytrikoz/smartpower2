@@ -2,6 +2,9 @@
 
 #include "Cli.h"
 
+using StrUtils::strfill;
+using StrUtils::strpadd;
+
 Shell::Shell() {
     memset(&prevInput, 0, sizeof(prevInput));
     active = false;
@@ -82,9 +85,9 @@ void Shell::welcome() {
     char title[SCREEN_WIDTH + 1];
     strcpy(title, APPNAME " v" FW_VERSION);
     uint8_t width = SCREEN_WIDTH / 2;
-    StrUtils::strwithpad(title, StrUtils::CENTER, width, ' ');
+    strpadd(title, StrUtils::CENTER, width, ' ');
     char tmp[width + 1];
-    StrUtils::strfill(tmp, '#', width);
+    strfill(tmp, '#', width);
 
     t->println(tmp);
     t->println(title);

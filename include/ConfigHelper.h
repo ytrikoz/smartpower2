@@ -60,6 +60,8 @@ class ConfigHelper {
 
     bool authorize(const char *login, const char *passwd);
 
+    void printTo(Print* p);
+    
     String getConfigJson();
     Config *getConfig();
 

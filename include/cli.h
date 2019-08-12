@@ -10,7 +10,7 @@ void close();
 bool active();
 
 void onCommandError(cmd_error *e);
-
+void onConfig(cmd *c);
 void onPower(cmd *c);
 void onShow(cmd *c);
 void onHelp(cmd *c);
@@ -25,11 +25,14 @@ void onClock(cmd *c);
 
 void onGetConfigParameter(const char *, const char *);
 void onConfigParameterChanged(const char *, const char *, const char *);
-void onCommandDone(String &action, String &param);
-void onCommandDone();
+
+void onDone();
+void onDone(String &action, String &param);
+
 void onFileResult(const char *, const char *);
 
 void unknownActionParam(const char *, const char *);
 void unknownCommandItem(const char *command, const char *item);
 void unknownConfigParam(const char *param);
+
 }  // namespace Cli

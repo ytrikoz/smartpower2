@@ -1,5 +1,8 @@
 #include "Display.h"
 
+uint8_t char_empty[8] = {0b00000, 0b00000, 0b00000, 0b00000,
+                         0b00000, 0b00000, 0b00000, 0b00000};
+
 uint8_t char_solid[8] = {0b11111, 0b11111, 0b11111, 0b11111,
                          0b11111, 0b11111, 0b11111, 0b11111};
 
@@ -37,23 +40,17 @@ uint8_t char_7_8[8] = {0b00000, 0b11111, 0b11111, 0b11111,
                        0b11111, 0b11111, 0b11111, 0b11111};
 
 uint8_t char_bell[8] = {0x4, 0xe, 0xe, 0xe, 0x1f, 0x0, 0x4};
-
 uint8_t char_note[8] = {0x2, 0x3, 0x2, 0xe, 0x1e, 0xc, 0x0};
-
 uint8_t char_clock[8] = {0x0, 0xe, 0x15, 0x17, 0x11, 0xe, 0x0};
-
 uint8_t char_heart[8] = {0x0, 0xa, 0x1f, 0x1f, 0xe, 0x4, 0x0};
-
 uint8_t char_duck[8] = {0x0, 0xc, 0x1d, 0xf, 0xf, 0x6, 0x0};
-
 uint8_t char_check[8] = {0x0, 0x1, 0x3, 0x16, 0x1c, 0x8, 0x0};
-
-uint8_t _cross[8] = {0x0, 0x1b, 0xe, 0x4, 0xe, 0x1b, 0x0};
-
-uint8_t _retarrow[8] = {0x1, 0x1, 0x5, 0x9, 0x1f, 0x8, 0x4};
+uint8_t char_cross[8] = {0x0, 0x1b, 0xe, 0x4, 0xe, 0x1b, 0x0};
+uint8_t char_retarrow[8] = {0x1, 0x1, 0x5, 0x9, 0x1f, 0x8, 0x4};
 
 using StrUtils::setstr;
 using StrUtils::strfill;
+using StrUtils::strpadd;
 
 Display::Display() {
     addr = 0x00;
@@ -71,6 +68,7 @@ bool Display::init() {
         output->print(FPSTR(str_lcd));
         if (connect()) {
             output->print(FPSTR(str_found));
+            output->print("0x");
             output->println(addr, HEX);
 
             lcd = new LiquidCrystal_I2C(addr, LCD_COLS, LCD_ROWS);
@@ -78,6 +76,9 @@ bool Display::init() {
             lcd->clear();
 
             memset(line, 0, sizeof(TextItem) * DISPLAY_VIRTUAL_ROWS);
+
+            loadBank(BANK_NONE);
+            backlight = true;
 
             connected = true;
         } else {
@@ -87,10 +88,19 @@ bool Display::init() {
     return connected;
 }
 
+void Display::disableBacklight() {
+    lcd->noBacklight();
+    backlight = false;
+}
+
+void Display::enableBacklight() {
+    lcd->backlight();
+    backlight = true;
+}
 void Display::turnOn() {
     if (lcd) {
         lcd->display();
-        lcd->backlight();
+        if (backlight) lcd->backlight();
     }
 }
 
@@ -159,26 +169,35 @@ void Display::lock(unsigned long period) {
 }
 
 bool Display::locked() {
-    unsigned long now = millis();
-    unsigned long passed = millis_passed(lockUpdated, now);
-    if (lockTimeLeft > passed) {
-        lockTimeLeft -= passed;
-    } else {
-        lockTimeLeft = 0;
+    if (!active) return true;
+
+    if (lockTimeLeft > 0) {
+        unsigned long now = millis();
+        unsigned long passed = millis_passed(lockUpdated, now);
+        if (lockTimeLeft > passed) {
+            lockTimeLeft -= passed;
+        } else {
+            lockTimeLeft = 0;
+        }
+        lockUpdated = now;
     }
-    lockUpdated = now;    
-    return (lockTimeLeft != 0);
+    return (lockTimeLeft > 0);
 }
 
-void Display::updateLCD(boolean forced) {
+void Display::loop(){
     if (!connected) return;
-    if (!active) return;
-    if (!forced && (millis_since(updated) < LCD_REFRESH_INTERVAL_ms)) return;
-    if (locked()) return;
+    if (millis_since(updated) > LCD_REFRESH_INTERVAL_ms) {
+        if (!locked()) {
+            for(size_t n = 0; n < LCD_ROWS; ++n) {
+                uint8_t row = get_row_for_update();
+                TextItem *l = &line[row];
+                if(l->hasUpdates) updateLCD(row, l);
+            }            
+        } 
+    }
+}
 
-    uint8_t row = get_row_for_update();
-    TextItem *l = &line[row];
-    if (!l->hasUpdates) return;
+void Display::updateLCD(uint8_t row, TextItem *l, boolean forced) {   
     lcd->setCursor(0, row);
 
     updated = millis();
@@ -215,7 +234,7 @@ void Display::updateLCD(boolean forced) {
     // [    <-abc]
     if (l->var_pos < _free_space) {
         char tmp[32];
-        strfill(tmp, ' ', 32);
+        strfill(tmp, '\x20', 32);
         uint8_t x = _free_space - l->var_pos + 1;
         strncpy(tmp + x, l->var_str, l->var_pos);
         tmp[_free_space] = '\x00';
@@ -223,7 +242,7 @@ void Display::updateLCD(boolean forced) {
     } else if (_free_space <= l->var_pos) {
         // [xyz<-    ]
         char tmp[32];
-        strfill(tmp, ' ', _free_space + 1);
+        strfill(tmp, '\x20', _free_space + 1);
         for (uint8_t str_index = 0; str_index < _free_space; str_index++) {
             int8_t _index = l->var_pos - _free_space + str_index;
             if (_index >= _var_len) {
@@ -235,7 +254,7 @@ void Display::updateLCD(boolean forced) {
             if (ch == '\x00') break;
         }
         lcd->print(tmp);
-        strfill(tmp, ' ', _free_space - strlen(tmp) + 1);
+        strfill(tmp, '\x20', _free_space - strlen(tmp) + 1);
         lcd->print(tmp);
     }
     l->var_pos++;
@@ -243,28 +262,29 @@ void Display::updateLCD(boolean forced) {
 
 void Display::drawBar(uint8_t row, uint8_t per) {
     if (!connected) return;
-
     uint8_t cols = floor((float)LCD_COLS * per / 100);
-    char tmp[cols + 1];
-    strfill(tmp, '#', cols + 1);
+    char buf[LCD_COLS + 1];
+
+    strfill(buf, '*', cols + 1);
+    strpadd(buf, StrUtils::LEFT, LCD_COLS);
     lcd->setCursor(0, row);
-    lcd->print(tmp);
+    lcd->print(buf);
 #ifdef DEBUG_DISPLAY
-    DEBUG.printf("[display] drawBar(%s) row: %d", tmp, row);
+    DEBUG.printf("[display] drawBar(%s)", buf);
     DEBUG.println();
 #endif
 }
 
 void Display::drawTextCenter(uint8_t row, const char *str) {
     if (!connected) return;
-    
+
     char buf[LCD_COLS + 1];
 
     size_t str_len = strlen(str);
     if (str_len > LCD_COLS) str_len = LCD_COLS;
     strncpy(buf, str, str_len);
     buf[str_len] = '\x00';
-    StrUtils::strwithpad(buf, StrUtils::CENTER, LCD_COLS + 1);
+    StrUtils::strpadd(buf, StrUtils::CENTER, LCD_COLS + 1);
     lcd->setCursor(0, row);
     lcd->print(buf);
 #ifdef DEBUG_DISPLAY
@@ -273,22 +293,32 @@ void Display::drawTextCenter(uint8_t row, const char *str) {
 #endif
 }
 
-void Display::load_bar_bank() {
-    lcd->createChar(1, char_1_5);
-    lcd->createChar(2, char_2_5);
-    lcd->createChar(3, char_3_5);
-    lcd->createChar(4, char_4_5);
-}
+void Display::loadBank(CharBank bank, bool force) {
+    if ((!force) && (this->bank == bank)) return;
 
-void Display::load_plot_bank() {
-    lcd->createChar(0, char_solid);
-    lcd->createChar(1, char_1_8);
-    lcd->createChar(2, char_2_8);
-    lcd->createChar(3, char_3_8);
-    lcd->createChar(4, char_4_8);
-    lcd->createChar(5, char_5_8);
-    lcd->createChar(6, char_6_8);
-    lcd->createChar(7, char_7_8);
+    switch (bank) {
+        case BANK_PLOT:
+            lcd->createChar(0, char_solid);
+            lcd->createChar(1, char_1_8);
+            lcd->createChar(2, char_2_8);
+            lcd->createChar(3, char_3_8);
+            lcd->createChar(4, char_4_8);
+            lcd->createChar(5, char_5_8);
+            lcd->createChar(6, char_6_8);
+            lcd->createChar(7, char_7_8);
+            break;
+        case BANK_BAR:
+            lcd->createChar(1, char_1_5);
+            lcd->createChar(2, char_2_5);
+            lcd->createChar(3, char_3_5);
+            lcd->createChar(4, char_4_5);
+            break;
+        case BANK_NONE:
+            for (uint8_t i = 0; i < 8; ++i) lcd->createChar(i, char_empty);
+        default:
+            break;
+    }
+    this->bank = bank;
 }
 
 void Display::loadData(float *values, size_t size) {
@@ -327,9 +357,8 @@ float get_plot_y(PlotData *p, uint8_t x) {
 
 void Display::drawPlot(uint8_t offset_x) {
     if (!connected) return;
-    load_plot_bank();
+    loadBank(BANK_PLOT);
     lcd->clear();
-
     for (uint8_t x = 0; x < PLOT_COLS; ++x) {
         uint8_t y = get_plot_y(plot, x);
         uint8_t col = offset_x + x;
@@ -342,7 +371,7 @@ void Display::drawPlot(uint8_t offset_x) {
                 lcd->write((uint8_t)y);  // Partial
                 y = 0;
             } else if (y == 0) {
-                lcd->write(16);  // Empty
+                lcd->write('\x20');  // Empty
             }
 #ifdef DEBUG_PLOTS
             DEBUG.printf("#%d %2.4f => %d", i, plot[i], value);

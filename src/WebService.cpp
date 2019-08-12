@@ -321,7 +321,7 @@ bool WebService::captivePortal() {
         output->print(FPSTR(str_http));
         output->println(FPSTR(str_request_redirected));
         server->sendHeader(
-            "Location", String("http://") + iptoa(server->client().localIP()),
+            "Location", String("http://") + server->client().localIP().toString(),
             true);
         server->send(302, "text/plain",
                      "");  // Empty content inhibits Content-length header so we

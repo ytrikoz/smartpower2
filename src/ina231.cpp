@@ -64,11 +64,12 @@ float ina231_read_power(void) {
 }
 
 void ina231_set_avg(uint8_t avg) {
-    int16_t config_reg = ina231_readWord(INA231_REG_CONFIG);
-    DEBUG.print(config_reg, BIN);
-    config_reg |= avg << 9;
-    DEBUG.print(config_reg, BIN);
+    uint16_t config_reg = ina231_readWord(INA231_REG_CONFIG);
+    DEBUG.println(config_reg, BIN);
+    
+    config_reg |= avg << 9;        
     ina231_writeWord(INA231_REG_CONFIG, config_reg);
+    DEBUG.println(config_reg, BIN);
 }
 
 void ina231_alert_on_conversation(bool enabled) {
@@ -79,7 +80,7 @@ void ina231_alert_on_conversation(bool enabled) {
 }
 
 void ina231_set_mode(const uint8_t mode) {
-    int16_t config_reg = ina231_readWord(INA231_REG_CONFIG);
+    uint16_t config_reg = ina231_readWord(INA231_REG_CONFIG);
     config_reg &= ~INA231_CONFIG_MODE_MASK;
     uint16_t _mode = 0b00000111 & mode;
     config_reg |= _mode;

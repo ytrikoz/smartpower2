@@ -4,8 +4,6 @@
 
 #include "Consts.h"
 
-static const char stre_low_voltage[] PROGMEM = "low voltage ";
-
 static const char strf_time[] PROGMEM = "%02d:%02d:%02d";
 static const char strf_s_d[] PROGMEM = "%s:%d ";
 static const char strf_ip_port[] PROGMEM = "%s:%d ";
@@ -61,22 +59,25 @@ static const char strf_interval[] PROGMEM = "interval %d";
 static const char strf_output_voltage[] PROGMEM = "Vout %.2f ";
 static const char strf_filelist[] PROGMEM = "filelist %s";
 static const char strf_power[] PROGMEM = "power %s ";
-static const char strf_lu_sec[] PROGMEM = "for %lu sec ";
-static const char strf_lu_ms[] PROGMEM = "for %lu ms ";
+static const char strf_lu_sec[] PROGMEM = "%lu sec ";
+static const char strf_lu_ms[] PROGMEM = "%lu ms ";
 static const char strf_used_per[] PROGMEM = "used %.2f%%";
 static const char strf_size_d[] PROGMEM = "size %d ";
 
 static const char str_as_default[] PROGMEM = "as default ";
 static const char str_ap[] PROGMEM = "ap ";
+static const char str_apply[] PROGMEM = "apply ";
 static const char str_arrow_dest[] PROGMEM = "-> ";
 static const char str_avaible_system_actions[] PROGMEM =
     "Available actions for 'system' command are: 'reset', 'load', 'save', "
     "'restart'.";
+static const char str_avg[] PROGMEM = "avg ";
 static const char str_backup[] PROGMEM = "backup ";
 static const char str_build_date[] PROGMEM = BUILD_DATE;
 static const char str_capture[] PROGMEM = "capture ";
-static const char str_clients[] = "clients";
-static const char str_shell_start_hint[] PROGMEM = "[shell] press \"enter\" to start";
+static const char str_clients[] = "clients ";
+static const char str_shell_start_hint[] PROGMEM =
+    "[shell] press \"enter\" to start";
 static const char str_clock[] PROGMEM = "[clock] ";
 static const char str_config[] PROGMEM = "[config] ";
 static const char str_connecting[] PROGMEM = "connecting ";
@@ -93,15 +94,20 @@ static const char str_down[] PROGMEM = "down ";
 static const char str_duration[] PROGMEM = "duration ";
 static const char str_interval[] PROGMEM = "interval ";
 static const char str_idle[] PROGMEM = "idle ";
+static const char str_read[] PROGMEM = "read ";
+
+static const char str_file[] PROGMEM = "file ";
 static const char str_invalid[] PROGMEM = "invalid %s";
 static const char str_http[] PROGMEM = "[http] ";
 static const char str_http_[] PROGMEM = "http ";
 static const char str_empty[] PROGMEM = "empty ";
 static const char str_got[] PROGMEM = "got ";
 static const char str_known[] PROGMEM = "known ";
+static const char str_load[] PROGMEM = "load ";
 static const char str_last[] PROGMEM = "last ";
 static const char str_left[] PROGMEM = "left ";
 static const char str_log[] PROGMEM = "log ";
+static const char str_low_voltage[] PROGMEM = "low voltage ";
 static const char str_lcd[] PROGMEM = "[lcd] ";
 static const char str_mdns[] PROGMEM = "[mdns] ";
 static const char str_mode[] PROGMEM = "mode ";
@@ -122,8 +128,12 @@ static const char str_host[] PROGMEM = "host ";
 static const char str_on[] PROGMEM = "on ";
 static const char str_off[] PROGMEM = "off ";
 static const char str_password[] PROGMEM = "password ";
+static const char str_print[] PROGMEM = "print ";
+static const char str_reset[] PROGMEM = "reset ";
 static const char str_psu[] PROGMEM = "[psu] ";
 static const char str_psu_log[] PROGMEM = "[psu-log] ";
+static const char str_save[] PROGMEM = "save ";
+static const char str_status[] PROGMEM = "status ";
 static const char str_up[] PROGMEM = "up ";
 static const char str_unknown[] PROGMEM = "unknown";
 static const char str_update[] PROGMEM = "[update] ";
@@ -144,10 +154,10 @@ static const char str_store[] PROGMEM = "store ";
 static const char str_sta[] PROGMEM = "sta ";
 static const char str_set[] PROGMEM = "set ";
 static const char str_system_time[] PROGMEM = "system time ";
-
 static const char str_system_restart[] PROGMEM =
     "The system is going down for restart ";
-static const char str_request_redirected[] PROGMEM = "request redirected to captive portal ";
+static const char str_request_redirected[] PROGMEM =
+    "request redirected to captive portal ";
 static const char str_synced[] PROGMEM = "synced ";
 static const char str_success[] PROGMEM = "success ";
 static const char str_timezone[] PROGMEM = "timezone ";
@@ -159,7 +169,8 @@ static const char str_twp[] PROGMEM = "twp ";
 static const char str_wifi[] PROGMEM = "[wifi] ";
 static const char str_wifi_[] PROGMEM = "wifi ";
 static const char str_wrong[] PROGMEM = "wrong ";
-static const char str_wait[] PROGMEM = "wait";
+static const char str_wait[] PROGMEM = "wait ";
+static const char str_write[] PROGMEM = "write ";
 static const char str_yes[] PROGMEM = "yes ";
 
 #define PRINTLN_WIFI_NETWORK_DOWN     \

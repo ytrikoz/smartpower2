@@ -21,7 +21,7 @@
 #define PLOT_COLS 8
 #define PLOT_ROWS 2
 
-enum GraphType { HORIZONTAL_BAR, VERTICAL_PLOT };
+enum CharBank { BANK_NONE, BANK_BAR, BANK_PLOT };
 
 struct TextItem {
     bool hasUpdates = false;
@@ -44,27 +44,16 @@ class Display {
     Display();
     bool init();
     bool ready();
+    void loop();
     void setOutput(Print *p);
     void drawTextCenter(uint8_t row, const char *str);
     void drawBar(uint8_t row, uint8_t per);
     void drawPlot(uint8_t start);
+    void disableBacklight();
+    void enableBacklight();
     void turnOn();
     void turnOff();
-    void initGraph(GraphType type) {
-        switch (type) {
-            case HORIZONTAL_BAR:
-                load_bar_bank();
-                break;
-            case VERTICAL_PLOT:
-                load_plot_bank();
-                break;
-            default:
-                break;
-        }
-    }
-
-    void load_bar_bank();
-    void load_plot_bank();
+    void loadBank(CharBank bank, bool force = false);
 
     void loadData(float *values, size_t size);
     void drawPlot(float min_value, float max_value, uint8_t offset_x);
@@ -72,22 +61,25 @@ class Display {
     void setLine(uint8_t n, const char *str);
     void setLine(uint8_t n, const char *fixed_str, const char *var_str);
 
-    void updateLCD(boolean forced = false);
     void lock(unsigned long period);
     void lock();
     void unlock();
     bool locked();
    private:  
-
+    void updateLCD(uint8_t row, TextItem *l, boolean forced = false);
+    uint8_t get_row_for_update();
+    bool updates_locked();
     bool connect();
+
     uint8_t addr;
     bool connected;
     bool active;
-    bool updates_locked();
-    uint8_t get_row_for_update();
+    CharBank bank;
+    bool backlight;
     uint8_t row_for_update;
     unsigned long lockTimeLeft;
     unsigned long lockUpdated;
+
     LiquidCrystal_I2C *lcd;
     Print *output;
     PlotData *plot = new PlotData();

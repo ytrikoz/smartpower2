@@ -12,8 +12,8 @@ void stringToBytes(const char *str, char sep, uint8_t *bytes, int len,
                    int base);
 String iptoa(IPAddress);
 IPAddress atoip(const char *);
-bool setstr(char *dest, const char *src, uint8_t size);
-void strfill(char *str, char chr, uint8_t size);
+bool setstr(char *dest, const char *src, size_t size);
+void strfill(char *str, char chr, size_t size);
 
 bool isip(const char *);
 bool isip(const String str);
@@ -27,7 +27,6 @@ String getMacStr(uint8 hwaddr[6]);
 String formatSize(size_t bytes);
 String formatInMHz(uint32_t);
 
-void strwithpad(char *str, Align align, uint8_t line_width,
-                const char ch = ' ');
+void strpadd(char *str, Align align, size_t size, const char ch = ' ');
 
 }  // namespace StrUtils

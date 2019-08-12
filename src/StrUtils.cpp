@@ -5,7 +5,7 @@
 
 namespace StrUtils {
 
-void strfill(char *str, char chr, uint8_t len) {
+void strfill(char *str, char chr, size_t len) {
     memset(&str[0], chr, sizeof(char) * len);
     str[len - 1] = '\x00';
 }
@@ -33,23 +33,17 @@ IPAddress atoip(const char *input) {
     return IPAddress(parts[0], parts[1], parts[2], parts[3]);
 }
 
-String iptoa(IPAddress ip) {
-    String res = "";
-    for (int i = 0; i < 3; i++) {
-        res += String((ip >> (8 * i)) & 0xFF) + ".";
-    }
-    res += String(((ip >> 8 * 3)) & 0xFF);
-
-    return res;
+char *iptoa(IPAddress ip, char *buf) {
+    return strcpy(buf, ip.toString().c_str());
 }
 
-bool setstr(char *dest, const char *src, uint8_t size) {
+bool setstr(char *dest, const char *src, size_t line_width) {
     if (src == nullptr) {
-        memset(dest, 0, size);
+        memset(dest, 0, line_width);
     } else if (strcmp(src, dest) != 0) {
         uint8_t len = strlen(src);
         if (len != 0) {
-            if (len > size - 1) len = size - 1;
+            if (len > line_width - 1) len = line_width - 1;
             memcpy(dest, src, len);
             dest[len] = '\x00';
         }
@@ -82,48 +76,35 @@ String formatInMHz(uint32_t value) {
     return String(buf);
 }
 
-void strwithpad(char *str, Align align, uint8_t size, const char ch) {
-    uint8_t str_len = strlen(str) + 1;
-    if (str_len > size) {
-        str_len = size;        
-    }
-    str[str_len] = '\x00';
-    char orig_str[str_len];
-    uint8_t str_start = 0, padd_start = 0;
+void strpadd(char *str, Align align, size_t size, const char ch) {
+    uint8_t str_len = strlen(str);
+    if (str_len > size) str_len = size;
+    char orig_str[str_len + 1];
+    strncpy(orig_str, str, str_len);
+    strfill(str, ch, size + 1);
+    uint8_t str_start = 0;
     switch (align) {
-        // str...
-        case LEFT:
-            str_start = 0;
-            padd_start = str_len;
-            break;
-        // ...str
+        // [...str]
         case RIGHT:
-            padd_start = 0;
             str_start = size - str_len;
             break;
-        // ..str..
+        // [..str..]
         case CENTER:
-            str_start = (size - str_len) / 2;
-            padd_start = 0;
+            str_start = floor((float)(size - str_len) / 2);
             break;
-            
+        // [str...]
+        case LEFT:
+        default:
+            str_start = 0;
     }
-    strncpy(orig_str, str, str_len);
-    
-    memset(str, ch, size + 1);
-    str[size] = '\x00';
-    
-    for (uint8_t i = padd_start; i < size; i++) {
-        if (i >= str_start && (i - str_start <= str_len + 3)) {
-            str[i] = orig_str[i - str_start];
-        } else {
-            str[i] = ch;
-        }
+    for (size_t i = 0; i < str_len; ++i) {
+        str[i + str_start] = orig_str[i];
     }
 }
 
 // http://stackoverflow.com/a/35236734
-void stringToBytes(const char *str, char sep, uint8_t *bytes, int len, int base) {
+void stringToBytes(const char *str, char sep, uint8_t *bytes, int len,
+                   int base) {
     for (int i = 0; i < len; i++) {
         bytes[i] = strtoul(str, NULL, base);
         str = strchr(str, sep);
@@ -136,7 +117,7 @@ void stringToBytes(const char *str, char sep, uint8_t *bytes, int len, int base)
 
 String getSocketStr(IPAddress ip, int port) {
     char buf[32];
-    strcpy(buf, iptoa(ip).c_str());
+    iptoa(ip, buf);
     size_t len = strlen(buf);
     buf[len++] = ':';
     buf[len++] = '\x00';
@@ -154,9 +135,6 @@ bool isip(const char *str) {
     return true;
 }
 
-bool isip(const String str) {    
-    return isip(str.c_str());
-}
-
+bool isip(const String str) { return isip(str.c_str()); }
 
 }  // namespace StrUtils

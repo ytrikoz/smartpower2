@@ -49,10 +49,10 @@ void on_restart_sequence() {
     restartCount--;
 }
 
-void setup_restart_timer(uint8_t count) {
+void setup_restart_timer(uint8_t delay_s) {
     USE_SERIAL.print(FPSTR(str_system_restart));
     if (restartTimer != -1) timer.deleteTimer(restartTimer);
-    restartCount = count;
+    restartCount = delay_s;
     if (restartCount > 0) {
         USE_SERIAL.printf(strf_in_second, restartCount);
         USE_SERIAL.println();
@@ -254,6 +254,9 @@ void display_boot_progress(uint8_t per, const char *str) {
 void print_reset_reason(Print *p) {
     p->print(F("reset reason: "));
     p->println(ESP.getResetReason());
+}
+
+void print_reset_info(Print *p) {
     p->print(F("reset info: "));
     p->println(ESP.getResetInfo());
 }
@@ -271,15 +274,20 @@ void delay_print(Print *p) {
 }
 
 void print_welcome(Print *p) {
-    char title[SCREEN_WIDTH + 1];
-    strcpy(title, APPNAME " v" FW_VERSION);
-    uint8_t width = SCREEN_WIDTH / 2;
-    StrUtils::strwithpad(title, StrUtils::CENTER, width);
-    char decor[width + 1];
-    StrUtils::strfill(decor, '*', width + 1);
-    p->println(decor);
-    p->println(title);
-    p->println(decor);
+    size_t width = SCREEN_WIDTH / 2;    
+    char tmp[width + 1];
+    
+    strcpy(tmp, " Welcome ");
+    StrUtils::strpadd(tmp, StrUtils::CENTER, width, '#');
+    p->println(tmp);
+    
+    strcpy(tmp, APPNAME " v" FW_VERSION);
+    StrUtils::strpadd(tmp, StrUtils::CENTER, width);
+    p->println(tmp);
+
+    strcpy(tmp, " " BUILD_DATE " ");
+    StrUtils::strpadd(tmp, StrUtils::CENTER, width, '#');
+    p->println(tmp);
 }
 
 void setup() {
@@ -287,11 +295,12 @@ void setup() {
 #ifdef SERIAL_DEBUG
     USE_SERIAL.setDebugOutput(true);
 #endif
-    USE_SERIAL.println();
-
     // Leds
     power_led = new Led(POWER_LED_PIN, LIGHT_ON, true);
     wifi_led = new Led(WIFI_LED_PIN, LIGHT_OFF, true);
+
+    USE_SERIAL.println();
+    print_welcome(&USE_SERIAL);
 
     // Button
     pinMode(POWER_BTN_PIN, INPUT);
@@ -299,7 +308,6 @@ void setup() {
                     power_button_state_change, CHANGE);
 
     print_reset_reason(&USE_SERIAL);
-    print_welcome(&USE_SERIAL);
 
     SPIFFS.begin();
 
@@ -400,7 +408,7 @@ void loop() {
 #ifdef DEBUG_LOOP
         TimeProfiler _tp_display = TimeProfiler("lcd", 24);
 #endif
-        if (display) display->updateLCD();
+        if (display) display->loop();
     }
     delay(0);
 #endif
@@ -466,32 +474,28 @@ uint8_t volatile powerBtnLongPressCounter;
 unsigned long volatile power_btn_last_event = 0;
 ButtonState volatile power_btn_state = BTN_RELEASED;
 
-bool volatile powerBtnPressEvent = false;
+bool volatile powerButtonClicked = false;
 static void ICACHE_RAM_ATTR power_button_state_change() {
-    bool handled = (millis() - power_btn_last_event) < 100;
-    if (!handled) {
-        if (!digitalRead(POWER_BTN_PIN) && power_btn_state != BTN_PRESSED) {
-            power_btn_last_event = millis();
-            handled = true;
-            power_btn_state = BTN_PRESSED;
-        }
+    unsigned long now = millis();
+    if (now - power_btn_last_event < 50) return;
+
+    if (!digitalRead(POWER_BTN_PIN) && power_btn_state != BTN_PRESSED) {
+        power_btn_last_event = now;
+        power_btn_state = BTN_PRESSED;
     }
-    if (!handled) {
-        if (digitalRead(POWER_BTN_PIN) && power_btn_state != BTN_RELEASED) {
-            power_btn_last_event = millis();
-            handled = true;
-            power_btn_state = BTN_RELEASED;
-            powerBtnPressEvent = true;
-        }
+    if (digitalRead(POWER_BTN_PIN) && power_btn_state != BTN_RELEASED) {
+        power_btn_last_event = now;
+        power_btn_state = BTN_RELEASED;
+        powerButtonClicked = true;
     }
 }
 
 void power_button_event_handler() {
-    if (powerBtnPressEvent) {
+    if (powerButtonClicked) {
         psu->togglePower();
-        powerBtnPressEvent = false;
+        powerButtonClicked = false;
     }
-    if (!digitalRead(POWER_BTN_PIN) && (power_btn_state)) {
+    if (!digitalRead(POWER_BTN_PIN) && (power_btn_state == BTN_PRESSED)) {
         if (powerBtnLongPressCounter++ > 5) {
             setup_restart_timer(5);
         }
