@@ -235,12 +235,14 @@ void onPower(cmd* c) {
         case ACTION_STATUS: {
             psu->printDiag(output);
             psuLog->printDiag(output);
+            break;
 
         }
         case ACTION_AVG: {
             size_t num = param.equals("") ? 1 : atoi(param.c_str());
             Actions::PowerAvg("avg", num).exec(output);
             print_done(cmd);
+            break;
         }
         case ACTION_LOG: {
             if (psuLog->empty()) {
@@ -250,6 +252,7 @@ void onPower(cmd* c) {
                 if (num > psuLog->size()) num = psuLog->size();
                 psuLog->printLast(output, num);
             }
+            break;
         }
         case ACTION_ON: {
             psu->setState(POWER_ON);

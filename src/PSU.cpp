@@ -199,7 +199,7 @@ String Psu::toString() {
 }
 
 unsigned long Psu::getDuration() {
-    return millis_passed(startedAt, updatedAt) / ONE_SECOND_ms;
+    return floor((float) millis_passed(startedAt, updatedAt) / ONE_SECOND_ms);
 }
 
 void Psu::init() {
@@ -215,15 +215,16 @@ String Psu::getStateStr() { return getState() == POWER_ON ? "ON " : "OFF "; }
 
 void Psu::printDiag(Print *p) {
     p->print(FPSTR(str_psu));
+    p->print(getStateStr());    
+    
     switch (status) {
-        case PSU_OK:
-        p->print(getStateStr());    
+        case PSU_OK:      
             if (getState() == POWER_ON) {
-                p->printf_P(strf_output_voltage, getOutputVoltage());
                 p->printf_P(strf_lu_sec, getDuration());
             } else if (getState() == POWER_OFF) {
                 p->printf_P(strf_lu_sec, millis_since(updatedAt) / ONE_SECOND_ms);
-            }
+            }   
+            p->printf_P(strf_output_voltage, getOutputVoltage());         
             p->println();
             break;
         case PSU_ERROR_LOW_VOLTAGE:
