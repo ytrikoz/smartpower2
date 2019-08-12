@@ -40,7 +40,7 @@
 #define PARAM_LARGE_NUMBER_SIZE 9
 
 #define HOST_NAME "smartpower2"
-#define HOST_DOMAIN "*"
+#define HOST_DOMAIN "local"
 #define WIFI_CONNECT_TIMEOUT 40
 #define MAX_WEB_CLIENTS 5
 #define OTA_PORT 8266

@@ -23,7 +23,7 @@
 //#define DEBUG_NTP
 //#define DEBUG_TELNET
 //#define DEBUG_WEBSOCKET
-//#define DEBUG_HTTP
+#define DEBUG_HTTP
 //#define DEBUG_SHELL
 //#define DEBUG_TERMUL
 //#define DEBUG_FILE_STORAGE

@@ -29,7 +29,7 @@ void sendPageState(uint8_t n, uint8_t page);
 void print_boot_delay(Print* p);
 void display_boot_progress(uint8_t per, const char* str = NULL);
 
-void power_button_event_handler();
+void power_button_handler();
 static void ICACHE_RAM_ATTR power_button_state_change();
 
 // ADC_MODE(ADC_VCC);

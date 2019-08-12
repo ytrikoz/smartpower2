@@ -82,7 +82,7 @@ PsuInfo PsuLogger::first() { return items[readPos]; }
 PsuInfo PsuLogger::last() {
     size_t pos = readPos;
     if (writePos < readPos) { 
-        size_t pos = writePos++; 
+        size_t pos = writePos + 1; 
         if (pos > capacity) pos = 0;
     }    
     return items[pos];

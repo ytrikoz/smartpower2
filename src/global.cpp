@@ -145,6 +145,7 @@ void start_psu() {
             display->loadData(items, size);
             display->drawPlot(0);
             display->lock(15000);
+            
             delete[] items;
         }
     });
@@ -155,8 +156,8 @@ void start_psu() {
         if (display) display->unlock();
 
         psuLog->begin();
-        
-                
+
+
     });
 
     psu->setOnPowerError([]() { power_led->set(BLINK_ERROR); });

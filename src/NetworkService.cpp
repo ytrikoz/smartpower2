@@ -2,10 +2,11 @@
 
 #include "Consts.h"
 
-NetworkService::NetworkService() {
-    dns = new DNSServer();
-    mdns = new esp8266::MDNSImplementation::MDNSResponder();
-    netbios = new ESP8266NetBIOS();
+NetworkService::NetworkService() {  
+    has_dns = false;
+    has_mdns = false;
+    has_netbios = false;
+
     active = false;
 }
 
@@ -19,36 +20,40 @@ void NetworkService::begin() {
     const uint16_t ota_port = OTA_PORT;
     char dns_name[PARAM_STR_SIZE + 1];
     char host_name[PARAM_STR_SIZE + 1];
-    if (Wireless::getWirelessMode() == WLAN_AP) {
-        strcpy(dns_name, HOST_DOMAIN);
-    } else {
-        strcpy(dns_name, HOST_NAME);
-    }
+   
     strcpy(host_name, HOST_NAME);
+    strcpy(dns_name, "*");
+    // strcpy(dns_name, HOST_NAME "." HOST_DOMAIN);
+   
+    if (Wireless::getWirelessMode() == WLAN_AP) {
+        output->print(FPSTR(str_dns));
+        dns = new DNSServer();
+        if (begin_dns(dns_name, ip, dns_port)) {
+            output->print(dns_name);
+            output->print(' ');
+            output->printf_P(strf_arrow_dest, StrUtils::getSocketStr(ip, dns_port).c_str());
+            has_dns = true;
+        } else {
+            output->print(FPSTR(str_failed));
+        }     
+        output->println();
 
-    output->printf_P(str_dns);
-
-    if (begin_dns(dns_name, ip, dns_port)) {
-        output->print(dns_name);
-        output->print(' ');
-        output->printf_P(strf_arrow_dest,
-                         StrUtils::getSocketStr(ip, dns_port).c_str());
-    } else {
-        output->printf_P(str_failed);
+        output->printf_P(str_netbios);
+        netbios = new ESP8266NetBIOS();   
+        if (begin_netbios(host_name)) {
+            
+            output->printf_P(str_ready);
+        } else {
+            output->printf_P(str_failed);
+        }
+        output->println();
     }
-    output->println();
 
     output->printf_P(str_mdns);
+    mdns = new esp8266::MDNSImplementation::MDNSResponder();
     if (begin_mdns(host_name, telnet_port, http_port, ota_port)) {
         output->printf_P(str_ready);
-    } else {
-        output->printf_P(str_failed);
-    }
-    output->println();
-
-    output->printf_P(str_netbios);
-    if (begin_netbios(host_name)) {
-        output->printf_P(str_ready);
+        has_mdns = true;
     } else {
         output->printf_P(str_failed);
     }
@@ -58,9 +63,12 @@ void NetworkService::begin() {
 }
 
 void NetworkService::stop() {
-    dns->stop();
-    mdns->end();
-    netbios->end();
+    if (has_dns) dns->stop();
+    if (has_mdns) mdns->end();
+    if (has_netbios) netbios->end();
+    has_dns = false;
+    has_mdns = false;
+    has_netbios = false;
     active = false;
 }
 
@@ -86,6 +94,6 @@ bool NetworkService::begin_netbios(const char *host_name) {
 
 void NetworkService::loop() {
     if (!active) return;
-    if (dns) dns->processNextRequest();
-    if (mdns) mdns->update();
+    if (has_dns) dns->processNextRequest();
+    if (has_mdns) mdns->update();
 }

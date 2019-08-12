@@ -188,7 +188,7 @@ CommandAction getAction(Command& c) {
     } else if (strcasecmp_P(str.c_str(), str_on) == 0) {
         return ACTION_ON;
     } else if (strcasecmp_P(str.c_str(), str_off) == 0) {
-       return ACTION_OFF;
+        return ACTION_OFF;
     }
     return ACTION_UNKNOWN;
 }
@@ -236,7 +236,6 @@ void onPower(cmd* c) {
             psu->printDiag(output);
             psuLog->printDiag(output);
             break;
-
         }
         case ACTION_AVG: {
             size_t num = param.equals("") ? 1 : atoi(param.c_str());
@@ -262,7 +261,10 @@ void onPower(cmd* c) {
             psu->setState(POWER_OFF);
             break;
         }
-        default: { unknownAction(cmd); }
+        default: {
+            unknownAction(cmd);
+            break;
+        }
     }
 }
 

@@ -274,13 +274,13 @@ void delay_print(Print *p) {
 }
 
 void print_welcome(Print *p) {
-    size_t width = SCREEN_WIDTH / 2;    
+    size_t width = SCREEN_WIDTH / 2;
     char tmp[width + 1];
-    
+
     strcpy(tmp, " Welcome ");
     StrUtils::strpadd(tmp, StrUtils::CENTER, width, '#');
     p->println(tmp);
-    
+
     strcpy(tmp, APPNAME " v" FW_VERSION);
     StrUtils::strpadd(tmp, StrUtils::CENTER, width);
     p->println(tmp);
@@ -343,20 +343,27 @@ void setup() {
     start_console_shell();
 #endif
 
-    display_boot_progress(100, "<COMPLETE>");
+    timer.setInterval(1000, [] { send_psu_data_to_clients(); });
 
-    timer.setInterval(1000, [] {
-        send_psu_data_to_clients();
-        power_button_event_handler();
 #ifndef DISABLE_LCD
-        update_display();
+    if ((display) && (display->ready())) {
+        timer.setInterval(1000, [] { update_display(); });
+        timer.setInterval(5000, [] { display_alt_line = !display_alt_line; });
+    }
 #endif
-    });
 
-    timer.setInterval(5000, [] { display_alt_line = !display_alt_line; });
+    display_boot_progress(100, "<COMPLETE>");
 }
 
 void loop() {
+    // Button
+    {
+#ifdef DEBUG_LOOP
+        TimeProfiler _tp_rtc = TimeProfiler("btn");
+#endif
+        power_button_handler();
+    }
+
     // Clock
     {
 #ifdef DEBUG_LOOP
@@ -469,12 +476,10 @@ void loop() {
 }
 
 enum ButtonState { BTN_PRESSED, BTN_RELEASED };
-
 uint8_t volatile powerBtnLongPressCounter;
 unsigned long volatile power_btn_last_event = 0;
 ButtonState volatile power_btn_state = BTN_RELEASED;
-
-bool volatile powerButtonClicked = false;
+bool volatile powerBtnPressedAndReleased = false;
 static void ICACHE_RAM_ATTR power_button_state_change() {
     unsigned long now = millis();
     if (now - power_btn_last_event < 50) return;
@@ -486,20 +491,37 @@ static void ICACHE_RAM_ATTR power_button_state_change() {
     if (digitalRead(POWER_BTN_PIN) && power_btn_state != BTN_RELEASED) {
         power_btn_last_event = now;
         power_btn_state = BTN_RELEASED;
-        powerButtonClicked = true;
+        powerBtnPressedAndReleased = true;
     }
 }
 
-void power_button_event_handler() {
-    if (powerButtonClicked) {
-        psu->togglePower();
-        powerButtonClicked = false;
-    }
-    if (!digitalRead(POWER_BTN_PIN) && (power_btn_state == BTN_PRESSED)) {
-        if (powerBtnLongPressCounter++ > 5) {
-            setup_restart_timer(5);
+unsigned long powerButtonUpdated = 0;
+void power_button_handler() {
+    unsigned long now = millis();
+
+    if (millis_passed(powerButtonUpdated, now) >= (ONE_SECOND_ms / 2)) {
+        if (powerBtnPressedAndReleased) {
+            if (powerBtnLongPressCounter == 0) {
+                psu->togglePower();
+            }
+            refresh_wifi_led();
+            powerBtnLongPressCounter = 0;
+            powerBtnPressedAndReleased = false;
         }
-    } else {
-        powerBtnLongPressCounter = 0;
+    }
+
+    if (millis_passed(powerButtonUpdated, now) >= ONE_SECOND_ms) {
+        if ((power_btn_state == BTN_PRESSED) && !digitalRead(POWER_BTN_PIN)) {
+            if (++powerBtnLongPressCounter >= 5) {
+                config->reset();
+                setup_restart_timer();
+            }
+            if (powerBtnLongPressCounter == 3) {
+                wifi_led->set(BLINK_ERROR);
+            }
+        } else {
+            powerBtnLongPressCounter = 0;
+        }
+        powerButtonUpdated = now;
     }
 }

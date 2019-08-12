@@ -67,22 +67,25 @@ void WebService::begin() {
     f.flush();
     f.close();
 
-    ssdp = new SSDPClass();
-    ssdp->setSchemaURL(F("description.xml"));
-    ssdp->setHTTPPort(http_port);
-    ssdp->setName(HOST_NAME);
-    ssdp->setModelName(APPNAME);
-    ssdp->setModelNumber(FW_VERSION);
-    ssdp->setSerialNumber(getChipId());
-    ssdp->setURL(F("index.html"));
-    ssdp->setModelURL(F(
-        "https://wiki.odroid.com/accessory/power_supply_battery/smartpower2"));
-    ssdp->setManufacturer(F("HardKernel"));
-    ssdp->setManufacturerURL(F("https://www.hardkernel.com"));
-    ssdp->setDeviceType(F("pnp:rootdevice"));
+    if ((Wireless::getWirelessMode() == WLAN_STA || Wireless::getWirelessMode() == WLAN_AP_STA))
+    {
+        ssdp = new SSDPClass();
+        ssdp->setSchemaURL(F("description.xml"));
+        ssdp->setHTTPPort(http_port);
+        ssdp->setName(HOST_NAME);
+        ssdp->setModelName(APPNAME);
+        ssdp->setModelNumber(FW_VERSION);
+        ssdp->setSerialNumber(getChipId());
+        ssdp->setURL(F("index.html"));
+        ssdp->setModelURL(F(
+            "https://wiki.odroid.com/accessory/power_supply_battery/smartpower2"));
+        ssdp->setManufacturer(F("HardKernel"));
+        ssdp->setManufacturerURL(F("https://www.hardkernel.com"));
+        ssdp->setDeviceType(F("pnp:rootdevice"));
 
-    server->on("/description.xml", HTTP_GET,
-               [this]() { ssdp->schema(server->client()); });
+        server->on(F("/description.xml"), HTTP_GET,
+                [this]() { ssdp->schema(server->client()); });
+    }
 
     USE_SERIAL.println();
 
@@ -98,11 +101,6 @@ void WebService::handleRoot() {
         return;
     }
     handleUri();
-#ifdef SIMPLE_DASH
-    server->sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    server->sendHeader("Pragma", "no-cache");
-    server->sendHeader("Expires", "-1");
-#endif
 }
 
 void WebService::handleUri() {
@@ -133,6 +131,7 @@ void WebService::handleNotFound(String &uri) {
     server->sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     server->sendHeader("Pragma", "no-cache");
     server->sendHeader("Expires", "-1");
+
     server->send(404, "text/plain", str);
 }
 
@@ -141,6 +140,7 @@ void WebService::loop() {
     server->handleClient();
     delay(2);
     websocket->loop();
+    delay(2);
 }
 
 void WebService::sendTxt(uint8_t num, const char *payload) {
@@ -318,11 +318,15 @@ void WebService::fileUpload() {
 bool WebService::captivePortal() {
     if (!isip(server->hostHeader()) &&
         server->hostHeader() != (String(HOST_NAME) + ".local")) {
+        #ifdef DEBUG_HTTP
         output->print(FPSTR(str_http));
-        output->println(FPSTR(str_request_redirected));
+        output->print(FPSTR(str_redirected));
+        output->println(server->hostHeader().c_str());
+        output->println();
+        #endif
         server->sendHeader(
-            "Location", String("http://") + server->client().localIP().toString(),
-            true);
+            "Location",
+            String("http://") + server->client().localIP().toString(), true);
         server->send(302, "text/plain",
                      "");  // Empty content inhibits Content-length header so we
                            // have to close the websocket ourselves.

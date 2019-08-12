@@ -156,8 +156,7 @@ static const char str_set[] PROGMEM = "set ";
 static const char str_system_time[] PROGMEM = "system time ";
 static const char str_system_restart[] PROGMEM =
     "The system is going down for restart ";
-static const char str_request_redirected[] PROGMEM =
-    "request redirected to captive portal ";
+static const char str_redirected[] PROGMEM = "redirected ";
 static const char str_synced[] PROGMEM = "synced ";
 static const char str_success[] PROGMEM = "success ";
 static const char str_timezone[] PROGMEM = "timezone ";

@@ -22,7 +22,13 @@ class NetworkService {
                     uint16_t http_port, uint16_t ota_port);
     bool begin_netbios(const char *hostname);
     Print *output;
+
     bool active;
+    
+    bool has_dns;
+    bool has_mdns;
+    bool has_netbios;
+    
     DNSServer *dns;
     esp8266::MDNSImplementation::MDNSResponder *mdns;
     ESP8266NetBIOS *netbios;
