@@ -34,9 +34,9 @@ struct TextItem {
 };
 
 struct PlotData {
-    float values[PLOT_COLS] = {0};
-    float min_value = 32000;
-    float max_value = -32000;
+    float cols[PLOT_COLS] = {0};
+    float min_value = INT_MAX;
+    float max_value = INT_MIN;
 };
 
 class Display {
@@ -54,10 +54,13 @@ class Display {
     void turnOn();
     void turnOff();
     void loadBank(CharBank bank, bool force = false);
+    void clear();
+    void scrollDown();
 
-    void loadData(float *values, size_t size);
-    void drawPlot(float min_value, float max_value, uint8_t offset_x);
-
+    PlotData* getData();
+    void drawPlot(uint8_t start_col, size_t cols);
+    
+    void setLines(size_t size);
     void setLine(uint8_t n, const char *str);
     void setLine(uint8_t n, const char *fixed_str, const char *var_str);
 
@@ -82,8 +85,10 @@ class Display {
 
     LiquidCrystal_I2C *lcd;
     Print *output;
-    PlotData *plot = new PlotData();
+    
+    PlotData data;     
 
     TextItem line[DISPLAY_VIRTUAL_ROWS];
-    unsigned long updated;
+    size_t lines = 0;
+    unsigned long refreshed;
 };

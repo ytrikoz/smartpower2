@@ -128,39 +128,36 @@ void start_clock() {
     rtc.begin();
 }
 
+
 void start_psu() {
     psu = new Psu();
     psu->setConfig(config);
-    psuLog = new PsuLogger(psu, PSU_LOG_SIZE);
-
-    psu->setOnPowerOff([]() {
+    psuLog = new PsuLogger(psu, PSU_LOG_SIZE);    
+    psu->setOnOff([]() {
         power_led->set(STAY_ON);
         psuLog->end();
-
         if (display) {
             int size = psuLog->size();
-            float *items = new float[size];
-            psuLog->getVoltages(items);
-
-            display->loadData(items, size);
-            display->drawPlot(0);
-            display->lock(15000);
-            
-            delete[] items;
+            if (size > 0) {
+                float *vals = new float[size];
+                psuLog->getVoltages(vals);
+                size_t cols = fill_data(display->getData(), vals, size);
+                display->drawPlot(8 - cols, cols);
+                display->lock(15000);
+                delete[] vals;
+            }
         }
     });
 
-    psu->setOnPowerOn([]() {
+    psu->setOnOn([]() {
         power_led->set(BLINK);
-    
         if (display) display->unlock();
-
         psuLog->begin();
-
-
     });
 
-    psu->setOnPowerError([]() { power_led->set(BLINK_ERROR); });
+    psu->setOnError([]() { 
+        power_led->set(BLINK_ERROR);
+    });
 
     psu->begin();
 }
@@ -230,25 +227,92 @@ void load_screen_psu_pvi() {
 }
 
 void load_screen_sta_wifi() {
-    display->setLine(0, "STA> ", Wireless::hostSSID().c_str());
+    display->setLine(0, "STA> ", Wireless::hostSTA_SSID().c_str());
     display->setLine(1, "IP> ", Wireless::hostIP().toString().c_str());
     display->setLine(2, "RSSI> ", Wireless::RSSIInfo().c_str());
 };
 
 void load_screen_ap_wifi() {
-    display->setLine(0, "AP> ", Wireless::hostSSID().c_str());
-    display->setLine(1, "PWD> ", Wireless::hostAPPassword().c_str());
+    display->setLine(0, "AP> ", Wireless::hostAP_SSID().c_str());
+    display->setLine(1, "PWD> ", Wireless::hostAP_Password().c_str());
 };
 
-void update_display() {
-    if ((!display) || !display->ready()) return;
-    if (psu->getState() == POWER_OFF) {
-        if (Wireless::getWirelessMode() == WLAN_STA) {
-            load_screen_sta_wifi();
-        } else if (Wireless::getWirelessMode() == WLAN_AP) {
-            load_screen_ap_wifi();
+void load_screen_ap_sta_wifi() {
+    display->setLine(0, "AP> ", Wireless::hostAP_SSID().c_str());
+    display->setLine(1, "STA> ", Wireless::hostSTA_SSID().c_str());
+    display->setLine(3, "IP AP>", Wireless::hostAP_IP().c_str());
+    display->setLine(4, "IP STA>", Wireless::hostSTA_IP().c_str());
+};
+
+void load_screen_wifi_status() {
+    display->setLine(0, "WIFI>");
+    display->setLine(1, Wireless::getConnectionStatus().c_str());
+    display->setLines(2);
+}
+
+void load_screen_ready() {
+    display->clear();
+    display->setLine(0, "READY>");
+}
+
+void update_display_every_1_sec() {
+    if ((display) && display->ready()) {
+        if (psu->getState() == POWER_OFF) {
+            if (Wireless::getWirelessMode() == WLAN_STA) {
+                load_screen_sta_wifi();
+            } else if (Wireless::getWirelessMode() == WLAN_AP) {
+                load_screen_ap_wifi();
+            } else if (Wireless::getWirelessMode() == WLAN_OFF) {
+                if (config->getWiFiMode() != WIFI_OFF) {
+                    load_screen_wifi_status();                    
+                } else
+                {
+                    load_screen_ready();
+                }
+            }
+        } else if (psu->getState() == POWER_ON) {
+            load_screen_psu_pvi();
         }
-    } else if (psu->getState() == POWER_ON) {
-        load_screen_psu_pvi();
     }
+}
+
+void update_display_every_5_sec() {
+    display->scrollDown();
+}
+
+size_t fill_data(PlotData *data, float *vals, size_t size) {
+    int group_size = 1;
+    int offset = 0;
+    
+    size_t col_last = PLOT_COLS;
+    if (size < PLOT_COLS) {
+        col_last = size;
+    } else {
+        group_size = floor((float)size / PLOT_COLS);
+        offset = size - group_size * PLOT_COLS;
+    }    
+#ifdef DEBUG_PLOT
+    DEBUG.printf("size %d offset %d by %d", size, offset, group_size);
+    DEBUG.println();
+#endif
+    for (uint8_t col_n = 0; col_n < col_last; ++col_n) {
+        float group_sum = 0;
+        for (uint8_t value_n = 0; value_n < group_size; ++value_n)
+            group_sum += vals[offset + (col_n * group_size) + value_n];
+        float group_avg = group_sum / group_size;
+#ifdef DEBUG_PLOT
+        DEBUG.printf("#%d sum %.4f avg %.4f", col_n, group_sum, group_avg);
+        DEBUG.println();
+#endif
+        if (data->min_value > group_avg) data->min_value = group_avg;
+        if (data->max_value < group_avg) data->max_value = group_avg;
+
+        data->cols[col_n] = group_avg;
+    }    
+#ifdef DEBUG_PLOT
+    DEBUG.printf("cols %d min %2.4f max %2.4f", col_last, data->min_value, data->max_value);
+    DEBUG.println();
+#endif
+
+    return col_last;
 }

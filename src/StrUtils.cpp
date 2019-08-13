@@ -135,6 +135,6 @@ bool isip(const char *str) {
     return true;
 }
 
-bool isip(const String str) { return isip(str.c_str()); }
+bool isip(const String &str) { return isip(str.c_str()); }
 
 }  // namespace StrUtils

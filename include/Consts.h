@@ -57,6 +57,9 @@
 #define TIME_BACKUP_INTERVAL_MIN_s 600
 #define WOL_PORT 9
 
+#define PSU_CHECK_INTERVAL_s 5
+#define PSU_VOLTAGE_LOW_v 1.0f
+#define PSU_LOAD_LOW_a 0.001f
 #define PSU_LOG_SIZE 128
 #define PSU_LOG_INTERVAL_ms 250
 
@@ -66,4 +69,5 @@
 #define SCREEN_WIDTH 80
 #define INPUT_MAX_LENGTH 128
 #define OUTPUT_MAX_LENGTH 128
+
 

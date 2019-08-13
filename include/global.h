@@ -47,7 +47,8 @@ void start_discovery();
 bool start_telnet_shell(Stream *s);
 void start_services();
 void refresh_wifi_led();
-void update_display();
+void update_display_every_1_sec();
+void update_display_every_5_sec();
 uint8_t get_telnet_clients_count();
 void start_console_shell();
 void onSystemTimeChanged(const char *str);
@@ -61,3 +62,6 @@ extern void setup_restart_timer(uint8_t delay_s = 3);
 
 extern uint8_t get_http_clients_count();
 extern LoopWatchDog loopWD;
+
+// plot
+size_t fill_data(PlotData *data, float *vals, size_t size);

@@ -55,7 +55,7 @@ using StrUtils::strpadd;
 Display::Display() {
     addr = 0x00;
     connected = false;
-    updated = 0;
+    refreshed = 0;
     lockTimeLeft = 0;
 }
 
@@ -184,23 +184,25 @@ bool Display::locked() {
     return (lockTimeLeft > 0);
 }
 
-void Display::loop(){
+void Display::loop() {
     if (!connected) return;
-    if (millis_since(updated) > LCD_REFRESH_INTERVAL_ms) {
+    if (millis_since(refreshed) > LCD_REFRESH_INTERVAL_ms) {
         if (!locked()) {
-            for(size_t n = 0; n < LCD_ROWS; ++n) {
+            for (size_t n = 0; n < LCD_ROWS; ++n) {
                 uint8_t row = get_row_for_update();
                 TextItem *l = &line[row];
-                if(l->hasUpdates) updateLCD(row, l);
-            }            
-        } 
+                if (l->hasUpdates) updateLCD(row, l);
+            }
+        }
     }
 }
 
-void Display::updateLCD(uint8_t row, TextItem *l, boolean forced) {   
+PlotData *Display::getData() { return &data; }
+
+void Display::updateLCD(uint8_t row, TextItem *l, boolean forced) {
     lcd->setCursor(0, row);
 
-    updated = millis();
+    refreshed = millis();
 
     uint8_t _fix_len = strlen(l->fixed_str);
     uint8_t _var_len = strlen(l->var_str);
@@ -293,9 +295,21 @@ void Display::drawTextCenter(uint8_t row, const char *str) {
 #endif
 }
 
+void Display::scrollDown() {
+    if (lines > LCD_ROWS ) {
+
+    };
+}
+
+void Display::setLines(size_t size) { lines = size; }
+
+void Display::clear() {
+    lcd->clear();
+    lines = 0;
+}
+
 void Display::loadBank(CharBank bank, bool force) {
     if ((!force) && (this->bank == bank)) return;
-
     switch (bank) {
         case BANK_PLOT:
             lcd->createChar(0, char_solid);
@@ -321,49 +335,28 @@ void Display::loadBank(CharBank bank, bool force) {
     this->bank = bank;
 }
 
-void Display::loadData(float *values, size_t size) {
-    int block_size = floor((float)size / PLOT_COLS);
-    int offset = size - block_size * PLOT_COLS;
-#ifdef DEBUG_PLOT
-    DEBUG.printf("group by %d offset %d", block_size, offset);
-    DEBUG.println();
-#endif
-    for (uint8_t block = 0; block < PLOT_COLS; block++) {
-        float block_sum = 0;
-        for (uint8_t n = 0; n < block_size; n++) {
-            block_sum += values[offset + (block * block_size) + n];
-        }
-        float value = block_sum / block_size;
-#ifdef DEBUG_PLOT
-        DEBUG.printf("#%d sum %.4f avg %.4f", block, block_sum, value);
-        DEBUG.println();
-#endif
-        if (plot->min_value > value) plot->min_value = value;
-        if (plot->max_value < value) plot->max_value = value;
-        plot->values[block] = value;
-    }
-#ifdef DEBUG_PLOT
-    DEBUG.printf("min %2.4f max %2.4f", plot->min_value, plot->max_value);
-    DEBUG.println();
-#endif
+float map_to_plot_min_max(PlotData *pd, uint8_t x) {
+    float val = pd->cols[x];
+    float min = pd->min_value;
+    float max = pd->max_value - min;
+    return 1 + floor((val - min) / max * (PLOT_ROWS * 8 - 2));
 }
 
-float get_plot_y(PlotData *p, uint8_t x) {
-    float value = p->values[x];
-    float min = p->min_value;
-    float max = p->max_value;
-    return floor((value - min) / (max - min) * PLOT_ROWS * 8);
-}
-
-void Display::drawPlot(uint8_t offset_x) {
+void Display::drawPlot(uint8_t start_col, size_t cols) {
     if (!connected) return;
+
     loadBank(BANK_PLOT);
     lcd->clear();
-    for (uint8_t x = 0; x < PLOT_COLS; ++x) {
-        uint8_t y = get_plot_y(plot, x);
-        uint8_t col = offset_x + x;
+
+    for (uint8_t x = 0; x < cols; ++x) {
+        uint8_t y = map_to_plot_min_max(&this->data, x);
+        uint8_t col = start_col + x;
         for (uint8_t row = LCD_ROWS; row > 0; row--) {
             lcd->setCursor(col, row - 1);
+            #ifdef DEBUG_PLOT
+                        DEBUG.printf("#%d %2.4f => %d", row, this->data.cols[x], y);
+                        DEBUG.println();
+            #endif
             if (y >= 8) {
                 lcd->write(0);  // Full
                 y -= 8;
@@ -373,26 +366,22 @@ void Display::drawPlot(uint8_t offset_x) {
             } else if (y == 0) {
                 lcd->write('\x20');  // Empty
             }
-#ifdef DEBUG_PLOTS
-            DEBUG.printf("#%d %2.4f => %d", i, plot[i], value);
-            DEBUG.println();
-#endif
         }
     }
 
-    lcd->setCursor(9, LCD_ROW_1);
     char tmp[16];
-    const char *str = dtostrf(plot->max_value, 5, 4, tmp);
+    const char *str = dtostrf(this->data.max_value, 5, 4, tmp);
+    lcd->setCursor(start_col + cols + 1, LCD_ROW_1);
     lcd->print(str);
-#ifdef DEBUG_DISPLAY
-    DEBUG.printf("[display] max_value %s", str);
+#ifdef DEBUG_PLOT
+    DEBUG.printf("max_value %s", str);
     DEBUG.println();
 #endif
-    str = dtostrf(plot->min_value, 5, 4, tmp);
-    lcd->setCursor(9, LCD_ROW_2);
+    str = dtostrf(this->data.min_value, 5, 4, tmp);
+    lcd->setCursor(start_col + cols + 1, LCD_ROW_2);
     lcd->print(str);
-#ifdef DEBUG_DISPLAY
-    DEBUG.printf("[display] min_value %s", str);
+#ifdef DEBUG_PLOT
+    DEBUG.printf("min_value %s", str);
     DEBUG.println();
 #endif
 }

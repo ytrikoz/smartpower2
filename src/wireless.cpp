@@ -3,6 +3,7 @@
 #include <Arduino.h>
 
 #include <ESP8266WiFi.h>
+#include <user_interface.h>
 
 #include "BuildConfig.h"
 #include "ConfigHelper.h"
@@ -21,6 +22,40 @@ WiFiEventHandler staGotIpEventHandler, staConnectedEventHandler,
 
 NetworkStateChangeEventHandler onNetworkStateChange;
 
+String getConnectionStatus() {
+    char buf[32];
+    memset(buf, 0, sizeof(char) * 32);
+    station_status_t status = wifi_station_get_connect_status();
+    switch (status) {
+        case STATION_IDLE:
+            strcpy_P(buf, str_idle);
+            break;
+        case STATION_CONNECTING:
+            strcpy_P(buf, str_connecting);
+            break;
+        case STATION_WRONG_PASSWORD:
+            strcpy_P(buf, str_wrong);
+            strcat_P(buf, str_password);
+            break;
+        case STATION_NO_AP_FOUND:
+            strcpy_P(buf, str_no);
+            strcat_P(buf, str_ap);
+            strcat_P(buf, str_found);
+            break;
+        case STATION_CONNECT_FAIL:
+            strcpy_P(buf, str_connection);
+            strcat_P(buf, str_failed);
+            break;
+        case STATION_GOT_IP: {
+            strcpy_P(buf, str_connected);
+            strcat_P(buf, str_got);
+            strcat_P(buf, str_ip);
+            break;
+        }
+    }
+    return String(buf);
+}
+
 void printDiag(Print *p) {
     p->print(FPSTR(str_wifi));
     p->printf_P(strf_mode, mode);
@@ -31,7 +66,11 @@ void printDiag(Print *p) {
     WiFi.printDiag(*p);
 }
 
-String hostAPPassword() { return WiFi.softAPPSK(); }
+String hostAP_Password() { return WiFi.softAPPSK(); }
+
+String hostAP_SSID() { return WiFi.softAPSSID(); }
+
+String hostSTA_SSID() { return WiFi.SSID(); }
 
 String hostSSID() {
     String str;
@@ -241,7 +280,7 @@ void start_wifi() {
             [](const WiFiEventStationModeDisconnected &e) {
                 if (network == NETWORK_UP) {
                     PRINTLN_WIFI_STA_DISCONNECTED
-                }                                
+                }
                 updateState();
             });
 
@@ -336,64 +375,34 @@ void enableStaticStationIP(bool enabled) {
 String hostIPInfo() {
     char buf[OUTPUT_MAX_LENGTH];
     memset(&buf, 0, OUTPUT_MAX_LENGTH);
-    if (network == NETWORK_DOWN) {
-        strcat_P(buf, str_wifi);
-        strcat_P(buf, str_down);
-        return String(buf);
-    }
-    strcat_P(buf, str_wifi);
+    strcpy_P(buf, str_wifi);
+    char tmp[32];
     switch (getWirelessMode()) {
         case WLAN_OFF:
             strcpy_P(buf, str_switched);
             strcpy_P(buf, str_off);
             break;
-        case WLAN_STA:
-        case WLAN_AP_STA: {
-            strcpy_P(buf, str_sta);
-            station_status_t connection_status =
-                wifi_station_get_connect_status();
-            switch (connection_status) {
-                case STATION_IDLE:
-                    strcat_P(buf, str_idle);
-                    break;
-                case STATION_CONNECTING:
-                    strcat_P(buf, str_connecting);
-                    break;
-                case STATION_WRONG_PASSWORD:
-                    strcat_P(buf, str_wrong);
-                    strcat_P(buf, str_password);
-                    break;
-                case STATION_NO_AP_FOUND:
-                    strcat_P(buf, str_no);
-                    strcat_P(buf, str_ap);
-                    strcat_P(buf, str_found);
-                    break;
-                case STATION_CONNECT_FAIL:
-                    strcat_P(buf, str_connection);
-                    strcat_P(buf, str_failed);
-                    break;
-                case STATION_GOT_IP: {
-                    strcat_P(buf, str_connected);
-                    strcat_P(buf, str_got);
-
-                    char tmp[32];
-                    sprintf_P(tmp, strf_ip, WiFi.localIP().toString().c_str());
-                    strcat_P(buf, tmp);
-                    break;
-                }
-            }
+        case WLAN_STA:            
+            sprintf_P(tmp, strf_ip, WiFi.localIP().toString().c_str());
+            strcat_P(buf, tmp);
             break;
-        }
         case WLAN_AP:
             strcat_P(buf, str_ap);
-            char tmp[32];
             sprintf_P(tmp, strf_ip, WiFi.softAPIP().toString().c_str());
             strcat_P(buf, tmp);
             break;
+        case WLAN_AP_STA:
+            strcat_P(buf, str_sta);
+            sprintf_P(tmp, strf_ip, WiFi.localIP().toString().c_str());
+            strcat_P(buf, tmp);
+            strcat_P(buf, " ");
+            strcat_P(buf, str_ap);
+            sprintf_P(tmp, strf_ip, WiFi.softAPIP().toString().c_str());
+            strcat_P(buf, tmp);
     }
     strcat_P(buf, str_reconnect);
     strcat_P(buf, wifi_station_get_reconnect_policy() ? str_yes : str_no);
     return String(buf);
-}
+}  // namespace Wireless
 
 }  // namespace Wireless

@@ -347,8 +347,8 @@ void setup() {
 
 #ifndef DISABLE_LCD
     if ((display) && (display->ready())) {
-        timer.setInterval(1000, [] { update_display(); });
-        timer.setInterval(5000, [] { display_alt_line = !display_alt_line; });
+        timer.setInterval(1000, [] { update_display_every_1_sec(); });
+        timer.setInterval(5000, [] { update_display_every_5_sec(); });
     }
 #endif
 
@@ -393,7 +393,7 @@ void loop() {
     // Tasks
     {
 #ifdef DEBUG_LOOP
-        TimeProfiler _tp_timer = TimeProfiler("timer");
+        TimeProfiler _tp_tasks = TimeProfiler("tasks");
 #endif
         timer.run();
     }
@@ -479,7 +479,7 @@ enum ButtonState { BTN_PRESSED, BTN_RELEASED };
 uint8_t volatile powerBtnLongPressCounter;
 unsigned long volatile power_btn_last_event = 0;
 ButtonState volatile power_btn_state = BTN_RELEASED;
-bool volatile powerBtnPressedAndReleased = false;
+bool volatile powerButtonClicked = false;
 static void ICACHE_RAM_ATTR power_button_state_change() {
     unsigned long now = millis();
     if (now - power_btn_last_event < 50) return;
@@ -491,7 +491,10 @@ static void ICACHE_RAM_ATTR power_button_state_change() {
     if (digitalRead(POWER_BTN_PIN) && power_btn_state != BTN_RELEASED) {
         power_btn_last_event = now;
         power_btn_state = BTN_RELEASED;
-        powerBtnPressedAndReleased = true;
+        if (millis_passed(power_btn_last_event, now) < 1000)
+        {
+            powerButtonClicked = true;
+        }
     }
 }
 
@@ -500,13 +503,11 @@ void power_button_handler() {
     unsigned long now = millis();
 
     if (millis_passed(powerButtonUpdated, now) >= (ONE_SECOND_ms / 2)) {
-        if (powerBtnPressedAndReleased) {
-            if (powerBtnLongPressCounter == 0) {
-                psu->togglePower();
-            }
+        if (powerButtonClicked) {
+            psu->togglePower();
             refresh_wifi_led();
             powerBtnLongPressCounter = 0;
-            powerBtnPressedAndReleased = false;
+            powerButtonClicked = false;
         }
     }
 

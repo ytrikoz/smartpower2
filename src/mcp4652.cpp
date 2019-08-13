@@ -3,9 +3,9 @@
 #include <Wire.h>
 
 void mcp4652_init() {
-    mcp4652_write(WRITE_TCON, 0x0B);
-    mcp4652_write(WRITE_WIPER0, 0xff);
-    mcp4652_write(WRITE_WIPER1, 0x00);
+    mcp4652_write(WRITE_TCON_ADDR, 0x0B);
+    mcp4652_write(WRITE_WIPER0_ADDR, 0xff);
+    mcp4652_write(WRITE_WIPER1_ADDR, 0x00);
 }
 
 void mcp4652_write(unsigned char addr, unsigned char value) {

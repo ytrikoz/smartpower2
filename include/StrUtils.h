@@ -8,16 +8,14 @@ typedef enum { LEFT, CENTER, RIGHT } Align;
 
 char *tmtoa(struct tm *tm, char *buf);
 
-void stringToBytes(const char *str, char sep, uint8_t *bytes, int len,
-                   int base);
+void stringToBytes(const char *str, char sep, uint8_t *bytes, int len, int base);
 String iptoa(IPAddress);
 IPAddress atoip(const char *);
+
 bool setstr(char *dest, const char *src, size_t size);
 void strfill(char *str, char chr, size_t size);
-
 bool isip(const char *);
-bool isip(const String str);
-
+bool isip(const String &);
 bool strpositiv(String &);
 bool strnegativ(String &);
 

@@ -5,7 +5,8 @@
 
 #define POWER_SWITCH_PIN D6
 
-enum PsuStatus {PSU_OK, PSU_ERROR_LOW_VOLTAGE};
+enum PsuStatus {PSU_OK, PSU_ERROR, PSU_ALERT};
+enum PsuAlert {PSU_ALERT_VOLTAGE_LOW, PSU_ALERT_LOAD_LOW};
 
 typedef std::function<void()> PsuEventHandler;
 
@@ -19,9 +20,10 @@ class Psu : public PsuInfoProvider {
     void setState(PowerState value, bool forceUpdate = false);
     void setConfig(ConfigHelper*);
 
-    void setOnPowerOn(PsuEventHandler);
-    void setOnPowerOff(PsuEventHandler);
-    void setOnPowerError(PsuEventHandler);
+    void setOnOn(PsuEventHandler);
+    void setOnOff(PsuEventHandler);
+    void setOnError(PsuEventHandler);
+    void setOnAlert(PsuEventHandler);
 
     void setOutputVoltage(float voltage);
     float getOutputVoltage();
@@ -46,11 +48,12 @@ class Psu : public PsuInfoProvider {
 
     void clearError();
     void error(PsuStatus err);
+    void alert(PsuAlert alert);
     void init();
     void storePowerState(PowerState state);
     PowerState restorePowerState();
     PsuStatus status;
-    unsigned long startedAt, updatedAt, calcedAt;
+    unsigned long startedAt, lastUpdated, lastPowerRead, lastAlertCheck;
     bool active;
     bool initialized;
     bool wattHoursCalculationEnabled;
@@ -61,10 +64,11 @@ class Psu : public PsuInfoProvider {
     PowerState state;
     
     float outputVoltage;
+    PsuEventHandler onPsuOn, onPsuOff, onPsuError, onPsuAlert;
+    
     Print* output = &USE_SERIAL;
-    PsuEventHandler onPowerOn, onPowerOff, onPowerError;
 
-    static int quadraticRegression(double volt) {
+    static int quadratic_regression(double volt) {
         double a = 0.0000006562;
         double b = 0.0022084236;
         float c = 4.08;
