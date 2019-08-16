@@ -66,6 +66,14 @@ void printDiag(Print *p) {
     WiFi.printDiag(*p);
 }
 
+IPAddress hostAP_IP() { 
+    return WiFi.softAPIP();
+}
+
+IPAddress hostSTA_IP() { 
+    return WiFi.localIP();
+}
+
 String hostAP_Password() { return WiFi.softAPPSK(); }
 
 String hostAP_SSID() { return WiFi.softAPSSID(); }
@@ -352,10 +360,10 @@ void onNetworkDown() {
 
 WirelessMode getWirelessMode() { return mode = (WirelessMode)WiFi.getMode(); }
 
-bool hasNetwork() { return (mode != WLAN_OFF) && (network == NETWORK_UP); }
+bool hasNetwork() { return (network == NETWORK_UP); }
 
 String RSSIInfo() {
-    sint8 rssi = wifi_station_get_rssi();
+    int rssi = wifi_station_get_rssi();
     String str = String(rssi);
     str += "dB";
     return String(str);

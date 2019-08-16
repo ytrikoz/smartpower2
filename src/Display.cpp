@@ -1,5 +1,7 @@
 #include "Display.h"
 
+#include "Plot.h"
+
 uint8_t char_empty[8] = {0b00000, 0b00000, 0b00000, 0b00000,
                          0b00000, 0b00000, 0b00000, 0b00000};
 
@@ -56,7 +58,7 @@ Display::Display() {
     addr = 0x00;
     connected = false;
     refreshed = 0;
-    lockTimeLeft = 0;
+    lockTimeout = 0;
 }
 
 void Display::setOutput(Print *p) { output = p; }
@@ -75,11 +77,11 @@ bool Display::init() {
             lcd->init();
             lcd->clear();
 
-            memset(line, 0, sizeof(TextItem) * DISPLAY_VIRTUAL_ROWS);
+            memset(item, 0, sizeof(TextItem) * DISPLAY_VIRTUAL_ROWS);
 
-            loadBank(BANK_NONE);
+            loadBank(BANK_NONE, true);
+
             backlight = true;
-
             connected = true;
         } else {
             output->println(FPSTR(str_not_found));
@@ -123,18 +125,17 @@ bool Display::connect() {
     return (addr);
 }
 
-void Display::setLine(uint8_t row, const char *str) {
-    setLine(row, nullptr, str);
+void Display::addTextItem(uint8_t row, const char *str) {
+    addTextItem(row, nullptr, str);
 }
 
-void Display::setLine(uint8_t n, const char *fixed_str, const char *var_str) {
-    TextItem *l = &line[n];
+void Display::addTextItem(uint8_t n, const char *fixed_str, const char *var_str) {
+    TextItem *l = &item[n];
     bool updates = setstr(l->fixed_str, fixed_str, LCD_COLS + 1);
     updates |= setstr(l->var_str, var_str, DISPLAY_VIRTUAL_COLS + 1);
     if (updates) {
 #ifdef DEBUG_DISPLAY
-        DEBUG.printf("[display] setLine n: %d /%s_%s/", n, l->fixed_str,
-                     l->var_str);
+        DEBUG.printf("#%d addTextItem(%s_%s)", n, l->fixed_str, l->var_str);
         DEBUG.println();
 #endif
         l->var_pos = 1;
@@ -144,44 +145,65 @@ void Display::setLine(uint8_t n, const char *fixed_str, const char *var_str) {
     }
 }
 
-uint8_t Display::get_row_for_update() {
-    if (++row_for_update > LCD_ROWS) row_for_update = 0;
-    return row_for_update;
+void Display::setScreen(Screen screen, size_t item_count) {
+    if (this->screen != screen) {
+        this->screen = screen;
+        this->items_count = item_count;        
+        lcd->clear();
+        // for (uint8_t i = 0; i < item_count; ++i) item[i].hasUpdates = true;
+        active = true;
+    }
 }
+
+Screen Display::getScreen() { return this->screen; }
 
 void Display::unlock() {
     active = true;
-    lockTimeLeft = 0;
+    lockTimeout = 0;
 }
 
 void Display::lock() {
     active = false;
-    lockTimeLeft = 0;
+    lockTimeout = 0;
 }
 
-void Display::lock(unsigned long period) {
+void Display::lock(unsigned long timeout) {
 #ifdef DEBUG_DISPLAY
-    DEBUG.printf("[display] lockUpdates %lu", period);
+    DEBUG.printf("lock %lu", timeout);
     DEBUG.println();
 #endif
-    lockTimeLeft = period;
+    lockTimeout = timeout;
     lockUpdated = millis();
 }
 
 bool Display::locked() {
     if (!active) return true;
 
-    if (lockTimeLeft > 0) {
+    if (lockTimeout > 0) {
         unsigned long now = millis();
         unsigned long passed = millis_passed(lockUpdated, now);
-        if (lockTimeLeft > passed) {
-            lockTimeLeft -= passed;
+        if (lockTimeout > passed) {
+            lockTimeout -= passed;
         } else {
-            lockTimeLeft = 0;
+            lockTimeout = 0;
         }
         lockUpdated = now;
     }
-    return (lockTimeLeft > 0);
+    return (lockTimeout > 0);
+}
+
+TextItem *Display::getItemForRow(uint8_t row) { 
+    size_t pos  = cur_item + row;     
+    item[pos].hasUpdates = true;
+    return &item[pos]; 
+}
+
+void Display::scrollDown() {
+    if (++cur_item + LCD_ROWS > items_count) cur_item = 0;
+#ifdef DEBUG_DISPLAY
+    DEBUG.printf("scrollDown(%d) ", cur_item);
+    DEBUG.println();
+#endif
 }
 
 void Display::loop() {
@@ -189,9 +211,15 @@ void Display::loop() {
     if (millis_since(refreshed) > LCD_REFRESH_INTERVAL_ms) {
         if (!locked()) {
             for (size_t n = 0; n < LCD_ROWS; ++n) {
-                uint8_t row = get_row_for_update();
-                TextItem *l = &line[row];
-                if (l->hasUpdates) updateLCD(row, l);
+                TextItem *l = getItemForRow(n);
+#ifdef DEBUG_DISPLAY
+                DEBUG.printf("#%d drawTextItem(%s) ", n, l->fixed_str);
+                DEBUG.println();
+#endif
+                if (l->hasUpdates) {
+                    drawTextItem(n, l);
+                    refreshed = millis();
+                }
             }
         }
     }
@@ -199,10 +227,8 @@ void Display::loop() {
 
 PlotData *Display::getData() { return &data; }
 
-void Display::updateLCD(uint8_t row, TextItem *l, boolean forced) {
+void Display::drawTextItem(uint8_t row, TextItem *l) {
     lcd->setCursor(0, row);
-
-    refreshed = millis();
 
     uint8_t _fix_len = strlen(l->fixed_str);
     uint8_t _var_len = strlen(l->var_str);
@@ -266,22 +292,19 @@ void Display::drawBar(uint8_t row, uint8_t per) {
     if (!connected) return;
     uint8_t cols = floor((float)LCD_COLS * per / 100);
     char buf[LCD_COLS + 1];
-
     strfill(buf, '*', cols + 1);
     strpadd(buf, StrUtils::LEFT, LCD_COLS);
     lcd->setCursor(0, row);
     lcd->print(buf);
 #ifdef DEBUG_DISPLAY
-    DEBUG.printf("[display] drawBar(%s)", buf);
+    DEBUG.printf("#%d drawBar(%s)", row, buf);
     DEBUG.println();
 #endif
 }
 
 void Display::drawTextCenter(uint8_t row, const char *str) {
     if (!connected) return;
-
     char buf[LCD_COLS + 1];
-
     size_t str_len = strlen(str);
     if (str_len > LCD_COLS) str_len = LCD_COLS;
     strncpy(buf, str, str_len);
@@ -290,26 +313,24 @@ void Display::drawTextCenter(uint8_t row, const char *str) {
     lcd->setCursor(0, row);
     lcd->print(buf);
 #ifdef DEBUG_DISPLAY
-    DEBUG.printf("[display] drawTextCenter(%s)", tmp);
+    DEBUG.printf("#%d drawTextCenter(%s)", row, str);
     DEBUG.println();
 #endif
 }
 
-void Display::scrollDown() {
-    if (lines > LCD_ROWS ) {
-
-    };
-}
-
-void Display::setLines(size_t size) { lines = size; }
-
 void Display::clear() {
+    items_count = 0;
+    cur_item = 0;
+    screen = SCREEN_CLEAR;
     lcd->clear();
-    lines = 0;
 }
 
 void Display::loadBank(CharBank bank, bool force) {
     if ((!force) && (this->bank == bank)) return;
+    #ifdef DEBUG_DISPLAY
+    DEBUG.printf("loadBank(%d, %d)", bank, force);
+    DEBUG.println();
+    #endif
     switch (bank) {
         case BANK_PLOT:
             lcd->createChar(0, char_solid);
@@ -335,28 +356,21 @@ void Display::loadBank(CharBank bank, bool force) {
     this->bank = bank;
 }
 
-float map_to_plot_min_max(PlotData *pd, uint8_t x) {
-    float val = pd->cols[x];
-    float min = pd->min_value;
-    float max = pd->max_value - min;
-    return 1 + floor((val - min) / max * (PLOT_ROWS * 8 - 2));
-}
-
-void Display::drawPlot(uint8_t start_col, size_t cols) {
+void Display::drawPlot(uint8_t col_start) {
     if (!connected) return;
 
     loadBank(BANK_PLOT);
     lcd->clear();
 
-    for (uint8_t x = 0; x < cols; ++x) {
+    for (uint8_t x = 0; x < this->data.size; ++x) {
         uint8_t y = map_to_plot_min_max(&this->data, x);
-        uint8_t col = start_col + x;
+#ifdef DEBUG_PLOT
+        DEBUG.printf("#%d %2.4f %d", x, this->data.cols[x], y);
+        DEBUG.println();
+#endif
+        uint8_t col = col_start + x;
         for (uint8_t row = LCD_ROWS; row > 0; row--) {
             lcd->setCursor(col, row - 1);
-            #ifdef DEBUG_PLOT
-                        DEBUG.printf("#%d %2.4f => %d", row, this->data.cols[x], y);
-                        DEBUG.println();
-            #endif
             if (y >= 8) {
                 lcd->write(0);  // Full
                 y -= 8;
@@ -369,19 +383,13 @@ void Display::drawPlot(uint8_t start_col, size_t cols) {
         }
     }
 
+    uint8_t col = col_start + this->data.size + 1;
+    drawFloat(col, LCD_ROW_1, this->data.max_value);
+    drawFloat(col, LCD_ROW_2, this->data.min_value);
+}
+
+void Display::drawFloat(uint8_t col, uint8_t row, float value) {
     char tmp[16];
-    const char *str = dtostrf(this->data.max_value, 5, 4, tmp);
-    lcd->setCursor(start_col + cols + 1, LCD_ROW_1);
-    lcd->print(str);
-#ifdef DEBUG_PLOT
-    DEBUG.printf("max_value %s", str);
-    DEBUG.println();
-#endif
-    str = dtostrf(this->data.min_value, 5, 4, tmp);
-    lcd->setCursor(start_col + cols + 1, LCD_ROW_2);
-    lcd->print(str);
-#ifdef DEBUG_PLOT
-    DEBUG.printf("min_value %s", str);
-    DEBUG.println();
-#endif
+    lcd->setCursor(col, row);
+    lcd->print(dtostrf(value, 5, 4, tmp));
 }

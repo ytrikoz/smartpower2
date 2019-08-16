@@ -3,8 +3,6 @@
 #include "Arduino.h"
 #include <Wire.h>
 
-#define I2C_DELAY 10
-#define INA231_I2C_ADDR		0x40
 #define INA231_REG_CONFIG	0x00
 #define INA231_REG_SHUNT_VOL	0x01
 #define INA231_REG_BUS_VOL	0x02
@@ -20,9 +18,10 @@ const uint16_t INA231_CONFIG_AVG_MASK =  0x0e00;
 const uint16_t INA231_ALERT_MASK =  0x03ff;
 // bits 0-3
 const uint16_t INA231_CONFIG_MODE_MASK =  0x0007;
-const uint8_t  INA231_ALERT_CONVERSION_READY_BIT = 10;
 
-typedef enum {
+const uint8_t INA231_ALERT_CONVERSION_READY_BIT = 10;
+
+enum INA231_AVERAGES {
     AVG_1 = 0b000,
     AVG_4 = 0b001,
     AVG_16 = 0b010,
@@ -31,9 +30,9 @@ typedef enum {
     AVG_256 = 0b101,
     AVG_512 = 0b110,
     AVG_1024 = 0b111
-} INA231_AVG;
+};
 
-typedef enum   {
+enum INA231_CONVERSATION_TIME {
     TIME_140 = 0b000,
     TIME_204 = 0b001,
     TIME_332 = 0b010,
@@ -42,16 +41,17 @@ typedef enum   {
     TIME_2116 = 0b101,
     TIME_4156 = 0b110,
     TIME_8244 = 0b111
-} INA231_CONVERSATION_TIME;
+};
 
 
 void ina231_writeWord(uint8_t addr, uint16_t value);
 uint16_t ina231_readWord(uint8_t addr);
 
 uint16_t ina231_get_config();
-void ina231_set_avg(uint8_t avg);
+void ina231_set_avg(const INA231_AVERAGES avg);
 void ina231_configure();
 void ina231_alert_on_conversation(bool enabled);
+uint16_t ina231_read_config();
 float ina231_read_voltage();
 float ina231_read_current();
 float ina231_read_power();

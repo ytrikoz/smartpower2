@@ -15,12 +15,13 @@
 #include "OTAUpdate.h"
 #include "Psu.h"
 #include "PsuLogger.h"
+#include "Plot.h"
 #include "Shell.h"
 #include "SystemClock.h"
 #include "TelnetServer.h"
 #include "WebService.h"
 
-extern Led *wifi_led, *power_led;
+extern Led::Led *wifi_led, *power_led;
 
 extern SimpleCLI *cli;
 extern SimpleTimer timer;

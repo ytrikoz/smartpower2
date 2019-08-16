@@ -15,6 +15,7 @@ void onPower(cmd *c);
 void onShow(cmd *c);
 void onHelp(cmd *c);
 void onPrint(cmd *c);
+void onPlot(cmd *c);
 void onRemove(cmd *c);
 void onSet(cmd *c);
 void onGet(cmd *c);
@@ -23,16 +24,15 @@ void onWifiScan(cmd *c);
 void onWifiDiag(cmd *c);
 void onClock(cmd *c);
 
+
 void onGetConfigParameter(const char *, const char *);
 void onConfigParameterChanged(const char *, const char *, const char *);
-
 void onDone();
 void onDone(String &action, String &param);
+void onIOResult(const char *, const char *);
 
-void onFileResult(const char *, const char *);
-
-void unknownActionParam(const char *, const char *);
-void unknownCommandItem(const char *command, const char *item);
-void unknownConfigParam(const char *param);
+void badActionParam(const char *, const char *);
+void badCommandItem(const char *command, const char *item);
+void badConfigParam(const char *param);
 
 }  // namespace Cli

@@ -83,6 +83,11 @@ struct Date : public Printable {
     uint16_t year = 0;
 };
 
+struct LogItem { 
+    unsigned long time;
+    float value;  
+};
+
 struct PsuInfo {
     unsigned long time;
     float voltage;

@@ -6,41 +6,44 @@
 #include "Consts.h"
 #include "TimeUtils.h"
 
-enum LedState { LIGHT_OFF = HIGH, LIGHT_ON = LOW };
-enum LedMode { STAY_OFF, STAY_ON, BLINK, BLINK_ONE, BLINK_TWO, BLINK_ERROR };
+namespace Led {
 
-#define LED_SHIM_INTERVAL_ms 50
-#define PWM_FREQ 500
-#define PWM_RANGE 100
+enum State { LIGHT_OFF = HIGH, LIGHT_ON = LOW };
+enum Mode { OFF, ON, BLINK, BLINK_ONE, BLINK_TWO, BLINK_ERROR };
 
-struct LedContract {
+#define LED_PWM_UPDATE_INTERVAL_ms 50
+#define LED_PWM_FREQ 500
+#define LED_PWM_DUTY_ON 0
+#define LED_PWM_DUTY_OFF 80
+#define LED_PWM_RANGE 100
+
+struct Contract {
    public:
-    LedState state;
+    State state;
     unsigned long stateTime;
-    LedContract() : state(LIGHT_OFF), stateTime(0) {}
-    LedContract(LedState state, unsigned long time)
+    Contract() : state(LIGHT_OFF), stateTime(0) {}
+    Contract(State state, unsigned long time)
         : state(state), stateTime(time) {}
 };
 
 class Led {
    public:
-    Led(uint8_t pin, LedState state = LIGHT_OFF, bool shim = false);
-    void set(LedMode mode);
+    Led(uint8_t pin, bool lightOn = false, bool smooth = false);
+    void set(Mode mode);
     void loop();
-
    private:
-    void updateState();
-    void setState(LedState state);
-    LedContract *getContract();
-
-    void nextStep();
-
-    bool shim;
+    void smoothTransition();
+    void updateState(State state);
+    Contract *getContract();
+    void next();
+    bool smooth;
     uint8_t pin;
-    LedMode mode;
-    LedState state;
-    unsigned long stateUpdated = 0, shimUpdated = 0;
+    Mode mode;
+    State state;
+    unsigned long stateUpdated = 0, pwmUpdated = 0;
     size_t step = 0;
     size_t size = 1;
-    LedContract contract[4];
+    Contract contract[4];
 };
+
+}

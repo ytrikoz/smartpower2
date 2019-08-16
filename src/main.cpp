@@ -12,12 +12,6 @@
 #include "TimeProfiler.h"
 #include "Wireless.h"
 
-#define I2C_SDA D2
-#define I2C_SCL D5
-#define POWER_LED_PIN D1
-#define WIFI_LED_PIN D4
-#define POWER_BTN_PIN D7
-
 LoopWatchDog loopWD;
 
 typedef struct {
@@ -25,8 +19,6 @@ typedef struct {
     uint8_t page = 0;
 } WebClient;
 WebClient clients[MAX_WEB_CLIENTS];
-
-bool display_alt_line = false;
 
 uint8_t get_http_clients_count() {
     uint8_t result = 0;
@@ -296,8 +288,8 @@ void setup() {
     USE_SERIAL.setDebugOutput(true);
 #endif
     // Leds
-    power_led = new Led(POWER_LED_PIN, LIGHT_ON, true);
-    wifi_led = new Led(WIFI_LED_PIN, LIGHT_OFF, true);
+    power_led = new Led::Led(POWER_LED_PIN, Led::LIGHT_ON, true);
+    wifi_led = new Led::Led(WIFI_LED_PIN, Led::LIGHT_OFF, true);
 
     USE_SERIAL.println();
     print_welcome(&USE_SERIAL);
@@ -491,8 +483,7 @@ static void ICACHE_RAM_ATTR power_button_state_change() {
     if (digitalRead(POWER_BTN_PIN) && power_btn_state != BTN_RELEASED) {
         power_btn_last_event = now;
         power_btn_state = BTN_RELEASED;
-        if (millis_passed(power_btn_last_event, now) < 1000)
-        {
+        if (millis_passed(power_btn_last_event, now) < 1000) {
             powerButtonClicked = true;
         }
     }
@@ -518,7 +509,7 @@ void power_button_handler() {
                 setup_restart_timer();
             }
             if (powerBtnLongPressCounter == 3) {
-                wifi_led->set(BLINK_ERROR);
+                wifi_led->set(Led::BLINK_ERROR);
             }
         } else {
             powerBtnLongPressCounter = 0;

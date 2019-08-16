@@ -69,5 +69,3 @@
 #define SCREEN_WIDTH 80
 #define INPUT_MAX_LENGTH 128
 #define OUTPUT_MAX_LENGTH 128
-
-

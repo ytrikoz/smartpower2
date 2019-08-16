@@ -1,21 +1,23 @@
 #include "Cli.h"
 
-#include "Actions/Actions.h"
 #include "Actions/ClockSet.h"
+#include "Actions/PlotPrint.h"
 #include "Actions/PowerAvg.h"
+#include "Actions/PowerLog.h"
 #include "Actions/ShowClients.h"
 #include "Actions/ShowClock.h"
 #include "Actions/ShowDiag.h"
 #include "Actions/ShowNtp.h"
 #include "Actions/ShowStatus.h"
 #include "Actions/ShowWifi.h"
+#include "Actions\Actions.h"
 
 #include "StrUtils.h"
 
 namespace Cli {
 
 Command cmdConfig, cmdPower, cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet,
-    cmdGet, cmdRm, cmdClock;
+    cmdGet, cmdRm, cmdClock, cmdPlot;
 
 Print* output;
 
@@ -33,7 +35,7 @@ void init() {
     // Power
     cmdPower = cli->addCommand("power");
     cmdPower.addPositionalArgument("action", "status");
-    cmdPower.addPositionalArgument("param", "");
+    cmdPower.addPositionalArgument("param", "0");
     cmdPower.setCallback(Cli::onPower);
     // Config
     cmdConfig = cli->addCommand("config");
@@ -74,6 +76,11 @@ void init() {
     cmdClock.addPositionalArgument("action");
     cmdClock.addPositionalArgument("param", "");
     cmdClock.setCallback(Cli::onClock);
+    // Plot
+    cmdPlot = cli->addCommand("plot");
+    cmdPlot.addPositionalArgument("action", "print");
+    cmdPlot.addPositionalArgument("param", "");
+    cmdPlot.setCallback(Cli::onPlot);
 }
 
 void close() {
@@ -128,9 +135,6 @@ void unknownAction(Command& c) {
 }
 
 void print_done(Command& c) {
-    // String str = getActionStr(c);
-    // output->print(str.c_str());
-    // output->print(' ');
     output->print(FPSTR(str_done));
     output->println();
 };
@@ -189,8 +193,9 @@ CommandAction getAction(Command& c) {
         return ACTION_ON;
     } else if (strcasecmp_P(str.c_str(), str_off) == 0) {
         return ACTION_OFF;
+    } else {
+        return ACTION_UNKNOWN;
     }
-    return ACTION_UNKNOWN;
 }
 
 void onHelp(cmd* c) {
@@ -238,19 +243,15 @@ void onPower(cmd* c) {
             break;
         }
         case ACTION_AVG: {
-            size_t num = param.equals("") ? 1 : atoi(param.c_str());
+            size_t num = atoi(param.c_str());
             Actions::PowerAvg("avg", num).exec(output);
             print_done(cmd);
             break;
         }
         case ACTION_LOG: {
-            if (psuLog->empty()) {
-                output->println(FPSTR(str_empty));
-            } else {
-                size_t num = param.equals("") ? 3 : atoi(param.c_str());
-                if (num > psuLog->size()) num = psuLog->size();
-                psuLog->printLast(output, num);
-            }
+            size_t num = atoi(param.c_str());
+            Actions::PowerLog("log", num).exec(output);
+            print_done(cmd);
             break;
         }
         case ACTION_ON: {
@@ -394,6 +395,19 @@ void onPrint(cmd* c) {
         f.close();
     } else {
         onIOResult(strf_file_not_found, file.c_str());
+    }
+}
+
+void onPlot(cmd* c) {
+    Command cmd(c);
+    PlotData *data = display->getData();
+    for (uint8_t x = 0; x < display->getData()->size; ++x) {
+        uint8_t y = map_to_plot_min_max(data, x);
+        char tmp[PLOT_ROWS * 8 + 1];
+        StrUtils::strfill(tmp, '*', y);
+        output->printf("#%d %2.4f ", x + 1, data->cols[x]);
+        output->print(tmp);
+        output->println();
     }
 }
 

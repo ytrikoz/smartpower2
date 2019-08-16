@@ -5,20 +5,21 @@
 #include "CommonTypes.h"
 #include "TimeUtils.h"
 
-PsuLogger::PsuLogger(Psu* provider, size_t capacity) {
-    this->items = new PsuInfo[capacity];
-    this->provider = provider;
+PsuLogger::PsuLogger(Psu* psu, size_t capacity) {
+    items = new PsuInfo[capacity];
+    this->provider = psu;
     this->capacity = capacity;
     this->writePos = 0;
     this->readPos = 0;
     this->lastTime = 0;
     this->lastItem = 0;
-    this->full = false;
+    this->rotated = false;
 }
 
 PsuLogger::~PsuLogger() { delete[] items; }
 
 void PsuLogger::begin() {
+
     clear();
     active = true;
 }
@@ -26,26 +27,27 @@ void PsuLogger::begin() {
 void PsuLogger::end() { active = false; }
 
 void PsuLogger::clear() {
-    memset(items, 0, sizeof(PsuInfo) * capacity);
     writePos = 0;
     readPos = 0;
-    full = false;
+    lastTime = 0;
+    rotated = false;
 }
 
 void PsuLogger::add(PsuInfo item, unsigned long time_ms) {
     if (writePos == capacity) {
         writePos = 0;
-        full = true;
+        rotated = true;
     }
-    items[writePos].time = time_ms;
-    items[writePos].current = item.current;
-    items[writePos].power = item.power;
-    items[writePos].voltage = item.voltage;
-    items[writePos].wattSeconds = item.wattSeconds;
+    items[writePos] = item;
+    // items[writePos].time = item.time;
+    // items[writePos].current = item.current;
+    // items[writePos].power = item.power;
+    // items[writePos].voltage = item.voltage;
+    // items[writePos].wattSeconds = item.wattSeconds;
 
     lastItem = item.time;
     writePos++;
-    if (full) readPos = writePos;
+    if (rotated) readPos = writePos;
 }
 
 void PsuLogger::getVoltages(float* voltages) {
@@ -73,9 +75,9 @@ void PsuLogger::loop() {
     }
 }
 
-bool PsuLogger::empty() { return writePos == 0 && !full; }
+bool PsuLogger::empty() { return writePos == 0 && !rotated; }
 
-size_t PsuLogger::size() { return full ? capacity : writePos; };
+size_t PsuLogger::size() { return rotated ? capacity : writePos; };
 
 PsuInfo PsuLogger::first() { return items[readPos]; }
 
@@ -115,10 +117,9 @@ void PsuLogger::print(Print* p) {
 
 void PsuLogger::printLast(Print* p, uint16_t n) {
     if (n > writePos) n = writePos;
-    unsigned long now = millis();
     for (int i = writePos - n; i < writePos; ++i) {
         PsuInfo pi = items[i];
-        p->printf("%lu %2.4fV %2.4fA %2.4fW", millis_passed(pi.time, now),
+        p->printf("%lu %2.4fV %2.4fA %2.4fW", millis_passed(pi.time, lastTime),
                   pi.voltage, pi.current, pi.power);
         p->println();
     }

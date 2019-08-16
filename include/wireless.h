@@ -20,8 +20,10 @@ String RSSIInfo();
 String hostAP_Password();
 String hostSTA_SSID();
 String hostAP_SSID();
-String hostAP_IP();
-String hostSTA_IP();
+
+IPAddress hostAP_IP();
+IPAddress hostSTA_IP();
+
 void printDiag(Print* p);
 
 void start_wifi();

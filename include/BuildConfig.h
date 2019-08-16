@@ -2,6 +2,15 @@
 
 #include <HardwareSerial.h>
 
+#define I2C_DELAY 10
+#define I2C_SDA D2
+#define I2C_SCL D5
+#define POWER_LED_PIN D1
+#define WIFI_LED_PIN D4
+#define POWER_BTN_PIN D7
+#define INA231_ALERT_PIN 16
+#define INA231_I2C_ADDR	0x40
+
 #define DEBUG Serial
 #define USE_SERIAL Serial
 
@@ -15,7 +24,7 @@
 
 //#define DEBUG_LEDS
 //#define DEBUG_LOOP
-#define DEBUG_PLOT
+//#define DEBUG_PLOT
 //#define DEBUG_DISPLAY
 //#define DEBUG_CONFIG
 //#define DEBUG_SYSTEM_CLOCK
@@ -23,7 +32,7 @@
 //#define DEBUG_NTP
 //#define DEBUG_TELNET
 //#define DEBUG_WEBSOCKET
-#define DEBUG_HTTP
+//#define DEBUG_HTTP
 //#define DEBUG_SHELL
 //#define DEBUG_TERMUL
 //#define DEBUG_FILE_STORAGE

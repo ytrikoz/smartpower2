@@ -28,13 +28,15 @@ class PsuLogger {
 
    private:
     void add(PsuInfo item, unsigned long time_ms);
+    void logVoltage(unsigned long time, float voltage);
     Psu* provider;
+    LogItem* voltage_log;
     PsuInfo* items;
     uint16_t capacity;
     uint16_t writePos;
     uint16_t readPos;
     unsigned long lastTime;
     unsigned long lastItem;
-    bool full;
+    bool rotated;
     bool active;
 };

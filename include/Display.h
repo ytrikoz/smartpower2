@@ -9,6 +9,7 @@
 #include "Strings.h"
 #include "StrUtils.h"
 #include "TimeUtils.h"
+#include "Plot.h"
 
 // slave address are 0x27 or 0x3f
 #define LCD_SLAVE_ADDRESS 0x3f
@@ -18,9 +19,9 @@
 #define LCD_ROWS 2
 #define LCD_ROW_1 0
 #define LCD_ROW_2 1
-#define PLOT_COLS 8
-#define PLOT_ROWS 2
 
+
+enum Screen { SCREEN_CLEAR, SCREEN_BOOT, SCREEN_WIFI_OFF, SCREEN_WIFI_STATUS, SCREEN_WIFI_AP, SCREEN_WIFI_STA, SCREEN_AP_STA, SCREEN_PVI };
 enum CharBank { BANK_NONE, BANK_BAR, BANK_PLOT };
 
 struct TextItem {
@@ -33,12 +34,6 @@ struct TextItem {
     uint8_t screen_Y = 1;
 };
 
-struct PlotData {
-    float cols[PLOT_COLS] = {0};
-    float min_value = INT_MAX;
-    float max_value = INT_MIN;
-};
-
 class Display {
    public:
     Display();
@@ -48,7 +43,9 @@ class Display {
     void setOutput(Print *p);
     void drawTextCenter(uint8_t row, const char *str);
     void drawBar(uint8_t row, uint8_t per);
-    void drawPlot(uint8_t start);
+    void drawPlot(uint8_t col_start);
+    void drawFloat(uint8_t col, uint8_t row, float value);
+    void printPlot(Print* p);
     void disableBacklight();
     void enableBacklight();
     void turnOn();
@@ -56,22 +53,22 @@ class Display {
     void loadBank(CharBank bank, bool force = false);
     void clear();
     void scrollDown();
+    Screen getScreen();
+    void setScreen(Screen screen, size_t items_count);
 
     PlotData* getData();
-    void drawPlot(uint8_t start_col, size_t cols);
     
-    void setLines(size_t size);
-    void setLine(uint8_t n, const char *str);
-    void setLine(uint8_t n, const char *fixed_str, const char *var_str);
+    void addTextItem(uint8_t n, const char *str);
+    void addTextItem(uint8_t n, const char *fixed_str, const char *var_str);
 
     void lock(unsigned long period);
     void lock();
     void unlock();
     bool locked();
    private:  
-    void updateLCD(uint8_t row, TextItem *l, boolean forced = false);
-    uint8_t get_row_for_update();
-    bool updates_locked();
+    void drawTextItem(uint8_t row, TextItem *l);
+    uint8_t getRowForUpdate();
+    TextItem* getItemForRow(uint8_t row);
     bool connect();
 
     uint8_t addr;
@@ -79,16 +76,19 @@ class Display {
     bool active;
     CharBank bank;
     bool backlight;
-    uint8_t row_for_update;
-    unsigned long lockTimeLeft;
+    uint8_t updatedRow;
+    unsigned long lockTimeout;
     unsigned long lockUpdated;
+    Screen screen;
 
     LiquidCrystal_I2C *lcd;
     Print *output;
     
     PlotData data;     
 
-    TextItem line[DISPLAY_VIRTUAL_ROWS];
-    size_t lines = 0;
+    TextItem item[DISPLAY_VIRTUAL_ROWS];
+    
+    size_t items_count = 0;    
+    size_t cur_item = 0;
     unsigned long refreshed;
 };
