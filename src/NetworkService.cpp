@@ -6,6 +6,10 @@ NetworkService::NetworkService() {
     has_dns = false;
     has_mdns = false;
     has_netbios = false;
+    
+    dns = new DNSServer();
+    mdns = new esp8266::MDNSImplementation::MDNSResponder();
+    netbios = new ESP8266NetBIOS();       
 
     active = false;
 }
@@ -27,7 +31,6 @@ void NetworkService::begin() {
    
     if (Wireless::getWirelessMode() == WLAN_AP) {
         output->print(FPSTR(str_dns));
-        dns = new DNSServer();
         if (begin_dns(dns_name, ip, dns_port)) {
             output->print(dns_name);
             output->print(' ');
@@ -37,20 +40,17 @@ void NetworkService::begin() {
             output->print(FPSTR(str_failed));
         }     
         output->println();
-
-        output->printf_P(str_netbios);
-        netbios = new ESP8266NetBIOS();   
-        if (begin_netbios(host_name)) {
-            
-            output->printf_P(str_ready);
-        } else {
-            output->printf_P(str_failed);
-        }
-        output->println();
+      
     }
+    output->printf_P(str_netbios);
+    if (begin_netbios(host_name)) {        
+        output->printf_P(str_ready);
+    } else {
+        output->printf_P(str_failed);
+    }
+    output->println();
 
     output->printf_P(str_mdns);
-    mdns = new esp8266::MDNSImplementation::MDNSResponder();
     if (begin_mdns(host_name, telnet_port, http_port, ota_port)) {
         output->printf_P(str_ready);
         has_mdns = true;

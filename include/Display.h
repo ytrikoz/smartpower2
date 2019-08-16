@@ -14,7 +14,7 @@
 // slave address are 0x27 or 0x3f
 #define LCD_SLAVE_ADDRESS 0x3f
 #define LCD_SLAVE_ADDRESS_ALT 0x27
-#define LCD_REFRESH_INTERVAL_ms 250
+#define LCD_REFRESH_INTERVAL_ms 500
 #define LCD_COLS 16
 #define LCD_ROWS 2
 #define LCD_ROW_1 0
