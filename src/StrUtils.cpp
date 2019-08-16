@@ -33,17 +33,17 @@ IPAddress atoip(const char *input) {
     return IPAddress(parts[0], parts[1], parts[2], parts[3]);
 }
 
-char *iptoa(IPAddress ip, char *buf) {
-    return strcpy(buf, ip.toString().c_str());
+const char* iptoa(IPAddress& ip) {
+    return ip.toString().c_str();
 }
 
-bool setstr(char *dest, const char *src, size_t line_width) {
+bool setstr(char *dest, const char *src, size_t size) {
     if (src == nullptr) {
-        memset(dest, 0, line_width);
+        memset(dest, 0, size);
     } else if (strcmp(src, dest) != 0) {
         uint8_t len = strlen(src);
         if (len != 0) {
-            if (len > line_width - 1) len = line_width - 1;
+            if (len > size - 1) len = size - 1;
             memcpy(dest, src, len);
             dest[len] = '\x00';
         }
@@ -117,7 +117,7 @@ void stringToBytes(const char *str, char sep, uint8_t *bytes, int len,
 
 String getSocketStr(IPAddress ip, int port) {
     char buf[32];
-    iptoa(ip, buf);
+    strcpy(buf, iptoa(ip));
     size_t len = strlen(buf);
     buf[len++] = ':';
     buf[len++] = '\x00';

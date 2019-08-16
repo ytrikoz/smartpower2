@@ -7,7 +7,7 @@
 
 PsuLogger::PsuLogger(Psu* psu, size_t capacity) {
     items = new PsuInfo[capacity];
-    this->provider = psu;
+    this->psu = psu;
     this->capacity = capacity;
     this->writePos = 0;
     this->readPos = 0;
@@ -19,7 +19,6 @@ PsuLogger::PsuLogger(Psu* psu, size_t capacity) {
 PsuLogger::~PsuLogger() { delete[] items; }
 
 void PsuLogger::begin() {
-
     clear();
     active = true;
 }
@@ -64,14 +63,16 @@ void PsuLogger::loop() {
     if (!active) return;
 
     unsigned long now = millis();
-    if (now - lastTime > PSU_LOG_INTERVAL_ms) {
+
+    if (millis_passed(lastTime, now) > PSU_LOG_INTERVAL_ms) {
         if (lastTime == 0) {
             lastTime = now;
         } else {
-            lastTime += PSU_LOG_INTERVAL_ms;
+            while (millis_passed(lastTime, now) > PSU_LOG_INTERVAL_ms) {
+                lastTime += PSU_LOG_INTERVAL_ms;
+            }
         }
-        PsuInfo info = provider->getInfo();
-        add(info, now);
+        add(psu->getInfo(), lastTime);
     }
 }
 
@@ -83,17 +84,17 @@ PsuInfo PsuLogger::first() { return items[readPos]; }
 
 PsuInfo PsuLogger::last() {
     size_t pos = readPos;
-    if (writePos < readPos) { 
-        size_t pos = writePos + 1; 
+    if (writePos < readPos) {
+        size_t pos = writePos + 1;
         if (pos > capacity) pos = 0;
-    }    
+    }
     return items[pos];
 }
 
-void PsuLogger::printFirst(Print* p, uint16_t n) {
-    if (n > size()) n = size();
+void PsuLogger::printFirst(Print* p, size_t num) {
+    if (num > size()) num = size();
     uint16_t pos = readPos;
-    for (int i = 1; i <= n; i++) {
+    for (size_t i = 0; i < num; ++i) {
         if (pos == capacity) pos = 0;
         PsuInfo pi = items[pos];
         p->printf("%lu %2.4fV %2.4fA %2.4f", pi.time, pi.voltage, pi.current,
@@ -105,7 +106,7 @@ void PsuLogger::printFirst(Print* p, uint16_t n) {
 
 void PsuLogger::print(Print* p) {
     uint16_t pos = readPos;
-    for (size_t i = 1; i <= size(); ++i) {
+    for (size_t i = 0; i < size() - 1; ++i) {
         if (pos == capacity) pos = 0;
         PsuInfo pi = items[pos];
         p->printf("%d %lu %2.4fV %2.4fA %2.4f", pos, pi.time, pi.voltage,
@@ -115,12 +116,17 @@ void PsuLogger::print(Print* p) {
     };
 }
 
-void PsuLogger::printLast(Print* p, uint16_t n) {
-    if (n > writePos) n = writePos;
-    for (int i = writePos - n; i < writePos; ++i) {
-        PsuInfo pi = items[i];
-        p->printf("%lu %2.4fV %2.4fA %2.4fW", millis_passed(pi.time, lastTime),
-                  pi.voltage, pi.current, pi.power);
+void PsuLogger::printLast(Print* p, size_t num) {
+    if (num > size()) num = size();
+    int pos = writePos;
+    unsigned long time_next = 0;
+    for (size_t i = 0; i < num; ++i) {
+        if (--pos < 0) pos = capacity - 1;
+        PsuInfo pi = items[pos];
+        unsigned long time_diff =
+            time_next != 0 ? millis_passed(pi.time, time_next) : 0;
+        p->printf("%lu %2.4fV %2.4fA %2.4fW", time_diff, pi.voltage, pi.current,
+                  pi.power);
         p->println();
     }
 }
@@ -133,7 +139,7 @@ void PsuLogger::printDiag(Print* p) {
     }
     p->print(FPSTR(str_duration));
     unsigned long logDuration =
-        floor((float) millis_passed(first().time, last().time) / ONE_SECOND_ms);
+        floor((float)millis_passed(first().time, last().time) / ONE_SECOND_ms);
     p->printf_P(strf_lu_sec, logDuration);
     p->printf_P(strf_size_d, (int)size());
     p->printf_P(strf_used_per, (float)size() / capacity * 100);

@@ -5,11 +5,11 @@
 
 #include "Strings.h"
 
-typedef struct {
+struct Month {
     char name[4];
     uint8_t days;
     uint16_t dayOfyear;
-} Month;
+};
 
 struct EpochTime : public Printable {
    public:

@@ -9,7 +9,7 @@ typedef enum { LEFT, CENTER, RIGHT } Align;
 char *tmtoa(struct tm *tm, char *buf);
 
 void stringToBytes(const char *str, char sep, uint8_t *bytes, int len, int base);
-String iptoa(IPAddress);
+const char* iptoa(IPAddress& ip);
 IPAddress atoip(const char *);
 
 bool setstr(char *dest, const char *src, size_t size);

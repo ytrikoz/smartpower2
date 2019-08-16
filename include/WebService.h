@@ -16,20 +16,18 @@ typedef std::function<void(uint8_t, String)> SocketDataEventHandler;
 
 class WebService {
    public:
-    WebService(uint16_t http_port, uint16_t ws_port, const char *root);
+    WebService();
     void setOutput(Print *output);
     void setOnClientConnection(SocketConnectionEventHandler h);
     void setOnClientDisconnected(SocketConnectionEventHandler h);
     void setOnClientData(SocketDataEventHandler h);
     void begin();
+    void end();
     void loop();
     void sendTxt(uint8_t, const char *);
-    bool captivePortal();
 
    private:
-    bool active = false;
-    int16_t http_port, socket_port;
-    char root[sizeof(WEB_ROOT)];
+    bool captivePortal();
 
     bool sendFile(String uri);
     bool sendFileContent(String path);
@@ -39,7 +37,7 @@ class WebService {
     void handleRoot();
     void handleUri();
     void handleFileList();
-    void handleNotFound(String& uri);
+    void handleNotFound(String &uri);
     void fileUpload();
 
     void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
@@ -48,6 +46,12 @@ class WebService {
     SocketDataEventHandler onDataEvent;
     SocketConnectionEventHandler onConnectEvent, onDisconnectEvent;
 
+
+    bool active = false;
+    int16_t port_http, port_websocket;
+    IPAddress ip;
+    char web_root[sizeof(HTTP_WEB_ROOT)];
+    
     ESP8266WebServer *server;
     WebSocketsServer *websocket;
     SSDPClass *ssdp;

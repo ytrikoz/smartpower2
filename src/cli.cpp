@@ -17,7 +17,7 @@
 namespace Cli {
 
 Command cmdConfig, cmdPower, cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet,
-    cmdGet, cmdRm, cmdClock, cmdPlot;
+    cmdGet, cmdRm, cmdClock, cmdPlot, cmdLog;
 
 Print* output;
 
@@ -81,6 +81,11 @@ void init() {
     cmdPlot.addPositionalArgument("action", "print");
     cmdPlot.addPositionalArgument("param", "");
     cmdPlot.setCallback(Cli::onPlot);
+    // Log
+    cmdPlot = cli->addCommand("log");
+    cmdPlot.addPositionalArgument("action", "status");
+    cmdPlot.addPositionalArgument("param", "-1");
+    cmdPlot.setCallback(Cli::onLog);
 }
 
 void close() {
@@ -124,11 +129,11 @@ void unknownConfigParam(const char* param) {
     output->println(buf);
 }
 
-void unknownActionParam(const char* param, const char* action) {
+void printUnknownActionParam(const char* param, const char* action) {
     output->printf_P(strf_unknown_action_param, param, action);
 }
 
-void unknownAction(Command& c) {
+void printUnknownAction(Command& c) {
     const char* str = getActionStr(c).c_str();
     output->printf_P(strf_unknown_action, str);
     output->println();
@@ -170,9 +175,8 @@ enum CommandAction {
     ACTION_OFF
 };
 
-CommandAction getAction(Command& c) {
-    String str = c.getArgument("action").getValue();
-    str += ' ';
+CommandAction getAction(Command& cmd) {
+    String str = getActionStr(cmd) + ' ';
     if (strcasecmp_P(str.c_str(), str_print) == 0) {
         return ACTION_PRINT;
     } else if (strcasecmp_P(str.c_str(), str_reset) == 0) {
@@ -193,8 +197,19 @@ CommandAction getAction(Command& c) {
         return ACTION_ON;
     } else if (strcasecmp_P(str.c_str(), str_off) == 0) {
         return ACTION_OFF;
+    }
+    printUnknownAction(cmd);
+    return ACTION_UNKNOWN;                
+}
+
+void onLog(cmd* c) {
+    Command cmd(c);
+    CommandAction action = getAction(cmd);
+    if (action == ACTION_STATUS) {
+        psuLog->printDiag(output);     
     } else {
-        return ACTION_UNKNOWN;
+        printUnknownAction(cmd);
+
     }
 }
 
@@ -227,7 +242,7 @@ void onConfig(cmd* c) {
             setup_restart_timer();
             break;
         default:
-            unknownAction(cmd);
+            printUnknownAction(cmd);
             return;
     }
 }
@@ -263,7 +278,7 @@ void onPower(cmd* c) {
             break;
         }
         default: {
-            unknownAction(cmd);
+            printUnknownAction(cmd);
             break;
         }
     }
@@ -368,8 +383,6 @@ void onShow(cmd* c) {
         output->println(getNetworkInfoJson().c_str());
     } else if (item.equals("info")) {
         output->println(getSystemInfoJson().c_str());
-    } else if (item.equals("config")) {
-        ;
     } else if (item.equals("status")) {
         Actions::showStatus->exec(output);
     } else if (item.equals("ntp")) {
@@ -400,7 +413,7 @@ void onPrint(cmd* c) {
 
 void onPlot(cmd* c) {
     Command cmd(c);
-    PlotData *data = display->getData();
+    PlotData* data = display->getData();
     for (uint8_t x = 0; x < display->getData()->size; ++x) {
         uint8_t y = map_to_plot_min_max(data, x);
         char tmp[PLOT_ROWS * 8 + 1];

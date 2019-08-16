@@ -4,26 +4,19 @@
 
 using StrUtils::iptoa;
 using StrUtils::isip;
+using StrUtils::setstr;
 
 File fsUploadFile;
 
 static const char stre_http_file_not_found[] PROGMEM =
     "File Not Found\n\nURI: %s\nMethod: %s\nArguments: %d\n";
 
-WebService::WebService(uint16_t http_port, uint16_t socket_port,
-                       const char *root) {
-    this->http_port = http_port;
-    this->socket_port = socket_port;
-    strcpy(this->root, root);
-    active = false;
-}
+WebService::WebService() {
+    this->port_http = HTTP_PORT;
+    this->port_websocket = WEBSOCKET_PORT;
+    strcpy(this->web_root, HTTP_WEB_ROOT);
 
-void WebService::begin() {
-    USE_SERIAL.printf_P(str_http);
-    IPAddress ip = Wireless::hostIP();
-    USE_SERIAL.printf_P(strf_http_params, root, ip.toString().c_str(),
-                        http_port, socket_port);
-    server = new ESP8266WebServer(ip, http_port);
+    server = new ESP8266WebServer(port_http);
     server->on("/upload", HTTP_POST, [this]() { server->send(200); },
                [this]() { fileUpload(); });
 
@@ -56,43 +49,66 @@ void WebService::begin() {
 
     server->onNotFound([this]() { handleUri(); });
 
-    websocket = new WebSocketsServer(this->socket_port);
+    websocket = new WebSocketsServer(this->port_websocket);
+
     websocket->onEvent(
         [this](uint8_t num, WStype_t type, uint8_t *payload, size_t lenght) {
             webSocketEvent(num, type, payload, lenght);
         });
 
-    File f = SPIFFS.open(FILE_WEB_SETTINGS, "w");
-    f.printf("ipaddr=\"%s\"\r\n", ip.toString().c_str());
-    f.flush();
-    f.close();
-
-    if ((Wireless::getWirelessMode() == WLAN_STA || Wireless::getWirelessMode() == WLAN_AP_STA))
-    {
+     if ((Wireless::getWirelessMode() == WLAN_STA ||
+         Wireless::getWirelessMode() == WLAN_AP_STA)) {
         ssdp = new SSDPClass();
         ssdp->setSchemaURL(F("description.xml"));
-        ssdp->setHTTPPort(http_port);
+        ssdp->setHTTPPort(port_http);
         ssdp->setName(HOST_NAME);
         ssdp->setModelName(APPNAME);
         ssdp->setModelNumber(FW_VERSION);
         ssdp->setSerialNumber(getChipId());
         ssdp->setURL(F("index.html"));
-        ssdp->setModelURL(F(
-            "https://wiki.odroid.com/accessory/power_supply_battery/smartpower2"));
+        ssdp->setModelURL(
+            F("https://wiki.odroid.com/accessory/power_supply_battery/"
+              "smartpower2"));
         ssdp->setManufacturer(F("HardKernel"));
         ssdp->setManufacturerURL(F("https://www.hardkernel.com"));
         ssdp->setDeviceType(F("pnp:rootdevice"));
 
         server->on(F("/description.xml"), HTTP_GET,
-                [this]() { ssdp->schema(server->client()); });
+                   [this]() { ssdp->schema(server->client()); });
     }
 
-    USE_SERIAL.println();
+    File f = SPIFFS.open(FILE_WEB_SETTINGS, "w");
+    f.printf("ipaddr=\"%s\"\r\n", iptoa(ip));
+    f.flush();
+    f.close();
+ 
+    active = false;
+}
+
+void WebService::begin() {
+    output->print(FPSTR(str_http));
+    output->printf_P(strf_http_params, web_root, port_http, port_websocket);                     
+    output->println();
 
     server->begin();
     websocket->begin();
 
     active = true;
+}
+
+void WebService::end() {
+    output->print(FPSTR(str_http));
+    output->print(FPSTR(str_stopped));
+    output->println();
+    active = false;
+}
+
+void WebService::loop() {
+    if (!active) return;
+    server->handleClient();
+    delay(2);
+    websocket->loop();
+    delay(2);
 }
 
 void WebService::handleRoot() {
@@ -133,14 +149,6 @@ void WebService::handleNotFound(String &uri) {
     server->sendHeader("Expires", "-1");
 
     server->send(404, "text/plain", str);
-}
-
-void WebService::loop() {
-    if (!active) return;
-    server->handleClient();
-    delay(2);
-    websocket->loop();
-    delay(2);
 }
 
 void WebService::sendTxt(uint8_t num, const char *payload) {
@@ -208,7 +216,7 @@ bool WebService::sendFile(String uri) {
 }
 
 String WebService::getFilePath(String uri) {
-    String path = String(root);
+    String path = String(web_root);
     path += uri;
     if (uri.endsWith("/")) path.concat("index.html");
     return path;
@@ -242,7 +250,7 @@ bool WebService::sendFileContent(String path) {
 }
 
 void WebService::handleFileList() {
-    String path = server->hasArg("path") ? server->arg("path") : root;
+    String path = server->hasArg("path") ? server->arg("path") : web_root;
     if (!path.startsWith("/")) path = "/" + path;
     output->print(FPSTR(str_http));
     output->printf(strf_filelist, path.c_str());
@@ -318,12 +326,12 @@ void WebService::fileUpload() {
 bool WebService::captivePortal() {
     if (!isip(server->hostHeader()) &&
         server->hostHeader() != (String(HOST_NAME) + ".local")) {
-        #ifdef DEBUG_HTTP
+#ifdef DEBUG_HTTP
         output->print(FPSTR(str_http));
         output->print(FPSTR(str_redirected));
         output->println(server->hostHeader().c_str());
         output->println();
-        #endif
+#endif
         server->sendHeader(
             "Location",
             String("http://") + server->client().localIP().toString(), true);

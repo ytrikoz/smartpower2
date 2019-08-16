@@ -50,14 +50,7 @@ void NetworkService::begin() {
     }
     output->println();
 
-    output->printf_P(str_mdns);
-    if (begin_mdns(host_name, telnet_port, http_port, ota_port)) {
-        output->printf_P(str_ready);
-        has_mdns = true;
-    } else {
-        output->printf_P(str_failed);
-    }
-    output->println();
+    has_mdns = begin_mdns(host_name, telnet_port, http_port, ota_port);
 
     active = true;
 }
@@ -79,12 +72,16 @@ bool NetworkService::begin_dns(const char *domain, IPAddress ip,
 
 bool NetworkService::begin_mdns(const char *host_name, uint16_t telnet_port,
                                 uint16_t http_port, uint16_t ota_port) {
-    if (mdns->begin(host_name)) {
+    output->print(FPSTR(str_mdns));    
+    if (mdns->begin(host_name)) {        
         mdns->addService(host_name, "telnet", "tcp", telnet_port);
         mdns->addService(host_name, "http", "tcp", http_port);
         mdns->enableArduino(ota_port);
+        
+        output->println(FPSTR(str_ready));
         return true;
     }
+    output->println(FPSTR(str_failed));
     return false;
 }
 

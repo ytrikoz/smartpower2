@@ -46,8 +46,9 @@ void refresh_wifi_led() {
 }
 
 void start_services() {
+    WirelessMode mode = Wireless::getWirelessMode();
     // only AP_STA
-    if (Wireless::getWirelessMode() == WLAN_AP_STA) {
+    if (mode == WLAN_AP_STA) {
         uint8_t broadcast_if = wifi_get_broadcast_if();
         USE_SERIAL.print(FPSTR(str_wifi));
         char buf[32];
@@ -56,13 +57,12 @@ void start_services() {
         if (!wifi_set_broadcast_if(3)) USE_SERIAL.print(FPSTR(str_failed));
         USE_SERIAL.println();
     }
-    // only STA
-    if (Wireless::getWirelessMode() == WLAN_STA) {
-#ifndef DISABLE_NTP
+    if (mode == WLAN_STA || mode == WLAN_AP_STA)
+    {
+    #ifndef DISABLE_NTP
         start_ntp();
-#endif
+    #endif
     }
-    // any
 #ifndef DISABLE_TELNET
     start_telnet();
 #endif
@@ -78,6 +78,7 @@ void start_services() {
 }
 
 void start_telnet() {
+    if (!telnet) {
     telnet = new TelnetServer(TELNET_PORT);
     telnet->setOutput(&USE_SERIAL);
 #ifndef DISABLE_TELNET_CLI
@@ -97,6 +98,7 @@ void start_telnet() {
         refresh_wifi_led();
     });
 #endif
+    }
     telnet->begin();
 }
 
@@ -160,31 +162,40 @@ void start_psu() {
 }
 
 void start_ntp() {
-    ntp = new NtpClient();
-    ntp->setConfig(config->getConfig());
-    ntp->setOutput(&USE_SERIAL);
-    ntp->setOnTimeSynced([](EpochTime &time) { rtc.setTime(time.get()); });
+    if (!ntp) {
+        ntp = new NtpClient();
+        ntp->setConfig(config->getConfig());
+        ntp->setOutput(&USE_SERIAL);
+        ntp->setOnTimeSynced([](EpochTime &time) { rtc.setTime(time.get()); });
+    }
     ntp->begin();
 }
 
 void start_http() {
-    http = new WebService(HTTP_PORT, WEBSOCKET_PORT, WEB_ROOT);
-    http->setOutput(&USE_SERIAL);
-    http->setOnClientConnection(onHttpClientConnect);
-    http->setOnClientDisconnected(onHttpClientDisconnect);
-    http->setOnClientData(onHttpClientData);
+    if (!http) {
+        http = new WebService();
+        http->setOutput(&USE_SERIAL);
+        http->setOnClientConnection(onHttpClientConnect);
+        http->setOnClientDisconnected(onHttpClientDisconnect);
+        http->setOnClientData(onHttpClientData);
+    }
     http->begin();
 }
 
 void start_ota_update() {
-    ota = new OTAUpdate();
-    ota->setOutput(&USE_SERIAL);
+    if (!ota) {
+        ota = new OTAUpdate();
+        ota->setOutput(&USE_SERIAL);
+    }    
     ota->begin(HOST_NAME, OTA_PORT);
 }
 
 void start_discovery() {
-    discovery = new NetworkService();
-    discovery->setOutput(&USE_SERIAL);
+    if (!discovery) {
+        discovery = new NetworkService();
+        discovery->setOutput(&USE_SERIAL);
+    }
+    
     discovery->begin();
 }
 

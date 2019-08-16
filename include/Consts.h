@@ -45,10 +45,11 @@
 #define MAX_WEB_CLIENTS 5
 #define OTA_PORT 8266
 #define DNS_PORT 53
+#define HTTP_WEB_ROOT "/www"
 #define HTTP_PORT 80
 #define WEBSOCKET_PORT 81
 #define TELNET_PORT 23
-#define WEB_ROOT "/www"
+
 #define NTP_REMOTE_PORT 123
 #define NTP_LOCAL_PORT 2390
 
