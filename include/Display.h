@@ -2,8 +2,9 @@
 
 #include <Arduino.h>
 #include <HardwareSerial.h>
-#include <LiquidCrystal_I2C.h>
 #include <Wire.h>
+#include <LCD.h>
+#include <LiquidCrystal_I2C.h>
 
 #include "BuildConfig.h"
 #include "Strings.h"

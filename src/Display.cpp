@@ -73,8 +73,11 @@ bool Display::init() {
             output->print("0x");
             output->println(addr, HEX);
 
-            lcd = new LiquidCrystal_I2C(addr, LCD_COLS, LCD_ROWS);
-            lcd->init();
+            // lcd = new LiquidCrystal_I2C(addr, LCD_COLS, LCD_ROWS);
+            lcd = new LiquidCrystal_I2C(addr, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE); 
+            //lcd = new LiquidCrystal_I2C(addr);
+            // lcd->init();
+            lcd->begin(LCD_COLS, LCD_ROWS);
             lcd->clear();
 
             memset(item, 0, sizeof(TextItem) * DISPLAY_VIRTUAL_ROWS);
@@ -233,23 +236,22 @@ void Display::drawTextItem(uint8_t row, TextItem *l) {
 
     uint8_t _free_space = LCD_COLS - _fix_len; 
 
-    // Fixed
-    drawText(0, row, l->fixed_str);
-
-    if (_var_len == _free_space) {
-        lcd->print(l->var_str);
+    if (_var_len <= _free_space) {   
+        char buf[LCD_COLS + 1];
+        strcpy(buf, l->fixed_str);
+        strcat(buf, l->var_str);
+        if (_free_space - _var_len > 0) {
+            char tmp[_free_space - _var_len + 1];
+            strfill(tmp, '\x20', _free_space - _var_len + 1);
+            tmp[_free_space - _var_len] = '\x00';
+            strcat(buf, tmp);
+        }
+        drawText(0, row, buf);
         l->hasUpdates = false;
-        return;
-    }
-
-    if (_var_len < _free_space) {
-        char tmp[_free_space + 1];
-        memset(tmp, '\x20', _free_space);
-        tmp[_free_space] = '\x00';
-        for (uint8_t n = 0; n < _var_len; ++n) tmp[n] = l->var_str[n];
-        lcd->print(tmp);
-        l->hasUpdates = false;
-        return;
+        return;    } 
+    else 
+    {   // Fixed
+        drawText(0, row, l->fixed_str);
     }
 
     // repeat

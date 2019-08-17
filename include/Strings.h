@@ -64,7 +64,7 @@ static const char strf_lu_sec[] PROGMEM = "%lu sec ";
 static const char strf_lu_ms[] PROGMEM = "%lu ms ";
 static const char strf_used_per[] PROGMEM = "used %.2f%%";
 static const char strf_size_d[] PROGMEM = "size %d ";
-static const char strf_per[] PROGMEM = "%.2f%%";
+static const char strf_per[] PROGMEM = "%.2f%% ";
 
 static const char str_alert[] PROGMEM = "alert ";
 static const char str_as_default[] PROGMEM = "as default ";

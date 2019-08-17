@@ -57,6 +57,8 @@ void LoopWatchDog::printCapture(Print* p) {
         float load = (float) (modules[i] / ONE_MILLISECOND_mi) / duration * 100;
         p->printf_P(strf_per, load);
         total_load += load;
+        p->print(FPSTR(str_avg));
+        p->print((float) modules[i] / loopCounter);
         p->println();
     }
     p->print(FPSTR(str_system_time));
