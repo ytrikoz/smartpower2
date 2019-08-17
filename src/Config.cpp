@@ -4,8 +4,8 @@
 
 #include "StrUtils.h"
 
-using StrUtils::setstr;
 using StrUtils::atoip;
+using StrUtils::setstr;
 
 Config::Config() {
     for (uint8_t i = 0; i < PARAM_COUNT; i++) {
@@ -22,7 +22,7 @@ Config::~Config() {
 
 void Config::setDefault() {
     for (int i = 0; i < PARAM_COUNT; ++i) {
-        if (setstr(values[i], metadata[i].def, metadata[i].size)) 
+        if (setstr(values[i], metadata[i].def, metadata[i].size))
             onConfigChangeEvent(Parameter(i));
     }
 }
@@ -77,8 +77,7 @@ bool Config::setValue(const char *name, const char *value) {
 }
 
 bool Config::setValue(Parameter param, const char *value) {
-    bool changed =
-        setstr(values[param], value, metadata[param].size);
+    bool changed = setstr(values[param], value, metadata[param].size);
 #ifdef DEBUG_CONFIG
     DEBUG.printf("[config] -> #%d: %s\r\n", param, value);
 #endif

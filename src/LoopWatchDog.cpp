@@ -11,6 +11,12 @@ LoopWatchDog::LoopWatchDog() {
     state = CAPTURE_IDLE;
 }
 
+#ifdef DEBUG_LOOP
+void LoopWatchDog::addTimeProfile(uint8_t index, unsigned long duration) {
+    if (state == CAPTURE_IN_PROGRESS) modules[index] += duration;
+}
+#endif
+
 unsigned long LoopWatchDog::getCaptureTimeLeft() { return captureTimeLeft; }
 
 void LoopWatchDog::printCapture(Print* p) {
@@ -22,7 +28,7 @@ void LoopWatchDog::printCapture(Print* p) {
     p->print(FPSTR(str_total));
     p->print(loopCounter);
     uint16_t lps = floor((float)loopCounter / duration * ONE_SECOND_ms);
-    p->print((" lps "));
+    p->print(F(" lps "));
     p->println(lps);
 
     unsigned long time = 2;
@@ -37,12 +43,26 @@ void LoopWatchDog::printCapture(Print* p) {
     if (loopOverRange > 0) {
         p->print(FPSTR(str_over));
         p->printf_P(strf_lu_ms, time / 2);
-        p->print(loopOverRange);
+        p->println(loopOverRange);
     }
 
     p->print(FPSTR(str_max));
-    p->printf_P(strf_lu_ms, (unsigned long)loopLongest);
+    p->printf_P(strf_lu_ms, loopLongest);
     p->println();
+
+#ifdef DEBUG_LOOP
+    float total_load = 0;
+    for (uint8_t i = 0; i < MODULES_COUNT; ++i) {
+        p->print(getModuleName(i));
+        float load = (float) (modules[i] / ONE_MILLISECOND_mi) / duration * 100;
+        p->printf_P(strf_per, load);
+        total_load += load;
+        p->println();
+    }
+    p->print(FPSTR(str_system_time));
+    p->printf_P(strf_per, 100 - total_load);
+    p->println();
+#endif
 }
 
 void LoopWatchDog::setIdle() { state = CAPTURE_IDLE; }
@@ -75,7 +95,8 @@ void LoopWatchDog::run() {
     loopCounter++;
 
     unsigned long time = 2;
-    for (uint8_t i = 0; i < LOOP_COUNTERS; ++i) {
+    uint8_t i;
+    for (i = 0; i < LOOP_COUNTERS; ++i) {
         if (passed <= time) {
             loops[i]++;
             break;
@@ -83,6 +104,7 @@ void LoopWatchDog::run() {
         time *= 2;
     }
     if (loopLongest < passed) loopLongest = passed;
+    if (i == LOOP_COUNTERS) loopOverRange++;
 
     if (captureTimeLeft <= passed) {
         captureTimeLeft = 0;
@@ -98,6 +120,9 @@ void LoopWatchDog::run() {
 void LoopWatchDog::resetStats() {
     loopCounter = 0;
     memset(loops, 0, sizeof(loops[0]) * LOOP_COUNTERS);
+    #ifdef DEBUG_LOOP
+    memset(modules, 0, sizeof(modules[0]) * MODULES_COUNT);
+    #endif
     loopOverRange = 0;
     loopLongest = 0;
 }

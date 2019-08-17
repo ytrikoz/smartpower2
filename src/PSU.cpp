@@ -2,7 +2,6 @@
 
 #include <FS.h>
 
-#include "TimeProfiler.h"
 #include "TimeUtils.h"
 #include "ina231.h"
 #include "mcp4652.h"

@@ -106,9 +106,9 @@ void WebService::end() {
 void WebService::loop() {
     if (!active) return;
     server->handleClient();
-    delay(2);
+    //delay(2);
     websocket->loop();
-    delay(2);
+    //delay(2);
 }
 
 void WebService::handleRoot() {

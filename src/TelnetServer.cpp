@@ -18,10 +18,7 @@ void TelnetServer::begin() {
         server->setNoDelay(true);
         server->begin();
         initialized = server->status() != CLOSED;
-        if (initialized)
-            output->printf_P(str_success);
-        else
-            output->printf_P(str_failed);
+        if (!initialized) output->printf_P(str_failed);
         output->println();
     }
     active = initialized;

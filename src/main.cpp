@@ -9,7 +9,6 @@
 #include "LoopWatchDog.h"
 #include "StrUtils.h"
 #include "SysInfo.h"
-#include "TimeProfiler.h"
 #include "Wireless.h"
 
 Profiler::LoopWatchDog watchDog;
@@ -351,7 +350,7 @@ void loop() {
     // Button
     {
 #ifdef DEBUG_LOOP
-        TimeProfiler _tp_rtc = TimeProfiler("btn");
+        Profiler::TimeProfiler tp = Profiler::TimeProfiler(&watchDog, Profiler::BUTTONS);
 #endif
         power_button_handler();
     }
@@ -359,7 +358,7 @@ void loop() {
     // Clock
     {
 #ifdef DEBUG_LOOP
-        TimeProfiler _tp_rtc = TimeProfiler("rtc");
+        Profiler::TimeProfiler tp = Profiler::TimeProfiler(&watchDog, Profiler::CLOCK);
 #endif
         rtc.loop();
     }
@@ -367,7 +366,7 @@ void loop() {
     // LEDs
     {
 #ifdef DEBUG_LOOP
-        TimeProfiler _tp_leds = TimeProfiler("leds");
+        Profiler::TimeProfiler tp = Profiler::TimeProfiler(&watchDog, Profiler::LEDS);
 #endif
         wifi_led->loop();
         power_led->loop();
@@ -376,7 +375,7 @@ void loop() {
     // PSU
     {
 #ifdef DEBUG_LOOP
-        TimeProfiler _tp_psu = TimeProfiler("psu");
+        Profiler::TimeProfiler tp = Profiler::TimeProfiler(&watchDog, Profiler::PSU);
 #endif
         psu->loop();
         psuLog->loop();
@@ -385,7 +384,7 @@ void loop() {
     // Tasks
     {
 #ifdef DEBUG_LOOP
-        TimeProfiler _tp_tasks = TimeProfiler("tasks");
+        Profiler::TimeProfiler tp = Profiler::TimeProfiler(&watchDog, Profiler::TASKS);
 #endif
         timer.run();
     }
@@ -393,7 +392,7 @@ void loop() {
 #ifndef DISABLE_CONSOLE_SHELL
     {
 #ifdef DEBUG_LOOP
-        TimeProfiler _tp_console = TimeProfiler("console");
+        Profiler::TimeProfiler tp = Profiler::TimeProfiler(&watchDog, Profiler::CONSOLE);
 #endif
         if (consoleShell) consoleShell->loop();
     }
@@ -405,7 +404,7 @@ void loop() {
 #ifndef DISABLE_LCD
     {
 #ifdef DEBUG_LOOP
-        TimeProfiler _tp_display = TimeProfiler("lcd", 24);
+        Profiler::TimeProfiler tp = Profiler::TimeProfiler(&watchDog, Profiler::LCD);
 #endif
         if (display) display->loop();
     }
@@ -416,7 +415,7 @@ void loop() {
 #ifndef DISABLE_HTTP
         {
 #ifdef DEBUG_LOOP
-            TimeProfiler profiler = TimeProfiler("http");
+            Profiler::TimeProfiler tp = Profiler::TimeProfiler(&watchDog, Profiler::HTTP);
 #endif
             if (http) http->loop();
         }
@@ -425,21 +424,25 @@ void loop() {
 #ifndef DISABLE_NETWORK_DISCOVERY
         {
 #ifdef DEBUG_LOOP
-            TimeProfiler _tp_discover = TimeProfiler("net");
+            Profiler::TimeProfiler tp = Profiler::TimeProfiler(&watchDog, Profiler::DISCOVERY);
 #endif
             if (discovery) discovery->loop();
         }
         delay(0);
 #endif
-
 #ifndef DISABLE_OTA_UPDATE
+{
+#ifdef DEBUG_LOOP
+        Profiler::TimeProfiler tp = Profiler::TimeProfiler(&watchDog, Profiler::OTA_UPDATE);
+#endif
         if (ota) ota->loop();
+}
         delay(0);
 #endif
 #ifndef DISABLE_NTP
         {
 #ifdef DEBUG_LOOP
-            TimeProfiler _tp_ntp = TimeProfiler("ntp");
+            Profiler::TimeProfiler tp = Profiler::TimeProfiler(&watchDog, Profiler::NTP);
 #endif
             if (ntp) ntp->loop();
         }
@@ -448,7 +451,7 @@ void loop() {
 #ifndef DISABLE_TELNET
         {
 #ifdef DEBUG_LOOP
-            TimeProfiler _tp_telnet = TimeProfiler("telnet");
+            Profiler::TimeProfiler tp = Profiler::TimeProfiler(&watchDog, Profiler::TELNET);
 #endif
             if (telnet) telnet->loop();
         }
@@ -457,7 +460,7 @@ void loop() {
 #ifndef DISABLE_TELNET_SHELL
         {
 #ifdef DEBUG_LOOP
-            TimeProfiler _tp_shell = TimeProfiler("shell");
+            Profiler::TimeProfiler tp = Profiler::TimeProfiler(&watchDog, Profiler::SHELL);
 #endif
             if (telnetShell) telnetShell->loop();
         }

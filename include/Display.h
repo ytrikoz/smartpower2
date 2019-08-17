@@ -45,6 +45,7 @@ class Display {
     void drawBar(uint8_t row, uint8_t per);
     void drawPlot(uint8_t col_start);
     void drawFloat(uint8_t col, uint8_t row, float value);
+    void drawText(uint8_t col, uint8_t row, const char* str);
     void printPlot(Print* p);
     void disableBacklight();
     void enableBacklight();

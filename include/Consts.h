@@ -10,6 +10,7 @@
 #define FW_VERSION "0.6.5"            
 #define DATETIME_FORMAT "%02d/%02d/%04d %02d:%02d:%02d"
 #define ONE_MHz_hz 1000000UL
+#define ONE_MILLISECOND_mi 1000
 #define ONE_SECOND_ms 1000
 #define ONE_MINUTE_s 60
 #define ONE_DAY_s 86400
@@ -38,7 +39,6 @@
 #define PARAM_OUTPUT_VOLTAGE_SIZE 8
 #define PARAM_NUMBER_SIZE 4
 #define PARAM_LARGE_NUMBER_SIZE 9
-
 
 #define HOST_DOMAIN "local"
 #define WIFI_CONNECT_TIMEOUT 40

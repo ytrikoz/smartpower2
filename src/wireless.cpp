@@ -359,7 +359,7 @@ void onNetworkDown() {
 
 WirelessMode getWirelessMode() { return mode = (WirelessMode)WiFi.getMode(); }
 
-bool hasNetwork() { return (network == NETWORK_UP); }
+bool hasNetwork() { return network == NETWORK_UP; }
 
 String RSSIInfo() {
     int rssi = wifi_station_get_rssi();

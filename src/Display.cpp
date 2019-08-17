@@ -228,15 +228,13 @@ void Display::loop() {
 PlotData *Display::getData() { return &data; }
 
 void Display::drawTextItem(uint8_t row, TextItem *l) {
-    lcd->setCursor(0, row);
-
     uint8_t _fix_len = strlen(l->fixed_str);
     uint8_t _var_len = strlen(l->var_str);
 
-    uint8_t _free_space = LCD_COLS - _fix_len;
+    uint8_t _free_space = LCD_COLS - _fix_len; 
 
     // Fixed
-    lcd->print(l->fixed_str);
+    drawText(0, row, l->fixed_str);
 
     if (_var_len == _free_space) {
         lcd->print(l->var_str);
@@ -385,6 +383,11 @@ void Display::drawPlot(uint8_t col_start) {
     uint8_t col = col_start + this->data.size + 1;
     drawFloat(col, LCD_ROW_1, this->data.max_value);
     drawFloat(col, LCD_ROW_2, this->data.min_value);
+}
+
+void Display::drawText(uint8_t col, uint8_t row, const char* str) {
+    lcd->setCursor(col, row);
+    lcd->print(str);
 }
 
 void Display::drawFloat(uint8_t col, uint8_t row, float value) {

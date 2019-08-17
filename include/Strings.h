@@ -64,6 +64,7 @@ static const char strf_lu_sec[] PROGMEM = "%lu sec ";
 static const char strf_lu_ms[] PROGMEM = "%lu ms ";
 static const char strf_used_per[] PROGMEM = "used %.2f%%";
 static const char strf_size_d[] PROGMEM = "size %d ";
+static const char strf_per[] PROGMEM = "%.2f%%";
 
 static const char str_alert[] PROGMEM = "alert ";
 static const char str_as_default[] PROGMEM = "as default ";
@@ -75,6 +76,7 @@ static const char str_avaible_system_actions[] PROGMEM =
     "'restart'.";
 static const char str_avg[] PROGMEM = "avg ";
 static const char str_backup[] PROGMEM = "backup ";
+static const char str_btns[] PROGMEM = "[btns] ";
 static const char str_build_date[] PROGMEM = BUILD_DATE;
 static const char str_capture[] PROGMEM = "capture ";
 static const char str_capturing[] PROGMEM = "capturing ";
@@ -83,10 +85,12 @@ static const char str_shell_start_hint[] PROGMEM =
     "[shell] press \"enter\" to start";
 static const char str_clock[] PROGMEM = "[clock] ";
 static const char str_config[] PROGMEM = "[config] ";
+static const char str_complete[] PROGMEM = "complete ";
 static const char str_connecting[] PROGMEM = "connecting ";
 static const char str_connection[] PROGMEM = "connection ";
 static const char str_connected[] PROGMEM = "connected ";
-static const char str_complete[] PROGMEM = "complete ";
+static const char str_console[] PROGMEM = "[console] ";
+static const char str_discovery[] PROGMEM = "[discovery] ";
 static const char str_date[] PROGMEM = "date ";
 static const char str_disabled[] PROGMEM = "disabled ";
 static const char str_disconnected[] PROGMEM = "disconnected ";
@@ -106,6 +110,7 @@ static const char str_http_[] PROGMEM = "http ";
 static const char str_empty[] PROGMEM = "empty ";
 static const char str_got[] PROGMEM = "got ";
 static const char str_known[] PROGMEM = "known ";
+static const char str_leds[] PROGMEM = "[leds] ";
 static const char str_load[] PROGMEM = "load ";
 static const char str_last[] PROGMEM = "last ";
 static const char str_left[] PROGMEM = "left ";
@@ -141,11 +146,6 @@ static const char str_psu[] PROGMEM = "[psu] ";
 static const char str_psu_log[] PROGMEM = "[psu-log] ";
 static const char str_save[] PROGMEM = "save ";
 static const char str_status[] PROGMEM = "status ";
-static const char str_up[] PROGMEM = "up ";
-static const char str_unknown[] PROGMEM = "unknown";
-static const char str_update[] PROGMEM = "[update] ";
-static const char str_unset[] PROGMEM = "<unset> ";
-static const char str_unsecured[] PROGMEM = "<unsecured>";
 static const char str_reconnect[] PROGMEM = "reconnect ";
 static const char str_restore[] PROGMEM = "restore ";
 static const char str_size[] PROGMEM = "size ";
@@ -164,8 +164,10 @@ static const char str_system_time[] PROGMEM = "system time ";
 static const char str_system_restart[] PROGMEM =
     "The system is going down for restart ";
 static const char str_redirected[] PROGMEM = "redirected ";
+static const char str_shell[] PROGMEM = "[shell] ";
 static const char str_synced[] PROGMEM = "synced ";
 static const char str_success[] PROGMEM = "success ";
+static const char str_tasks[] PROGMEM = "[tasks] ";
 static const char str_timezone[] PROGMEM = "timezone ";
 static const char str_time[] PROGMEM = "time ";
 static const char str_total[] PROGMEM = "total ";
@@ -173,6 +175,11 @@ static const char str_telnet[] PROGMEM = "[telnet] ";
 static const char str_telnet_[] PROGMEM = "telnet ";
 static const char str_two_dots[] PROGMEM = ": ";
 static const char str_twp[] PROGMEM = "twp ";
+static const char str_up[] PROGMEM = "up ";
+static const char str_unknown[] PROGMEM = "unknown";
+static const char str_update[] PROGMEM = "[update] ";
+static const char str_unset[] PROGMEM = "<unset> ";
+static const char str_unsecured[] PROGMEM = "<unsecured>";
 static const char str_wifi[] PROGMEM = "[wifi] ";
 static const char str_wifi_[] PROGMEM = "wifi ";
 static const char str_wrong[] PROGMEM = "wrong ";
@@ -249,3 +256,13 @@ static const char str_yes[] PROGMEM = "yes ";
     USE_SERIAL.printf_P(str_got); \
     PRINT_IP                      \
     USE_SERIAL.println();
+
+static PGM_P module_name[] PROGMEM = {
+    str_btns,    str_clock, str_leds,      str_psu,       str_tasks,
+    str_console, str_lcd,   str_http,      str_discovery, str_ntp,
+    str_telnet,  str_shell, str_update};
+inline String getModuleName(uint8_t index) {
+    char buf[16];
+    strcpy_P(buf, (char *)pgm_read_ptr(&(module_name[index])));
+    return String(buf);
+}
