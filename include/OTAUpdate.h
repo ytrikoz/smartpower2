@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ArduinoOTA.h>
+#include <Updater.h>
 #include <FS.h>
 
 #include "Strings.h"

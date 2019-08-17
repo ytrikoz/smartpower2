@@ -1,6 +1,8 @@
 #include "OTAUpdate.h"
 
 #include "StrUtils.h"
+#define OTA_FLASH   0
+#define OTA_FS      100
 
 OTAUpdate::OTAUpdate() {
     ota = new ArduinoOTAClass();
@@ -49,10 +51,10 @@ void OTAUpdate::onStart(void) {
     output->printf_P(str_start);
     PGM_P strP;
     switch (this->ota->getCommand()) {
-        case U_FLASH:
+        case OTA_FLASH:
             strP = str_firmware;
             break;
-        case U_SPIFFS:
+        case OTA_FS:
             strP = str_spiffs;
             break;
         default:
