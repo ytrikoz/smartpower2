@@ -281,8 +281,7 @@ void Display::drawTextItem(uint8_t row, TextItem *l) {
             tmp[str_index] = ch;
             if (ch == '\x00') break;
         }
-        lcd->print(tmp);
-        strfill(tmp, '\x20', _free_space - strlen(tmp) + 1);
+        strpadd(tmp, StrUtils::LEFT, _free_space + 1);
         lcd->print(tmp);
     }
     l->var_pos++;

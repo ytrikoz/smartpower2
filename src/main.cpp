@@ -12,7 +12,7 @@
 #include "TimeProfiler.h"
 #include "Wireless.h"
 
-LoopWatchDog loopWD;
+Profiler::LoopWatchDog watchDog;
 
 typedef struct {
     bool connected = false;
@@ -75,9 +75,10 @@ void onHttpClientData(uint8_t n, String data) {
         case SET_POWER_ON_OFF: {
             PowerState new_state = PowerState(data.substring(1).toInt());
             psu->setState(new_state);
-            String str = String(SET_POWER_ON_OFF);
-            str += psu->getState();
-            sendToClients(str, PG_HOME, n);
+
+            String payload = String(SET_POWER_ON_OFF);
+            payload += psu->getState();
+            sendToClients(payload, PG_HOME, n);
             break;
         }
         case SET_VOLTAGE: {
@@ -125,79 +126,79 @@ void onHttpClientData(uint8_t n, String data) {
     }
 }
 
-void sendToClients(String str, uint8_t page, uint8_t except_n) {
+void sendToClients(String payload, uint8_t page, uint8_t except_n) {
     for (uint8_t i = 0; i < WEBSOCKETS_SERVER_CLIENT_MAX; i++)
         if (clients[i].connected && (clients[i].page == page) &&
             (except_n != i))
-            http->sendTxt(i, str.c_str());
+            http->sendTxt(i, payload.c_str());
 }
 
-void sendToClients(String str, uint8_t page) {
+void sendToClients(String payload, uint8_t page) {
     for (uint8_t i = 0; i < WEBSOCKETS_SERVER_CLIENT_MAX; i++)
         if (clients[i].connected && clients[i].page == page)
-            http->sendTxt(i, str.c_str());
+            http->sendTxt(i, payload.c_str());
 }
 
 void sendPageState(uint8_t n, uint8_t page) {
     switch (page) {
         case PG_HOME: {
-            String str;
+            String payload;
             // State
-            str = String(SET_POWER_ON_OFF);
-            str += String(psu->getState());
-            http->sendTxt(n, str.c_str());
+            payload = String(SET_POWER_ON_OFF);
+            payload += String(psu->getState());
+            http->sendTxt(n, payload.c_str());
             // WattHours
-            str = String(SET_MEASURE_MODE);
-            str += String(psu->isWattHoursCalculationEnabled());
-            http->sendTxt(n, str.c_str());
+            payload = String(SET_MEASURE_MODE);
+            payload += String(psu->isWattHoursCalculationEnabled());
+            http->sendTxt(n, payload.c_str());
             break;
         }
         case PG_SETTINGS: {
-            String str;
+            String payload;
             // Power mode
-            str = String(SET_BOOT_POWER_MODE);
-            str += config->getConfig()->getStrValue(POWER);
-            http->sendTxt(n, str.c_str());
+            payload = String(SET_BOOT_POWER_MODE);
+            payload += config->getConfig()->getStrValue(POWER);
+            http->sendTxt(n, payload.c_str());
 
             // Output voltage
-            str = String(SET_VOLTAGE);
-            str += psu->getOutputVoltage();
-            http->sendTxt(n, str.c_str());
+            payload = String(SET_VOLTAGE);
+            payload += psu->getOutputVoltage();
+            http->sendTxt(n, payload.c_str());
 
             // Network config
-            str = String(SET_NETWORK);
-            str += config->getConfig()->getStrValue(WIFI);
-            str += ',';
-            str += config->getSSID();
-            str += ',';
-            str += config->getPassword();
-            str += ',';
-            str += config->getDHCP();
-            str += ',';
-            str += config->getIPAddrStr();
-            str += ',';
-            str += config->getNetmaskStr();
-            str += ',';
-            str += config->getGatewayStr();
-            str += ',';
-            str += config->getDNSStr();
-            http->sendTxt(n, str.c_str());
+            payload = String(SET_NETWORK);
+            payload += config->getConfig()->getStrValue(WIFI);
+            payload += ',';
+            payload += config->getSSID();
+            payload += ',';
+            payload += config->getPassword();
+            payload += ',';
+            payload += config->getDHCP();
+            payload += ',';
+            payload += config->getIPAddrStr();
+            payload += ',';
+            payload += config->getNetmaskStr();
+            payload += ',';
+            payload += config->getGatewayStr();
+            payload += ',';
+            payload += config->getDNSStr();
+            http->sendTxt(n, payload.c_str());
             break;
         }
         case PG_STATUS: {
-            String str;
+            String payload;
             // Version info
-            str = String(TAG_FIRMWARE_INFO);
-            str += getVersionInfoJson();
-            http->sendTxt(n, str.c_str());
+            payload = String(TAG_FIRMWARE_INFO);
+            payload += getVersionInfoJson();
+            http->sendTxt(n, payload.c_str());
             // System info
-            str = String(TAG_SYSTEM_INFO);
-            str += getSystemInfoJson();
-            http->sendTxt(n, str.c_str());
+            payload = String(TAG_SYSTEM_INFO);
+            payload += getSystemInfoJson();
+            http->sendTxt(n, payload.c_str());
             // Network info
-            str = String(TAG_NETWORK_INFO);
-            str += getNetworkInfoJson();
-            http->sendTxt(n, str.c_str());
+            payload = String(TAG_NETWORK_INFO);
+            payload += getNetworkInfoJson();
+            http->sendTxt(n, payload.c_str());
             break;
         }
     }
@@ -225,11 +226,11 @@ void send_psu_data_to_clients() {
 }
 
 uint8_t boot_progress = 0;
-void display_boot_progress(uint8_t per, const char *str) {
+void display_boot_progress(uint8_t per, const char *payload) {
 #ifndef DISABLE_LCD
     if (display) {
-        if (str != NULL) {
-            display->drawTextCenter(LCD_ROW_1, str);
+        if (payload != NULL) {
+            display->drawTextCenter(LCD_ROW_1, payload);
         }
         display->drawBar(LCD_ROW_2, per);
     }
@@ -255,7 +256,6 @@ void print_reset_info(Print *p) {
 
 void delay_print(Print *p) {
     p->print(FPSTR(str_wait));
-    p->print(" ");
     for (uint8_t t = BOOT_WAIT_s; t > 0; t--) {
         p->print(t);
         p->print(" ");
@@ -464,7 +464,7 @@ void loop() {
         delay(0);
 #endif
     }
-    loopWD.run();
+    watchDog.run();
 }
 
 enum ButtonState { BTN_PRESSED, BTN_RELEASED };

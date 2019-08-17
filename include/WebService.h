@@ -46,12 +46,10 @@ class WebService {
     SocketDataEventHandler onDataEvent;
     SocketConnectionEventHandler onConnectEvent, onDisconnectEvent;
 
-
     bool active = false;
     int16_t port_http, port_websocket;
-    IPAddress ip;
     char web_root[sizeof(HTTP_WEB_ROOT)];
-    
+
     ESP8266WebServer *server;
     WebSocketsServer *websocket;
     SSDPClass *ssdp;

@@ -4,9 +4,10 @@
 
 #include "Consts.h"
 
+static const char HOST_NAME[] PROGMEM = "smartpower2";
+
 static const char strf_time[] PROGMEM = "%02d:%02d:%02d";
 static const char strf_s_d[] PROGMEM = "%s:%d ";
-static const char strf_ip_port[] PROGMEM = "%s:%d ";
 static const char strf_every_ms[] PROGMEM = "every %lu ms ";
 static const char strf_every_sec[] PROGMEM = "every %lu sec ";
 static const char strf_arrow_dest[] PROGMEM = "-> %s";
@@ -76,6 +77,7 @@ static const char str_avg[] PROGMEM = "avg ";
 static const char str_backup[] PROGMEM = "backup ";
 static const char str_build_date[] PROGMEM = BUILD_DATE;
 static const char str_capture[] PROGMEM = "capture ";
+static const char str_capturing[] PROGMEM = "capturing ";
 static const char str_clients[] = "clients ";
 static const char str_shell_start_hint[] PROGMEM =
     "[shell] press \"enter\" to start";
@@ -111,6 +113,7 @@ static const char str_log[] PROGMEM = "log ";
 static const char str_low_voltage[] PROGMEM = "low voltage ";
 static const char str_load_low[] PROGMEM = "load low ";
 static const char str_lcd[] PROGMEM = "[lcd] ";
+static const char str_max[] PROGMEM = "max ";
 static const char str_mdns[] PROGMEM = "[mdns] ";
 static const char str_mode[] PROGMEM = "mode ";
 static const char str_netbios[] PROGMEM = "[netbios] ";
@@ -121,7 +124,7 @@ static const char str_no[] PROGMEM = "no ";
 static const char str_ntp[] PROGMEM = "[ntp] ";
 static const char str_elapsed[] PROGMEM = "elapsed ";
 static const char str_error[] PROGMEM = "error ";
-static const char str_failed[] PROGMEM = "failed ";
+static const char str_failed[] PROGMEM = "<FAILED> ";
 static const char str_firmware[] PROGMEM = "firmware";
 static const char str_found[] PROGMEM = "found ";
 static const char str_not_found[] PROGMEM = "not found ";
@@ -130,6 +133,7 @@ static const char str_host[] PROGMEM = "host ";
 static const char str_on[] PROGMEM = "on ";
 static const char str_ok[] PROGMEM = "ok ";
 static const char str_off[] PROGMEM = "off ";
+static const char str_over[] PROGMEM = "over ";
 static const char str_password[] PROGMEM = "password ";
 static const char str_print[] PROGMEM = "print ";
 static const char str_reset[] PROGMEM = "reset ";
@@ -164,6 +168,7 @@ static const char str_synced[] PROGMEM = "synced ";
 static const char str_success[] PROGMEM = "success ";
 static const char str_timezone[] PROGMEM = "timezone ";
 static const char str_time[] PROGMEM = "time ";
+static const char str_total[] PROGMEM = "total ";
 static const char str_telnet[] PROGMEM = "[telnet] ";
 static const char str_telnet_[] PROGMEM = "telnet ";
 static const char str_two_dots[] PROGMEM = ": ";
@@ -212,11 +217,11 @@ static const char str_yes[] PROGMEM = "yes ";
     PRINT_WIFI_STA_CONNECTION           \
     USE_SERIAL.println();
 
-#define PRINTLN_WIFI_CONFIG                    \
-    USE_SERIAL.printf_P(str_wifi);             \
-    USE_SERIAL.printf_P(strf_mode, mode);      \
-    USE_SERIAL.printf_P(strf_tpw, tpw);        \
-    USE_SERIAL.printf_P(strf_host, HOST_NAME); \
+#define PRINTLN_WIFI_CONFIG                               \
+    USE_SERIAL.printf_P(str_wifi);                        \
+    USE_SERIAL.printf_P(strf_mode, mode);                 \
+    USE_SERIAL.printf_P(strf_tpw, tpw);                   \
+    USE_SERIAL.printf_P(strf_host, Wireless::hostname()); \
     USE_SERIAL.println();
 
 #define PRINT_WIFI_AP              \

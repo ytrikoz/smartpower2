@@ -50,9 +50,8 @@ void PsuLogger::add(PsuInfo item, unsigned long time_ms) {
 }
 
 void PsuLogger::getVoltages(float* voltages) {
-    uint16_t pos = readPos;
-
-    for (int i = 0; i < (int)size(); ++i) {
+    size_t pos = readPos;
+    for (size_t i = 0; i < size(); ++i) {
         if (pos == capacity) pos = 0;
         voltages[i] = items[pos].voltage;
         pos++;

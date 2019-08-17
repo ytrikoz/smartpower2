@@ -2,6 +2,8 @@
 
 #include <Arduino.h>
 
+namespace Profiler {
+
 class TimeProfiler {
    public:
     TimeProfiler(const char* label, uint16_t limit = 16);
@@ -40,4 +42,6 @@ inline void TimeProfiler::print(unsigned long time) {
     p->print(' ');
     p->print(time);
     p->println();
+}
+
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#define DEBUG_ESP_MDNS_RESPONDER
+
 #include <DNSServer.h>
 #include <ESP8266NetBIOS.h>
 #include <ESP8266mDNS.h>
@@ -17,10 +19,9 @@ class NetworkService {
     void setOutput(Print *p);
 
    private:
-    bool begin_dns(const char *domain, IPAddress ip, uint16_t port);
-    bool begin_mdns(const char *hostname, uint16_t telnet_port,
-                    uint16_t http_port, uint16_t ota_port);
-    bool begin_netbios(const char *hostname);
+    bool begin_dns();
+    bool begin_mdns();
+    bool begin_netbios();
     Print *output;
 
     bool active;

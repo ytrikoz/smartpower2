@@ -3,124 +3,103 @@
 #include "Strings.h"
 #include "TimeUtils.h"
 
+namespace Profiler {
+
 LoopWatchDog::LoopWatchDog() {
-    resetStats();
     captureTimeLeft = 0;
-    captureStart = millis();
-    captureFinish = 0;
     loopStarted = 0;
+    state = CAPTURE_IDLE;
 }
 
-LoopWatchDog::~LoopWatchDog() {}
+unsigned long LoopWatchDog::getCaptureTimeLeft() { return captureTimeLeft; }
 
-void LoopWatchDog::_printDiag(Print* p) {
-    long elapsed = millis_passed(captureStart, captureFinish);
-    unsigned long lps = floor(((float)loops / elapsed) * ONE_SECOND_ms);
+void LoopWatchDog::printCapture(Print* p) {
+    p->print(FPSTR(str_capture));
+    long duration = millis_passed(captureStarted, captureFinished);
+    p->printf_P(strf_lu_ms, duration);
+    p->println();
 
-    p->print(FPSTR(str_elapsed));
-    p->printf_P(strf_lu_ms, elapsed);
-    p->print(F("total "));
-    p->print(loops);
+    p->print(FPSTR(str_total));
+    p->print(loopCounter);
+    uint16_t lps = floor((float)loopCounter / duration * ONE_SECOND_ms);
     p->print((" lps "));
     p->println(lps);
-    p->print(" 2ms ");
-    p->print(loops2ms);
-    p->print(" 4ms ");
-    p->print(loops4ms);
-    p->print(" 8ms ");
-    p->print(loops8ms);
-    p->print(" 16ms ");
-    p->println(loops16ms);
 
-    if (longWaitLoops > 0) {
-        p->print(" over 16ms ");
-        p->print(longWaitLoops);
-        p->print(" longest ");
-        p->printf_P(strf_lu_ms, longestWait);
-        p->println();
-    }
-}
-
-void LoopWatchDog::printDiag(Print* p) {
-    if (getState() == CAPTURE_IN_PROGRESS) {
-        p->print(FPSTR(str_capture));
-        p->printf_P(strf_lu_ms, captureTimeLeft);
-        p->print(FPSTR(str_left));
-        p->println();
-        return;
-    };
-    if (getState() == CAPTURE_IDLE) {
-        startCapture();    
-        p->print(FPSTR(str_start));
-        p->print(FPSTR(str_capture));
-        p->printf_P(strf_lu_ms, captureTimeLeft);
-        p->println();
-        return;
+    unsigned long time = 2;
+    for (uint8_t i = 0; i < LOOP_COUNTERS; ++i) {
+        if (loops[i] > 0) {
+            p->printf_P(strf_lu_ms, time);
+            p->println(loops[i]);
+        }
+        time *= 2;
     }
 
-    if (getState() == CAPTURE_DONE)    
-    {
-        _printDiag(p);
-        state = CAPTURE_IDLE;
-    };
+    if (loopOverRange > 0) {
+        p->print(FPSTR(str_over));
+        p->printf_P(strf_lu_ms, time / 2);
+        p->print(loopOverRange);
+    }
+
+    p->print(FPSTR(str_max));
+    p->printf_P(strf_lu_ms, (unsigned long)loopLongest);
+    p->println();
 }
 
-WatchDogState LoopWatchDog::getState() 
-{
-    return state;
-}
+void LoopWatchDog::setIdle() { state = CAPTURE_IDLE; }
 
-void LoopWatchDog::startCapture()
-{
+State LoopWatchDog::getState() { return state; }
+
+void LoopWatchDog::startCapture() {
     resetStats();
 
-    captureStart = millis();
-    captureFinish = 0;
-    captureTimeLeft = 10000;
+    captureStarted = 0;
+    captureFinished = 0;
+    captureTimeLeft = LOOP_CAPTURE_INTERVAL;
 
-    loopStarted = 0;    
+    loopStarted = 0;
 
-    state = CAPTURE_IN_PROGRESS;    
+    state = CAPTURE_IN_PROGRESS;
 }
 
 void LoopWatchDog::run() {
     if (getState() != CAPTURE_IN_PROGRESS) return;
 
-    if (loopStarted == 0) {        
+    if (loopStarted == 0) {
         loopStarted = millis();
+        captureStarted = loopStarted;
         return;
     }
-    long elapsed = millis_since(loopStarted);
-    loops++;
-    if (elapsed < 2) {
-        loops2ms++;
-    } else if ((elapsed >= 2) && (elapsed < 4)) {
-        loops4ms++;
-    } else if ((elapsed >= 4) && (elapsed < 8)) {
-        loops8ms++;
-    } else if ((elapsed >= 8) && (elapsed < 16)) {
-        loops16ms++;
-    } else
-        longWaitLoops++;
 
-    if (longestWait < (unsigned long) elapsed) longestWait = elapsed;
+    unsigned long passed = millis_since(loopStarted);
 
-    if (captureTimeLeft <= (unsigned long) elapsed) {
-        captureTimeLeft = 0;       
-        captureFinish = millis();        
-        state = CAPTURE_DONE;
-        return; 
+    loopCounter++;
+
+    unsigned long time = 2;
+    for (uint8_t i = 0; i < LOOP_COUNTERS; ++i) {
+        if (passed <= time) {
+            loops[i]++;
+            break;
+        }
+        time *= 2;
     }
-    captureTimeLeft -= elapsed;
+    if (loopLongest < passed) loopLongest = passed;
+
+    if (captureTimeLeft <= passed) {
+        captureTimeLeft = 0;
+        captureFinished = millis();
+        state = CAPTURE_DONE;
+        return;
+    }
+    captureTimeLeft -= passed;
+
     loopStarted = millis();
 }
 
 void LoopWatchDog::resetStats() {
-    loops = 0;
-    loops2ms = 0;
-    loops4ms = 0;
-    loops8ms = 0;
-    loops16ms = 0;
-    longWaitLoops = 0;
-    longestWait = 0;
+    loopCounter = 0;
+    memset(loops, 0, sizeof(loops[0]) * LOOP_COUNTERS);
+    loopOverRange = 0;
+    loopLongest = 0;
 }
+
+}  // namespace Profiler

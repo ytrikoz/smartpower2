@@ -21,6 +21,8 @@
 #include "TelnetServer.h"
 #include "WebService.h"
 
+extern Profiler::LoopWatchDog watchDog;
+
 extern Led::Led *wifi_led, *power_led;
 
 extern SimpleCLI *cli;
@@ -62,7 +64,6 @@ extern void cancel_system_restart();
 extern void setup_restart_timer(uint8_t delay_s = 3);
 
 extern uint8_t get_http_clients_count();
-extern LoopWatchDog loopWD;
 
 // plot
 size_t fill_data(PlotData *data, float *vals, size_t size);

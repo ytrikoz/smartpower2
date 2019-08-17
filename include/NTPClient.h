@@ -35,7 +35,6 @@ class NtpClient {
     char server[PARAM_STR_SIZE + 1];
     int port;
     bool active;
-    bool initialized;
     unsigned long interval_ms;
     unsigned long updated_ms;
     EpochTime epochTime;

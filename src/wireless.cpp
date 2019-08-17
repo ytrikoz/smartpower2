@@ -22,6 +22,12 @@ WiFiEventHandler staGotIpEventHandler, staConnectedEventHandler,
 
 NetworkStateChangeEventHandler onNetworkStateChange;
 
+String getConfigHostname() {
+    char buf[32];
+    strcpy_P(buf, HOST_NAME);
+    return String(buf);
+}
+
 String getConnectionStatus() {
     char buf[32];
     memset(buf, 0, sizeof(char) * 32);
@@ -46,12 +52,11 @@ String getConnectionStatus() {
             strcpy_P(buf, str_connection);
             strcat_P(buf, str_failed);
             break;
-        case STATION_GOT_IP: {
+        case STATION_GOT_IP:
             strcpy_P(buf, str_connected);
             strcat_P(buf, str_got);
             strcat_P(buf, str_ip);
             break;
-        }
     }
     return String(buf);
 }
@@ -66,13 +71,9 @@ void printDiag(Print *p) {
     WiFi.printDiag(*p);
 }
 
-IPAddress hostAP_IP() { 
-    return WiFi.softAPIP();
-}
+IPAddress hostAP_IP() { return WiFi.softAPIP(); }
 
-IPAddress hostSTA_IP() { 
-    return WiFi.localIP();
-}
+IPAddress hostSTA_IP() { return WiFi.localIP(); }
 
 String hostAP_Password() { return WiFi.softAPPSK(); }
 
@@ -118,15 +119,13 @@ IPAddress hostIP() {
 String hostName() {
     String str;
     switch (getWirelessMode()) {
-        case WLAN_OFF:
-            break;
-            str = "";
         case WLAN_STA:
         case WLAN_AP_STA:
             str = WiFi.hostname();
             break;
+        case WLAN_OFF:
         case WLAN_AP:
-            str = HOST_NAME;
+            str = getConfigHostname();
             break;
     }
     return str;
@@ -233,7 +232,7 @@ void start_wifi() {
     mode = (WirelessMode)config->getWiFiMode();
     uint8_t tpw = config->getTPW();
     system_phy_set_max_tpw(tpw);
-    WiFi.hostname(HOST_NAME);
+    WiFi.hostname(Wireless::getConfigHostname());
 
 #ifdef DEBUG_WIRELESS
     PRINTLN_WIFI_CONFIG
@@ -390,7 +389,7 @@ String hostIPInfo() {
             strcpy_P(buf, str_switched);
             strcpy_P(buf, str_off);
             break;
-        case WLAN_STA:            
+        case WLAN_STA:
             sprintf_P(tmp, strf_ip, WiFi.localIP().toString().c_str());
             strcat_P(buf, tmp);
             break;

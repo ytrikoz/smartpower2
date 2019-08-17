@@ -39,6 +39,4 @@ void ShowWifi::exec(Print* p) {
     p->println(Wireless::hostIPInfo().c_str());
 }
 
-ShowWifi* showWifi = new ShowWifi();
-
 }  // namespace Actions

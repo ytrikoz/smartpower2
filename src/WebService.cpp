@@ -2,7 +2,6 @@
 
 #include "Wireless.h"
 
-using StrUtils::iptoa;
 using StrUtils::isip;
 using StrUtils::setstr;
 
@@ -61,7 +60,7 @@ WebService::WebService() {
         ssdp = new SSDPClass();
         ssdp->setSchemaURL(F("description.xml"));
         ssdp->setHTTPPort(port_http);
-        ssdp->setName(HOST_NAME);
+        ssdp->setName(Wireless::hostName());
         ssdp->setModelName(APPNAME);
         ssdp->setModelNumber(FW_VERSION);
         ssdp->setSerialNumber(getChipId());
@@ -77,11 +76,7 @@ WebService::WebService() {
                    [this]() { ssdp->schema(server->client()); });
     }
 
-    File f = SPIFFS.open(FILE_WEB_SETTINGS, "w");
-    f.printf("ipaddr=\"%s\"\r\n", iptoa(ip));
-    f.flush();
-    f.close();
- 
+
     active = false;
 }
 
@@ -90,6 +85,11 @@ void WebService::begin() {
     output->printf_P(strf_http_params, web_root, port_http, port_websocket);                     
     output->println();
 
+    File f = SPIFFS.open(FILE_WEB_SETTINGS, "w");
+    f.printf("ipaddr=\"%s\"\r\n", Wireless::hostIP().toString().c_str());
+    f.flush();
+    f.close();
+ 
     server->begin();
     websocket->begin();
 
@@ -325,7 +325,7 @@ void WebService::fileUpload() {
  */
 bool WebService::captivePortal() {
     if (!isip(server->hostHeader()) &&
-        server->hostHeader() != (String(HOST_NAME) + ".local")) {
+        server->hostHeader() != (Wireless::hostName() + ".local")) {
 #ifdef DEBUG_HTTP
         output->print(FPSTR(str_http));
         output->print(FPSTR(str_redirected));

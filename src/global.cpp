@@ -168,7 +168,6 @@ void start_ntp() {
         ntp->setOutput(&USE_SERIAL);
         ntp->setOnTimeSynced([](EpochTime &time) { rtc.setTime(time.get()); });
     }
-    ntp->begin();
 }
 
 void start_http() {
@@ -183,19 +182,19 @@ void start_http() {
 }
 
 void start_ota_update() {
+    String host_name = Wireless::hostName();
     if (!ota) {
         ota = new OTAUpdate();
         ota->setOutput(&USE_SERIAL);
     }    
-    ota->begin(HOST_NAME, OTA_PORT);
+    ota->begin(host_name.c_str(), OTA_PORT);
 }
 
 void start_discovery() {
     if (!discovery) {
         discovery = new NetworkService();
         discovery->setOutput(&USE_SERIAL);
-    }
-    
+    }    
     discovery->begin();
 }
 

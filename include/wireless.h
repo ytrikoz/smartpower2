@@ -9,6 +9,7 @@ typedef std::function<void(bool hasNetwork)> NetworkStateChangeEventHandler;
 
 namespace Wireless {
 
+String getConfigHostname();
 String getConnectionStatus();
 WirelessMode getWirelessMode();
 bool hasNetwork();
@@ -17,8 +18,8 @@ IPAddress hostIP();
 String hostIPInfo();
 String hostName();
 String RSSIInfo();
-String hostAP_Password();
 String hostSTA_SSID();
+String hostAP_Password();
 String hostAP_SSID();
 
 IPAddress hostAP_IP();

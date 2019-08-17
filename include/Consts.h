@@ -39,7 +39,7 @@
 #define PARAM_NUMBER_SIZE 4
 #define PARAM_LARGE_NUMBER_SIZE 9
 
-#define HOST_NAME "smartpower2"
+
 #define HOST_DOMAIN "local"
 #define WIFI_CONNECT_TIMEOUT 40
 #define MAX_WEB_CLIENTS 5

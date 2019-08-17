@@ -19,5 +19,4 @@ void ShowNtp::exec(Print* p) {
     p->println();
 }
 
-ShowNtp* showNtp = new ShowNtp();
 }  // namespace Actions

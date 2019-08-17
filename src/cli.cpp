@@ -8,6 +8,7 @@
 #include "Actions/ShowClock.h"
 #include "Actions/ShowDiag.h"
 #include "Actions/ShowNtp.h"
+#include "Actions/ShowLoop.h"
 #include "Actions/ShowStatus.h"
 #include "Actions/ShowWifi.h"
 #include "Actions\Actions.h"
@@ -384,13 +385,15 @@ void onShow(cmd* c) {
     } else if (item.equals("info")) {
         output->println(getSystemInfoJson().c_str());
     } else if (item.equals("status")) {
-        Actions::showStatus->exec(output);
+        Actions::ShowStatus().exec(output);
+    } else if (item.equals("loop")) {
+        Actions::ShowLoop().exec(output);
     } else if (item.equals("ntp")) {
-        Actions::showNtp->exec(output);
+        Actions::ShowNtp().exec(output);
     } else if (item.equals("diag")) {
-        Actions::showDiag->exec(output);
+        Actions::ShowDiag().exec(output);
     } else if (item.equals("wifi")) {
-        Actions::showWifi->exec(output);
+        Actions::ShowWifi().exec(output);
     } else {
         unknownCommandItem(cmd.getName().c_str(), item.c_str());
     }
