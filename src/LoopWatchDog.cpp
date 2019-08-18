@@ -20,21 +20,22 @@ void LoopWatchDog::addTimeProfile(uint8_t index, unsigned long duration) {
 unsigned long LoopWatchDog::getCaptureTimeLeft() { return captureTimeLeft; }
 
 void LoopWatchDog::printCapture(Print* p) {
-    p->print(FPSTR(str_capture));
+    p->print(getStrP(str_capture));
     long duration = millis_passed(captureStarted, captureFinished);
     p->printf_P(strf_lu_ms, duration);
-    p->println();
-
-    p->print(FPSTR(str_total));
+    p->print(getStrP(str_total));
     p->print(loopCounter);
+    p->print(' ');
     uint16_t lps = floor((float)loopCounter / duration * ONE_SECOND_ms);
-    p->print(F(" lps "));
+    p->print(getStrP(str_lps));
     p->println(lps);
 
     unsigned long time = 2;
     for (uint8_t i = 0; i < LOOP_COUNTERS; ++i) {
         if (loops[i] > 0) {
             p->printf_P(strf_lu_ms, time);
+            p->print('\t');
+            p->print('\t');
             p->println(loops[i]);
         }
         time *= 2;
@@ -54,14 +55,16 @@ void LoopWatchDog::printCapture(Print* p) {
     float total_load = 0;
     for (uint8_t i = 0; i < MODULES_COUNT; ++i) {
         p->print(getModuleName(i));
+        p->print('\t');
         float load = (float) (modules[i] / ONE_MILLISECOND_mi) / duration * 100;
         p->printf_P(strf_per, load);
+        p->print('\t');
         total_load += load;
-        p->print(FPSTR(str_avg));
+        p->print(getStrP(str_avg));        
         p->print((float) modules[i] / loopCounter);
         p->println();
     }
-    p->print(FPSTR(str_system_time));
+    p->print(getStrP(str_system_time));
     p->printf_P(strf_per, 100 - total_load);
     p->println();
 #endif

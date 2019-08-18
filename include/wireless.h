@@ -15,6 +15,7 @@ WirelessMode getWirelessMode();
 bool hasNetwork();
 String hostSSID();
 IPAddress hostIP();
+String wifiModeInfo();
 String hostIPInfo();
 String hostName();
 String RSSIInfo();

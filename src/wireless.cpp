@@ -361,13 +361,6 @@ WirelessMode getWirelessMode() { return mode = (WirelessMode)WiFi.getMode(); }
 
 bool hasNetwork() { return network == NETWORK_UP; }
 
-String RSSIInfo() {
-    int rssi = wifi_station_get_rssi();
-    String str = String(rssi);
-    str += "dB";
-    return String(str);
-}
-
 // https://github.com/esp8266/Arduino/issues/4114
 class WiFiStationStaticIP : public ESP8266WiFiSTAClass {
    public:
@@ -379,37 +372,56 @@ void enableStaticStationIP(bool enabled) {
     tmp.useStaticStationIP(enabled);
 }
 
-String hostIPInfo() {
-    char buf[OUTPUT_MAX_LENGTH];
-    memset(&buf, 0, OUTPUT_MAX_LENGTH);
-    strcpy_P(buf, str_wifi);
-    char tmp[32];
-    switch (getWirelessMode()) {
-        case WLAN_OFF:
-            strcpy_P(buf, str_switched);
-            strcpy_P(buf, str_off);
+String wifiModeInfo() {
+    String str = getStrP(str_mode);
+    switch (Wireless::getWirelessMode()) {
+        case WLAN_AP:
+            str += getStrP(str_ap);
             break;
         case WLAN_STA:
-            sprintf_P(tmp, strf_ip, WiFi.localIP().toString().c_str());
-            strcat_P(buf, tmp);
-            break;
-        case WLAN_AP:
-            strcat_P(buf, str_ap);
-            sprintf_P(tmp, strf_ip, WiFi.softAPIP().toString().c_str());
-            strcat_P(buf, tmp);
+            str += getStrP(str_sta);
+            str += getStrP(str_reconnect);
+            str += wifi_station_get_reconnect_policy() ? getStrP(str_yes)
+                                                       : getStrP(str_no);
             break;
         case WLAN_AP_STA:
-            strcat_P(buf, str_sta);
-            sprintf_P(tmp, strf_ip, WiFi.localIP().toString().c_str());
-            strcat_P(buf, tmp);
-            strcat_P(buf, " ");
-            strcat_P(buf, str_ap);
-            sprintf_P(tmp, strf_ip, WiFi.softAPIP().toString().c_str());
-            strcat_P(buf, tmp);
+            str += getStrP(str_ap);
+            str += getStrP(str_sta);
+            break;
+        case WLAN_OFF:
+            str += getStrP(str_wifi);
+            str += getStrP(str_off);
+            break;
     }
-    strcat_P(buf, str_reconnect);
-    strcat_P(buf, wifi_station_get_reconnect_policy() ? str_yes : str_no);
-    return String(buf);
-}  // namespace Wireless
+    return str;
+}
+
+String hostIPInfo() {
+    String str = getStrP(str_ip);
+    switch (getWirelessMode()) {
+        case WLAN_OFF:
+            str += getStrP(str_none);
+            break;
+        case WLAN_STA:
+            str += Wireless::hostSTA_IP().toString();
+            break;
+        case WLAN_AP:
+            str += Wireless::hostAP_IP().toString();
+            break;
+        case WLAN_AP_STA:
+            str += Wireless::hostSTA_IP().toString();
+            str += " ";
+            str += Wireless::hostSTA_IP().toString();
+    }
+    return str;    
+}
+
+String RSSIInfo() {
+    sint8_t rssi = wifi_station_get_rssi();
+    String str = String(rssi);
+    str += "dB";
+    return str;
+}
 
 }  // namespace Wireless
+

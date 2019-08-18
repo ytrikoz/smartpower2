@@ -4,11 +4,13 @@
 #include "Actions/PlotPrint.h"
 #include "Actions/PowerAvg.h"
 #include "Actions/PowerLog.h"
+#include "Actions/PowerOff.h"
+#include "Actions/PowerOn.h"
 #include "Actions/ShowClients.h"
 #include "Actions/ShowClock.h"
 #include "Actions/ShowDiag.h"
-#include "Actions/ShowNtp.h"
 #include "Actions/ShowLoop.h"
+#include "Actions/ShowNtp.h"
 #include "Actions/ShowStatus.h"
 #include "Actions/ShowWifi.h"
 #include "Actions\Actions.h"
@@ -140,9 +142,9 @@ void printUnknownAction(Command& c) {
     output->println();
 }
 
-void print_done(Command& c) {
-    output->print(FPSTR(str_done));
-    output->println();
+void print_done(Print* p) {
+    p->print(FPSTR(str_done));
+    p->println();
 };
 
 void print_done(String& action, String& param) {
@@ -177,7 +179,7 @@ enum CommandAction {
 };
 
 CommandAction getAction(Command& cmd) {
-    String str = getActionStr(cmd) + ' ';
+    String str = getActionStr(cmd);
     if (strcasecmp_P(str.c_str(), str_print) == 0) {
         return ACTION_PRINT;
     } else if (strcasecmp_P(str.c_str(), str_reset) == 0) {
@@ -199,18 +201,16 @@ CommandAction getAction(Command& cmd) {
     } else if (strcasecmp_P(str.c_str(), str_off) == 0) {
         return ACTION_OFF;
     }
-    printUnknownAction(cmd);
-    return ACTION_UNKNOWN;                
+    return ACTION_UNKNOWN;
 }
 
 void onLog(cmd* c) {
     Command cmd(c);
     CommandAction action = getAction(cmd);
     if (action == ACTION_STATUS) {
-        psuLog->printDiag(output);     
+        psuLog->printDiag(output);
     } else {
         printUnknownAction(cmd);
-
     }
 }
 
@@ -228,15 +228,15 @@ void onConfig(cmd* c) {
             break;
         case ACTION_RESET:
             config->reset();
-            print_done(cmd);
+            print_done(output);
             break;
         case ACTION_SAVE:
             config->save();
-            print_done(cmd);
+            print_done(output);
             break;
         case ACTION_LOAD:
             config->reload();
-            print_done(cmd);
+            print_done(output);
             break;
         case ACTION_APPLY:
             config->save();
@@ -244,7 +244,7 @@ void onConfig(cmd* c) {
             break;
         default:
             printUnknownAction(cmd);
-            return;
+            break;
     }
 }
 
@@ -255,34 +255,32 @@ void onPower(cmd* c) {
     switch (action) {
         case ACTION_STATUS: {
             psu->printDiag(output);
-            psuLog->printDiag(output);
             break;
         }
         case ACTION_AVG: {
             size_t num = atoi(param.c_str());
-            Actions::PowerAvg("avg", num).exec(output);
-            print_done(cmd);
+            Actions::PowerAvg(num).exec(output);
             break;
         }
         case ACTION_LOG: {
             size_t num = atoi(param.c_str());
-            Actions::PowerLog("log", num).exec(output);
-            print_done(cmd);
+            Actions::PowerLog(num).exec(output);
             break;
         }
         case ACTION_ON: {
-            psu->setState(POWER_ON);
+            Actions::PowerOn().exec(output);
             break;
         }
         case ACTION_OFF: {
-            psu->setState(POWER_OFF);
+            Actions::PowerOff().exec(output);
             break;
         }
         default: {
             printUnknownAction(cmd);
-            break;
+            return;
         }
     }
+    print_done(output);
 }
 
 void onClock(cmd* c) {

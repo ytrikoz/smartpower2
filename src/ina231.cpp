@@ -32,17 +32,11 @@ uint16_t ina231_readWord(uint8_t addr) {
 }
 
 uint16_t ina231_read_config(void) {
-    uint16_t reg = ina231_readWord(INA231_REG_CONFIG);    
+    return ina231_readWord(INA231_REG_CONFIG);    
+}
 
-    uint8_t byte[2];
-    byte[0] = (uint8_t)((reg >> 8) & 0x00ff);
-    byte[1] = (uint8_t)(reg & 0x00ff);
-
-    DEBUG.print(byte[0], BIN);
-    DEBUG.print(' ');
-    DEBUG.println(byte[1], BIN);
-
-    return reg;
+void ina231_write_config(uint16_t config){
+    ina231_writeWord(INA231_REG_CONFIG, config);    
 }
 
 void ina231_configure(void) {
@@ -80,12 +74,11 @@ float ina231_read_power(void) {
 }
 
 void ina231_set_avg(const INA231_AVERAGES avgs) {
-    uint16_t config_reg = ina231_read_config(); 
-    uint16_t new_value = avgs;
-    config_reg &= ~INA231_CONFIG_AVG_MASK;    
-    config_reg |= new_value << 9;        
-    
-    ina231_writeWord(INA231_REG_CONFIG, config_reg);    
+    uint16_t config = ina231_read_config(); 
+    uint16_t update = avgs << 9;
+    config &= ~INA231_CONFIG_AVG_MASK;    
+    config |= update;    
+    ina231_write_config(config);
 }
 
 void ina231_alert_on_conversation(bool enabled) {
@@ -99,9 +92,9 @@ void ina231_alert_on_conversation(bool enabled) {
 }
 
 void ina231_set_mode(const uint8_t mode) {
-    uint16_t config_reg = ina231_readWord(INA231_REG_CONFIG);
-    config_reg &= ~INA231_CONFIG_MODE_MASK;
+    uint16_t config = ina231_readWord(INA231_REG_CONFIG);
+    config &= ~INA231_CONFIG_MODE_MASK;
     uint16_t _mode = 0b00000111 & mode;
-    config_reg |= _mode;
-    ina231_writeWord(INA231_REG_CONFIG, config_reg);
+    config |= _mode;
+    ina231_writeWord(INA231_REG_CONFIG, config);
 }

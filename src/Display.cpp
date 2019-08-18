@@ -73,10 +73,7 @@ bool Display::init() {
             output->print("0x");
             output->println(addr, HEX);
 
-            // lcd = new LiquidCrystal_I2C(addr, LCD_COLS, LCD_ROWS);
             lcd = new LiquidCrystal_I2C(addr, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE); 
-            //lcd = new LiquidCrystal_I2C(addr);
-            // lcd->init();
             lcd->begin(LCD_COLS, LCD_ROWS);
             lcd->clear();
 

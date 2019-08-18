@@ -229,7 +229,7 @@ void Psu::init() {
 String Psu::getStateStr() { return getState() == POWER_ON ? "ON " : "OFF "; }
 
 void Psu::printDiag(Print *p) {
-    p->print(FPSTR(str_psu));
+    p->print(FPSTR(str_power));
     p->print(getStateStr());    
     p->printf_P(strf_output_voltage, getOutputVoltage());         
     if (getState() == POWER_ON) {

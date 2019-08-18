@@ -9,39 +9,32 @@ namespace Actions {
 class EmptyParamAction {
    public:
     EmptyParamAction();
-    EmptyParamAction(const char* name);
-   protected:
-    char* name;
 };
 
-EmptyParamAction::EmptyParamAction() { this->name = new char[16]{0}; }
-
-EmptyParamAction::EmptyParamAction(const char* str) {
-    EmptyParamAction();
-    StrUtils::setstr(this->name, str, 16);
-}
+EmptyParamAction::EmptyParamAction() {}
 
 class NumericAction : public EmptyParamAction {
    public:
-    NumericAction(const char* str, size_t param);
+    NumericAction(size_t param);
     virtual void exec(Print* p);
+
    protected:
     int param;
 };
 
-NumericAction::NumericAction(const char* str, size_t param)
-    : EmptyParamAction(str) {
+NumericAction::NumericAction(size_t param) : EmptyParamAction() {
     this->param = param;
 }
 
-class StringAction : EmptyParamAction { 
-    public:
-    StringAction(const char* str, String param);
+class StringAction : EmptyParamAction {
+   public:
+    StringAction(String param);
     virtual void exec(Print* p);
-    protected:
+
+   protected:
     String param;
 };
 
-StringAction::StringAction(const char* str, String param) : EmptyParamAction(str) {};
+StringAction::StringAction(String param) : EmptyParamAction(){};
 
 }  // namespace Actions

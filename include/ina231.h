@@ -43,6 +43,8 @@ enum INA231_CONVERSATION_TIME {
     TIME_8244 = 0b111
 };
 
+void ina231_write_config(uint16_t value);
+uint16_t ina231_read_config();
 
 void ina231_writeWord(uint8_t addr, uint16_t value);
 uint16_t ina231_readWord(uint8_t addr);
@@ -51,7 +53,6 @@ uint16_t ina231_get_config();
 void ina231_set_avg(const INA231_AVERAGES avg);
 void ina231_configure();
 void ina231_alert_on_conversation(bool enabled);
-uint16_t ina231_read_config();
 float ina231_read_voltage();
 float ina231_read_current();
 float ina231_read_power();

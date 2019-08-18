@@ -6,19 +6,17 @@ namespace Actions {
 
 class PowerLog : public NumericAction {
    public:
-    PowerLog(const char* str, size_t param);
+    PowerLog(size_t param);
     void exec(Print* p);
 };
 
-PowerLog::PowerLog(const char* str, size_t param) : NumericAction(str, param) {}
+PowerLog::PowerLog(size_t param) : NumericAction(param) {}
 
 void PowerLog::exec(Print* p) {
-    DEBUG.printf("PowerLog(%d)", param);
-    DEBUG.println();
     if (psuLog->empty()) {
-        p->println(FPSTR(str_empty));
+        p->println(getStrP(str_empty, false));
     } else {
-        size_t num = (size_t)param <= psuLog->size() ? param : psuLog->size();
+        size_t num = (size_t) param <= psuLog->size() ? param : psuLog->size();
         psuLog->printLast(p, num);
     }
 }

@@ -8,16 +8,12 @@ namespace Actions {
 
 class ClockSet : public EmptyParamAction {
    public:
-    ClockSet();
     void exec(Print* p);
 };
 
-ClockSet::ClockSet(){
-    strcpy(name, "test");
-}
 void ClockSet::exec(Print* p) {
-    p->print(FPSTR(str_set));
-    p->print(FPSTR(str_date));
+    p->print(getStrP(str_set));
+    p->print(getStrP(str_date));
     char date_str[32];
     strcpy_P(date_str, str_build_date);
     tm tm;

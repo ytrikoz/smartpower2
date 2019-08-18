@@ -4,11 +4,11 @@
 
 namespace Actions {
 
-class ShowDiag : public EmptyParamAction {
+class PowerOn : public EmptyParamAction {
    public:
     void exec(Print* p);
 };
 
-void ShowDiag::exec(Print* p) { Wireless::printDiag(p); }
+void PowerOn::exec(Print* p) { psu->setState(POWER_ON); }
 
 }  // namespace Actions
