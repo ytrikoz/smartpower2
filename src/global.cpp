@@ -166,7 +166,7 @@ void start_ntp() {
         ntp = new NtpClient();
         ntp->setConfig(config->getConfig());
         ntp->setOutput(&USE_SERIAL);
-        ntp->setOnTimeSynced([](EpochTime &time) { rtc.setTime(time.get()); });
+        ntp->setOnSynced([](EpochTime &time) { rtc.setTime(time.get()); });
     }
 }
 

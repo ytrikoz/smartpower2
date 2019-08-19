@@ -100,6 +100,7 @@ static const char str_done[] PROGMEM = "done ";
 static const char str_down[] PROGMEM = "down";
 static const char str_duration[] PROGMEM = "duration ";
 static const char str_interval[] PROGMEM = "interval ";
+static const char str_info[] PROGMEM = "info";
 static const char str_idle[] PROGMEM = "idle ";
 static const char str_ip[] PROGMEM = "ip";
 static const char str_read[] PROGMEM = "read ";
@@ -148,6 +149,7 @@ static const char str_psu_log[] PROGMEM = "[psu-log] ";
 static const char str_power[] PROGMEM = "power ";
 static const char str_save[] PROGMEM = "save ";
 static const char str_status[] PROGMEM = "status";
+static const char str_reason[] PROGMEM = "reason";
 static const char str_reconnect[] PROGMEM = "reconnect";
 static const char str_restore[] PROGMEM = "restore ";
 static const char str_size[] PROGMEM = "size ";
@@ -289,9 +291,8 @@ inline String getStrP(PGM_P strP, bool space = true) {
     strcpy_P(buf, strP);
     if (space) {
         size_t size = strlen(buf);
-        buf[size] = '\x20';    
+        buf[size] = '\x20';
         buf[++size] = '\x00';
     }
     return String(buf);
 }
-

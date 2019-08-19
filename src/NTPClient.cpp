@@ -16,22 +16,22 @@ NtpClient::NtpClient() {
 void NtpClient::printDiag(Print *p) {
     p->printf_P(strf_active, active);    
     p->printf_P(strf_every_sec, interval_ms / ONE_SECOND_ms);
-    p->printf_P(strf_synced, (int) (millis() - updated_ms) / ONE_SECOND_ms);
+    p->printf_P(strf_synced, (int) (millis() - lastUpdated) / ONE_SECOND_ms);
     p->println();
 }
 
 void NtpClient::setOutput(Print *p) { output = p; }
 
 void NtpClient::setConfig(Config *config) {
-    setSyncInterval(config->getIntValue(NTP_SYNC_INTERVAL));
-    setTimeServer(config->getStrValue(NTP_POOL_SERVER));
+    setInterval(config->getIntValue(NTP_SYNC_INTERVAL));
+    setServer(config->getStrValue(NTP_POOL_SERVER));
 }
 
-void NtpClient::setSyncInterval(uint16_t time_s) {
+void NtpClient::setInterval(uint16_t time_s) {
     interval_ms = time_s * ONE_SECOND_ms;
 }
 
-void NtpClient::setTimeServer(const char *str) {
+void NtpClient::setServer(const char *str) {
     StrUtils::setstr(this->server, str, strlen(str) + 1);
 }
 
@@ -57,9 +57,9 @@ void NtpClient::end() {
 void NtpClient::loop() {
     if (!active) return;
 
-    if (millis_since(updated_ms) >= interval_ms) {
+    if (millis_since(lastUpdated) >= interval_ms) {
         sync();
-        updated_ms = millis();
+        lastUpdated = millis();
     }
 }
 
@@ -100,7 +100,7 @@ void NtpClient::sync() {
         if (timeout > 10) {
 #ifdef DEBUG_NTP
             DEBUG.printf_P(strf_ntp, (char *)pgm_read_ptr(str_got));
-            DEBUG.print(time.epochTime_s);
+            DEBUG.print(time.epoch_s);
             DEBUG.println();
 #endif
             return;
@@ -110,17 +110,21 @@ void NtpClient::sync() {
 
     udp->read(buffer, NTP_PACKET_SIZE);
 
-    unsigned long highWord = word(this->buffer[40], buffer[41]);
-    unsigned long lowWord = word(this->buffer[42], buffer[43]);
+    uint16_t high = word(buffer[40], buffer[41]);
+    uint16_t low = word(buffer[42], buffer[43]);
 
-    epochTime = EpochTime((highWord << 16 | lowWord) - SEVENTY_YEARS_ms +
+    epoch = EpochTime((high << 16 | low) - SEVENTY_YEARS_ms +
                           (10 * (timeout + 1)));
 #ifdef DEBUG_NTP
     DEBUG.print(FPSTR(str_ntp));
     DEBUG.print(FPSTR(str_got));
-    DEBUG.println(time.epochTime_s);
+    DEBUG.println(time.epoch_s);
 #endif
-    if (onTimeSynced) onTimeSynced(epochTime);
+    if (onTimeSynced) {
+        onTimeSynced(epoch);
+    } else {
+
+    }
 }
 
-void NtpClient::setOnTimeSynced(NtpClientEventHandler h) { onTimeSynced = h; }
+void NtpClient::setOnSynced(NtpClientEventHandler h) { onTimeSynced = h; }

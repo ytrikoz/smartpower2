@@ -303,6 +303,15 @@ String getNetworkInfoJson() {
     return str;
 }
 
+void printResetInfo(Print* p) {
+    p->print(getStrP(str_reset));    
+    p->print(getStrP(str_reason));
+    p->println(ESP.getResetReason());
+    p->print(getStrP(str_reset));    
+    p->print(getStrP(str_info));
+    p->println(ESP.getResetInfo());    
+}
+
 String getHeapStat() {
     uint32_t free;
     uint16_t max;

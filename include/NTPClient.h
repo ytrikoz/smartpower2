@@ -15,15 +15,17 @@ typedef std::function<void(EpochTime&)> NtpClientEventHandler;
 class NtpClient {
    public:
     NtpClient();
+    void setConfig(Config* config);
+    void setOutput(Print* p);
+    void setOnSynced(NtpClientEventHandler);
+    void setInterval(uint16_t time_s);
+    void setServer(const char* server);
+    void setZone(uint8_t zone);
+    
     bool begin();
     void end();
-    void loop();
-    void setConfig(Config* config);
-    void setOnTimeSynced(NtpClientEventHandler);
-    void setSyncInterval(uint16_t time_s);
-    void setTimeServer(const char* server);
-    void setTimeZone(uint8_t zone);
-    void setOutput(Print* p);
+    void loop();    
+    
     void printDiag(Print* p);
 
    private:
@@ -31,16 +33,16 @@ class NtpClient {
     void sync();
     void send_udp_packet();
 
-    byte buffer[NTP_PACKET_SIZE];
+    uint8_t buffer[NTP_PACKET_SIZE];
     char server[PARAM_STR_SIZE + 1];
-    int port;
+    uint16_t port;
     bool active;
+    bool synced;
     unsigned long interval_ms;
-    unsigned long updated_ms;
-    EpochTime epochTime;
+    unsigned long lastUpdated;
+    EpochTime epoch;
     WiFiUDP* udp;
     NtpClientEventHandler onTimeSynced;
     WiFiEventHandler onDisconnected, onGotIp;
-
     Print* output = &USE_SERIAL;
 };
