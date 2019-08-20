@@ -102,7 +102,7 @@ using StrUtils::strpadd;
 Display::Display() {
     addr = 0x00;
     connected = false;
-    refreshed = 0;
+    lastUpdated = 0;
     lockTimeout = 0;
 }
 
@@ -122,7 +122,7 @@ bool Display::init() {
             lcd->begin(LCD_COLS, LCD_ROWS);
             lcd->clear();
 
-            memset(item, 0, sizeof(TextItem) * DISPLAY_VIRTUAL_ROWS);
+            memset(items, 0, sizeof(ScreenItem) * DISPLAY_VIRTUAL_ROWS);
 
             loadBank(BANK_NONE, true);
 
@@ -135,15 +135,16 @@ bool Display::init() {
     return connected;
 }
 
-void Display::disableBacklight() {
+void Display::backlightOff() {
     lcd->noBacklight();
     backlight = false;
 }
 
-void Display::enableBacklight() {
+void Display::backlightOn() {
     lcd->backlight();
     backlight = true;
 }
+
 void Display::turnOn() {
     if (lcd) {
         lcd->display();
@@ -167,36 +168,33 @@ bool Display::connect() {
         Wire.beginTransmission(LCD_SLAVE_ADDRESS_ALT);
         if (!Wire.endTransmission()) addr = LCD_SLAVE_ADDRESS_ALT;
     }
-    return (addr);
+    return addr;
 }
 
-void Display::addTextItem(uint8_t row, const char *str) {
-    addTextItem(row, nullptr, str);
+void Display::addScreenItem(uint8_t n, const char *text) {
+    addScreenItem(n, NULL, text);
 }
 
-void Display::addTextItem(uint8_t n, const char *fixed_str,
-                          const char *var_str) {
-    TextItem *l = &item[n];
-    bool updates = setstr(l->fixed_str, fixed_str, LCD_COLS + 1);
-    updates |= setstr(l->var_str, var_str, DISPLAY_VIRTUAL_COLS + 1);
-    if (updates) {
+void Display::addScreenItem(uint8_t n, const char *label, const char *text) {
+    ScreenItem *item = &items[n];
+    if (setstr(item->label, label, LCD_COLS + 1)) item->redrawLabel = true;
+    if (setstr(item->text, text, DISPLAY_VIRTUAL_COLS + 1))
+        item->redrawText = true;
 #ifdef DEBUG_DISPLAY
-        DEBUG.printf("#%d addTextItem(%s_%s)", n, l->fixed_str, l->var_str);
+    if (item->needsRedraw()) {
+        DEBUG.printf("#%d addScreenItem(%s_%s)", n, item->fixed_str,
+                     item->text);
         DEBUG.println();
-#endif
-        l->var_pos = 1;
-        l->screen_X = 1;
-        l->screen_Y = 1;
-        l->hasUpdates = true;
     }
+#endif
 }
 
-void Display::setScreen(Screen screen, size_t item_count) {
+void Display::setScreen(Screen screen, size_t item_size) {
     if (this->screen != screen) {
         this->screen = screen;
-        this->items_count = item_count;
+        this->items_size = item_size;
+        this->item_pos = 0;
         lcd->clear();
-        // for (uint8_t i = 0; i < item_count; ++i) item[i].hasUpdates = true;
         active = true;
     }
 }
@@ -222,11 +220,11 @@ void Display::lock(unsigned long timeout) {
     lockUpdated = millis();
 }
 
-bool Display::locked() {
-    if (!active) return true;
+bool Display::locked() { return locked(millis()); }
 
+bool Display::locked(unsigned long now) {
+    if (!active) return true;
     if (lockTimeout > 0) {
-        unsigned long now = millis();
         unsigned long passed = millis_passed(lockUpdated, now);
         if (lockTimeout > passed) {
             lockTimeout -= passed;
@@ -235,98 +233,97 @@ bool Display::locked() {
         }
         lockUpdated = now;
     }
-    return (lockTimeout > 0);
+    return lockTimeout;
 }
 
-TextItem *Display::getItemForRow(uint8_t row) {
-    size_t pos = cur_item + row;
-    item[pos].hasUpdates = true;
-    return &item[pos];
+ScreenItem *Display::getItemForRow(uint8_t row) {
+    size_t pos = item_pos + row;
+    return &items[pos];
 }
 
 void Display::scrollDown() {
-    if (++cur_item + LCD_ROWS > items_count) cur_item = 0;
+    if (items_size <= LCD_ROWS) return;
+    if (++item_pos + LCD_ROWS > items_size) item_pos = 0;
+
+    uint8_t pos = item_pos;
+    for (uint8_t n = 0; n < LCD_ROWS; ++n) {
+        if (pos + n > items_size) item_pos = 0;
+        items[pos + n].forceRedraw();
+    }
 #ifdef DEBUG_DISPLAY
-    DEBUG.printf("scrollDown(%d) ", cur_item);
+    DEBUG.printf("scrollDown(%d) ", item_pos);
     DEBUG.println();
 #endif
 }
 
 void Display::loop() {
     if (!connected) return;
-    if (millis_since(refreshed) > LCD_REFRESH_INTERVAL_ms) {
-        if (!locked()) {
-            for (size_t n = 0; n < LCD_ROWS; ++n) {
-                TextItem *l = getItemForRow(n);
-#ifdef DEBUG_DISPLAY
-                DEBUG.printf("#%d drawTextItem(%s) ", n, l->fixed_str);
-                DEBUG.println();
-#endif
-                if (l->hasUpdates) {
-                    drawTextItem(n, l);
-                    refreshed = millis();
-                }
+    unsigned long now = millis();
+    if (millis_passed(lastUpdated, now) >= LCD_UPDATE_INTERVAL) {
+        if (!locked(now)) {
+            for (uint8_t row = 0; row < LCD_ROWS; ++row) {
+                ScreenItem *item = getItemForRow(row);
+                if (item->needsRedraw()) drawScreenItem(row, item);
             }
         }
+        lastUpdated = now;
     }
 }
 
 PlotData *Display::getData() { return &data; }
 
-void Display::drawTextItem(uint8_t row, TextItem *l) {
-    uint8_t _fix_len = strlen(l->fixed_str);
-    uint8_t _var_len = strlen(l->var_str);
+void Display::drawScreenItem(uint8_t row, ScreenItem *item) {
+#ifdef DEBUG_DISPLAY
+    DEBUG.printf("#%d drawScreenItem(%s) ", n, item->fixed_str);
+    DEBUG.println();
+#endif
+    uint8_t label_size = strlen(item->label);
+    uint8_t text_size = strlen(item->text);
+    uint8_t free_size = LCD_COLS - label_size;
 
-    uint8_t _free_space = LCD_COLS - _fix_len;
-
-    if (_var_len <= _free_space) {
+    if (text_size <= free_size) {
         char buf[LCD_COLS + 1];
-        strcpy(buf, l->fixed_str);
-        strcat(buf, l->var_str);
-        if (_free_space - _var_len > 0) {
-            char tmp[_free_space - _var_len + 1];
-            strfill(tmp, '\x20', _free_space - _var_len + 1);
-            tmp[_free_space - _var_len] = '\x00';
+        strcpy(buf, item->label);
+        strcat(buf, item->text);
+        if (free_size - text_size > 0) {
+            char tmp[free_size - text_size + 1];
+            strfill(tmp, '\x20', free_size - text_size + 1);
+            tmp[free_size - text_size] = '\x00';
             strcat(buf, tmp);
         }
         drawText(0, row, buf);
-        l->hasUpdates = false;
+        item->redrawLabel = false;
+        item->redrawText = false;
         return;
-    } else {  // Fixed
-        drawText(0, row, l->fixed_str);
     }
 
-    // repeat
-    if (l->var_pos > _var_len + _free_space) {
-        l->var_pos = 1;
-        l->screen_X = 1;
+    if (item->redrawLabel) {
+        drawText(0, row, item->label);
+        item->redrawLabel = false;
     }
+
+    if (item->text_pos > text_size + free_size) item->text_pos = 1;
+
+    char tmp[free_size + 1];
+    strfill(tmp, '\x20', free_size + 1);
     // [    <-abc]
-    if (l->var_pos < _free_space) {
-        char tmp[32];
-        strfill(tmp, '\x20', 32);
-        uint8_t x = _free_space - l->var_pos + 1;
-        strncpy(tmp + x, l->var_str, l->var_pos);
-        tmp[_free_space] = '\x00';
-        lcd->print(tmp);
-    } else if (_free_space <= l->var_pos) {
+    if (item->text_pos < free_size) {
+        uint8_t abc_len = free_size - item->text_pos;
+        strncpy(tmp + abc_len + 1, item->text, item->text_pos);
+    } else if (free_size <= item->text_pos) {
         // [xyz<-    ]
-        char tmp[32];
-        strfill(tmp, '\x20', _free_space + 1);
-        for (uint8_t str_index = 0; str_index < _free_space; str_index++) {
-            int8_t _index = l->var_pos - _free_space + str_index;
-            if (_index >= _var_len) {
-                tmp[str_index] = '\x00';
+        for (uint8_t col_index = 0; col_index < free_size; col_index++) {
+            int8_t index = item->text_pos - free_size + col_index;
+            if (index < text_size)
+                tmp[col_index] = item->text[index];
+            else
                 break;
-            }
-            char ch = l->var_str[_index];
-            tmp[str_index] = ch;
-            if (ch == '\x00') break;
         }
-        strpadd(tmp, StrUtils::LEFT, _free_space + 1);
-        lcd->print(tmp);
     }
-    l->var_pos++;
+    tmp[free_size] = '\x00';
+    drawText(label_size, row, tmp);
+    item->text_pos++;
+    item->redrawText = true;
 }
 
 void Display::drawTextCenter(uint8_t row, const char *str) {
@@ -336,14 +333,16 @@ void Display::drawTextCenter(uint8_t row, const char *str) {
     if (str_len > LCD_COLS) str_len = LCD_COLS;
     strncpy(buf, str, str_len);
     buf[str_len] = '\x00';
+
     StrUtils::strpadd(buf, StrUtils::CENTER, LCD_COLS + 1);
+
     drawText(0, row, buf);
 }
 
 void Display::clear() {
-    items_count = 0;
-    cur_item = 0;
     screen = SCREEN_CLEAR;
+    item_pos = 0;
+    items_size = 0;
     lcd->clear();
 }
 
@@ -401,20 +400,6 @@ void Display::loadBank(CharBank bank, bool force) {
     this->bank = bank;
 }
 
-void Display::drawBar(uint8_t row, uint8_t per) {
-    if (!connected) return;
-    uint8_t cols = floor((float)LCD_COLS * per / 100);
-    char buf[LCD_COLS + 1];
-    strfill(buf, '*', cols + 1);
-    strpadd(buf, StrUtils::LEFT, LCD_COLS);
-    lcd->setCursor(0, row);
-    lcd->print(buf);
-#ifdef DEBUG_DISPLAY
-    DEBUG.printf("#%d drawBar(%s)", row, buf);
-    DEBUG.println();
-#endif
-}
-
 void Display::drawProgressBar(uint8_t row, uint8_t per) {
     lcd->setCursor(0, row);
 
@@ -461,9 +446,8 @@ void Display::drawProgressBar(uint8_t row, uint8_t per) {
             }
         }
     }
-
     char tmp[5];
-    sprintf(tmp, "% 3d %%", per);
+    sprintf(tmp, "%3d%%", per);
     lcd->print(tmp);
 }
 
@@ -494,9 +478,15 @@ void Display::drawPlot(uint8_t col_start) {
         }
     }
 
-    uint8_t col = col_start + this->data.size + 1;
+    uint8_t col = col_start + this->data.size + 2;
     drawFloat(col, LCD_ROW_1, this->data.max_value);
     drawFloat(col, LCD_ROW_2, this->data.min_value);
+}
+
+void Display::drawFloat(uint8_t col, uint8_t row, float value) {
+    char buf[16];
+    sprintf(buf, "%2.4f", value);
+    drawText(col, row, buf);
 }
 
 void Display::drawText(uint8_t col, uint8_t row, const char *str) {
@@ -506,10 +496,4 @@ void Display::drawText(uint8_t col, uint8_t row, const char *str) {
 #endif
     lcd->setCursor(col, row);
     lcd->print(str);
-}
-
-void Display::drawFloat(uint8_t col, uint8_t row, float value) {
-    char tmp[16];
-    lcd->setCursor(col, row);
-    lcd->print(dtostrf(value, 5, 4, tmp));
 }

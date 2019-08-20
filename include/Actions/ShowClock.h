@@ -4,7 +4,7 @@
 
 namespace Actions {
 
-class ShowClock : public EmptyParamAction {
+class ShowClock : public Action {
    public:
     void exec(Print* p);
 };

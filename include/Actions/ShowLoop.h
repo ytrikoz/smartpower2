@@ -1,11 +1,11 @@
 #pragma once
 
 #include "Actions.h"
-#include "LoopWatchDog.h"
+
 
 namespace Actions {
 
-class ShowLoop : public EmptyParamAction {
+class ShowLoop : public Action {
    public:
     void exec(Print* p);
     void printCapture(Print* p, Profiler::Capture* cap);

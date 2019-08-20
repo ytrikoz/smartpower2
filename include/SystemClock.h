@@ -6,12 +6,11 @@
 #include "Consts.h"
 #include "FileStorage.h"
 
-typedef std::function<void(const char *)> SystemTimeChangedEvent;
+typedef std::function<void(const char *)> TimeChangedEvent;
 
 class SystemClock {
    public:
     SystemClock();
-    void setOnSystemTimeChanged(SystemTimeChangedEvent);
     void begin();
     void loop();
     void setTime(unsigned long epoch_s);
@@ -19,6 +18,7 @@ class SystemClock {
     void setTimeZone(sint8_t timeZone);
     void setBackupInterval(uint16_t time_s);
     void setOutput(Print *output);
+    void setOnTimeChanged(TimeChangedEvent);
     bool isSynced();
     uint32_t getUptimeEpoch();
     unsigned long getUtcEpoch();
@@ -35,16 +35,16 @@ class SystemClock {
    private:
     bool store();
     bool restore();
-    SystemTimeChangedEvent onSystemTimeChanged;
+    TimeChangedEvent onTimeChanged;
 
     bool active = false;
     bool synced = false;
     unsigned long utcEpochTime_s;
     sint16_t timeOffset_s;
-    unsigned long backupInterval_ms;
-    unsigned long lastUpdated_ms;
-    unsigned long lastBackup_ms;
-    unsigned long rolloverCounter;
+    unsigned long backupInterval;
+    unsigned long lastUpdated;
+    unsigned long lastBackup_ms;    
+    uint8_t rollover;
     FileStorage *storage;
     Print *output;
 };

@@ -34,28 +34,36 @@ String getConnectionStatus() {
     switch (status) {
         case STATION_CONNECTING:
             str = getStrP(str_connecting);
+            break;
         case STATION_GOT_IP:
             str = getStrP(str_connected);
+            break;
         case STATION_NO_AP_FOUND:
             str = getStrP(str_ap) + getStrP(str_not_found, false);
+            break;
         case STATION_CONNECT_FAIL:
             str = getStrP(str_connection) + getStrP(str_failed, false);
+            break;
         case STATION_WRONG_PASSWORD:
             str = getStrP(str_wrong) + getStrP(str_password, false);
+            break;
         case STATION_IDLE:
             str = getStrP(str_idle);
+            break;
         default:
             str = getStrP(str_disconnected);
+            break;
     }
     return str;
 }
 
 void printDiag(Print *p) {
-    p->print(FPSTR(str_wifi));
-    p->printf_P(strf_mode, mode);
-    p->print(FPSTR(str_network));
-    p->print(network);
-    p->println();
+    p->print(getStrP(str_wifi));
+    p->print(getStrP(str_mode));
+    p->println(mode);
+
+    p->print(getStrP(str_network));
+    p->println(network);
 
     WiFi.printDiag(*p);
 }
@@ -120,68 +128,73 @@ String hostName() {
     return str;
 }
 
-void setupAP(IPAddress ip) {
-    WiFi.mode(WIFI_AP);
+void setMode(WirelessMode mode) {
+    WiFi.mode((WiFiMode_t)mode);
     WiFi.disconnect();
     delay(100);
-    WiFi.softAPConfig(ip, ip, IPAddress(255, 255, 255, 0));
+    USE_SERIAL.print(getSquareBracketsStrP(str_wifi));
+    USE_SERIAL.println(wifiModeInfo());
+}
+
+void setupAP(IPAddress ap_ip) {
+    IPAddress gateway = ap_ip;
+    IPAddress subnet = IPAddress(255, 255, 255, 0);
+
+    WiFi.softAPConfig(ap_ip, gateway, subnet);
+
+    USE_SERIAL.print(getSquareBracketsStrP(str_wifi));
+    USE_SERIAL.print(getStrP(str_ap));
+    USE_SERIAL.print(getStrP(str_arrow_dest));
+    USE_SERIAL.print(ap_ip.toString());
+    USE_SERIAL.print('/');
+    USE_SERIAL.print(subnet.toString());
+    USE_SERIAL.print(' ');
+    USE_SERIAL.println(gateway.toString());
 }
 
 void setupSTA(IPAddress ip, IPAddress gateway, IPAddress subnet,
               IPAddress dns) {
-    WiFi.mode(WIFI_STA);
-    WiFi.disconnect();
-    delay(100);
-    WiFi.config(ip, gateway, subnet, dns);
-}
-
-bool scanWiFi(const char *ssid) {
-    setupSTA(hostIP(), IPAddress(IP_ADDR_ANY), IPAddress(IP_ADDR_ANY),
-             IPAddress(IP_ADDR_ANY));
-
-    int8_t discovered = WiFi.scanNetworks(false, true, 0, (uint8_t *)ssid);
-
-    WiFi.scanDelete();
-    WiFi.disconnect(true);
-    delay(100);
-
-    return discovered;
-}
-
-void startSTA(const char *ssid, const char *passwd) {
-    startSTA(ssid, passwd, IPAddress(IP_ADDR_ANY), IPAddress(IP_ADDR_ANY),
-             IPAddress(IP_ADDR_ANY), IPAddress(IP_ADDR_ANY));
-}
-
-void startSTA(const char *ssid, const char *password, IPAddress ip,
-              IPAddress subnet, IPAddress gateway, IPAddress dns) {
-    PRINT_WIFI_STA
-    USE_SERIAL.print(FPSTR(str_arrow_dest));
-    USE_SERIAL.print(ssid);
+    USE_SERIAL.print(getSquareBracketsStrP(str_wifi));
+    USE_SERIAL.print(getStrP(str_sta));
+    USE_SERIAL.print(getStrP(str_arrow_dest));
     if (ip.operator== IP4_ADDR_ANY) {
-        USE_SERIAL.printf_P(str_dhcp_on);
+        USE_SERIAL.print(getStrP(str_dhcp));
+        USE_SERIAL.print(getStrP(str_on));
     } else {
-        PRINT_IP
+        USE_SERIAL.printf_P(strf_ip_params, ip.toString().c_str(),
+                            subnet.toString().c_str(),
+                            gateway.toString().c_str(), dns.toString().c_str());
     }
     USE_SERIAL.println();
 
-    setupSTA(ip, gateway, subnet, dns);
+    WiFi.config(ip, gateway, subnet, dns);
+}
+
+void setupSTA() {
+    IPAddress any = IPAddress(IP_ADDR_ANY);
+    setupSTA(any, any, any, any);
+}
+
+void startSTA(const char *ssid, const char *password) {
+    USE_SERIAL.print(getSquareBracketsStrP(str_wifi));
+    USE_SERIAL.print(getStrP(str_sta));
+    USE_SERIAL.print(getStrP(str_arrow_dest));
+    USE_SERIAL.print(getStrP(str_ssid));
+    USE_SERIAL.println(getStr(ssid));
 
     WiFi.begin(ssid, password);
 
     uint8_t result = WiFi.waitForConnectResult();
-    if (result == WL_CONNECTED) {
-        WiFi.setAutoConnect(true);
-        WiFi.setAutoReconnect(true);
-    } else {
-        PRINT_WIFI_STA
-        USE_SERIAL.println(FPSTR(str_failed));
+    if (result != WL_CONNECTED) {
+        USE_SERIAL.print(getStrP(str_wifi));
+        USE_SERIAL.print(getStrP(str_sta));
+        USE_SERIAL.print(getStrP(str_arrow_src));
+        USE_SERIAL.println(getConnectionStatus());
     }
 }
 
 bool startAP(const char *ssid, const char *passwd, IPAddress ip) {
     bool result = false;
-    setupAP(ip);
     bool unsec = strlen(passwd) < 8;
     if (unsec) {
         USE_SERIAL.printf_P(str_unsecured);
@@ -222,23 +235,85 @@ void start_wifi() {
     uint8_t tpw = config->getTPW();
     system_phy_set_max_tpw(tpw);
     WiFi.hostname(Wireless::getConfigHostname());
+    WiFi.setAutoConnect(false);
 
+    setMode(mode);
+
+    staConnectedEventHandler =
+        WiFi.onStationModeConnected([](const WiFiEventStationModeConnected &e) {
+            USE_SERIAL.print(getSquareBracketsStrP(str_wifi));
+            USE_SERIAL.print(getStrP(str_sta));
+            USE_SERIAL.print(getStrP(str_arrow_src));
+            USE_SERIAL.print(getStrP(str_ssid));
+            USE_SERIAL.print(getStr(e.ssid));
+            USE_SERIAL.printf_P(strf_bssid, e.bssid[0], e.bssid[1], e.bssid[2],
+                                e.bssid[3], e.bssid[4], e.bssid[5]);
+            USE_SERIAL.printf_P(strf_channel, e.channel);
+            USE_SERIAL.println();
+        });
+
+    staGotIpEventHandler =
+        WiFi.onStationModeGotIP([](const WiFiEventStationModeGotIP &e) {
+            IPAddress ip, subnet, gateway, dns;
+            ip = e.ip;
+            subnet = e.mask;
+            gateway = e.gw;
+            dns = WiFi.dnsIP();
+
+            USE_SERIAL.print(getSquareBracketsStrP(str_wifi));
+            USE_SERIAL.print(getStrP(str_sta));
+            USE_SERIAL.print(getStrP(str_arrow_src));
+            USE_SERIAL.print(getStrP(str_got));
+            USE_SERIAL.printf_P(strf_ip_params, ip.toString().c_str(),
+                                subnet.toString().c_str(),
+                                gateway.toString().c_str(),
+                                dns.toString().c_str());
+            USE_SERIAL.println();
+
+            updateState();
+        });
+
+    staDisconnectedEventHandler = WiFi.onStationModeDisconnected(
+        [](const WiFiEventStationModeDisconnected &e) {
+            if (network == NETWORK_UP) {
+                USE_SERIAL.print(getSquareBracketsStrP(str_wifi));
+                USE_SERIAL.print(getStrP(str_sta));
+                USE_SERIAL.print(getStrP(str_arrow_src));
+                USE_SERIAL.print(getStrP(str_disconnected));
+            }
+            updateState();
+        });
+
+    if (mode == WLAN_STA || mode == WLAN_AP_STA) {
+        const char *ssid = config->getSSID();
+        const char *passwd = config->getPassword();
+        const bool dhcp = config->getDHCP();
+        if (dhcp) {
+            setupSTA();
+        } else {
+            IPAddress ip, subnet, gateway, dns;
+            ip = config->getIPAddr();
+            subnet = config->getNetmask();
+            gateway = config->getGateway();
+            dns = config->getDNS();
+            setupSTA(ip, gateway, subnet, dns);
+        }
+        startSTA(ssid, passwd);
 #ifdef DEBUG_WIRELESS
-    PRINTLN_WIFI_CONFIG
+        PRINTLN_WIFI_CONFIG
 #endif
+    }
 
-    if (mode == WLAN_AP) {
+    if (mode == WLAN_AP || mode == WLAN_AP_STA) {
         const char *ap_ssid = config->getSSID_AP();
         const char *ap_passwd = config->getPassword_AP();
         IPAddress ap_ipaddr = config->getIPAddr_AP();
-
 #ifdef DEBUG_WIRELESS
         PRINT_WIFI_AP
         PRINT_WIFI_AP_CONFIG
 #endif
-
+        setupAP(ap_ipaddr);
         bool result = startAP(ap_ssid, ap_passwd, ap_ipaddr);
-
 #ifdef DEBUG_WIRELESS
         if (result)
             USE_SERIAL.printf_P(str_success);
@@ -246,53 +321,10 @@ void start_wifi() {
             USE_SERIAL.printf_P(str_failed);
         USE_SERIAL.println();
 #endif
-
         if (result)
             setNetworkState(NETWORK_UP);
         else
             setNetworkState(NETWORK_DOWN);
-    }
-
-    if (mode == WLAN_STA) {
-        staConnectedEventHandler = WiFi.onStationModeConnected(
-            [](const WiFiEventStationModeConnected &e) {
-                PRINTLN_WIFI_STA_CONNECTED
-            });
-
-        staGotIpEventHandler =
-            WiFi.onStationModeGotIP([](const WiFiEventStationModeGotIP &e) {
-                IPAddress ip, subnet, gateway, dns;
-                ip = e.ip;
-                subnet = e.mask;
-                gateway = e.gw;
-                dns = WiFi.dnsIP();
-
-                PRINTLN_WIFI_STA_GOT_IP
-
-                updateState();
-            });
-
-        staDisconnectedEventHandler = WiFi.onStationModeDisconnected(
-            [](const WiFiEventStationModeDisconnected &e) {
-                if (network == NETWORK_UP) {
-                    PRINTLN_WIFI_STA_DISCONNECTED
-                }
-                updateState();
-            });
-
-        const char *ssid = config->getSSID();
-        const char *passwd = config->getPassword();
-        const bool dhcp = config->getDHCP();
-        if (dhcp) {
-            startSTA(ssid, passwd);
-        } else {
-            IPAddress ip, subnet, gateway, dns;
-            ip = config->getIPAddr();
-            subnet = config->getNetmask();
-            gateway = config->getGateway();
-            dns = config->getDNS();
-            startSTA(ssid, passwd, ip, subnet, gateway, dns);
-        }
     }
 }
 
@@ -303,7 +335,7 @@ void updateState() {
             setNetworkState(NETWORK_DOWN);
             break;
         case WIFI_AP:
-            // ping ?
+            setNetworkState(NETWORK_UP);
             break;
         case WIFI_STA:
         case WIFI_AP_STA:
@@ -350,17 +382,6 @@ WirelessMode getWirelessMode() { return mode = (WirelessMode)WiFi.getMode(); }
 
 bool hasNetwork() { return network == NETWORK_UP; }
 
-// https://github.com/esp8266/Arduino/issues/4114
-class WiFiStationStaticIP : public ESP8266WiFiSTAClass {
-   public:
-    void useStaticStationIP(bool enabled) { _useStaticIp = enabled; }
-};
-
-void enableStaticStationIP(bool enabled) {
-    WiFiStationStaticIP tmp;
-    tmp.useStaticStationIP(enabled);
-}
-
 String wifiModeInfo() {
     String str = getStrP(str_mode);
     switch (Wireless::getWirelessMode()) {
@@ -402,7 +423,7 @@ String hostIPInfo() {
             str += " ";
             str += Wireless::hostSTA_IP().toString();
     }
-    return str;    
+    return str;
 }
 
 String RSSIInfo() {
@@ -412,5 +433,27 @@ String RSSIInfo() {
     return str;
 }
 
-}  // namespace Wireless
+bool scanWiFi(const char *ssid) {
+    setupSTA(hostIP(), IPAddress(IP_ADDR_ANY), IPAddress(IP_ADDR_ANY),
+             IPAddress(IP_ADDR_ANY));
 
+    int8_t discovered = WiFi.scanNetworks(false, true, 0, (uint8_t *)ssid);
+
+    WiFi.scanDelete();
+    WiFi.disconnect(true);
+    delay(100);
+
+    return discovered;
+}
+
+// https://github.com/esp8266/Arduino/issues/4114
+class WiFiStationStaticIP : public ESP8266WiFiSTAClass {
+   public:
+    void useStaticStationIP(bool enabled) { _useStaticIp = enabled; }
+};
+
+void enableStaticStationIP(bool enabled) {
+    WiFiStationStaticIP tmp;
+    tmp.useStaticStationIP(enabled);
+}
+}  // namespace Wireless

@@ -8,10 +8,10 @@ SystemClock rtc;
 SystemClock::SystemClock() {
     storage = new FileStorage(FILE_TIME_BACKUP);
     timeOffset_s = 0;
-    backupInterval_ms = 0;
-    lastUpdated_ms = 0;
+    backupInterval = 0;
+    lastUpdated = 0;
     lastBackup_ms = 0;
-    rolloverCounter = 0;
+    rollover = 0;
     utcEpochTime_s = 0;
 }
 
@@ -46,14 +46,15 @@ void SystemClock::setBackupInterval(uint16_t time_s) {
     if ((time_s < TIME_BACKUP_INTERVAL_MIN_s) && (time_s != 0)) {
         time_s = TIME_BACKUP_INTERVAL_MIN_s;
     }
-    backupInterval_ms = time_s * ONE_SECOND_ms;
+    backupInterval = time_s * ONE_SECOND_ms;
 #ifdef DEBUG_SYSTEM_CLOCK
     DEBUG.print(FPSTR(str_interval));
     DEBUG.println(time_s);
 #endif
 }
-void SystemClock::setOnSystemTimeChanged(SystemTimeChangedEvent e) {
-    onSystemTimeChanged = e;
+
+void SystemClock::setOnTimeChanged(TimeChangedEvent e) {
+    onTimeChanged = e;
 }
 
 void SystemClock::begin() {
@@ -70,14 +71,14 @@ void SystemClock::begin() {
 }
 
 void SystemClock::loop() {
-    if (!active) return;
-    unsigned long now_s = millis();
-    if (now_s < lastUpdated_ms) rolloverCounter++;
-    if (now_s - lastUpdated_ms >= ONE_SECOND_ms) {
-        lastUpdated_ms += ONE_SECOND_ms;
+    if (!active) return;    
+    unsigned long now = millis();
+    if (now < lastUpdated) rollover++;
+    if (millis_passed(lastUpdated, now) >= ONE_SECOND_ms) {
+        lastUpdated += ONE_SECOND_ms;
         utcEpochTime_s += 1;
-        if (synced && backupInterval_ms > 0) {
-            if (((now_s - lastBackup_ms >= backupInterval_ms) ||
+        if (synced && backupInterval > 0) {
+            if (((now - lastBackup_ms >= backupInterval) ||
                  (lastBackup_ms == 0))) {
                 store();
             }
@@ -110,31 +111,29 @@ bool SystemClock::restore() {
 void SystemClock::setTime(unsigned long utc_epoch_s) {
     utcEpochTime_s = utc_epoch_s;
     synced = true;
-    if (onSystemTimeChanged) {
-        onSystemTimeChanged(getLocalFormated().c_str());
-    };
+    if (onTimeChanged) onTimeChanged(getLocalFormated().c_str());
 }
 
 String SystemClock::getLocalFormated() {
     String result = "";
-    unsigned long now_s = getLocalEpoch();
-    uint8_t hours = (now_s % 86400L) / 3600;
-    uint8_t minutes = (now_s % 3600) / 60;
-    uint8_t seconds = now_s % 60;
+    unsigned long now = getLocalEpoch();
+    uint8_t hours = (now % 86400L) / 3600;
+    uint8_t minutes = (now % 3600) / 60;
+    uint8_t seconds = now % 60;
     char buf[16];
     sprintf_P(buf, strf_time, hours, minutes, seconds);
     return String(buf);
 }
 
 uint32_t SystemClock::getUptimeEpoch() {
-    return (0xFFFFFFFF / ONE_SECOND_ms) * rolloverCounter +
+    return (0xFFFFFFFF / ONE_SECOND_ms) * rollover +
            (millis() / ONE_SECOND_ms);
 }
 
 String SystemClock::getUptimeFormated() {
-    uint32_t now_s = getUptimeEpoch();
+    uint32_t now = getUptimeEpoch();
     char buf[16];
-    sprintf_P(buf, strf_time, now_s / 3600 % 24, now_s / 60 % 60, now_s % 60);
+    sprintf_P(buf, strf_time, now / 3600 % 24, now / 60 % 60, now % 60);
     return String(buf);
 }
 

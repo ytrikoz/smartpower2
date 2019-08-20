@@ -4,11 +4,11 @@
 
 namespace Actions {
 
-class ShowDiag : public EmptyParamAction {
+class ShowDiag : public Action {
    public:
     void exec(Print* p);
 };
 
-void ShowDiag::exec(Print* p) { Wireless::printDiag(p); }
+void ShowDiag::exec(Print* p) {  }
 
 }  // namespace Actions

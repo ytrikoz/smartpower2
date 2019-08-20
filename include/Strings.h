@@ -7,7 +7,10 @@
 static const char HOST_NAME[] PROGMEM = "smartpower2";
 
 static const char msg_system_restart[] PROGMEM =
-    "the system is going down for restart ";
+    "the system is going down for restart!";
+static const char msg_session_interrupted[] PROGMEM =
+    "the session was interrupted!";
+
 static const char msgf_unknown_action[] PROGMEM = "unknown action '%s'";
 
 static const char strf_time[] PROGMEM = "%02d:%02d:%02d";
@@ -22,9 +25,8 @@ static const char strf_init[] PROGMEM = "init %d";
 static const char strf_http_params[] PROGMEM = "%s %d(%d)";
 static const char strf_wifi_params[] PROGMEM = "ssid %s ip %s ";
 static const char strf_wifi_scan_results[] PROGMEM = "#%d %s %d";
-static const char strf_file_print[] PROGMEM = "Print '%s'";
-static const char strf_file_deleted[] PROGMEM = "File '%s' deleted";
-static const char strf_file_not_found[] PROGMEM = "File '%s' not found";
+static const char strf_file_deleted[] PROGMEM = "file '%s' deleted";
+static const char strf_file_not_found[] PROGMEM = "file '%s' not found";
 static const char strf_config_param_value[] PROGMEM = "'%s'='%s'";
 static const char strf_synced[] PROGMEM = "synced %d ";
 static const char strf_timezone[] PROGMEM = "timezone %d ";
@@ -72,7 +74,8 @@ static const char str_alert[] PROGMEM = "alert ";
 static const char str_as_default[] PROGMEM = "as default ";
 static const char str_ap[] PROGMEM = "ap";
 static const char str_apply[] PROGMEM = "apply";
-static const char str_arrow_dest[] PROGMEM = "-> ";
+static const char str_arrow_dest[] PROGMEM = "->";
+static const char str_arrow_src[] PROGMEM = "<-";
 static const char str_avg[] PROGMEM = "avg";
 static const char str_backup[] PROGMEM = "backup ";
 static const char str_backlight[] PROGMEM = "backlight";
@@ -94,7 +97,7 @@ static const char str_netsvc[] PROGMEM = "netsvc";
 static const char str_date[] PROGMEM = "date ";
 static const char str_disabled[] PROGMEM = "disabled";
 static const char str_disconnected[] PROGMEM = "disconnected ";
-static const char str_dhcp_on[] PROGMEM = " dhcp on ";
+static const char str_dhcp[] PROGMEM = "dhcp";
 static const char str_dns[] PROGMEM = "[dns] ";
 static const char str_done[] PROGMEM = "done ";
 static const char str_down[] PROGMEM = "down";
@@ -156,11 +159,10 @@ static const char str_restart[] PROGMEM = "restart";
 static const char str_restore[] PROGMEM = "restore";
 static const char str_size[] PROGMEM = "size";
 static const char str_spiffs[] PROGMEM = "spiffs";
-static const char str_session_interrupted[] PROGMEM =
-    "[cli] Your session was interrupted!";
+
 static const char str_scanning[] PROGMEM = "scanning... ";
 static const char str_switched[] PROGMEM = "switched ";
-static const char str_ssid[] PROGMEM = "ssid ";
+static const char str_ssid[] PROGMEM = "ssid";
 static const char str_start[] PROGMEM = "start";
 static const char str_stopped[] PROGMEM = "stopped";
 static const char str_store[] PROGMEM = "store ";
@@ -218,12 +220,7 @@ static const char str_yes[] PROGMEM = "yes ";
                         subnet.toString().c_str(), gateway.toString().c_str(), \
                         dns.toString().c_str());
 
-#define PRINT_WIFI_STA             \
-    USE_SERIAL.printf_P(str_wifi); \
-    USE_SERIAL.printf_P(str_sta);
-
 #define PRINTLN_WIFI_STA_CONNECTED      \
-    PRINT_WIFI_STA                      \
     USE_SERIAL.printf_P(str_connected); \
     PRINT_WIFI_STA_CONNECTION           \
     USE_SERIAL.println();
@@ -251,12 +248,10 @@ static const char str_yes[] PROGMEM = "yes ";
     USE_SERIAL.print(e.ssid);
 
 #define PRINTLN_WIFI_STA_DISCONNECTED      \
-    PRINT_WIFI_STA                         \
     USE_SERIAL.printf_P(str_disconnected); \
     USE_SERIAL.println();
 
 #define PRINTLN_WIFI_STA_GOT_IP   \
-    PRINT_WIFI_STA                \
     USE_SERIAL.printf_P(str_got); \
     PRINT_IP                      \
     USE_SERIAL.println();
@@ -280,6 +275,10 @@ inline String getSquareBracketsStrP(PGM_P strP, bool space = true) {
     char buf[32];
     strcpy_P(buf, strP);
     return getSquareBracketsStr(buf, space);
+}
+
+inline String getStr(String str) {
+    return String(str) + " ";
 }
 
 inline String getStrP(PGM_P strP, bool space = true) {

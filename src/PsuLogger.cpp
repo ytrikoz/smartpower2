@@ -37,8 +37,8 @@ void PsuLogger::add(PsuInfo item, unsigned long time_ms) {
         writePos = 0;
         rotated = true;
     }
-    items[writePos] = item;
-    if (rotated) readPos = writePos++;
+    items[writePos++] = item;
+    if (rotated) readPos = writePos;
 }
 
 void PsuLogger::getVoltages(float* voltages) {

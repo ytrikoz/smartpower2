@@ -4,7 +4,7 @@
 
 namespace Actions {
 
-class PlotPrint : public EmptyParamAction {
+class PlotPrint : public Action {
    public:
     void exec(Print* p);
 };

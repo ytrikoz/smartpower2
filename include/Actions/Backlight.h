@@ -16,12 +16,11 @@ void Backlight::exec(Print* p) {
     bool enabled = (param > 0);
     p->print(getStrP(str_lcd));
     p->print(getStrP(str_backlight));
-	p->println();
-    p->print(enabled ? getStrP(str_on) : getStrP(str_off));
+    p->println(enabled ? getStrP(str_on) : getStrP(str_off));
     if (enabled)
-        display->enableBacklight();
+        display->backlightOn();
     else
-        display->disableBacklight();
+        display->backlightOff();
 }
 
 }  // namespace Actions

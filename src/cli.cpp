@@ -1,5 +1,7 @@
 #include "Cli.h"
 
+#include "Global.h"
+
 #include "Actions/Backlight.h"
 #include "Actions/ClockSet.h"
 #include "Actions/PlotPrint.h"
@@ -14,7 +16,6 @@
 #include "Actions/ShowNtp.h"
 #include "Actions/ShowStatus.h"
 #include "Actions/ShowWifi.h"
-#include "Actions\Actions.h"
 
 #include "StrUtils.h"
 
@@ -42,15 +43,21 @@ Command cmdConfig, cmdPower, cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet,
 
 Print* output;
 
-String getActionStr(Command& command) { return command.getArgument("action").getValue(); }
-
-String getParamStr(Command& command) { return command.getArgument("param").getValue(); }
-
-String getCommandFile(Command& command) { return command.getArgument("action").getValue(); }
-
-String getCommandItem(Command& command) { return command.getArgument("item").getValue(); }
-
-String getCommandValue(Command& command) { return command.getArgument("value").getValue(); }
+String getActionStr(Command& command) {
+    return command.getArgument("action").getValue();
+}
+String getParamStr(Command& command) {
+    return command.getArgument("param").getValue();
+}
+String getFileStr(Command& command) {
+    return command.getArgument("file").getValue();
+}
+String getItemStr(Command& command) {
+    return command.getArgument("item").getValue();
+}
+String getValueStr(Command& command) {
+    return command.getArgument("value").getValue();
+}
 
 CommandAction getAction(Command& cmd) {
     String str = getActionStr(cmd);
@@ -74,20 +81,20 @@ CommandAction getAction(Command& cmd) {
         return ACTION_ON;
     } else if (strcasecmp_P(str.c_str(), str_off) == 0) {
         return ACTION_OFF;
-    } else if (strcasecmp_P(str.c_str(), str_restart) == 0) {    
+    } else if (strcasecmp_P(str.c_str(), str_restart) == 0) {
         return ACTION_RESTART;
-    } else if (strcasecmp_P(str.c_str(), str_backlight) == 0) {    
+    } else if (strcasecmp_P(str.c_str(), str_backlight) == 0) {
         return ACTION_BACKLIGHT;
-     } else if (strcasecmp_P(str.c_str(), str_uptime) == 0) {    
+    } else if (strcasecmp_P(str.c_str(), str_uptime) == 0) {
         return ACTION_UPTIME;
-    }    
+    }
     return ACTION_UNKNOWN;
 }
 
 bool active() { return output != NULL; }
 
 void open(Print* p) {
-    if (output != NULL) output->println(FPSTR(str_session_interrupted));
+    if (output != NULL) output->println(FPSTR(msg_session_interrupted));
     output = p;
 }
 
@@ -182,10 +189,6 @@ void unknownConfigParam(const char* param) {
     output->println(buf);
 }
 
-void print_unknown_actionParam(const char* param, const char* action) {
-    output->printf_P(strf_unknown_action_param, param, action);
-}
-
 void print_unknown_action(String str) {
     output->printf_P(msgf_unknown_action, str.c_str());
     output->println();
@@ -260,20 +263,19 @@ void onConfig(cmd* c) {
 void onPower(cmd* c) {
     Command cmd(c);
     CommandAction action = getAction(cmd);
-    String param = getParamStr(cmd);
     switch (action) {
         case ACTION_STATUS: {
             psu->printDiag(output);
             break;
         }
         case ACTION_AVG: {
-            size_t num = atoi(param.c_str());
-            Actions::PowerAvg(num).exec(output);
+            String param = getParamStr(cmd);
+            Actions::PowerAvg(param.toInt()).exec(output);
             break;
         }
         case ACTION_LOG: {
-            size_t num = atoi(param.c_str());
-            Actions::PowerLog(num).exec(output);
+            String param = getParamStr(cmd);
+            Actions::PowerLog(param.toInt()).exec(output);
             break;
         }
         case ACTION_ON: {
@@ -298,14 +300,14 @@ void onSystem(cmd* c) {
     String param = getParamStr(cmd);
 
     switch (action) {
-       case ACTION_RESTART: {
+        case ACTION_RESTART: {
             output->print(FPSTR(msg_system_restart));
             output->println();
             setup_restart_timer(param.toInt());
             break;
         }
         case ACTION_BACKLIGHT: {
-            bool enabled = param.length() == 0? true: param.toInt();
+            bool enabled = param.length() == 0 ? true : param.toInt();
             Actions::Backlight(enabled).exec(output);
             break;
         }
@@ -325,7 +327,7 @@ void onClock(cmd* c) {
     String action = getActionStr(cmd);
     String param = getParamStr(cmd);
     if (action.equals("set")) {
-        Actions::ClockSet().exec(output);
+        Actions::ClockSet(param).exec(output);
     }
 }
 
@@ -352,8 +354,7 @@ void onWifiScan(cmd* c) {
 void onSet(cmd* c) {
     Command cmd(c);
     String name = getParamStr(cmd);
-    String value = getCommandValue(cmd);
-
+    String value = getValueStr(cmd);
     Config* cfg = config->getConfig();
     Parameter param;
     size_t old_size;
@@ -366,9 +367,7 @@ void onSet(cmd* c) {
             output->printf_P(strf_config_param_unchanged, name.c_str());
         }
     } else {
-        char buf[OUTPUT_MAX_LENGTH];
-        sprintf_P(buf, strf_set_s, name.c_str());
-        output->print(buf);
+        unknownConfigParam(name.c_str());
     }
     output->println();
 }
@@ -390,7 +389,7 @@ void onGet(cmd* c) {
 
 void onShow(cmd* c) {
     Command cmd(c);
-    String item = getCommandItem(cmd);
+    String item = getItemStr(cmd);
     if (item.equals("clients")) {
         Actions::ShowClients().exec(output);
     } else if (item.equals("clock")) {
@@ -418,20 +417,6 @@ void onShow(cmd* c) {
     }
 }
 
-void onPrint(cmd* c) {
-    Command cmd(c);
-    String file = getCommandFile(cmd);
-    if (SPIFFS.exists(file)) {
-        File f = SPIFFS.open(file, "r");
-        onIOResult(strf_file_print, file.c_str());
-        while (f.available()) {
-            output->println(f.readString().c_str());
-        }
-        f.close();
-    } else {
-        onIOResult(strf_file_not_found, file.c_str());
-    }
-}
 
 void onPlot(cmd* c) {
     Command cmd(c);
@@ -446,15 +431,26 @@ void onPlot(cmd* c) {
     }
 }
 
-void onRemove(cmd* c) {
+void onPrint(cmd* c) {
     Command cmd(c);
-    String file = cmd.getArgument("file").getValue();
+    String file = getFileStr(cmd);
     if (SPIFFS.exists(file)) {
-        if (SPIFFS.remove(file)) {
-            onIOResult(strf_file_deleted, file.c_str());
-        }
+        File f = SPIFFS.open(file, "r");
+        while (f.available()) output->println(f.readString());
+        f.close();
     } else {
         onIOResult(strf_file_not_found, file.c_str());
     }
 }
+
+void onRemove(cmd* c) {
+    Command cmd(c);
+    String file = getFileStr(cmd);
+    if (SPIFFS.exists(file)) {
+        if (SPIFFS.remove(file)) onIOResult(strf_file_deleted, file.c_str());        
+    } else {
+        onIOResult(strf_file_not_found, file.c_str());
+    }
+}
+
 }  // namespace Cli

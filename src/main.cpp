@@ -74,9 +74,9 @@ void onHttpClientData(uint8_t n, String data) {
             PowerState new_state = PowerState(data.substring(1).toInt());
             psu->setState(new_state);
 
-            String payload = String(SET_POWER_ON_OFF);
-            payload += psu->getState();
-            sendToClients(payload, PG_HOME, n);
+            String text = String(SET_POWER_ON_OFF);
+            text += psu->getState();
+            sendToClients(text, PG_HOME, n);
             break;
         }
         case SET_VOLTAGE: {
@@ -124,79 +124,77 @@ void onHttpClientData(uint8_t n, String data) {
     }
 }
 
-void sendToClients(String payload, uint8_t page, uint8_t except_n) {
+void sendToClients(String text, uint8_t page, uint8_t except_n) {
     for (uint8_t i = 0; i < WEBSOCKETS_SERVER_CLIENT_MAX; i++)
         if (clients[i].connected && (clients[i].page == page) &&
             (except_n != i))
-            http->sendTxt(i, payload.c_str());
+            http->sendTxt(i, text.c_str());
 }
 
-void sendToClients(String payload, uint8_t page) {
+void sendToClients(String text, uint8_t page) {
     for (uint8_t i = 0; i < WEBSOCKETS_SERVER_CLIENT_MAX; i++)
         if (clients[i].connected && clients[i].page == page)
-            http->sendTxt(i, payload.c_str());
+            http->sendTxt(i, text.c_str());
 }
 
 void sendPageState(uint8_t n, uint8_t page) {
     switch (page) {
         case PG_HOME: {
-            String payload;
+            String text;
             // State
-            payload = String(SET_POWER_ON_OFF);
-            payload += String(psu->getState());
-            http->sendTxt(n, payload.c_str());
-            // WattHours
-            payload = String(SET_MEASURE_MODE);
-            payload += String(psu->isWattHoursCalculationEnabled());
-            http->sendTxt(n, payload.c_str());
+            text = String(SET_POWER_ON_OFF);
+            text += String(psu->getState());
+            http->sendTxt(n, text.c_str());
+            // WattHour
+            text = String(SET_MEASURE_MODE);
+            text += String(psu->isWattHoursCalculationEnabled());
+            http->sendTxt(n, text.c_str());
             break;
         }
         case PG_SETTINGS: {
-            String payload;
-            // Power mode
-            payload = String(SET_BOOT_POWER_MODE);
-            payload += config->getConfig()->getStrValue(POWER);
-            http->sendTxt(n, payload.c_str());
-
+            String text;
+            // Power mod
+            text = String(SET_BOOT_POWER_MODE);
+            text += config->getConfig()->getStrValue(POWER);
+            http->sendTxt(n, text.c_str());
             // Output voltage
-            payload = String(SET_VOLTAGE);
-            payload += psu->getOutputVoltage();
-            http->sendTxt(n, payload.c_str());
-
+            text = String(SET_VOLTAGE);
+            text += psu->getOutputVoltage();
+            http->sendTxt(n, text.c_str());
             // Network config
-            payload = String(SET_NETWORK);
-            payload += config->getConfig()->getStrValue(WIFI);
-            payload += ',';
-            payload += config->getSSID();
-            payload += ',';
-            payload += config->getPassword();
-            payload += ',';
-            payload += config->getDHCP();
-            payload += ',';
-            payload += config->getIPAddrStr();
-            payload += ',';
-            payload += config->getNetmaskStr();
-            payload += ',';
-            payload += config->getGatewayStr();
-            payload += ',';
-            payload += config->getDNSStr();
-            http->sendTxt(n, payload.c_str());
+            text = String(SET_NETWORK);
+            text += config->getConfig()->getStrValue(WIFI);
+            text += ',';
+            text += config->getSSID();
+            text += ',';
+            text += config->getPassword();
+            text += ',';
+            text += config->getDHCP();
+            text += ',';
+            text += config->getIPAddrStr();
+            text += ',';
+            text += config->getNetmaskStr();
+            text += ',';
+            text += config->getGatewayStr();
+            text += ',';
+            text += config->getDNSStr();
+            http->sendTxt(n, text.c_str());
             break;
         }
         case PG_STATUS: {
-            String payload;
+            String text;
             // Version info
-            payload = String(TAG_FIRMWARE_INFO);
-            payload += getVersionInfoJson();
-            http->sendTxt(n, payload.c_str());
+            text = String(TAG_FIRMWARE_INFO);
+            text += getVersionInfoJson();
+            http->sendTxt(n, text.c_str());
             // System info
-            payload = String(TAG_SYSTEM_INFO);
-            payload += getSystemInfoJson();
-            http->sendTxt(n, payload.c_str());
+            text = String(TAG_SYSTEM_INFO);
+            text += getSystemInfoJson();
+            http->sendTxt(n, text.c_str());
             // Network info
-            payload = String(TAG_NETWORK_INFO);
-            payload += getNetworkInfoJson();
-            http->sendTxt(n, payload.c_str());
+            text = String(TAG_NETWORK_INFO);
+            text += getNetworkInfoJson();
+            http->sendTxt(n, text.c_str());
             break;
         }
     }
@@ -224,24 +222,18 @@ void send_psu_data_to_clients() {
 }
 
 uint8_t boot_progress = 0;
-void display_boot_progress(uint8_t per, const char *payload) {
-#ifndef DISABLE_LCD
-    if (display) {
-        if (payload != NULL) {
-            display->drawTextCenter(LCD_ROW_1, payload);
-        }
-        // display->drawBar(LCD_ROW_2, per);
-        display->loadBank(BANK_PROGRESS);
-        display->drawProgressBar(LCD_ROW_2, per);
-    }
+void display_boot_progress(uint8_t per, const char *text) {
     while (per - boot_progress > 0) {
-        boot_progress += 10;
-        delay(200);
-    }
-#else
-    USE_SERIAL.printf_P(strf_boot_progress, message, per);
-    USE_SERIAL.println();
+        boot_progress += 5;
+#ifndef DISABLE_LCD
+        if (display) {
+            if (text != NULL) display->drawTextCenter(LCD_ROW_1, text);
+            display->loadBank(BANK_PROGRESS);
+            display->drawProgressBar(LCD_ROW_2, per);
+        }
 #endif
+        delay(100);
+    }
 }
 
 void delay_print(Print *p) {

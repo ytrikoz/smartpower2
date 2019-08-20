@@ -4,7 +4,7 @@
 
 namespace Actions {
 
-class ShowStatus : public EmptyParamAction {
+class ShowStatus : public Action {
    public:
     void exec(Print* p);
 };

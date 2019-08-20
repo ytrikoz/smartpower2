@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Actions.h"
+
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
@@ -8,18 +10,16 @@
 
 namespace Actions {
 
-class WakeOnLanCommand : public Printable {
+class WakeOnLanCommand : Action {
    public:
-    void Execute(Print *p);
-    size_t printTo(Print &p) const;
-
+    void exec(Print *p);
    private:
     WiFiUDP *udp;
     const char wol_preamble[6] = {'\xFF', '\xFF', '\xFF',
                                   '\xFF', '\xFF', '\xFF'};
 };
 
-void WakeOnLanCommand::Execute(Print *p) {
+void WakeOnLanCommand::exec(Print *p) {
     IPAddress ipaddr;
     udp = new WiFiUDP();
     bool result = udp->begin(WOL_PORT);

@@ -1,15 +1,19 @@
 #pragma once
 
 #include "Actions.h"
+
 #include "CommonTypes.h"
 #include "TimeUtils.h"
 
 namespace Actions {
 
-class ClockSet : public EmptyParamAction {
+class ClockSet : public StringAction {
    public:
+    ClockSet(String param);
     void exec(Print* p);
 };
+
+ClockSet::ClockSet(String param) : StringAction(param) {}
 
 void ClockSet::exec(Print* p) {
     p->print(getStrP(str_set));

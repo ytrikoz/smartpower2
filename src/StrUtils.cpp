@@ -38,7 +38,7 @@ String iptos(IPAddress ip) {
 }
 
 bool setstr(char *dest, const char *src, size_t size) {
-    if (src == nullptr) {
+    if (src == NULL) {
         memset(dest, 0, size);
     } else if (strcmp(src, dest) != 0) {
         uint8_t len = strlen(src);
@@ -52,15 +52,15 @@ bool setstr(char *dest, const char *src, size_t size) {
     return false;
 }
 
-String formatSize(size_t bytes) {
-    if (bytes < 1024)
-        return String(bytes) + "B";
-    else if (bytes < (1024 * 1024))
-        return String(bytes / 1024.0) + "KB";
-    else if (bytes < (1024 * 1024 * 1024))
-        return String(bytes / 1024.0 / 1024.0) + "MB";
+String formatSize(size_t size) {
+    if (size < 1024)
+        return String(size) + "B";
+    else if (size < (1024 * 1024))
+        return String(size / 1024.0) + "KB";
+    else if (size < (1024 * 1024 * 1024))
+        return String(size / 1024.0 / 1024.0) + "MB";
     else
-        return String(bytes / 1024.0 / 1024.0 / 1024.0) + "GB";
+        return String(size / 1024.0 / 1024.0 / 1024.0) + "GB";
 }
 
 String formatMac(uint8 hw[6]) {
@@ -97,16 +97,14 @@ void strpadd(char *str, Align align, size_t size, const char ch) {
         default:
             str_start = 0;
     }
-    for (size_t i = 0; i < str_len; ++i) {
-        str[i + str_start] = orig_str[i];
-    }
+    for (size_t i = 0; i < str_len; ++i) str[i + str_start] = orig_str[i];
 }
 
 // http://stackoverflow.com/a/35236734
-void stringToBytes(const char *str, char sep, uint8_t *bytes, int len,
+void stringToBytes(const char *str, char sep, uint8_t *size, int len,
                    int base) {
     for (int i = 0; i < len; i++) {
-        bytes[i] = strtoul(str, NULL, base);
+        size[i] = strtoul(str, NULL, base);
         str = strchr(str, sep);
         if (str == NULL || *str == '\x00') {
             break;

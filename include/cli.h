@@ -31,8 +31,4 @@ void onDone();
 void onDone(String &action, String &param);
 void onIOResult(const char *, const char *);
 
-void badActionParam(const char *, const char *);
-void badCommandItem(const char *command, const char *item);
-void badConfigParam(const char *param);
-
 }  // namespace Cli

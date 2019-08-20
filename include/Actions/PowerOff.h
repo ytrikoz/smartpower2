@@ -4,7 +4,7 @@
 
 namespace Actions {
 
-class PowerOff : public EmptyParamAction {
+class PowerOff : public Action {
    public:
     void exec(Print* p);
 };
