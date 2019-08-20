@@ -1,12 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
-#include <ArduinoJson.h>
-#include <ESP8266WiFi.h>
-#include <FS.h>
 
-#include "Strings.h"
-#include "StrUtils.h"
 
 void printResetInfo(Print* p);
 

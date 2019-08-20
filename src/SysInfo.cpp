@@ -1,5 +1,12 @@
 #include "SysInfo.h"
 
+#include <ArduinoJson.h>
+#include <ESP8266WiFi.h>
+#include <FS.h>
+
+#include "Strings.h"
+#include "StrUtils.h"
+
 const char *flashChipMode[] = {"QIO", "QOUT", "DIO", "DOUT"};
 const char *wifiPhyMode[] = {"b", "g", "n"};
 
@@ -195,11 +202,12 @@ String getConnectedStationInfo() {
     char buf[32];
     String str;
     while (station) {
-        sprintf(buf, MACSTR, MAC2STR(station->bssid));
         str = "bssid: ";
+        sprintf(buf, MACSTR, MAC2STR(station->bssid));
         str += buf;
-        sprintf(buf, IPSTR, IP2STR(&station->ip));
+        
         str += "\tip: ";
+        sprintf(buf, IPSTR, IP2STR(&station->ip));        
         str += buf;
         str += "\r\n";
 
@@ -224,17 +232,17 @@ String getChipId() { return String(ESP.getChipId(), HEX); }
 
 const char *rssi2human(sint8_t rssi) {
     if (rssi < -50) {
-        return "Fantastic";
+        return "fantastic";
     } else if (rssi <= -60) {
-        return "Great";
+        return "great";
     } else if (rssi <= -75) {
-        return "Average";
+        return "average";
     } else if (rssi <= -85) {
-        return "Poor";
+        return "poor";
     } else if (rssi <= -95) {
-        return "Unusable";
+        return "unusable";
     }
-    return "Unknown";
+    return "unknown";
 }
 
 String getNetworkInfoJson() {

@@ -136,12 +136,12 @@ bool Display::init() {
 }
 
 void Display::disableBacklight() {
-    lcd->noDisplay();
+    lcd->noBacklight();
     backlight = false;
 }
 
 void Display::enableBacklight() {
-    lcd->display();
+    lcd->backlight();
     backlight = true;
 }
 void Display::turnOn() {

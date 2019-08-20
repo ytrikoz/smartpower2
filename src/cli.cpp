@@ -299,14 +299,14 @@ void onSystem(cmd* c) {
 
     switch (action) {
        case ACTION_RESTART: {
+            output->print(FPSTR(msg_system_restart));
+            output->println();
             setup_restart_timer(param.toInt());
             break;
         }
         case ACTION_BACKLIGHT: {
-            if (!param.length())
-                Actions::Backlight(true).exec(output);
-            else 
-                Actions::Backlight(param.toInt()).exec(output);             
+            bool enabled = param.length() == 0? true: param.toInt();
+            Actions::Backlight(enabled).exec(output);
             break;
         }
         case ACTION_UPTIME: {

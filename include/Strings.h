@@ -73,9 +73,6 @@ static const char str_as_default[] PROGMEM = "as default ";
 static const char str_ap[] PROGMEM = "ap";
 static const char str_apply[] PROGMEM = "apply";
 static const char str_arrow_dest[] PROGMEM = "-> ";
-static const char str_avaible_system_actions[] PROGMEM =
-    "Available actions for 'system' command are: 'reset', 'load', 'save', "
-    "'restart'.";
 static const char str_avg[] PROGMEM = "avg";
 static const char str_backup[] PROGMEM = "backup ";
 static const char str_backlight[] PROGMEM = "backlight";

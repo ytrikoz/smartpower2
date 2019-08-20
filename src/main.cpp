@@ -41,9 +41,6 @@ void on_restart_sequence() {
 }
 
 void setup_restart_timer(uint8_t delay_s) {
-    USE_SERIAL.print(getStrP(str_system));
-    USE_SERIAL.println(getStrP(str_restart, false));
-    
     if (restartTimer != -1) timer.deleteTimer(restartTimer);
     restartCount = delay_s;
     if (restartCount > 0) {
