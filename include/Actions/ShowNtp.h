@@ -10,13 +10,11 @@ class ShowNtp : public EmptyParamAction {
 };
 
 void ShowNtp::exec(Print* p) {
-    p->print(FPSTR(str_ntp));
     if (ntp) {
         ntp->printDiag(p);
     } else {
-        p->print(FPSTR(str_disabled));
+        p->println(getStrP(str_disabled));
     }
-    p->println();
 }
 
 }  // namespace Actions

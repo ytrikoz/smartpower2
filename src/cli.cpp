@@ -1,5 +1,6 @@
 #include "Cli.h"
 
+#include "Actions/Backlight.h"
 #include "Actions/ClockSet.h"
 #include "Actions/PlotPrint.h"
 #include "Actions/PowerAvg.h"
@@ -19,10 +20,69 @@
 
 namespace Cli {
 
+enum CommandAction {
+    ACTION_UNKNOWN,
+    ACTION_PRINT,
+    ACTION_RESET,
+    ACTION_SAVE,
+    ACTION_LOAD,
+    ACTION_APPLY,
+    ACTION_STATUS,
+    ACTION_LOG,
+    ACTION_AVG,
+    ACTION_ON,
+    ACTION_OFF,
+    ACTION_RESTART,
+    ACTION_BACKLIGHT,
+    ACTION_UPTIME
+};
+
 Command cmdConfig, cmdPower, cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet,
     cmdGet, cmdRm, cmdClock, cmdPlot, cmdLog;
 
 Print* output;
+
+String getActionStr(Command& command) { return command.getArgument("action").getValue(); }
+
+String getParamStr(Command& command) { return command.getArgument("param").getValue(); }
+
+String getCommandFile(Command& command) { return command.getArgument("action").getValue(); }
+
+String getCommandItem(Command& command) { return command.getArgument("item").getValue(); }
+
+String getCommandValue(Command& command) { return command.getArgument("value").getValue(); }
+
+CommandAction getAction(Command& cmd) {
+    String str = getActionStr(cmd);
+    if (strcasecmp_P(str.c_str(), str_print) == 0) {
+        return ACTION_PRINT;
+    } else if (strcasecmp_P(str.c_str(), str_reset) == 0) {
+        return ACTION_RESET;
+    } else if (strcasecmp_P(str.c_str(), str_save) == 0) {
+        return ACTION_SAVE;
+    } else if (strcasecmp_P(str.c_str(), str_load) == 0) {
+        return ACTION_LOAD;
+    } else if (strcasecmp_P(str.c_str(), str_apply) == 0) {
+        return ACTION_APPLY;
+    } else if (strcasecmp_P(str.c_str(), str_status) == 0) {
+        return ACTION_STATUS;
+    } else if (strcasecmp_P(str.c_str(), str_log) == 0) {
+        return ACTION_LOG;
+    } else if (strcasecmp_P(str.c_str(), str_avg) == 0) {
+        return ACTION_AVG;
+    } else if (strcasecmp_P(str.c_str(), str_on) == 0) {
+        return ACTION_ON;
+    } else if (strcasecmp_P(str.c_str(), str_off) == 0) {
+        return ACTION_OFF;
+    } else if (strcasecmp_P(str.c_str(), str_restart) == 0) {    
+        return ACTION_RESTART;
+    } else if (strcasecmp_P(str.c_str(), str_backlight) == 0) {    
+        return ACTION_BACKLIGHT;
+     } else if (strcasecmp_P(str.c_str(), str_uptime) == 0) {    
+        return ACTION_UPTIME;
+    }    
+    return ACTION_UNKNOWN;
+}
 
 bool active() { return output != NULL; }
 
@@ -54,7 +114,7 @@ void init() {
     cmdPrint.setCallback(Cli::onPrint);
     // System
     cmdSystem = cli->addCommand("system");
-    cmdSystem.addPositionalArgument("action");
+    cmdSystem.addPositionalArgument("action", "uptime");
     cmdSystem.addPositionalArgument("param", "");
     cmdSystem.setCallback(Cli::onSystem);
     // Show
@@ -97,16 +157,6 @@ void close() {
     output = nullptr;
 }
 
-String getActionStr(Command& c) { return c.getArgument("action").getValue(); }
-
-String getParamStr(Command& c) { return c.getArgument("param").getValue(); }
-
-String getCommandFile(Command& c) { return c.getArgument("action").getValue(); }
-
-String getCommandItem(Command& c) { return c.getArgument("item").getValue(); }
-
-String getCommandValue(Command& c) { return c.getArgument("value").getValue(); }
-
 void onGetConfigParameter(const char* name, const char* value) {
     char buf[INPUT_MAX_LENGTH];
     sprintf_P(buf, strf_config_param_value, name, value);
@@ -132,13 +182,12 @@ void unknownConfigParam(const char* param) {
     output->println(buf);
 }
 
-void printUnknownActionParam(const char* param, const char* action) {
+void print_unknown_actionParam(const char* param, const char* action) {
     output->printf_P(strf_unknown_action_param, param, action);
 }
 
-void printUnknownAction(Command& c) {
-    const char* str = getActionStr(c).c_str();
-    output->printf_P(strf_unknown_action, str);
+void print_unknown_action(String str) {
+    output->printf_P(msgf_unknown_action, str.c_str());
     output->println();
 }
 
@@ -164,53 +213,13 @@ void onCommandError(cmd_error* e) {
     output->println(cmdError.toString().c_str());
 }
 
-enum CommandAction {
-    ACTION_UNKNOWN,
-    ACTION_PRINT,
-    ACTION_RESET,
-    ACTION_SAVE,
-    ACTION_LOAD,
-    ACTION_APPLY,
-    ACTION_STATUS,
-    ACTION_LOG,
-    ACTION_AVG,
-    ACTION_ON,
-    ACTION_OFF
-};
-
-CommandAction getAction(Command& cmd) {
-    String str = getActionStr(cmd);
-    if (strcasecmp_P(str.c_str(), str_print) == 0) {
-        return ACTION_PRINT;
-    } else if (strcasecmp_P(str.c_str(), str_reset) == 0) {
-        return ACTION_RESET;
-    } else if (strcasecmp_P(str.c_str(), str_save) == 0) {
-        return ACTION_SAVE;
-    } else if (strcasecmp_P(str.c_str(), str_load) == 0) {
-        return ACTION_LOAD;
-    } else if (strcasecmp_P(str.c_str(), str_apply) == 0) {
-        return ACTION_APPLY;
-    } else if (strcasecmp_P(str.c_str(), str_status) == 0) {
-        return ACTION_STATUS;
-    } else if (strcasecmp_P(str.c_str(), str_log) == 0) {
-        return ACTION_LOG;
-    } else if (strcasecmp_P(str.c_str(), str_avg) == 0) {
-        return ACTION_AVG;
-    } else if (strcasecmp_P(str.c_str(), str_on) == 0) {
-        return ACTION_ON;
-    } else if (strcasecmp_P(str.c_str(), str_off) == 0) {
-        return ACTION_OFF;
-    }
-    return ACTION_UNKNOWN;
-}
-
 void onLog(cmd* c) {
     Command cmd(c);
     CommandAction action = getAction(cmd);
     if (action == ACTION_STATUS) {
         psuLog->printDiag(output);
     } else {
-        printUnknownAction(cmd);
+        print_unknown_action(getActionStr(cmd));
     }
 }
 
@@ -243,7 +252,7 @@ void onConfig(cmd* c) {
             setup_restart_timer();
             break;
         default:
-            printUnknownAction(cmd);
+            print_unknown_action(getActionStr(cmd));
             break;
     }
 }
@@ -276,11 +285,39 @@ void onPower(cmd* c) {
             break;
         }
         default: {
-            printUnknownAction(cmd);
+            print_unknown_action(getActionStr(cmd));
             return;
         }
     }
     print_done(output);
+}
+
+void onSystem(cmd* c) {
+    Command cmd(c);
+    CommandAction action = getAction(cmd);
+    String param = getParamStr(cmd);
+
+    switch (action) {
+       case ACTION_RESTART: {
+            setup_restart_timer(param.toInt());
+            break;
+        }
+        case ACTION_BACKLIGHT: {
+            if (!param.length())
+                Actions::Backlight(true).exec(output);
+            else 
+                Actions::Backlight(param.toInt()).exec(output);             
+            break;
+        }
+        case ACTION_UPTIME: {
+            output->println(rtc.getUptimeFormated());
+            break;
+        }
+        default: {
+            print_unknown_action(getActionStr(cmd));
+            return;
+        }
+    }
 }
 
 void onClock(cmd* c) {
@@ -310,22 +347,6 @@ void onWifiScan(cmd* c) {
                          WiFi.RSSI(i));
     }
     output->println();
-}
-
-void onSystem(cmd* c) {
-    Command cmd(c);
-    String action = getActionStr(cmd);
-    String param = getParamStr(cmd);
-
-    if (action.equals("restart")) {
-        setup_restart_timer(param.toInt());
-        return;
-    } else {
-        output->print(FPSTR(str_avaible_system_actions));
-        output->println();
-        return;
-    }
-    print_done(action, param);
 }
 
 void onSet(cmd* c) {

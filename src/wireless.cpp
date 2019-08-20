@@ -29,36 +29,25 @@ String getConfigHostname() {
 }
 
 String getConnectionStatus() {
-    char buf[32];
-    memset(buf, 0, sizeof(char) * 32);
     station_status_t status = wifi_station_get_connect_status();
+    String str;
     switch (status) {
-        case STATION_IDLE:
-            strcpy_P(buf, str_idle);
-            break;
         case STATION_CONNECTING:
-            strcpy_P(buf, str_connecting);
-            break;
-        case STATION_WRONG_PASSWORD:
-            strcpy_P(buf, str_wrong);
-            strcat_P(buf, str_password);
-            break;
-        case STATION_NO_AP_FOUND:
-            strcpy_P(buf, str_no);
-            strcat_P(buf, str_ap);
-            strcat_P(buf, str_found);
-            break;
-        case STATION_CONNECT_FAIL:
-            strcpy_P(buf, str_connection);
-            strcat_P(buf, str_failed);
-            break;
+            str = getStrP(str_connecting);
         case STATION_GOT_IP:
-            strcpy_P(buf, str_connected);
-            strcat_P(buf, str_got);
-            strcat_P(buf, str_ip);
-            break;
+            str = getStrP(str_connected);
+        case STATION_NO_AP_FOUND:
+            str = getStrP(str_ap) + getStrP(str_not_found, false);
+        case STATION_CONNECT_FAIL:
+            str = getStrP(str_connection) + getStrP(str_failed, false);
+        case STATION_WRONG_PASSWORD:
+            str = getStrP(str_wrong) + getStrP(str_password, false);
+        case STATION_IDLE:
+            str = getStrP(str_idle);
+        default:
+            str = getStrP(str_disconnected);
     }
-    return String(buf);
+    return str;
 }
 
 void printDiag(Print *p) {

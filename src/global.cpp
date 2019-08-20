@@ -166,7 +166,7 @@ void start_ntp() {
         ntp = new NtpClient();
         ntp->setConfig(config->getConfig());
         ntp->setOutput(&USE_SERIAL);
-        ntp->setOnSynced([](EpochTime &time) { rtc.setTime(time.get()); });
+        ntp->setOnTimeSynced([](EpochTime &time) { rtc.setTime(time.get()); });
     }
 }
 
@@ -207,8 +207,10 @@ uint8_t get_telnet_clients_count() {
 }
 
 void onSystemTimeChanged(const char *str) {
-    USE_SERIAL.print(FPSTR(str_clock));
-    USE_SERIAL.print(FPSTR(str_set));
+    USE_SERIAL.print(getSquareBracketsStrP(str_clock));
+    USE_SERIAL.print(getStrP(str_system));
+    USE_SERIAL.print(getStrP(str_time));
+    USE_SERIAL.print(getStrP(str_set));
     USE_SERIAL.println(str);
 }
 

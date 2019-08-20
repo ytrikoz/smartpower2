@@ -10,6 +10,25 @@
 
 #define NTP_PACKET_SIZE 48
 
+struct EpochTime {
+   public:
+    EpochTime() {
+        epoch = 0;
+        when = 0;
+    }
+    EpochTime(unsigned long epoch) {
+        this->epoch = epoch;
+        this->when = millis();
+    }
+    unsigned long get() {
+        if (epoch > 0) return epoch + (millis_passed(when, millis()) / ONE_SECOND_ms); else return 0;
+    }
+
+   private:
+    unsigned long epoch;
+    unsigned long when;
+};
+
 typedef std::function<void(EpochTime&)> NtpClientEventHandler;
 
 class NtpClient {
@@ -17,28 +36,24 @@ class NtpClient {
     NtpClient();
     void setConfig(Config* config);
     void setOutput(Print* p);
-    void setOnSynced(NtpClientEventHandler);
+    void setOnTimeSynced(NtpClientEventHandler);
     void setInterval(uint16_t time_s);
     void setServer(const char* server);
     void setZone(uint8_t zone);
-    
+
     bool begin();
     void end();
-    void loop();    
-    
+    void loop();
+
     void printDiag(Print* p);
 
    private:
     void init();
     void sync();
-    void send_udp_packet();
-
-    uint8_t buffer[NTP_PACKET_SIZE];
-    char server[PARAM_STR_SIZE + 1];
+    char* server;
     uint16_t port;
     bool active;
-    bool synced;
-    unsigned long interval_ms;
+    unsigned long syncInterval;
     unsigned long lastUpdated;
     EpochTime epoch;
     WiFiUDP* udp;

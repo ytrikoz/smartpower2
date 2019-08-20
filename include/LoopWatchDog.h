@@ -10,63 +10,84 @@
 
 namespace Profiler {
 
-enum Module {BUTTONS, CLOCK, LEDS, PSU, TASKS, CONSOLE, LCD, HTTP, DISCOVERY, NTP, TELNET, SHELL, OTA_UPDATE};
+struct Capture {
+    unsigned long duration;
+    uint32_t total;
+    uint32_t overrange;
+    unsigned long longest;
+    uint32_t counter[LOOP_COUNTERS];
+    uint8_t counters_size;
+    unsigned long module[MODULES_COUNT];
+    uint8_t modules_size;
+    Capture() {
+        reset();
+    }
+    void reset() 
+    {
+        duration = 0;
+        total = 0;
+        overrange = 0;
+        longest = 0;
+        counters_size = LOOP_COUNTERS;
+        memset(counter, 0, sizeof(counter[0]) * counters_size);
+        modules_size = MODULES_COUNT;
+        memset(module, 0, sizeof(module[0]) * modules_size);
+
+    }
+};
+
+enum Module {
+    BUTTONS,
+    CLOCK,
+    LEDS,
+    PSU,
+    TASKS,
+    SERIAL_SHELL,
+    LCD,
+    HTTP,
+    NETSVC,
+    NTP,
+    TELNET,
+    TELNET_SHELL,
+    OTA_UPDATE
+};
 
 enum State { CAPTURE_IDLE, CAPTURE_IN_PROGRESS, CAPTURE_DONE };
 
-class LoopWatchDog {
+class ProfilesHolder {
    public:
-    LoopWatchDog();
-    void run();
-    void resetStats();
-    void startCapture();
-    void printCapture(Print* p);
-    State getState();
-    void setIdle();
-    unsigned long getCaptureTimeLeft();
-    void addTimeProfile(uint8_t index, unsigned long duration);
-   private:
-    State state;
-    unsigned long captureTimeLeft;
-    unsigned long captureStarted;
-    unsigned long captureFinished;
-    unsigned long loopStarted;
-
-    uint32_t loopCounter = 0;
-    uint32_t loops[LOOP_COUNTERS];
-    #ifdef DEBUG_LOOP
-    unsigned long modules[MODULES_COUNT];
-    #endif
-    uint32_t loopOverRange = 0;
-    unsigned long loopLongest = 0;    
+    virtual void add(Module module, unsigned long duration);
 };
-
 
 class TimeProfiler {
    public:
-    TimeProfiler(LoopWatchDog *watchDog, Module index);
+    TimeProfiler(ProfilesHolder* holder, Module module);
     ~TimeProfiler();
-    unsigned long duration();
+
    private:
-    Profiler::Module module;
-    LoopWatchDog *watchDog;
+    Module module;
+    ProfilesHolder* holder;
     unsigned long started;
-    unsigned long finished;
 };
 
-inline TimeProfiler::TimeProfiler(LoopWatchDog* watchDog, Module module) {
-    this->watchDog = watchDog;
-    this->module = module;
-    started = micros();
-}
+class LoopWatchDog : public ProfilesHolder {
+   public:
+    LoopWatchDog();
+    void loop();
+    void start();
+    void add(Module module, unsigned long duration);
+    Capture* getResults();
+    State getState();
+    unsigned long getDuration();
+    void setIdle();
+    TimeProfiler run(Module module);
 
-inline unsigned long TimeProfiler::duration(){
-    return finished - started;
-}
-
-inline TimeProfiler::~TimeProfiler() {
-    finished =  micros();
-    watchDog->addTimeProfile(module, finished - started);
-}
+   private:
+    Capture cap;
+    State state;
+    unsigned long captureStarted;
+    unsigned long captureTimeleft;
+    unsigned long loopStarted;
+};
 
 }  // namespace Profiler

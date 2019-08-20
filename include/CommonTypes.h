@@ -4,38 +4,12 @@
 #include <time.h>
 
 #include "Strings.h"
+#include "TimeUtils.h"
 
 struct Month {
     char name[4];
     uint8_t days;
     uint16_t dayOfyear;
-};
-
-struct EpochTime : public Printable {
-   public:
-    EpochTime() {
-        this->epoch_s = 0;
-        this->wasSet = false;
-    }
-    EpochTime(unsigned long epoch_s) {
-        this->epoch_s = epoch_s;
-        wasSet = true;
-    }
-
-    unsigned long get() { return epoch_s; }
-
-    size_t printTo(Print& p) const {
-        size_t n;
-        if (wasSet)
-            n = p.printf_P(strf_epoch, epoch_s);
-        else
-            n = p.printf_P(str_unset);
-        return n;
-    }
-
-   private:
-    unsigned long epoch_s;
-    bool wasSet;
 };
 
 struct Time : public Printable {

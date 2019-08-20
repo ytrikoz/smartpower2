@@ -220,11 +220,6 @@ String getVcc() {
     return str;
 }
 
-String getHeapFree() {
-    String str = StrUtils::formatSize(ESP.getFreeHeap());
-    return str;
-}
-
 String getChipId() { return String(ESP.getChipId(), HEX); }
 
 const char *rssi2human(sint8_t rssi) {
@@ -240,22 +235,6 @@ const char *rssi2human(sint8_t rssi) {
         return "Unusable";
     }
     return "Unknown";
-}
-
-uint8_t rssi2per(sint8_t rssi) {
-    int r;
-
-    if (rssi > 200)
-        r = 100;
-    else if (rssi < 100)
-        r = 0;
-    else
-        r = 100 - 2 * (200 - rssi);
-
-    if (r > 100) r = 100;
-    if (r < 0) r = 0;
-
-    return r;
 }
 
 String getNetworkInfoJson() {
@@ -321,24 +300,4 @@ String getHeapStat() {
     sprintf(buf, "free %s max %s frag %d%%", StrUtils::formatSize(free).c_str(),
             StrUtils::formatSize(max).c_str(), frag);
     return String(buf);
-}
-
-String getWifiStaStatus() {
-    station_status_t status = wifi_station_get_connect_status();
-    String str = "";
-    switch (status) {
-        case STATION_GOT_IP:
-            str = "connected";
-        case STATION_NO_AP_FOUND:
-            str = "no ap found";
-        case STATION_CONNECT_FAIL:
-            str = "connection failed";
-        case STATION_WRONG_PASSWORD:
-            str = "wrong password";
-        case STATION_IDLE:
-            str = "idle";
-        default:
-            str = "disconnected";
-    }
-    return str;
 }

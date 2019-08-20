@@ -23,7 +23,7 @@
 
 
 enum Screen { SCREEN_CLEAR, SCREEN_BOOT, SCREEN_WIFI_OFF, SCREEN_WIFI_STATUS, SCREEN_WIFI_AP, SCREEN_WIFI_STA, SCREEN_AP_STA, SCREEN_PVI };
-enum CharBank { BANK_NONE, BANK_BAR, BANK_PLOT };
+enum CharBank { BANK_NONE, BANK_PROGRESS, BANK_PROGRESS_START, BANK_PROGRESS_1_TO_4, BANK_PROGRESS_4_TO_7, BANK_PROGRESS_END, BANK_PLOT };
 
 struct TextItem {
     bool hasUpdates = false;
@@ -42,8 +42,11 @@ class Display {
     bool ready();
     void loop();
     void setOutput(Print *p);
+    void drawTextLeft(uint8_t row, const char *str);
+    void drawTextRight(uint8_t row, const char *str);
     void drawTextCenter(uint8_t row, const char *str);
     void drawBar(uint8_t row, uint8_t per);
+    void drawProgressBar(uint8_t row, uint8_t per);
     void drawPlot(uint8_t col_start);
     void drawFloat(uint8_t col, uint8_t row, float value);
     void drawText(uint8_t col, uint8_t row, const char* str);

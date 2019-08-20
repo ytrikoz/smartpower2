@@ -38,15 +38,7 @@ void PsuLogger::add(PsuInfo item, unsigned long time_ms) {
         rotated = true;
     }
     items[writePos] = item;
-    // items[writePos].time = item.time;
-    // items[writePos].current = item.current;
-    // items[writePos].power = item.power;
-    // items[writePos].voltage = item.voltage;
-    // items[writePos].wattSeconds = item.wattSeconds;
-
-    lastItem = item.time;
-    writePos++;
-    if (rotated) readPos = writePos;
+    if (rotated) readPos = writePos++;
 }
 
 void PsuLogger::getVoltages(float* voltages) {
@@ -60,18 +52,11 @@ void PsuLogger::getVoltages(float* voltages) {
 
 void PsuLogger::loop() {
     if (!active) return;
-
     unsigned long now = millis();
-
     if (millis_passed(lastTime, now) > PSU_LOG_INTERVAL_ms) {
-        if (lastTime == 0) {
-            lastTime = now;
-        } else {
-            while (millis_passed(lastTime, now) > PSU_LOG_INTERVAL_ms) {
-                lastTime += PSU_LOG_INTERVAL_ms;
-            }
-        }
+        if (lastTime == 0) lastTime = now;        
         add(psu->getInfo(), lastTime);
+        while (millis_passed(lastTime, now) > PSU_LOG_INTERVAL_ms) lastTime += PSU_LOG_INTERVAL_ms;
     }
 }
 

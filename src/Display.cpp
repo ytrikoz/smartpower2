@@ -8,37 +8,82 @@ uint8_t char_empty[8] = {0b00000, 0b00000, 0b00000, 0b00000,
 uint8_t char_solid[8] = {0b11111, 0b11111, 0b11111, 0b11111,
                          0b11111, 0b11111, 0b11111, 0b11111};
 
-uint8_t char_1_5[8] = {0b10000, 0b10000, 0b10000, 0b10000,
-                       0b10000, 0b10000, 0b10000, 0b10000};
+uint8_t progress_start_0_4[8] = {0b01111, 0b11000, 0b10000, 0b10000,
+                                 0b10000, 0b10000, 0b11000, 0b01111};
 
-uint8_t char_2_5[8] = {0b11000, 0b11000, 0b11000, 0b11000,
-                       0b11000, 0b11000, 0b11000, 0b11000};
+uint8_t progress_start_1_4[8] = {0b01111, 0b11000, 0b10000, 0b10000,
+                                 0b10000, 0b10011, 0b11000, 0b01111};
 
-uint8_t char_3_5[8] = {0b11100, 0b11100, 0b11100, 0b11100,
-                       0b11100, 0b11100, 0b11100, 0b11100};
+uint8_t progress_start_2_4[8] = {0b01111, 0b11000, 0b10000, 0b10000,
+                                 0b10111, 0b10011, 0b11000, 0b01111};
 
-uint8_t char_4_5[8] = {0b11110, 0b11110, 0b11110, 0b11110,
-                       0b11110, 0b11110, 0b11110, 0b11110};
+uint8_t progress_start_3_4[8] = {0b01111, 0b11000, 0b10000, 0b10111,
+                                 0b10111, 0b10011, 0b11000, 0b01111};
 
-uint8_t char_1_8[8] = {0b00000, 0b00000, 0b00000, 0b00000,
+uint8_t progress_start_4_4[8] = {0b01111, 0b11000, 0b10011, 0b10111,
+                                 0b10111, 0b10011, 0b11000, 0b01111};
+
+uint8_t progress_0_8[8] = {0b11111, 0b00000, 0b00000, 0b00000,
+                           0b00000, 0b00000, 0b00000, 0b11111};
+
+uint8_t progress_1_8[8] = {0b11111, 0b00000, 0b00000, 0b00000,
+                           0b00000, 0b11000, 0b00000, 0b11111};
+
+uint8_t progress_2_8[8] = {0b11111, 0b00000, 0b00000, 0b00000,
+                           0b11000, 0b11000, 0b00000, 0b11111};
+
+uint8_t progress_3_8[8] = {0b11111, 0b00000, 0b00000, 0b11000,
+                           0b11000, 0b11000, 0b00000, 0b11111};
+
+uint8_t progress_4_8[8] = {0b11111, 0b00000, 0b11000, 0b11000,
+                           0b11000, 0b11000, 0b00000, 0b11111};
+
+uint8_t progress_5_8[8] = {0b11111, 0b00000, 0b11000, 0b11000,
+                           0b11000, 0b11011, 0b00000, 0b11111};
+
+uint8_t progress_6_8[8] = {0b11111, 0b00000, 0b11000, 0b11000,
+                           0b11011, 0b11011, 0b00000, 0b11111};
+
+uint8_t progress_7_8[8] = {0b11111, 0b00000, 0b11000, 0b11011,
+                           0b11011, 0b11011, 0b00000, 0b11111};
+
+uint8_t progress_8_8[8] = {0b11111, 0b00000, 0b11011, 0b11011,
+                           0b11011, 0b11011, 0b00000, 0b11111};
+
+uint8_t progress_end_0_4[8] = {0b11110, 0b00011, 0b00001, 0b00001,
+                               0b00001, 0b00001, 0b00011, 0b11110};
+
+uint8_t progress_end_1_4[8] = {0b11110, 0b00011, 0b00001, 0b00001,
+                               0b00001, 0b11001, 0b00011, 0b11110};
+
+uint8_t progress_end_2_4[8] = {0b11110, 0b00011, 0b00001, 0b00001,
+                               0b11101, 0b11001, 0b00011, 0b11110};
+
+uint8_t progress_end_3_4[8] = {0b11110, 0b00011, 0b00001, 0b11101,
+                               0b11101, 0b11001, 0b00011, 0b11110};
+
+uint8_t progress_end_4_4[8] = {0b11110, 0b00011, 0b11001, 0b11101,
+                               0b11101, 0b11001, 0b00011, 0b11110};
+
+uint8_t plot_1_8[8] = {0b00000, 0b00000, 0b00000, 0b00000,
                        0b00000, 0b00000, 0b00000, 0b11111};
 
-uint8_t char_2_8[8] = {0b00000, 0b00000, 0b00000, 0b00000,
+uint8_t plot_2_8[8] = {0b00000, 0b00000, 0b00000, 0b00000,
                        0b00000, 0b00000, 0b11111, 0b11111};
 
-uint8_t char_3_8[8] = {0b00000, 0b00000, 0b00000, 0b00000,
+uint8_t plot_3_8[8] = {0b00000, 0b00000, 0b00000, 0b00000,
                        0b00000, 0b11111, 0b11111, 0b11111};
 
-uint8_t char_4_8[8] = {0b00000, 0b00000, 0b00000, 0b00000,
+uint8_t plot_4_8[8] = {0b00000, 0b00000, 0b00000, 0b00000,
                        0b11111, 0b11111, 0b11111, 0b11111};
 
-uint8_t char_5_8[8] = {0b00000, 0b00000, 0b00000, 0b11111,
+uint8_t plot_5_8[8] = {0b00000, 0b00000, 0b00000, 0b11111,
                        0b11111, 0b11111, 0b11111, 0b11111};
 
-uint8_t char_6_8[8] = {0b00000, 0b00000, 0b11111, 0b11111,
+uint8_t plot_6_8[8] = {0b00000, 0b00000, 0b11111, 0b11111,
                        0b11111, 0b11111, 0b11111, 0b11111};
 
-uint8_t char_7_8[8] = {0b00000, 0b11111, 0b11111, 0b11111,
+uint8_t plot_7_8[8] = {0b00000, 0b11111, 0b11111, 0b11111,
                        0b11111, 0b11111, 0b11111, 0b11111};
 
 uint8_t char_bell[8] = {0x4, 0xe, 0xe, 0xe, 0x1f, 0x0, 0x4};
@@ -73,7 +118,7 @@ bool Display::init() {
             output->print("0x");
             output->println(addr, HEX);
 
-            lcd = new LiquidCrystal_I2C(addr, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE); 
+            lcd = new LiquidCrystal_I2C(addr, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
             lcd->begin(LCD_COLS, LCD_ROWS);
             lcd->clear();
 
@@ -91,12 +136,12 @@ bool Display::init() {
 }
 
 void Display::disableBacklight() {
-    lcd->noBacklight();
+    lcd->noDisplay();
     backlight = false;
 }
 
 void Display::enableBacklight() {
-    lcd->backlight();
+    lcd->display();
     backlight = true;
 }
 void Display::turnOn() {
@@ -129,7 +174,8 @@ void Display::addTextItem(uint8_t row, const char *str) {
     addTextItem(row, nullptr, str);
 }
 
-void Display::addTextItem(uint8_t n, const char *fixed_str, const char *var_str) {
+void Display::addTextItem(uint8_t n, const char *fixed_str,
+                          const char *var_str) {
     TextItem *l = &item[n];
     bool updates = setstr(l->fixed_str, fixed_str, LCD_COLS + 1);
     updates |= setstr(l->var_str, var_str, DISPLAY_VIRTUAL_COLS + 1);
@@ -148,7 +194,7 @@ void Display::addTextItem(uint8_t n, const char *fixed_str, const char *var_str)
 void Display::setScreen(Screen screen, size_t item_count) {
     if (this->screen != screen) {
         this->screen = screen;
-        this->items_count = item_count;        
+        this->items_count = item_count;
         lcd->clear();
         // for (uint8_t i = 0; i < item_count; ++i) item[i].hasUpdates = true;
         active = true;
@@ -192,10 +238,10 @@ bool Display::locked() {
     return (lockTimeout > 0);
 }
 
-TextItem *Display::getItemForRow(uint8_t row) { 
-    size_t pos  = cur_item + row;     
+TextItem *Display::getItemForRow(uint8_t row) {
+    size_t pos = cur_item + row;
     item[pos].hasUpdates = true;
-    return &item[pos]; 
+    return &item[pos];
 }
 
 void Display::scrollDown() {
@@ -231,9 +277,9 @@ void Display::drawTextItem(uint8_t row, TextItem *l) {
     uint8_t _fix_len = strlen(l->fixed_str);
     uint8_t _var_len = strlen(l->var_str);
 
-    uint8_t _free_space = LCD_COLS - _fix_len; 
+    uint8_t _free_space = LCD_COLS - _fix_len;
 
-    if (_var_len <= _free_space) {   
+    if (_var_len <= _free_space) {
         char buf[LCD_COLS + 1];
         strcpy(buf, l->fixed_str);
         strcat(buf, l->var_str);
@@ -245,9 +291,8 @@ void Display::drawTextItem(uint8_t row, TextItem *l) {
         }
         drawText(0, row, buf);
         l->hasUpdates = false;
-        return;    } 
-    else 
-    {   // Fixed
+        return;
+    } else {  // Fixed
         drawText(0, row, l->fixed_str);
     }
 
@@ -284,6 +329,78 @@ void Display::drawTextItem(uint8_t row, TextItem *l) {
     l->var_pos++;
 }
 
+void Display::drawTextCenter(uint8_t row, const char *str) {
+    if (!connected) return;
+    char buf[LCD_COLS + 1];
+    size_t str_len = strlen(str);
+    if (str_len > LCD_COLS) str_len = LCD_COLS;
+    strncpy(buf, str, str_len);
+    buf[str_len] = '\x00';
+    StrUtils::strpadd(buf, StrUtils::CENTER, LCD_COLS + 1);
+    drawText(0, row, buf);
+}
+
+void Display::clear() {
+    items_count = 0;
+    cur_item = 0;
+    screen = SCREEN_CLEAR;
+    lcd->clear();
+}
+
+void Display::loadBank(CharBank bank, bool force) {
+    if ((!force) && (this->bank == bank)) return;
+#ifdef DEBUG_DISPLAY
+    DEBUG.printf("loadBank(%d, %d)", bank, force);
+    DEBUG.println();
+#endif
+    switch (bank) {
+        case BANK_PLOT:
+            lcd->createChar(0, char_solid);
+            lcd->createChar(1, plot_1_8);
+            lcd->createChar(2, plot_2_8);
+            lcd->createChar(3, plot_3_8);
+            lcd->createChar(4, plot_4_8);
+            lcd->createChar(5, plot_5_8);
+            lcd->createChar(6, plot_6_8);
+            lcd->createChar(7, plot_7_8);
+            break;
+        case BANK_PROGRESS:
+            lcd->createChar(0, progress_start_4_4);
+            lcd->createChar(1, progress_0_8);
+            lcd->createChar(2, progress_8_8);
+            lcd->createChar(3, progress_end_0_4);
+            break;
+        case BANK_PROGRESS_START:
+            lcd->createChar(4, progress_start_0_4);
+            lcd->createChar(5, progress_start_1_4);
+            lcd->createChar(6, progress_start_2_4);
+            lcd->createChar(7, progress_start_3_4);
+        case BANK_PROGRESS_1_TO_4:
+            lcd->createChar(4, progress_1_8);
+            lcd->createChar(5, progress_2_8);
+            lcd->createChar(6, progress_3_8);
+            lcd->createChar(7, progress_4_8);
+            break;
+        case BANK_PROGRESS_4_TO_7:
+            lcd->createChar(4, progress_4_8);
+            lcd->createChar(5, progress_5_8);
+            lcd->createChar(6, progress_6_8);
+            lcd->createChar(7, progress_7_8);
+            break;
+        case BANK_PROGRESS_END:
+            lcd->createChar(4, progress_end_1_4);
+            lcd->createChar(5, progress_end_2_4);
+            lcd->createChar(6, progress_end_3_4);
+            lcd->createChar(7, progress_end_4_4);
+            break;
+        case BANK_NONE:
+            for (uint8_t i = 0; i < 8; ++i) lcd->createChar(i, char_empty);
+        default:
+            break;
+    }
+    this->bank = bank;
+}
+
 void Display::drawBar(uint8_t row, uint8_t per) {
     if (!connected) return;
     uint8_t cols = floor((float)LCD_COLS * per / 100);
@@ -298,58 +415,56 @@ void Display::drawBar(uint8_t row, uint8_t per) {
 #endif
 }
 
-void Display::drawTextCenter(uint8_t row, const char *str) {
-    if (!connected) return;
-    char buf[LCD_COLS + 1];
-    size_t str_len = strlen(str);
-    if (str_len > LCD_COLS) str_len = LCD_COLS;
-    strncpy(buf, str, str_len);
-    buf[str_len] = '\x00';
-    StrUtils::strpadd(buf, StrUtils::CENTER, LCD_COLS + 1);
+void Display::drawProgressBar(uint8_t row, uint8_t per) {
     lcd->setCursor(0, row);
-    lcd->print(buf);
-#ifdef DEBUG_DISPLAY
-    DEBUG.printf("#%d drawTextCenter(%s)", row, str);
-    DEBUG.println();
-#endif
-}
 
-void Display::clear() {
-    items_count = 0;
-    cur_item = 0;
-    screen = SCREEN_CLEAR;
-    lcd->clear();
-}
+    uint8_t nb_columns = map(per, 0, 100, 0, (LCD_COLS - 4) * 2 * 4 - 2 * 4);
 
-void Display::loadBank(CharBank bank, bool force) {
-    if ((!force) && (this->bank == bank)) return;
-    #ifdef DEBUG_DISPLAY
-    DEBUG.printf("loadBank(%d, %d)", bank, force);
-    DEBUG.println();
-    #endif
-    switch (bank) {
-        case BANK_PLOT:
-            lcd->createChar(0, char_solid);
-            lcd->createChar(1, char_1_8);
-            lcd->createChar(2, char_2_8);
-            lcd->createChar(3, char_3_8);
-            lcd->createChar(4, char_4_8);
-            lcd->createChar(5, char_5_8);
-            lcd->createChar(6, char_6_8);
-            lcd->createChar(7, char_7_8);
-            break;
-        case BANK_BAR:
-            lcd->createChar(1, char_1_5);
-            lcd->createChar(2, char_2_5);
-            lcd->createChar(3, char_3_5);
-            lcd->createChar(4, char_4_5);
-            break;
-        case BANK_NONE:
-            for (uint8_t i = 0; i < 8; ++i) lcd->createChar(i, char_empty);
-        default:
-            break;
+    for (uint8_t i = 0; i < LCD_COLS - 4; ++i) {
+        if (i == 0) {
+            if (nb_columns > 4) {
+                lcd->write((uint8_t)0);
+                nb_columns -= 4;
+            } else if (nb_columns == 4) {
+                lcd->write((uint8_t)0);
+                nb_columns = 0;
+            } else {
+                loadBank(BANK_PROGRESS_START);
+                lcd->setCursor(i, row);
+                lcd->write((uint8_t)nb_columns + 4);
+                nb_columns = 0;
+            }
+        } else if (i == LCD_COLS - 5) {
+            if (nb_columns > 0) {
+                loadBank(BANK_PROGRESS_END);
+                lcd->setCursor(i, row);
+                lcd->write((uint8_t)nb_columns + 3);
+            } else {
+                lcd->write((uint8_t)3);
+            }
+        } else {
+            if (nb_columns == 0) {
+                lcd->write((uint8_t)1);
+            } else if (nb_columns >= 8) {
+                lcd->write((uint8_t)2);
+                nb_columns -= 8;
+            } else if (nb_columns >= 4 && nb_columns < 8) {
+                loadBank(BANK_PROGRESS_4_TO_7);
+                lcd->setCursor(i, row);
+                lcd->write((uint8_t)nb_columns);
+                nb_columns = 0;
+            } else if (nb_columns < 4) {
+                loadBank(BANK_PROGRESS_1_TO_4);
+                lcd->setCursor(i, row);
+                lcd->write((uint8_t)nb_columns + 3);
+                nb_columns = 0;
+            }
+        }
     }
-    this->bank = bank;
+
+    char tmp[5];
+    sprintf(tmp, "% 3d %%", per);
+    lcd->print(tmp);
 }
 
 void Display::drawPlot(uint8_t col_start) {
@@ -384,7 +499,11 @@ void Display::drawPlot(uint8_t col_start) {
     drawFloat(col, LCD_ROW_2, this->data.min_value);
 }
 
-void Display::drawText(uint8_t col, uint8_t row, const char* str) {
+void Display::drawText(uint8_t col, uint8_t row, const char *str) {
+#ifdef DEBUG_DISPLAY
+    DEBUG.printf("#%d drawText(%s)", row, str);
+    DEBUG.println();
+#endif
     lcd->setCursor(col, row);
     lcd->print(str);
 }
