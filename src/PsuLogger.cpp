@@ -29,7 +29,7 @@ void PsuLogger::clear() {
 
 void PsuLogger::add(PsuInfo item) {
     items[writePos] = item;
-    if (++writePos == capacity) {
+    if (++writePos >= capacity) {
         writePos = 0;
         rotated = true;
     }
@@ -61,9 +61,9 @@ size_t PsuLogger::first() { return rotated ? next(writePos) : 0; }
 
 size_t PsuLogger::last() { return prev(writePos); }
 
-size_t PsuLogger::next(size_t pos) { return pos + 1 > capacity ? 0 : ++pos; }
+size_t PsuLogger::next(size_t pos) { return pos + 1 >= capacity ? 0 : ++pos; }
 
-size_t PsuLogger::prev(size_t pos) { return pos == 0 ? pos = capacity : --pos; }
+size_t PsuLogger::prev(size_t pos) { return pos == 0 ? pos = capacity - 1 : --pos; }
 
 void PsuLogger::printItem(Print* p, size_t index) {
     PsuInfo pi = items[index];

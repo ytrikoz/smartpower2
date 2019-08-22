@@ -416,7 +416,6 @@ void onShow(cmd* c) {
     }
 }
 
-
 void onPlot(cmd* c) {
     Command cmd(c);
     PlotData* data = display->getData();
@@ -446,7 +445,7 @@ void onRemove(cmd* c) {
     Command cmd(c);
     String file = getFileStr(cmd);
     if (SPIFFS.exists(file)) {
-        if (SPIFFS.remove(file)) onIOResult(strf_file_deleted, file.c_str());        
+        if (SPIFFS.remove(file)) onIOResult(strf_file_deleted, file.c_str());
     } else {
         onIOResult(strf_file_not_found, file.c_str());
     }
