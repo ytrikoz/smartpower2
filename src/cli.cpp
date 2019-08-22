@@ -291,7 +291,6 @@ void onPower(cmd* c) {
             return;
         }
     }
-    print_done(output);
 }
 
 void onSystem(cmd* c) {

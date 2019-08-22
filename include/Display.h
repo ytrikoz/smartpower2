@@ -12,9 +12,10 @@
 #include "Strings.h"
 #include "TimeUtils.h"
 
-// slave address are 0x27 or 0x3f
+// address are 0x27 or 0x3f
 #define LCD_SLAVE_ADDRESS 0x3f
 #define LCD_SLAVE_ADDRESS_ALT 0x27
+#define LCD_SCROLL_INTERVAL 5000
 #define LCD_UPDATE_INTERVAL 250
 #define LCD_COLS 16
 #define LCD_ROWS 2
@@ -72,26 +73,24 @@ class Display {
     void drawText(uint8_t col, uint8_t row, const char *str);
     void turnOn();
     void turnOff();
-    void loadBank(CharBank bank, bool force = false);
     void clear();
-    void scrollDown();
     Screen getScreen();
     void setScreen(Screen screen, size_t items_count);
     void addScreenItem(uint8_t n, const char *text);
     void addScreenItem(uint8_t n, const char *label, const char *text);
     void lock(unsigned long period);
-    void lock();
     void unlock();
     bool locked();
     PlotData *getData();
 
    private:
+    bool connect();
     bool locked(unsigned long now);
-
+    void loadBank(CharBank bank, bool force = false);
     void drawScreenItem(uint8_t row, ScreenItem *l);
     uint8_t getRowForUpdate();
     ScreenItem *getItemForRow(uint8_t row);
-    bool connect();
+    void scrollDown();
 
     uint8_t addr;
     bool connected;
@@ -101,6 +100,7 @@ class Display {
     unsigned long lockTimeout;
     unsigned long lockUpdated;
     unsigned long lastUpdated;
+    unsigned long lastScroll;
     LiquidCrystal_I2C *lcd;
     Print *output;
     PlotData data;

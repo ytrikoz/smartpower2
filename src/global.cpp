@@ -20,11 +20,9 @@ Shell *telnetShell;
 Shell *consoleShell;
 
 void refresh_wifi_led() {
-    uint8_t level;
-    if (!Wireless::hasNetwork()) {
-        level = 0;
-    } else {
-        level = 1;
+    uint8_t level = 0;
+    if (Wireless::hasNetwork()) {
+        level++;
         if (get_http_clients_count() || get_telnet_clients_count()) level++;
     }
     switch (level) {
@@ -36,9 +34,6 @@ void refresh_wifi_led() {
             break;
         case 2:
             wifi_led->set(Led::BLINK_ONE);
-            break;
-        case 3:
-            wifi_led->set(Led::BLINK_TWO);
             break;
         default:
             break;
@@ -111,23 +106,17 @@ void start_telnet() {
 
 void start_console_shell() {
     consoleTerm = new Termul(&USE_SERIAL);
-    consoleTerm->enableEcho(true);
+    consoleTerm->enableEcho();
 
-    consoleShell = new Shell();
-    consoleShell->setParser(cli);
-    consoleShell->setTermul(consoleTerm);
+    consoleShell = new Shell(cli, consoleTerm);
 }
 
-bool start_telnet_shell(Stream *s) {
+void start_telnet_shell(Stream *s) {
     telnetTerm = new Termul(s);
-    telnetTerm->enableControlCodes(true);
+    telnetTerm->enableControlCodes();
 
-    telnetShell = new Shell();
-    telnetShell->setParser(cli);
-    telnetShell->enableWelcome();
-    telnetShell->setTermul(telnetTerm);
-
-    return true;
+    telnetShell = new Shell(cli, telnetTerm);
+    telnetShell->enableWelcome();    
 }
 
 void start_clock() {
@@ -245,6 +234,7 @@ void load_screen_sta_wifi() {
     display->addScreenItem(0, "WIFI> ",
                            Wireless::getConnectionStatus().c_str());
     display->addScreenItem(1, "STA> ", Wireless::hostSTA_SSID().c_str());
+    
     display->addScreenItem(2, "IP> ", Wireless::hostIP().toString().c_str());
     display->addScreenItem(3, "RSSI> ", Wireless::RSSIInfo().c_str());
     display->setScreen(SCREEN_WIFI_STA, 4);
@@ -274,12 +264,11 @@ void load_screen_ready() {
     display->setScreen(SCREEN_WIFI_OFF, 1);
 }
 
-void update_display_every_1_sec() {
-    if (display->locked()) return;
+void update_display() {
     WirelessMode mode = Wireless::getWirelessMode();
     if (psu->getState() == POWER_OFF) {
         if (mode == WLAN_STA) {
-            load_screen_sta_wifi();
+            load_screen_sta_wifi(); 
         } else if (mode == WLAN_AP) {
             load_screen_ap_wifi();
         } else if (mode == WLAN_AP_STA) {
@@ -291,5 +280,3 @@ void update_display_every_1_sec() {
         load_screen_psu_pvi();
     }
 }
-
-void update_display_every_5_sec() { display->scrollDown(); }

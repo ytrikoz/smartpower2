@@ -221,23 +221,23 @@ void send_psu_data_to_clients() {
 
 uint8_t boot_progress = 0;
 void display_boot_progress(uint8_t per, const char *text) {
-#ifndef DISABLE_LCD
-    if (display && text != NULL) display->drawTextCenter(LCD_ROW_1, text);
-#endif
     while (per - boot_progress > 0) {
         boot_progress += 5;
 #ifndef DISABLE_LCD
-        if (display) {display->drawProgressBar(LCD_ROW_2, per);}
+        if (display) display->drawProgressBar(LCD_ROW_2, per);
 #endif
         delay(100);
     }
+#ifndef DISABLE_LCD
+    if (display && text != NULL) display->drawTextCenter(LCD_ROW_1, text);
+#endif
 }
 
 void delay_print(Print *p) {
-    p->print(FPSTR(str_wait));
+    p->print(getSquareBracketsStrP(str_wait));
     for (uint8_t t = BOOT_WAIT_s; t > 0; t--) {
         p->print(t);
-        p->print(" ");
+        p->print(' ');
         delay(1000);
     }
     p->println();
@@ -293,10 +293,9 @@ void setup() {
 #endif
     delay_print(&USE_SERIAL);
 
-    display->loadBank(BANK_PROGRESS);
     display->setScreen(SCREEN_BOOT, 0);
 
-    display_boot_progress(10, BUILD_DATE);
+    display_boot_progress(0, BUILD_DATE);
 
     config = new ConfigHelper();
     config->init(FILE_CONFIG);
@@ -318,16 +317,15 @@ void setup() {
     start_console_shell();
 #endif
 
+    display_boot_progress(100, "<COMPLETE>");
+
     timer.setInterval(1000, [] { send_psu_data_to_clients(); });
 
 #ifndef DISABLE_LCD
     if ((display) && (display->ready())) {
-        timer.setInterval(1000, [] { update_display_every_1_sec(); });
-        timer.setInterval(5000, [] { update_display_every_5_sec(); });
+        timer.setInterval(1000, [] { update_display(); });
     }
 #endif
-
-    display_boot_progress(100, "<COMPLETE>");
 }
 
 void loop() {
@@ -462,44 +460,40 @@ ButtonState volatile power_btn_state = BTN_RELEASED;
 bool volatile powerButtonClicked = false;
 static void ICACHE_RAM_ATTR power_button_state_change() {
     unsigned long now = millis();
-    if (now - power_btn_last_event < 50) return;
-
+    if (millis_passed(power_btn_last_event, now) < 50) return;
     if (!digitalRead(POWER_BTN_PIN) && power_btn_state != BTN_PRESSED) {
         power_btn_last_event = now;
         power_btn_state = BTN_PRESSED;
     }
     if (digitalRead(POWER_BTN_PIN) && power_btn_state != BTN_RELEASED) {
-        power_btn_last_event = now;
-        power_btn_state = BTN_RELEASED;
         if (millis_passed(power_btn_last_event, now) < 1000)
             powerButtonClicked = true;
+        power_btn_last_event = now;
+        power_btn_state = BTN_RELEASED;
     }
 }
 
 unsigned long powerButtonUpdated = 0;
 void power_button_handler() {
     unsigned long now = millis();
-
-    if (millis_passed(powerButtonUpdated, now) >= (ONE_SECOND_ms / 2)) {
-        if (powerButtonClicked) {
-            psu->togglePower();
-            refresh_wifi_led();
-            powerBtnLongPressCounter = 0;
-            powerButtonClicked = false;
-        }
-    }
-
-    if (millis_passed(powerButtonUpdated, now) >= ONE_SECOND_ms) {
-        if ((power_btn_state == BTN_PRESSED) && !digitalRead(POWER_BTN_PIN)) {
-            if (++powerBtnLongPressCounter >= 5) {
+    if (powerButtonClicked) {
+        psu->togglePower();
+        powerBtnLongPressCounter = 0;
+        powerButtonClicked = false;
+    } else if (millis_passed(powerButtonUpdated, now) >= ONE_SECOND_ms) {
+        if (power_btn_state == BTN_PRESSED) {
+            if (++powerBtnLongPressCounter >= 10) {
                 config->reset();
                 setup_restart_timer();
-            }
-            if (powerBtnLongPressCounter == 3) {
-                wifi_led->set(Led::BLINK_ERROR);
+            } else if (powerBtnLongPressCounter == 5) {
+                power_led->set(Led::BLINK_ERROR);
             }
         } else {
-            powerBtnLongPressCounter = 0;
+            if (powerBtnLongPressCounter > 0) {
+                power_led->set(psu->getState() == POWER_ON ? Led::BLINK
+                                                           : Led::ON);
+                powerBtnLongPressCounter = 0;
+            }
         }
         powerButtonUpdated = now;
     }

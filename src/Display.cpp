@@ -188,28 +188,28 @@ void Display::addScreenItem(uint8_t n, const char *label, const char *text) {
 #endif
 }
 
-void Display::setScreen(Screen screen, size_t item_size) {
+void Display::setScreen(Screen screen, size_t size) {
     if (!connected) return;
+
+    if (locked()) return;
+
     if (this->screen != screen) {
-        this->screen = screen;
-        this->items_size = item_size;
-        this->item_pos = 0;
+        if (screen == SCREEN_BOOT) {
+            loadBank(BANK_PROGRESS);
+        }
         lcd->clear();
-        active = true;
+
+        this->screen = screen;
+        this->items_size = size;
+        this->item_pos = 0;
+        this->lastScroll = millis();
+        this->active = items_size > 0;
     }
 }
 
 Screen Display::getScreen() { return this->screen; }
 
-void Display::unlock() {
-    active = true;
-    lockTimeout = 0;
-}
-
-void Display::lock() {
-    active = false;
-    lockTimeout = 0;
-}
+void Display::unlock() { lockTimeout = 0; }
 
 void Display::lock(unsigned long timeout) {
 #ifdef DEBUG_DISPLAY
@@ -223,7 +223,6 @@ void Display::lock(unsigned long timeout) {
 bool Display::locked() { return locked(millis()); }
 
 bool Display::locked(unsigned long now) {
-    if (!active) return true;
     if (lockTimeout > 0) {
         unsigned long passed = millis_passed(lockUpdated, now);
         if (lockTimeout > passed) {
@@ -241,32 +240,29 @@ ScreenItem *Display::getItemForRow(uint8_t row) {
     return &items[pos];
 }
 
-void Display::scrollDown() {
-    if (items_size <= LCD_ROWS) return;
-    if (++item_pos + LCD_ROWS > items_size) item_pos = 0;
-
-    uint8_t pos = item_pos;
-    for (uint8_t n = 0; n < LCD_ROWS; ++n) {
-        if (pos + n > items_size) item_pos = 0;
-        items[pos + n].forceRedraw();
-    }
-#ifdef DEBUG_DISPLAY
-    DEBUG.printf("scrollDown(%d) ", item_pos);
-    DEBUG.println();
-#endif
-}
-
 void Display::loop() {
     if (!connected) return;
+
+    if (!active) return;
+
     unsigned long now = millis();
+
+    if (locked(now)) return;
+
     if (millis_passed(lastUpdated, now) >= LCD_UPDATE_INTERVAL) {
-        if (!locked(now)) {
-            for (uint8_t row = 0; row < LCD_ROWS; ++row) {
-                ScreenItem *item = getItemForRow(row);
-                if (item->needsRedraw()) drawScreenItem(row, item);
-            }
+        for (uint8_t row = 0; row < LCD_ROWS; ++row) {
+            ScreenItem *item = getItemForRow(row);
+            if (item->needsRedraw()) drawScreenItem(row, item);
         }
         lastUpdated = now;
+    }
+
+    if (items_size > LCD_ROWS) {
+        if (millis_passed(lastScroll, now) >= LCD_SCROLL_INTERVAL &&
+            (lastScroll > 0)) {
+            scrollDown();
+            lastScroll = now;
+        }
     }
 }
 
@@ -347,7 +343,7 @@ void Display::clear() {
 }
 
 void Display::loadBank(CharBank bank, bool force) {
-    if(!connected) return;
+    if (!connected) return;
     if ((!force) && (this->bank == bank)) return;
 #ifdef DEBUG_DISPLAY
     DEBUG.printf("loadBank(%d, %d)", bank, force);
@@ -406,46 +402,46 @@ void Display::drawProgressBar(uint8_t row, uint8_t per) {
 
     lcd->setCursor(0, row);
 
-    uint8_t nb_columns = map(per, 0, 100, 0, (LCD_COLS - 4) * 2 * 4 - 2 * 4);
+    uint8_t y = map(per, 0, 100, 0, (LCD_COLS - 4) * 2 * 4 - 2 * 4);
 
     for (uint8_t i = 0; i < LCD_COLS - 4; ++i) {
         if (i == 0) {
-            if (nb_columns > 4) {
+            if (y > 4) {
                 lcd->write((uint8_t)0);
-                nb_columns -= 4;
-            } else if (nb_columns == 4) {
+                y -= 4;
+            } else if (y == 4) {
                 lcd->write((uint8_t)0);
-                nb_columns = 0;
+                y = 0;
             } else {
                 loadBank(BANK_PROGRESS_START);
                 lcd->setCursor(i, row);
-                lcd->write((uint8_t)nb_columns + 4);
-                nb_columns = 0;
+                lcd->write((uint8_t)y + 4);
+                y = 0;
             }
         } else if (i == LCD_COLS - 5) {
-            if (nb_columns > 0) {
+            if (y > 0) {
                 loadBank(BANK_PROGRESS_END);
                 lcd->setCursor(i, row);
-                lcd->write((uint8_t)nb_columns + 3);
+                lcd->write((uint8_t)y + 3);
             } else {
                 lcd->write((uint8_t)3);
             }
         } else {
-            if (nb_columns == 0) {
+            if (y == 0) {
                 lcd->write((uint8_t)1);
-            } else if (nb_columns >= 8) {
+            } else if (y >= 8) {
                 lcd->write((uint8_t)2);
-                nb_columns -= 8;
-            } else if (nb_columns >= 4 && nb_columns < 8) {
+                y -= 8;
+            } else if (y >= 4 && y < 8) {
                 loadBank(BANK_PROGRESS_4_TO_7);
                 lcd->setCursor(i, row);
-                lcd->write((uint8_t)nb_columns);
-                nb_columns = 0;
-            } else if (nb_columns < 4) {
+                lcd->write((uint8_t)y);
+                y = 0;
+            } else if (y < 4) {
                 loadBank(BANK_PROGRESS_1_TO_4);
                 lcd->setCursor(i, row);
-                lcd->write((uint8_t)nb_columns + 3);
-                nb_columns = 0;
+                lcd->write((uint8_t)y + 3);
+                y = 0;
             }
         }
     }
@@ -473,18 +469,17 @@ void Display::drawPlot(uint8_t col_start) {
                 lcd->write(0);  // Full
                 y -= 8;
             } else if (y > 0) {
-                lcd->write((uint8_t)y);  // Partial
+                lcd->write(y);  // Partial
                 y = 0;
             } else if (y == 0) {
                 lcd->write('\x20');  // Empty
             }
         }
     }
-
     uint8_t col = col_start + this->data.size + 2;
     drawFloat(col, LCD_ROW_1, this->data.max_value);
     drawFloat(col, LCD_ROW_2, this->data.min_value);
-}
+} 
 
 void Display::drawFloat(uint8_t col, uint8_t row, float value) {
     char buf[16];
@@ -499,4 +494,17 @@ void Display::drawText(uint8_t col, uint8_t row, const char *str) {
 #endif
     lcd->setCursor(col, row);
     lcd->print(str);
+}
+
+void Display::scrollDown() {
+    if (++item_pos + LCD_ROWS > items_size) item_pos = 0;
+#ifdef DEBUG_DISPLAY
+    DEBUG.printf("scrollDown(%d)", item_pos);
+    DEBUG.println();
+#endif
+    uint8_t pos = item_pos;
+    for (uint8_t n = 0; n < LCD_ROWS; ++n) {
+        if (pos + n > items_size) item_pos = 0;
+        items[pos + n].forceRedraw();
+    }
 }

@@ -4,20 +4,20 @@
 
 using StrUtils::strfill;
 using StrUtils::strpadd;
+using StrUtils::setstr;
 
-Shell::Shell() {
+Shell::Shell(SimpleCLI *cli, Termul *t) {
     memset(&prevInput, 0, sizeof(prevInput));
+    
+    this->cli = cli;
+    
+    this->t = t;
+    this->t->setOnStart([this]() { this->onOpen(); });
+    this->t->setOnQuit([this]() { this->onClose(); });
+    this->t->setOnInput([this](const char* str) { this->onInput(str); });
+    this->t->setOnTab([this]() { this->onTabPress(); });
+
     active = false;
-}
-
-void Shell::setParser(SimpleCLI* parser) { this->parser = parser; }
-
-void Shell::setTermul(Termul* term) {
-    term->setOnStart([this]() { this->onOpen(); });
-    term->setOnQuit([this]() { this->onClose(); });
-    term->setOnInput([this](const char* str) { this->onInput(str); });
-    term->setOnTab([this]() { this->onTabPress(); });
-    this->t = term;
 }
 
 bool Shell::isActive() { return this->active; }
@@ -31,14 +31,14 @@ void Shell::onOpen() {
     DEBUG.print("[shell] onOpen");
 #endif
     Cli::open(t);
-    if (welcomeEnabled) welcome();
-    prompt();
+    if (welcomeEnabled) print_welcome();
+    print_prompt();
     active = true;
 }
 
 void Shell::onClose() {
 #ifdef DEBUG_SHELL
-    DEBUG.print("[shell] onClose");
+    DEBUG.println("[shell] onClose");
 #endif
     t->println();
     Cli::close();
@@ -46,18 +46,17 @@ void Shell::onClose() {
 }
 
 void Shell::loop() {
-    if (!t) return;
-    t->read();
+    if (t) t->read();    
 }
 
 void Shell::onTabPress() {
 #ifdef DEBUG_SHELL
-    DEBUG.printf("[shell] onTabPress()");
+    DEBUG.println("[shell] onTabPress");
 #endif
     if (strlen(prevInput) > 0) {
         if (t->input()->length() > 0) {
             t->println();
-            prompt();
+            print_prompt();
         }
         t->input()->set(prevInput);
         t->print(prevInput);
@@ -68,19 +67,18 @@ void Shell::onInput(const char* str) {
 #ifdef DEBUG_SHELL
     DEBUG.printf("[shell] onInput(%s)", str);
 #endif
-    parser->parse(str);
-    while (parser->available()) {
+    cli->parse(str);
+    while (cli->available()) {
         t->println();
-        Command cmd = parser->getCmd();
-        cmd.run();
+        cli->getCmd().run();
     }
-    strcpy(prevInput, str);
-    prompt();
+    setstr(prevInput, str, sizeof(prevInput));
+    print_prompt();
 }
 
-void Shell::welcome() {
+void Shell::print_welcome() {
 #ifdef DEBUG_SHELL
-    DEBUG.print("[shell] welcome");
+    DEBUG.print("[shell] print_welcome");
 #endif
     char title[SCREEN_WIDTH + 1];
     strcpy(title, APPNAME " v" FW_VERSION);
@@ -94,15 +92,15 @@ void Shell::welcome() {
     t->println(tmp);
 }
 
-void Shell::prompt() {
-    char buf[OUTPUT_MAX_LENGTH + 1];
+void Shell::print_prompt() {
+    #ifdef DEBUG_SHELL
+    DEBUG.print("[shell] print_prompt");
+    #endif
+    char buf[OUTPUT_MAX_LENGTH];
     strcpy(buf, rtc.getLocalFormated().c_str());
-    uint8_t len = strlen(buf);
-    buf[len] = CHAR_SP;
-    buf[len + 1] = '\x00';
-    strcat(buf, Wireless::hostName().c_str());
-    strcat(buf, " > ");
+    uint8_t x = strlen(buf);
+    buf[x] = '>';
+    buf[++x] = CHAR_SP;
+    buf[++x] = '\x00';
     t->print(buf);
 }
-
-

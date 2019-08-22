@@ -14,9 +14,11 @@ class PsuLogger {
     void clear();
     void loop();
     
-    PsuInfo first();
-    PsuInfo last();
-    
+    size_t first();
+    size_t last();
+    size_t next(size_t pos);
+    size_t prev(size_t pos);
+
     size_t getItems(PsuInfo& info);
     void getVoltages(float* voltages);
     
@@ -27,16 +29,15 @@ class PsuLogger {
     void printDiag(Print* p);
 
    private:
-    void add(PsuInfo item, unsigned long time_ms);
+    void printItem(Print* p, size_t index);
+    void add(PsuInfo item);
     void logVoltage(unsigned long time, float voltage);
     Psu* psu;
     LogItem* voltage_log;
     PsuInfo* items;
+    unsigned long lastUpdated;
     size_t capacity;
     size_t writePos;
-    size_t readPos;
-    unsigned long lastTime;
-    unsigned long lastItem;
     bool rotated;
     bool active;
 };

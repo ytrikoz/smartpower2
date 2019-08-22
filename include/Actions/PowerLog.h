@@ -16,8 +16,7 @@ void PowerLog::exec(Print* p) {
     if (psuLog->empty()) {
         p->println(getStrP(str_empty, false));
     } else {
-        size_t num = (size_t) param <= psuLog->size() ? param : psuLog->size();
-        psuLog->printLast(p, num);
+        psuLog->printLast(p, param);
     }
 }
 

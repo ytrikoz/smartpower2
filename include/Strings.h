@@ -10,8 +10,7 @@ static const char msg_system_restart[] PROGMEM =
     "the system is going down for restart!";
 static const char msg_session_interrupted[] PROGMEM =
     "the session was interrupted!";
-static const char msg_connection_is_busy[] PROGMEM =
-    "connection is busy";
+static const char msg_connection_is_busy[] PROGMEM = "connection is busy";
 static const char msgf_unknown_action[] PROGMEM = "unknown action '%s'";
 
 static const char strf_time[] PROGMEM = "%02d:%02d:%02d";
@@ -61,7 +60,7 @@ static const char strf_ipaddr[] PROGMEM = "ipaddr %s ";
 static const char strf_unhandled[] PROGMEM = "unhandled %d";
 static const char strf_ntp[] PROGMEM = "[ntp] %s";
 static const char strf_interval[] PROGMEM = "interval %d";
-static const char  strf_output_voltage[] PROGMEM = "Vout %.2f ";
+static const char strf_output_voltage[] PROGMEM = "Vout %.2f";
 static const char strf_filelist[] PROGMEM = "filelist %s";
 static const char strf_power[] PROGMEM = "power %s ";
 static const char strf_lu_sec[] PROGMEM = "%lu sec ";
@@ -70,7 +69,7 @@ static const char strf_used_per[] PROGMEM = "used %.2f%%";
 static const char strf_size_d[] PROGMEM = "size %d ";
 static const char strf_per[] PROGMEM = "%.2f%% ";
 
-static const char str_alert[] PROGMEM = "alert ";
+static const char str_alert[] PROGMEM = "alert";
 static const char str_as_default[] PROGMEM = "as default ";
 static const char str_ap[] PROGMEM = "ap";
 static const char str_apply[] PROGMEM = "apply";
@@ -102,10 +101,10 @@ static const char str_date[] PROGMEM = "date ";
 static const char str_disabled[] PROGMEM = "disabled";
 static const char str_disconnected[] PROGMEM = "disconnected ";
 static const char str_dhcp[] PROGMEM = "dhcp";
-static const char str_dns[] PROGMEM = "[dns] ";
-static const char str_done[] PROGMEM = "done ";
+static const char str_dns[] PROGMEM = "dns";
+static const char str_done[] PROGMEM = "done";
 static const char str_down[] PROGMEM = "down";
-static const char str_duration[] PROGMEM = "duration ";
+static const char str_duration[] PROGMEM = "duration";
 static const char str_interval[] PROGMEM = "interval";
 static const char str_info[] PROGMEM = "info";
 static const char str_idle[] PROGMEM = "idle ";
@@ -154,8 +153,8 @@ static const char str_password[] PROGMEM = "password ";
 static const char str_print[] PROGMEM = "print";
 static const char str_reset[] PROGMEM = "reset";
 static const char str_psu[] PROGMEM = "psu";
-static const char str_psu_log[] PROGMEM = "[psu-log] ";
-static const char str_power[] PROGMEM = "power ";
+static const char str_psu_log[] PROGMEM = "psu-log";
+static const char str_power[] PROGMEM = "power";
 static const char str_save[] PROGMEM = "save ";
 static const char str_status[] PROGMEM = "status";
 static const char str_reconnect[] PROGMEM = "reconnect";
@@ -164,9 +163,9 @@ static const char str_restart[] PROGMEM = "restart";
 static const char str_restore[] PROGMEM = "restore";
 static const char str_receive[] PROGMEM = "receive";
 static const char str_safe[] PROGMEM = "safe";
+static const char str_sec[] PROGMEM = "sec";
 static const char str_size[] PROGMEM = "size";
 static const char str_spiffs[] PROGMEM = "spiffs";
-
 static const char str_scanning[] PROGMEM = "scanning... ";
 static const char str_switched[] PROGMEM = "switched ";
 static const char str_ssid[] PROGMEM = "ssid";
@@ -195,8 +194,8 @@ static const char str_uptime[] PROGMEM = "uptime";
 static const char str_unset[] PROGMEM = "<unset> ";
 static const char str_unsecured[] PROGMEM = "<unsecured>";
 static const char str_wifi[] PROGMEM = "wifi";
-static const char str_wrong[] PROGMEM = "wrong ";
-static const char str_wait[] PROGMEM = "wait ";
+static const char str_wrong[] PROGMEM = "wrong";
+static const char str_wait[] PROGMEM = "wait";
 static const char str_write[] PROGMEM = "write ";
 static const char str_yes[] PROGMEM = "yes ";
 
@@ -250,13 +249,13 @@ static PGM_P module_name[] PROGMEM = {
     str_http, str_netsvc, str_ntp, str_telnet, str_shell, str_update};
 
 inline String squareBracketsStr(const char* str, bool space = true) {
-    char buf[32];
-    strcpy(buf, "[");
+    char buf[32] = {0};
+    buf[0] = '[';
     strcat(buf, str);
-    if (space)
-        strcat(buf, "] ");
-    else
-        strcat(buf, "]");
+    uint8_t x = strlen(buf);
+    buf[x] = ']';
+    if (space) buf[++x] = ' ';
+    buf[++x] = '\x00';
     return String(buf);
 }
 
@@ -266,9 +265,7 @@ inline String getSquareBracketsStrP(PGM_P strP, bool space = true) {
     return squareBracketsStr(buf, space);
 }
 
-inline String getStr(String str) {
-    return String(str) + " ";
-}
+inline String getStr(String str) { return String(str) + " "; }
 
 inline String getStrP(PGM_P strP, bool space = true) {
     char buf[64];
