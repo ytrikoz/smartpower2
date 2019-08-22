@@ -45,23 +45,33 @@ void refresh_wifi_led() {
     }
 }
 
+void setBroadcastTo(uint8_t broadcast_if) {
+    uint8_t old_if = wifi_get_broadcast_if();
+
+    USE_SERIAL.print(getSquareBracketsStrP(str_wifi));
+    USE_SERIAL.print(getStrP(str_set));
+    USE_SERIAL.print(getStrP(str_broadcast));
+    USE_SERIAL.print(old_if);
+    USE_SERIAL.print(getStrP(str_arrow_dest));
+    USE_SERIAL.print(broadcast_if);
+
+    if (!wifi_set_broadcast_if(broadcast_if))
+        USE_SERIAL.print(FPSTR(str_failed));
+    USE_SERIAL.println();
+}
+
 void start_services() {
     WirelessMode mode = Wireless::getWirelessMode();
+
     // only AP_STA
     if (mode == WLAN_AP_STA) {
-        uint8_t broadcast_if = wifi_get_broadcast_if();
-        USE_SERIAL.print(FPSTR(str_wifi));
-        char buf[32];
-        sprintf_P(buf, strf_set_broadcast, broadcast_if, 3);
-        USE_SERIAL.print(buf);
-        if (!wifi_set_broadcast_if(3)) USE_SERIAL.print(FPSTR(str_failed));
-        USE_SERIAL.println();
+        setBroadcastTo(3);
     }
-    if (mode == WLAN_STA || mode == WLAN_AP_STA)
-    {
-    #ifndef DISABLE_NTP
+
+    if (mode == WLAN_STA || mode == WLAN_AP_STA) {
+#ifndef DISABLE_NTP
         start_ntp();
-    #endif
+#endif
     }
 #ifndef DISABLE_TELNET
     start_telnet();
@@ -79,25 +89,22 @@ void start_services() {
 
 void start_telnet() {
     if (!telnet) {
-    telnet = new TelnetServer(TELNET_PORT);
-    telnet->setOutput(&USE_SERIAL);
+        telnet = new TelnetServer(TELNET_PORT);
+        telnet->setOutput(&USE_SERIAL);
+        telnet->setOnClientConnect([](Stream *stream) {
+            USE_SERIAL.print(getSquareBracketsStrP(str_telnet));
+            USE_SERIAL.println(getStrP(str_connected));
 #ifndef DISABLE_TELNET_CLI
-    telnet->setOnClientConnect([](Stream *s) {
-        USE_SERIAL.print(FPSTR(str_telnet));
-        USE_SERIAL.println(FPSTR(str_connected));
-
-        start_telnet_shell(s);
-        refresh_wifi_led();
-        return true;
-    });
-
-    telnet->setOnCLientDisconnect([]() {
-        USE_SERIAL.print(FPSTR(str_telnet));
-        USE_SERIAL.println(FPSTR(str_disconnected));
-
-        refresh_wifi_led();
-    });
+            start_telnet_shell(stream);
 #endif
+            refresh_wifi_led();
+            return true;
+        });
+        telnet->setOnCLientDisconnect([]() {
+            USE_SERIAL.print(getSquareBracketsStrP(str_telnet));
+            USE_SERIAL.println(getStrP(str_disconnected));
+            refresh_wifi_led();
+        });
     }
     telnet->begin();
 }
@@ -186,7 +193,7 @@ void start_ota_update() {
     if (!ota) {
         ota = new OTAUpdate();
         ota->setOutput(&USE_SERIAL);
-    }    
+    }
     ota->begin(host_name.c_str(), OTA_PORT);
 }
 
@@ -194,7 +201,7 @@ void start_discovery() {
     if (!discovery) {
         discovery = new NetworkService();
         discovery->setOutput(&USE_SERIAL);
-    }    
+    }
     discovery->begin();
 }
 
@@ -231,18 +238,19 @@ void load_screen_psu_pvi() {
         str += "KWh";
     }
     display->addScreenItem(1, str.c_str());
-    display->setScreen(SCREEN_PVI, 2);    
+    display->setScreen(SCREEN_PVI, 2);
 }
 
 void load_screen_sta_wifi() {
-    display->addScreenItem(0, "WIFI> ",  Wireless::getConnectionStatus().c_str());
+    display->addScreenItem(0, "WIFI> ",
+                           Wireless::getConnectionStatus().c_str());
     display->addScreenItem(1, "STA> ", Wireless::hostSTA_SSID().c_str());
     display->addScreenItem(2, "IP> ", Wireless::hostIP().toString().c_str());
     display->addScreenItem(3, "RSSI> ", Wireless::RSSIInfo().c_str());
     display->setScreen(SCREEN_WIFI_STA, 4);
 };
 
-void load_screen_ap_wifi() {    
+void load_screen_ap_wifi() {
     display->addScreenItem(0, "AP> ", Wireless::hostAP_SSID().c_str());
     display->addScreenItem(1, "PWD> ", Wireless::hostAP_Password().c_str());
     display->setScreen(SCREEN_WIFI_AP, 2);
@@ -251,9 +259,12 @@ void load_screen_ap_wifi() {
 void load_screen_ap_sta_wifi() {
     display->addScreenItem(0, "AP> ", Wireless::hostAP_SSID().c_str());
     display->addScreenItem(1, "STA> ", Wireless::hostSTA_SSID().c_str());
-    display->addScreenItem(2, "WIFI> ",  Wireless::getConnectionStatus().c_str());
-    display->addScreenItem(3, "IP AP> ", Wireless::hostAP_IP().toString().c_str());
-    display->addScreenItem(4, "IP STA> ", Wireless::hostSTA_IP().toString().c_str());
+    display->addScreenItem(2, "WIFI> ",
+                           Wireless::getConnectionStatus().c_str());
+    display->addScreenItem(3, "IP AP> ",
+                           Wireless::hostAP_IP().toString().c_str());
+    display->addScreenItem(4, "IP STA> ",
+                           Wireless::hostSTA_IP().toString().c_str());
     display->addScreenItem(5, "RSSI> ", Wireless::RSSIInfo().c_str());
     display->setScreen(SCREEN_AP_STA, 6);
 };

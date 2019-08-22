@@ -39,12 +39,12 @@ bool disconnectWiFi();
 
 void setMode(WirelessMode);
 void setupAP(IPAddress);
-bool startAP(const char* ssid, const char* password, IPAddress host);
+bool startAP(const char* ssid, const char* password);
 
 void setupSTA();
 void setupSTA(IPAddress ipaddr, IPAddress subnet, IPAddress gateway,
               IPAddress dns);
-void startSTA(const char* ssid, const char* password);
+bool startSTA(const char* ssid, const char* password);
 
 void useStaticStationIP(bool enabled);
 

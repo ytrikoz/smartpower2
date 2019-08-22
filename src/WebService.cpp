@@ -75,14 +75,12 @@ WebService::WebService() {
         server->on(F("/description.xml"), HTTP_GET,
                    [this]() { ssdp->schema(server->client()); });
     }
-
-
     active = false;
 }
 
 void WebService::begin() {
-    output->print(FPSTR(str_http));
-    output->printf_P(strf_http_params, web_root, port_http, port_websocket);                     
+    output->print(getSquareBracketsStrP(str_http));
+    output->printf_P(strf_http_params, web_root, port_http, port_websocket);
     output->println();
 
     File f = SPIFFS.open(FILE_WEB_SETTINGS, "w");
@@ -97,25 +95,19 @@ void WebService::begin() {
 }
 
 void WebService::end() {
-    output->print(FPSTR(str_http));
-    output->print(FPSTR(str_stopped));
-    output->println();
+    output->print(getSquareBracketsStrP(str_http));
+    output->println(getStr(str_stopped));
     active = false;
 }
 
 void WebService::loop() {
     if (!active) return;
     server->handleClient();
-    //delay(2);
     websocket->loop();
-    //delay(2);
 }
 
 void WebService::handleRoot() {
-    if (captivePortal()) {  // If caprive portal redirect instead of displaying
-                            // the page.
-        return;
-    }
+    if (captivePortal()) return;
     handleUri();
 }
 

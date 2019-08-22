@@ -37,7 +37,7 @@ void cancel_system_restart() {
 
 void on_restart_sequence() {
     if (restartCount == 0) system_restart();
-    restartCount--;
+    --restartCount;
 }
 
 void setup_restart_timer(uint8_t delay_s) {
@@ -46,8 +46,6 @@ void setup_restart_timer(uint8_t delay_s) {
     if (restartCount > 0) {
         USE_SERIAL.printf(strf_in_second, restartCount);
         USE_SERIAL.println();
-    } else {
-        USE_SERIAL.println(F("now!"));
     }
     restartTimer = timer.setInterval(ONE_SECOND_ms, on_restart_sequence);
 }
@@ -223,14 +221,13 @@ void send_psu_data_to_clients() {
 
 uint8_t boot_progress = 0;
 void display_boot_progress(uint8_t per, const char *text) {
+#ifndef DISABLE_LCD
+    if (display && text != NULL) display->drawTextCenter(LCD_ROW_1, text);
+#endif
     while (per - boot_progress > 0) {
         boot_progress += 5;
 #ifndef DISABLE_LCD
-        if (display) {
-            if (text != NULL) display->drawTextCenter(LCD_ROW_1, text);
-            display->loadBank(BANK_PROGRESS);
-            display->drawProgressBar(LCD_ROW_2, per);
-        }
+        if (display) {display->drawProgressBar(LCD_ROW_2, per);}
 #endif
         delay(100);
     }
@@ -296,19 +293,22 @@ void setup() {
 #endif
     delay_print(&USE_SERIAL);
 
+    display->loadBank(BANK_PROGRESS);
+    display->setScreen(SCREEN_BOOT, 0);
+
     display_boot_progress(10, BUILD_DATE);
 
     config = new ConfigHelper();
     config->init(FILE_CONFIG);
 
     start_clock();
-
     start_psu();
 
     display_boot_progress(40, "<WIFI>");
 
     Wireless::setOnNetworkStateChange(
         [](bool hasNetwork) { refresh_wifi_led(); });
+
     Wireless::start_wifi();
 
     display_boot_progress(80, "<INIT>");

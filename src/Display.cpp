@@ -112,9 +112,8 @@ bool Display::ready() { return connected; }
 
 bool Display::init() {
     if (!connected) {
-        output->print(FPSTR(str_lcd));
+        output->print(getSquareBracketsStrP(str_lcd));
         if (connect()) {
-            output->print(FPSTR(str_found));
             output->print("0x");
             output->println(addr, HEX);
 
@@ -190,6 +189,7 @@ void Display::addScreenItem(uint8_t n, const char *label, const char *text) {
 }
 
 void Display::setScreen(Screen screen, size_t item_size) {
+    if (!connected) return;
     if (this->screen != screen) {
         this->screen = screen;
         this->items_size = item_size;
@@ -347,6 +347,7 @@ void Display::clear() {
 }
 
 void Display::loadBank(CharBank bank, bool force) {
+    if(!connected) return;
     if ((!force) && (this->bank == bank)) return;
 #ifdef DEBUG_DISPLAY
     DEBUG.printf("loadBank(%d, %d)", bank, force);
@@ -401,6 +402,8 @@ void Display::loadBank(CharBank bank, bool force) {
 }
 
 void Display::drawProgressBar(uint8_t row, uint8_t per) {
+    if (!connected) return;
+
     lcd->setCursor(0, row);
 
     uint8_t nb_columns = map(per, 0, 100, 0, (LCD_COLS - 4) * 2 * 4 - 2 * 4);

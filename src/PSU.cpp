@@ -40,9 +40,9 @@ void Psu::setState(PowerState value, bool force) {
 
     state = value;
 
-    output->print(FPSTR(str_psu));
-    output->printf_P(strf_arrow_dest, getStateStr().c_str());
-    output->println();
+    output->print(getSquareBracketsStrP(str_psu));
+    output->print(getStrP(str_arrow_dest));
+    output->println(getStateInfo());
 
     digitalWrite(POWER_SWITCH_PIN, state);
 
@@ -60,12 +60,13 @@ PowerState Psu::getState() { return state; }
 float Psu::getOutputVoltage() { return outputVoltage; }
 
 void Psu::setOutputVoltage(float value) {
-    output->print(FPSTR(str_psu));
+    output->print(getSquareBracketsStrP(str_psu));
+    output->print(getStrP(str_arrow_dest));
     output->printf_P(strf_output_voltage, value);
     output->println();
 
     outputVoltage = value;
-    
+
     mcp4652_write(WRITE_WIPER0_ADDR, quadratic_regression(value));
 }
 
@@ -141,16 +142,18 @@ void Psu::loop() {
         lastUpdated = now;
     }
 
-    unsigned long sinceLastPowerRead = millis_passed(lastPowerRead, now);    
+    unsigned long sinceLastPowerRead = millis_passed(lastPowerRead, now);
     if (sinceLastPowerRead >= ONE_SECOND_ms) {
         info.power = ina231_read_power();
         if (wattHoursCalculationEnabled)
-            info.wattSeconds += info.power * ((float) sinceLastPowerRead / ONE_SECOND_ms);
+            info.wattSeconds +=
+                info.power * ((float)sinceLastPowerRead / ONE_SECOND_ms);
         lastPowerRead = now;
     }
-    
+
     if (status == PSU_OK) {
-        if (millis_passed(lastAlertCheck, now) > PSU_CHECK_INTERVAL_s * ONE_SECOND_ms) {
+        if (millis_passed(lastAlertCheck, now) >
+            PSU_CHECK_INTERVAL_s * ONE_SECOND_ms) {
             if (info.voltage <= PSU_VOLTAGE_LOW_v) {
                 alert(PSU_ALERT_VOLTAGE_LOW);
             } else if (info.current <= PSU_LOAD_LOW_a) {
@@ -164,17 +167,15 @@ void Psu::clearError() { status = PSU_OK; }
 
 void Psu::alert(PsuAlert a) {
     status = PSU_ALERT;
-    
+
     output->print(FPSTR(str_psu));
     output->print(FPSTR(str_alert));
     switch (a) {
-        case PSU_ALERT_VOLTAGE_LOW:        
-        {
+        case PSU_ALERT_VOLTAGE_LOW: {
             output->print(FPSTR(str_low_voltage));
             output->print(info.voltage);
         }
-        case PSU_ALERT_LOAD_LOW:
-        {
+        case PSU_ALERT_LOAD_LOW: {
             output->print(FPSTR(str_load_low));
             output->print(info.current);
         }
@@ -214,7 +215,7 @@ String Psu::toString() {
 }
 
 unsigned long Psu::getDuration() {
-    return floor((float) millis_passed(startedAt, lastUpdated) / ONE_SECOND_ms);
+    return floor((float)millis_passed(startedAt, lastUpdated) / ONE_SECOND_ms);
 }
 
 void Psu::init() {
@@ -226,19 +227,20 @@ void Psu::init() {
     initialized = true;
 }
 
-String Psu::getStateStr() { return getState() == POWER_ON ? "ON " : "OFF "; }
+String Psu::getStateInfo() {
+    return state == POWER_ON ? getStrP(str_on) : getStrP(str_off);
+}
 
 void Psu::printDiag(Print *p) {
     p->print(FPSTR(str_power));
-    p->print(getStateStr());    
-    p->printf_P(strf_output_voltage, getOutputVoltage());         
+    p->print(getStateInfo());
+    p->printf_P(strf_output_voltage, getOutputVoltage());
     if (getState() == POWER_ON) {
-        p->printf_P(strf_lu_sec, getDuration());        
+        p->printf_P(strf_lu_sec, getDuration());
     } else if (getState() == POWER_OFF) {
         p->printf_P(strf_lu_sec, millis_since(lastUpdated) / ONE_SECOND_ms);
-    }   
-    switch (status)
-    {
+    }
+    switch (status) {
         case PSU_OK:
             p->print(FPSTR(str_ok));
             break;
@@ -250,7 +252,7 @@ void Psu::printDiag(Print *p) {
             break;
         default:
             break;
-        return;
+            return;
     }
     p->println();
 }

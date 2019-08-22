@@ -38,7 +38,7 @@ bool NetworkService::begin_dns() {
     output->print(FPSTR(str_dns));
     output->print(dns_name);
     output->print(' ');
-    output->printf_P(strf_s_d, StrUtils::iptos(ip).c_str(), DNS_PORT);    
+    output->printf_P(strf_s_d, StrUtils::iptos(ip).c_str(), DNS_PORT);
     if (dns->start(DNS_PORT, dns_name, ip)) {
         output->println();
         return true;
@@ -48,30 +48,31 @@ bool NetworkService::begin_dns() {
 }
 
 bool NetworkService::begin_mdns() {
-    output->print(FPSTR(str_mdns));
+    output->print(getSquareBracketsStrP(str_mdns));    
     String host_name = Wireless::hostName();
-    output->print(host_name);
-    if (mdns->begin(host_name)) {
+    bool result = mdns->begin(host_name);
+    if (result) {        
         mdns->addService(NULL, "telnet", "tcp", TELNET_PORT);
         mdns->addService(NULL, "http", "tcp", HTTP_PORT);
         mdns->enableArduino(OTA_PORT);
-        output->println();
-        return true;
+        output->print(host_name);
+        output->println();        
+    } else {
+        output->println(getStrP(str_failed));
     }
-    output->println(FPSTR(str_failed));
-    return false;
+    return result;
 }
 
 bool NetworkService::begin_netbios() {
-    output->print(FPSTR(str_netbios));
+    output->print(getSquareBracketsStrP(str_netbios));
     String host_name = Wireless::hostName();
-    output->print(host_name.c_str());
-    if (netbios->begin(host_name.c_str())) {
-        output->println();
-        return true;
+    bool result = netbios->begin(host_name.c_str());
+    if (result) {        
+        output->println(host_name);
+    } else {
+        output->println(getStrP(str_failed));
     }
-    output->println(FPSTR(str_failed));
-    return false;
+    return result;
 }
 
 void NetworkService::loop() {

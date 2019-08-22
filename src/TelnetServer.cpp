@@ -12,29 +12,34 @@ void TelnetServer::setOutput(Print *p) { output = p; }
 
 void TelnetServer::begin() {
     if (!initialized) {
-        output->printf_P(str_telnet);
-        output->printf_P(strf_port, port);
+        output->print(getSquareBracketsStrP(str_telnet));
+        output->printf_P(strf_s_d, "*", port);
+        output->println();
+        
         server = new WiFiServer(port);
         server->setNoDelay(true);
         server->begin();
+
         initialized = server->status() != CLOSED;
-        if (!initialized) output->printf_P(str_failed);
-        output->println();
+
+        if (!initialized) {
+            output->print(getSquareBracketsStrP(str_telnet));
+            output->print(getStrP(str_failed));
+        }
     }
     active = initialized;
 }
 
 void TelnetServer::stop() {
-    if (initialized) {
-        output->printf_P(str_telnet);
-        output->printf_P(str_stopped);
-        output->println();
+    if (active) {
         server->stop();
-        active = false;
+        active = false;        
+        output->print(getSquareBracketsStrP(str_telnet));
+        output->println(getStrP(str_stopped));
     }
 }
 
-bool TelnetServer::hasClientConnected() { 
+bool TelnetServer::hasClientConnected() {
     return initialized & client & client.connected();
 }
 
@@ -61,7 +66,7 @@ void TelnetServer::loop() {
             } else {
                 WiFiClient reject;
                 reject = server->available();
-                reject.write("Server is busy");
+                reject.write(getStrP(msg_connection_is_busy, false).c_str());
                 reject.stop();
             }
         }

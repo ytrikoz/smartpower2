@@ -10,7 +10,8 @@ static const char msg_system_restart[] PROGMEM =
     "the system is going down for restart!";
 static const char msg_session_interrupted[] PROGMEM =
     "the session was interrupted!";
-
+static const char msg_connection_is_busy[] PROGMEM =
+    "connection is busy";
 static const char msgf_unknown_action[] PROGMEM = "unknown action '%s'";
 
 static const char strf_time[] PROGMEM = "%02d:%02d:%02d";
@@ -53,7 +54,6 @@ static const char strf_ip_params[] PROGMEM =
 static const char strf_mac[] PROGMEM = "mac %02x:%02x:%02x:%02x:%02x:%02x ";
 static const char strf_bssid[] PROGMEM = "bssid %02x:%02x:%02x:%02x:%02x:%02x ";
 static const char strf_channel[] PROGMEM = "ch %d ";
-static const char strf_port[] PROGMEM = "port %d ";
 static const char strf_ssid[] PROGMEM = "ssid %s ";
 static const char strf_heap[] PROGMEM = "heap %s ";
 static const char strf_passwd[] PROGMEM = "passwd %s ";
@@ -61,7 +61,7 @@ static const char strf_ipaddr[] PROGMEM = "ipaddr %s ";
 static const char strf_unhandled[] PROGMEM = "unhandled %d";
 static const char strf_ntp[] PROGMEM = "[ntp] %s";
 static const char strf_interval[] PROGMEM = "interval %d";
-static const char strf_output_voltage[] PROGMEM = "Vout %.2f ";
+static const char  strf_output_voltage[] PROGMEM = "Vout %.2f ";
 static const char strf_filelist[] PROGMEM = "filelist %s";
 static const char strf_power[] PROGMEM = "power %s ";
 static const char strf_lu_sec[] PROGMEM = "%lu sec ";
@@ -77,8 +77,11 @@ static const char str_apply[] PROGMEM = "apply";
 static const char str_arrow_dest[] PROGMEM = "->";
 static const char str_arrow_src[] PROGMEM = "<-";
 static const char str_avg[] PROGMEM = "avg";
+static const char str_auth[] PROGMEM = "auth";
 static const char str_backup[] PROGMEM = "backup ";
 static const char str_backlight[] PROGMEM = "backlight";
+static const char str_begin[] PROGMEM = "begin";
+static const char str_broadcast[] PROGMEM = "broadcast";
 static const char str_btn[] PROGMEM = "btn";
 static const char str_build_date[] PROGMEM = BUILD_DATE;
 static const char str_capture[] PROGMEM = "capture";
@@ -89,9 +92,10 @@ static const char str_shell_start_hint[] PROGMEM =
 static const char str_clock[] PROGMEM = "clock";
 static const char str_config[] PROGMEM = "[config] ";
 static const char str_complete[] PROGMEM = "complete ";
-static const char str_connecting[] PROGMEM = "connecting ";
-static const char str_connection[] PROGMEM = "connection ";
-static const char str_connected[] PROGMEM = "connected ";
+static const char str_connect[] PROGMEM = "connect";
+static const char str_connecting[] PROGMEM = "connecting";
+static const char str_connection[] PROGMEM = "connection";
+static const char str_connected[] PROGMEM = "connected";
 static const char str_cli[] PROGMEM = "cli";
 static const char str_netsvc[] PROGMEM = "netsvc";
 static const char str_date[] PROGMEM = "date ";
@@ -122,17 +126,18 @@ static const char str_low_voltage[] PROGMEM = "low voltage ";
 static const char str_load_low[] PROGMEM = "load low ";
 static const char str_lcd[] PROGMEM = "lcd";
 static const char str_max[] PROGMEM = "max ";
-static const char str_mdns[] PROGMEM = "[mdns] ";
+static const char str_mdns[] PROGMEM = "mdns";
 static const char str_mode[] PROGMEM = "mode";
-static const char str_netbios[] PROGMEM = "[netbios] ";
+static const char str_netbios[] PROGMEM = "netbios";
 static const char str_network[] PROGMEM = "network";
 static const char str_network_not_found[] PROGMEM = "no networks found";
 static const char str_network_found[] PROGMEM = "%d networks found";
 static const char str_no[] PROGMEM = "no ";
 static const char str_ntp[] PROGMEM = "ntp";
-static const char str_elapsed[] PROGMEM = "elapsed ";
+static const char str_elapsed[] PROGMEM = "elapsed";
+static const char str_end[] PROGMEM = "end";
 static const char str_none[] PROGMEM = "none";
-static const char str_error[] PROGMEM = "error ";
+static const char str_error[] PROGMEM = "error";
 static const char str_epoch[] PROGMEM = "epoch";
 static const char str_lps[] PROGMEM = "lps";
 static const char str_failed[] PROGMEM = "<FAILED> ";
@@ -157,6 +162,8 @@ static const char str_reconnect[] PROGMEM = "reconnect";
 static const char str_reason[] PROGMEM = "reason";
 static const char str_restart[] PROGMEM = "restart";
 static const char str_restore[] PROGMEM = "restore";
+static const char str_receive[] PROGMEM = "receive";
+static const char str_safe[] PROGMEM = "safe";
 static const char str_size[] PROGMEM = "size";
 static const char str_spiffs[] PROGMEM = "spiffs";
 
@@ -211,19 +218,10 @@ static const char str_yes[] PROGMEM = "yes ";
     USE_SERIAL.printf_P(str_off);      \
     USE_SERIAL.println();
 
-#define PRINT_SWITCHED_ON              \
-    USE_SERIAL.printf_P(str_switched); \
-    USE_SERIAL.printf_P(str_on);
-
 #define PRINT_IP                                                               \
     USE_SERIAL.printf_P(strf_ip_params, ip.toString().c_str(),                 \
                         subnet.toString().c_str(), gateway.toString().c_str(), \
                         dns.toString().c_str());
-
-#define PRINTLN_WIFI_STA_CONNECTED      \
-    USE_SERIAL.printf_P(str_connected); \
-    PRINT_WIFI_STA_CONNECTION           \
-    USE_SERIAL.println();
 
 #define PRINTLN_WIFI_CONFIG                               \
     USE_SERIAL.printf_P(str_wifi);                        \
@@ -247,20 +245,11 @@ static const char str_yes[] PROGMEM = "yes ";
     USE_SERIAL.printf_P(str_ssid);                                      \
     USE_SERIAL.print(e.ssid);
 
-#define PRINTLN_WIFI_STA_DISCONNECTED      \
-    USE_SERIAL.printf_P(str_disconnected); \
-    USE_SERIAL.println();
-
-#define PRINTLN_WIFI_STA_GOT_IP   \
-    USE_SERIAL.printf_P(str_got); \
-    PRINT_IP                      \
-    USE_SERIAL.println();
-
 static PGM_P module_name[] PROGMEM = {
     str_btn,  str_clock,  str_led, str_psu,    str_task,  str_shell, str_lcd,
     str_http, str_netsvc, str_ntp, str_telnet, str_shell, str_update};
 
-inline String getSquareBracketsStr(const char* str, bool space = true) {
+inline String squareBracketsStr(const char* str, bool space = true) {
     char buf[32];
     strcpy(buf, "[");
     strcat(buf, str);
@@ -274,7 +263,7 @@ inline String getSquareBracketsStr(const char* str, bool space = true) {
 inline String getSquareBracketsStrP(PGM_P strP, bool space = true) {
     char buf[32];
     strcpy_P(buf, strP);
-    return getSquareBracketsStr(buf, space);
+    return squareBracketsStr(buf, space);
 }
 
 inline String getStr(String str) {
@@ -282,7 +271,7 @@ inline String getStr(String str) {
 }
 
 inline String getStrP(PGM_P strP, bool space = true) {
-    char buf[32];
+    char buf[64];
     strcpy_P(buf, strP);
     if (space) {
         size_t size = strlen(buf);

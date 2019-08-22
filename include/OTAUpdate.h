@@ -22,4 +22,5 @@ class OTAUpdate {
     void onProgress(unsigned int progress, unsigned int total);
     void onEnd();
     void onError(ota_error_t error);
+    unsigned int total_progress;
 };

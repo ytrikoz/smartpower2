@@ -31,7 +31,7 @@ class Psu : public PsuInfoProvider {
     PsuInfo getInfo();
     String toString();
     PowerState getState();
-    String getStateStr();    
+    String getStateInfo();    
     float getVoltage();
     float getCurrent();
     float getPower();
