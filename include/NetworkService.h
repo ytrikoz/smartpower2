@@ -1,7 +1,5 @@
 #pragma once
 
-#define DEBUG_ESP_MDNS_RESPONDER
-
 #include <DNSServer.h>
 #include <ESP8266NetBIOS.h>
 #include <ESP8266mDNS.h>

@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <IPAddress.h>
+
 #include "CommonTypes.h"
 
 typedef std::function<void(bool hasNetwork)> NetworkStateChangeEventHandler;

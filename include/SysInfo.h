@@ -2,7 +2,6 @@
 
 #include <Arduino.h>
 
-
 void printResetInfo(Print* p);
 
 String getConnectedStationInfo();
