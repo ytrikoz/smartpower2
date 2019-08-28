@@ -6,12 +6,12 @@ namespace StrUtils {
 
 typedef enum { LEFT, CENTER, RIGHT } Align;
 
-char *tmtoa(struct tm *tm, char *buf);
-
 void stringToBytes(const char *str, char sep, uint8_t *bytes, int len, int base);
-String iptos(IPAddress ip);
+String iptos(IPAddress& ip);
+const char* iptoa(IPAddress& ip);
 IPAddress atoip(const char *);
 
+void setnnstr(char *dest, const char *src);
 bool setstr(char *dest, const char *src, size_t size);
 void strfill(char *str, char chr, size_t size);
 bool isip(const char *);

@@ -6,13 +6,18 @@
 #define PLOT_COLS 8
 #define PLOT_ROWS 2
 
+#define UNSET_MAX -16364
+#define UNSET_MIN 16364
+
 struct PlotData {
-    float cols[PLOT_COLS] = {0};
+    float cols[PLOT_COLS];
     size_t size = 0;
-    float min_value = 16384;
-    float max_value = -16364;
+    float min_value = UNSET_MIN;
+    float max_value = UNSET_MAX;
+    float avg_value = 0; 
 };
 
+void value_max_min(float value, float& max, float& min);
 
 float map_to_plot_min_max(PlotData *pd, uint8_t x);
 

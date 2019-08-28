@@ -10,8 +10,9 @@ class ShowClock : public Action {
     void exec(Print* p);
 };
 
+
 void ShowClock::exec(Print* p) {    
-    rtc.printDiag(p);
+    p->println(rtc.getDateTimeStr());
 }
 
 }  // namespace Actions

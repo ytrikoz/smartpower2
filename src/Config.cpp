@@ -4,150 +4,150 @@
 
 #include "StrUtils.h"
 
-using StrUtils::atoip;
-using StrUtils::setstr;
+using namespace StrUtils;
 
 Config::Config() {
-    for (uint8_t i = 0; i < PARAM_COUNT; i++) {
-        values[i] = new char[metadata[i].size];
-        setstr(values[i], '\x00', metadata[i].size);
+    for (size_t index = 0; index < PARAM_COUNT; ++index) {
+        size_t value_size = getSize(Parameter(index));
+        values[index] = new char[value_size + 1];
+        setstr(values[index], getMetadata(index).default_value, value_size + 1);
     }
 }
 
 Config::~Config() {
-    for (int i = 0; i < PARAM_COUNT; i++) {
-        delete[] values[i];
-    }
+    for (int index = 0; index < PARAM_COUNT; ++index) delete[] values[index];
 }
 
-void Config::setDefault() {
-    for (int i = 0; i < PARAM_COUNT; ++i) {
-        if (setstr(values[i], metadata[i].def, metadata[i].size))
-            onConfigChangeEvent(Parameter(i));
-    }
+void Config::setDefaultValue(Parameter param) {
+    setValueString(param, getDefaultValue(param));
 }
 
-void Config::setOnEvents(ConfigEventHandler eventHandler) {
-    onEvents = eventHandler;
+void Config::setOnParameterChanged(ParameterChangedEventHandler handler) {
+    onParameterChanged = handler;
 }
 
-void Config::onConfigChangeEvent(Parameter param) {
-    if (onEvents) onEvents(param);
+void Config::onChangedEvent(Parameter param) {
+    if (onParameterChanged) onParameterChanged(param);
 }
 
-const char *Config::getStrValue(Parameter param) { return values[param]; }
+Metadata Config::getMetadata(size_t index) { return metadata[index]; }
 
-bool Config::setValue(Parameter param, bool value) {
-    char buf[2];
-    return setValue(param, itoa(value, buf, DEC));
-}
-
-bool Config::setValue(Parameter param, sint8_t value) {
-    char buf[8];
-    return setValue(param, itoa(value, buf, DEC));
-}
-
-bool Config::setValue(Parameter param, uint8_t value) {
-    char buf[8];
-    return setValue(param, itoa(value, buf, DEC));
-}
-
-bool Config::setValue(Parameter param, uint16_t value) {
-    char buf[16];
-    return setValue(param, itoa(value, buf, DEC));
-}
-
-bool Config::setValue(Parameter param, float value) {
-    char buf[8];
-    return setValue(param, dtostrf(value, 2, 1, buf));
-}
-
-bool Config::setValue(Parameter param, const char value) {
-    char buf[2];
-    buf[0] = value;
-    buf[1] = '\x00';
-    return setValue(param, buf);
-}
-
-bool Config::setValue(const char *name, const char *value) {
-    bool result = false;
-    Parameter param;
-    if (getParameter(name, param)) result = setValue(param, value);
-    return result;
-}
-
-bool Config::setValue(Parameter param, const char *value) {
-    bool changed = setstr(values[param], value, metadata[param].size);
-#ifdef DEBUG_CONFIG
-    DEBUG.printf("[config] -> #%d: %s\r\n", param, value);
-#endif
-    if (changed) onConfigChangeEvent(param);
-    return changed;
-}
-
-void Config::setValue(String str) {
-    uint8_t split = str.indexOf('=');
-
-    char buf[split];
-    str.toCharArray(buf, split + 1);
-    Parameter param;
-    if (getParameter(buf, param)) {
-        setValue(param, str.substring(split + 2, str.length() - 2).c_str());
-    } else {
-#ifdef DEBUG_CONFIG
-        DEBUG.printf("[config] unknown param %s", buf);
-#endif
-    }
-}
-
-uint8_t Config::getByteValue(Parameter param) {
-    return atoi(getStrValue(param));
-}
-
-sint8_t Config::getSignedValue(Parameter param) {
-    return atoi(getStrValue(param));
-}
-
-uint16_t Config::getIntValue(Parameter param) {
-    return atoi(getStrValue(param));
-}
-
-float Config::getFloatValue(Parameter param) {
-    return atof(getStrValue(param));
-}
-
-bool Config::getBoolValue(Parameter param) {
-    return (bool)atoi(getStrValue(param));
-}
-
-IPAddress Config::getIPAddrValue(Parameter param) {
-    return atoip(getStrValue(param));
-}
+const char *Config::getValueAsString(Parameter param) { return values[param]; }
 
 bool Config::getParameter(const char *name, Parameter &param) {
-    for (uint8_t i = 0; i < PARAM_COUNT; i++) {
-        if (strcmp(name, metadata[i].name) == 0) {
-            param = Parameter(i);
-            return true;
-        }
+    for (uint8_t i = 0; i < PARAM_COUNT; ++i) {
+        param = Parameter(i);
+        if (strcmp(name, getName(param)) == 0) return true;
     }
     return false;
 }
 
 bool Config::getParameter(const char *name, Parameter &param, size_t &size) {
-    if (getParameter(name, param)) {
-        size = metadata[param].size;
-        return true;
+    bool result = getParameter(name, param);
+    size = result ? getSize(param) : 0;
+    return result;
+}
+
+String Config::toString(Parameter param) {
+    char buf[128];
+    sprintf(buf, "%s=\"%s\"", getName(param), getValueAsString(param));
+    return String(buf);
+}
+
+const char *Config::getName(Parameter param) { return getMetadata(param).name; }
+
+const size_t Config::getSize(Parameter param) {
+    return getMetadata(param).size;
+}
+
+const char *Config::getDefaultValue(Parameter param) {
+    return getMetadata(param).default_value;
+}
+
+bool Config::setValueBool(Parameter param, bool value) {
+    char buf[8];
+    return setValueString(param, itoa(value, buf, DEC));
+}
+
+
+bool Config::setValueSignedByte(Parameter param, sint8_t value) {
+    char buf[8];
+    return setValueString(param, itoa(value, buf, DEC));
+}
+
+bool Config::setValueByte(Parameter param, uint8_t value) {
+    char buf[8];
+    return setValueString(param, itoa(value, buf, DEC));
+}
+
+bool Config::setValueInt(Parameter param, uint16_t value) {
+    char buf[16];
+    return setValueString(param, itoa(value, buf, DEC));
+}
+
+bool Config::setValueFloat(Parameter param, float value) {
+    char buf[8];
+    return setValueString(param, dtostrf(value, 2, 1, buf));
+}
+
+bool Config::setValueChar(Parameter param, char ch) {
+    char buf[2];
+    buf[0] = ch;
+    buf[1] = '\x00';
+    return setValueString(param, buf);
+}
+
+bool Config::setValueStringByName(const char *name, const char *value) {
+    Parameter param;
+    bool result = getParameter(name, param);
+    if (result) {
+        result = setValueString(param, value);
+    }
+    return result;
+}
+
+bool Config::setValueString(const Parameter param, const char *str) {
+    bool result = setstr(values[param], str, getSize(param) + 1);
+    if (result) onChangedEvent(param);
+    return result;
+}
+
+bool Config::load(const char *str, size_t len) {
+    size_t split;
+    for (split = 0; split < len; ++split)
+        if (str[split] == '=') break;
+    if (split == len) return false;
+    char buf[64];
+    strncpy(buf, str, split);
+    Parameter param;
+    size_t size;
+    if (getParameter(buf, param, size)) {
+        strncpy(buf, &str[split + 2], strlen(str) - (split + 2));
+        return setValueString(param, buf);
     }
     return false;
 }
 
-void Config::getConfigLine(Parameter param, char *str) {
-    sprintf(str, "%s=\"%s\"", getName(param), getStrValue(param));
+uint8_t Config::getValueAsByte(Parameter param) {
+    return atoi(getValueAsString(param));
 }
 
-const char *Config::getName(Parameter param) { return metadata[param].name; }
+sint8_t Config::getValueAsSignedByte(Parameter param) {
+    return atoi(getValueAsString(param));
+}
 
-const size_t Config::getValueSize(Parameter param) {
-    return metadata[param].size;
+uint16_t Config::getValueAsInt(Parameter param) {
+    return atoi(getValueAsString(param));
+}
+
+float Config::getValueAsFloat(Parameter param) {
+    return atof(getValueAsString(param));
+}
+
+bool Config::getValueAsBool(Parameter param) {
+    return (bool)atoi(getValueAsString(param));
+}
+
+IPAddress Config::getValueAsIPAddress(Parameter param) {
+    return atoip(getValueAsString(param));
 }

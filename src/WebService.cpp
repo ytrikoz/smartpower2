@@ -5,14 +5,10 @@
 using StrUtils::isip;
 using StrUtils::setstr;
 
-File fsUploadFile;
-
-static const char stre_http_file_not_found[] PROGMEM =
-    "File Not Found\n\nURI: %s\nMethod: %s\nArguments: %d\n";
-
 WebService::WebService() {
     this->port_http = HTTP_PORT;
     this->port_websocket = WEBSOCKET_PORT;
+    this->web_root = new char[strlen(HTTP_WEB_ROOT) + 1];
     strcpy(this->web_root, HTTP_WEB_ROOT);
 
     server = new ESP8266WebServer(port_http);
@@ -39,23 +35,19 @@ WebService::WebService() {
     });
 
     // Android captive portal.
-    // server->on("/generate_204", HTTP_GET, [this]() { noContent(); });
     server->on("/generate_204", [this]() { handleRoot(); });
     // Microsoft captive portal.
     server->on("/fwlink", [this]() { handleRoot(); });
-    // Root
     server->on("/", [this]() { handleRoot(); });
-
     server->onNotFound([this]() { handleUri(); });
 
     websocket = new WebSocketsServer(this->port_websocket);
-
     websocket->onEvent(
         [this](uint8_t num, WStype_t type, uint8_t *payload, size_t lenght) {
             webSocketEvent(num, type, payload, lenght);
         });
 
-     if ((Wireless::getWirelessMode() == WLAN_STA ||
+    if ((Wireless::getWirelessMode() == WLAN_STA ||
          Wireless::getWirelessMode() == WLAN_AP_STA)) {
         ssdp = new SSDPClass();
         ssdp->setSchemaURL(F("description.xml"));
@@ -79,7 +71,7 @@ WebService::WebService() {
 }
 
 void WebService::begin() {
-    output->print(getSquareBracketsStrP(str_http));
+    output->print(getIdentStrP(str_http));
     output->printf_P(strf_http_params, web_root, port_http, port_websocket);
     output->println();
 
@@ -87,7 +79,7 @@ void WebService::begin() {
     f.printf("ipaddr=\"%s\"\r\n", Wireless::hostIP().toString().c_str());
     f.flush();
     f.close();
- 
+
     server->begin();
     websocket->begin();
 
@@ -95,15 +87,15 @@ void WebService::begin() {
 }
 
 void WebService::end() {
-    output->print(getSquareBracketsStrP(str_http));
+    output->print(getIdentStrP(str_http));
     output->println(getStr(str_stopped));
     active = false;
 }
 
 void WebService::loop() {
     if (!active) return;
-    server->handleClient();
     websocket->loop();
+    server->handleClient();
 }
 
 void WebService::handleRoot() {
@@ -120,9 +112,11 @@ void WebService::handleUri() {
 
 void WebService::handleNotFound(String &uri) {
 #ifdef DEBUG_HTTP
-    DEBUG.print(FPSTR(str_http));
-    DEBUG.printf_P(strf_file_not_found, uri.c_str());
-    DEBUG.println();
+    DEBUG.print(getIdentStrP(str_http));
+    DEBUG.print(getStrP(str_file));
+    DEBUG.print(getStrP(str_not));
+    DEBUG.print(getStrP(str_found));
+    DEBUG.println(uri);
 #endif
     String str = F("File Not Found\n");
     str += F("\nURI: ");
@@ -229,12 +223,9 @@ bool WebService::sendFileContent(String path) {
 #else
         size_t sent = server->streamFile(f, type);
         f.close();
-        DEBUG.print(path.c_str());
-        DEBUG.print(" ");
-        DEBUG.print(type.c_str());
-        DEBUG.print(" ");
-        DEBUG.print(StrUtils::formatSize(sent).c_str());
-        DEBUG.println();
+        DEBUG.print(path);
+        DEBUG.print(' ');
+        DEBUG.println(StrUtils::formatSize(sent).c_str());
 #endif
         return true;
     }
@@ -270,9 +261,8 @@ void WebService::fileUpload() {
         int ac = server->args();
         int i;
         for (i = 0; i < ac; i++) {
-            output->print(FPSTR(str_http));
-            output->printf("%d %s=%s", i, server->argName(i).c_str(),
-                           server->arg(i).c_str());
+            output->print(getIdentStrP(str_http));
+            output->printf("%d %s=%s", i, server->argName(i).c_str(), server->arg(i).c_str());
             output->println();
         }
         String filename = upload.filename;
@@ -288,8 +278,10 @@ void WebService::fileUpload() {
             }
         }
         filename = getFilePath(filename);
-
-        output->printf("[http] upload %s\r\n", filename.c_str());
+        output->print(getIdentStrP(str_http));
+        output->print(getStrP(str_upload));
+        output->print(filename);
+        
         fsUploadFile = SPIFFS.open(filename, "w");
     } else if (upload.status == UPLOAD_FILE_WRITE) {
         // Write the received bytes to the file
@@ -312,17 +304,13 @@ void WebService::fileUpload() {
     }
 }
 
-/** Redirect to captive portal if we got a request for another domain. Return
- * true in that case so the page handler do not try to handle the request again.
- */
 bool WebService::captivePortal() {
     if (!isip(server->hostHeader()) &&
         server->hostHeader() != (Wireless::hostName() + ".local")) {
 #ifdef DEBUG_HTTP
-        output->print(FPSTR(str_http));
-        output->print(FPSTR(str_redirected));
-        output->println(server->hostHeader().c_str());
-        output->println();
+        output->print(getStrP(str_http));
+        output->print(getStrP(str_redirected));
+        output->println(server->hostHeader());
 #endif
         server->sendHeader(
             "Location",

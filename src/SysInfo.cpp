@@ -291,11 +291,11 @@ String getNetworkInfoJson() {
 }
 
 void printResetInfo(Print* p) {
-    p->print(getSquareBracketsStrP(str_reset));    
+    p->print(getIdentStrP(str_reset));    
     p->print(getStrP(str_reason));
     p->println(ESP.getResetReason());
     
-    p->print(getSquareBracketsStrP(str_reset));    
+    p->print(getIdentStrP(str_reset));    
     p->print(getStrP(str_info));
     p->println(ESP.getResetInfo());    
 }

@@ -17,18 +17,24 @@ class Shell {
     void enableWelcome(bool enabled = true);    
     Termul *getTerm();
     bool isActive();
+    void setEditBuffer(String& str);
+    void clearHistory();
+    void addHistory(const char* str);
+    bool getHistoryInput(String& str);
    private:
+    bool getLastInput(String& str);
     void onOpen();
-    void onInput(const char *);
+    void onLineInput(const char *);
     void onTabPress();
-    void onClose();    
-    
+    void onClose();        
     void print_prompt();
     void print_welcome();
 
     SimpleCLI *cli;
     Termul *t;
-    char prevInput[INPUT_MAX_LENGTH];
+    std::vector<String> history;
+    uint8_t history_size;
+    uint8_t history_pos;
     bool welcomeEnabled;
     bool active;
 };

@@ -1,43 +1,26 @@
 #pragma once
 
 #include "Psu.h"
+#include "PsuLog.h"
 
 class PsuLogger {
    public:
-    PsuLogger(Psu* psu, size_t capacity);
-    ~PsuLogger();
-    bool empty();
-    size_t length();
-    size_t size();
+    PsuLogger(Psu* psu);
     void begin();
     void end();
-    void clear();
     void loop();
-    
-    size_t first();
-    size_t last();
-    size_t next(size_t pos);
-    size_t prev(size_t pos);
-
-    size_t getItems(PsuInfo& info);
-    void getVoltages(float* voltages);
-    
-    void print(Print* p);
-    void printFirst(Print* p, size_t n);
-    void printLast(Print* p, size_t n);
-    void printSummary(Print* p);
+    PsuLog* getLog(PsuLogItem param);    
+    void fill(PsuLogItem log, float* array, size_t& cnt);
+    void print(Print* p, PsuLogItem log);
     void printDiag(Print* p);
-
    private:
-    void printItem(Print* p, size_t index);
-    void add(PsuInfo item);
-    void logVoltage(unsigned long time, float voltage);
+    void clear();
+    void log(PsuInfo& item);
+    void log(PsuLogItem log, unsigned long time, float voltage);
     Psu* psu;
-    LogItem* voltage_log;
-    PsuInfo* items;
-    unsigned long lastUpdated;
-    size_t capacity;
-    size_t writePos;
-    bool rotated;
     bool active;
+    unsigned long startTime;
+    unsigned long lastUpdated;
+    PsuLog* psuLog[4];
+    bool v_enabled, i_enabled,  p_enabled, wh_enabled;
 };

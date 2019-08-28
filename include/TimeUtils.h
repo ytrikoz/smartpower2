@@ -1,37 +1,25 @@
 #pragma once
 
-#include <pgmspace.h>
+#include <Arduino.h>
 #include <time.h>
 
-#include "BuildConfig.h"
-#include "Consts.h"
-#include "StrUtils.h"
-
-uint8_t get_days_in_month(uint8_t month, uint16_t year);
-uint8_t str_to_month(String str);
-
-bool is_leap_year(uint16_t year);
-bool is_valid_date(int day, int month, int year);
-bool is_valid_year(uint16_t n);
-bool is_valid_month(uint8_t n);
-bool is_valid_hour(uint8_t n);
-bool is_valid_minute(uint8_t n);
-bool is_valid_seconds(uint8_t n);
-bool is_valid_day(uint8_t n);
-
-bool str_to_date(char *str, struct tm &tm);
-bool str_to_time(char *str, struct tm &tm);
-
+unsigned long getAppBuildEpoch();
 unsigned long millis_since(unsigned long since);
 unsigned long millis_passed(unsigned long start, unsigned long finish);
 
-void epoch_to_tm(unsigned long epoch_s, struct tm &tm);
-
-unsigned long get_appbuild_epoch();
-
-uint32_t get_epoch(tm dateTime);
-
-uint32_t get_epoch(int year, int month, int day, int hour, int minute,
-                   int second);
-
-char *tmtoa(struct tm *tm, char *buf);
+bool isLeapYear(uint16_t year);
+uint8_t getDaysInMonth(uint8_t month, uint16_t year);
+uint16_t encodeYear(uint16_t& year);
+uint8_t encodeMonth(String str);
+bool encodeDate(uint8_t mday, uint8_t month, int16_t year);
+bool encodeDate(char *str, struct tm &tm);
+bool encodeTime(char *str, struct tm &tm);
+void epochToDateTime(unsigned long epoch_s, struct tm &tm);
+bool isValidMonth(uint8_t month);
+bool isValidHour(uint8_t hour);
+bool isValidMinute(uint8_t minute);
+bool isValidSecond(uint8_t second);
+uint32_t encodeEpoch(tm tm);
+uint32_t encodeEpochTime(uint8_t hour, uint8_t minute, uint8_t second);
+uint32_t encodeEpochDate(uint16_t year, uint8_t month, uint16_t day);
+size_t tmtodtf(struct tm &tm, char *str);

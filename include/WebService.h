@@ -48,10 +48,11 @@ class WebService {
 
     bool active = false;
     int16_t port_http, port_websocket;
-    char web_root[sizeof(HTTP_WEB_ROOT)];
+    char* web_root;
 
     ESP8266WebServer *server;
     WebSocketsServer *websocket;
     SSDPClass *ssdp;
     Print *output;
+    File fsUploadFile;
 };

@@ -59,7 +59,7 @@ void update_display();
 
 uint8_t get_telnet_clients_count();
 
-void onSystemTimeChanged(const char *str);
+void onTimeChangeEvent(const char *str);
 
 // main
 extern void onHttpClientConnect(uint8_t num);

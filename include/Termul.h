@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Buffer.h"
+#include "EditBuffer.h"
 #include "CommonTypes.h"
 #include "Strings.h"
 #include "SystemClock.h"
@@ -60,6 +60,7 @@
 #define MAX_FN_KEY ((CHAR_KEY_F1 + 12) - 0x80)
 
 typedef std::function<void()> TermulEventHandler;
+
 typedef std::function<void(const char *)> TermulInputEventHandler;
 
 class Termul : public Print {
@@ -70,13 +71,13 @@ class Termul : public Print {
     void setEOL(EOLCode code);
     void enableControlCodes(bool enabled = true);
     void enableEcho(bool enabled = true);
-
+    void enableColors(bool enabled = false);
     void setOnInput(TermulInputEventHandler handler);
     void setOnTab(TermulEventHandler handler);
     void setOnQuit(TermulEventHandler handler);
     void setOnStart(TermulEventHandler handler);
-
-    Buffer *input();
+    bool setEditBuffer(const uint8_t *bytes, size_t size);
+    EditBuffer *getEditBuffer();
     void backsp();
     void clear();
     void clear_line();
@@ -99,16 +100,17 @@ class Termul : public Print {
     TermulEventHandler onStartEvent;
     TermulEventHandler onQuitEvent;
 
-    unsigned long lastControlCodeRecived = 0;
-    State state = ST_INACTIVE;
     uint8_t attr = '\xff';
     uint8_t curY = '\xff';
     uint8_t curX = '\xff';
-    Stream *s;
-    Buffer *in_buf;
-    char cc_buf[32] = {0};
-    int cc_index = 0;
 
+    unsigned long lastReceived = 0;
+    State state = ST_INACTIVE;
+    Stream *s;
+    EditBuffer *input;
+    char cc_buf[32] = {0};
+    size_t cc_index = 0;
+    bool colorEnabled = false;
     bool controlCodesEnabled = false;
     bool echoEnabled = false;
 

@@ -7,35 +7,44 @@
 #define BUILD_DATE __DATE__
 #define BUILD_TIME __TIME__
 #define APPNAME "SmartPower2"
-#define FW_VERSION "0.6.5"            
+#define FW_VERSION "0.6.7"            
 #define DATETIME_FORMAT "%02d/%02d/%04d %02d:%02d:%02d"
 #define ONE_MHz_hz 1000000UL
 #define ONE_MILLISECOND_mi 1000
 #define ONE_SECOND_ms 1000
 #define ONE_MINUTE_s 60
-#define ONE_DAY_s 86400
+#define ONE_MINUTE_ms ONE_MINUTE_s * ONE_SECOND_ms
+#define ONE_DAY_s 86400L
+#define ONE_YEAR_days 365
 #define ONE_HOUR_s 3600
 #define ONE_HOUR_m 60
 #define ONE_DAY_h 24
 #define ONE_HOUR_ms ONE_HOUR_s* ONE_SECOND_ms;
+#define ONE_WATT_mW 1000
 #define SEVENTY_YEARS_ms 2208988800UL
 #define MILLENIUM_s 946684800UL
+#define ONE_WEEK_days 7
+#define START_YEAR 1970
 
 #define MEASUREMENT_INTERVAL_ms 250
 #define START_SHOWING_RESTART_COUNTER_ON 5
 #define LOOP_STATS_INTERVAL 5000
 
-#define FILENAME_MAX_LENGTH 31
-#define FILE_CONFIG "/cfg/settings.ini"
-#define FILE_LAST_POWER_STATE "/cfg/powerstate"
-#define FILE_TIME_BACKUP "/cfg/clock"
-#define FILE_WEB_SETTINGS "/www/js/settings.js"
+#define FILENAME_SIZE 31
 
-#define PARAM_COUNT 20
-#define PARAM_NAME_STR_SIZE 12
-#define PARAM_BOOL_SIZE 2
-#define PARAM_STR_SIZE 33
-#define PARAM_IPADDR_SIZE 17
+#define DIR_PSU_LOG "/log/"
+
+#define FILE_WEB_SETTINGS "/www/js/settings.js"
+#define FILE_CONFIG "/etc/main"
+#define FILE_VAR_POWER_STATE "/var/ps"
+#define FILE_VAR_UTC "/var/utc"
+#define FILE_VAR_WH "/var/wh"
+
+#define PARAM_COUNT 21
+#define PARAM_NAME_STR_SIZE 32
+#define PARAM_BOOL_SIZE 1
+#define PARAM_STR_SIZE 31
+#define PARAM_IPADDR_SIZE 16
 #define PARAM_OUTPUT_VOLTAGE_SIZE 8
 #define PARAM_NUMBER_SIZE 4
 #define PARAM_LARGE_NUMBER_SIZE 9
@@ -55,14 +64,17 @@
 
 #define DEF_NTP_POOL_SERVER "pool.ntp.org"
 #define DEF_TIME_BACKUP_INTERVAL_s "3600"
-#define TIME_BACKUP_INTERVAL_MIN_s 600
+#define TIME_BACKUP_INTERVAL_MIN_s 60
 #define WOL_PORT 9
 
 #define PSU_CHECK_INTERVAL_s 5
 #define PSU_VOLTAGE_LOW_v 1.0f
 #define PSU_LOAD_LOW_a 0.001f
-#define PSU_LOG_SIZE 128
 #define PSU_LOG_INTERVAL_ms 250
+#define PSU_LOG_VOLTAGE_SIZE 128
+#define PSU_LOG_CURRENT_SIZE 128
+#define PSU_LOG_POWER_SIZE 128
+#define PSU_LOG_WATTHOURS_SIZE 128
 
 #define DISPLAY_VIRTUAL_COLS 63
 #define DISPLAY_VIRTUAL_ROWS 6
@@ -70,3 +82,5 @@
 #define SCREEN_WIDTH 80
 #define INPUT_MAX_LENGTH 128
 #define OUTPUT_MAX_LENGTH 128
+
+#define SHELL_HISTORY_SIZE 4

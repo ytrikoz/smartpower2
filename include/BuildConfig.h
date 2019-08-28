@@ -12,6 +12,7 @@
 #define INA231_I2C_ADDR	0x40
 
 #define DEBUG Serial
+#define ERROR Serial
 #define USE_SERIAL Serial
 
 #define NO_GLOBAL_SSDP
@@ -23,10 +24,11 @@
 //#define SERIAL_DEBUG
 
 //#define DEBUG_LEDS
-#define DEBUG_LOOP
+//#define DEBUG_LOOP
 //#define DEBUG_PLOT
 //#define DEBUG_DISPLAY
 //#define DEBUG_CONFIG
+//#define DEBUG_FILE_STORAGE
 //#define DEBUG_SYSTEM_CLOCK
 //#define DEBUG_WIRELESS
 //#define DEBUG_NTP
@@ -35,7 +37,7 @@
 //#define DEBUG_HTTP
 //#define DEBUG_SHELL
 //#define DEBUG_TERMUL
-//#define DEBUG_FILE_STORAGE
+
 //#define DEBUG_TIME_BACKUP
 //#define DEBUG_TIME_UTILS
 

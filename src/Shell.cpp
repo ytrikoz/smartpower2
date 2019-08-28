@@ -2,19 +2,17 @@
 
 #include "Cli.h"
 
+using StrUtils::setstr;
 using StrUtils::strfill;
 using StrUtils::strpadd;
-using StrUtils::setstr;
 
-Shell::Shell(SimpleCLI *cli, Termul *t) {
-    memset(&prevInput, 0, sizeof(prevInput));
-    
+Shell::Shell(SimpleCLI* cli, Termul* t) {
     this->cli = cli;
-    
+
     this->t = t;
     this->t->setOnStart([this]() { this->onOpen(); });
     this->t->setOnQuit([this]() { this->onClose(); });
-    this->t->setOnInput([this](const char* str) { this->onInput(str); });
+    this->t->setOnInput([this](const char* str) { this->onLineInput(str); });
     this->t->setOnTab([this]() { this->onTabPress(); });
 
     active = false;
@@ -36,6 +34,10 @@ void Shell::onOpen() {
     active = true;
 }
 
+void Shell::clearHistory() {
+    history.clear();
+}
+
 void Shell::onClose() {
 #ifdef DEBUG_SHELL
     DEBUG.println("[shell] onClose");
@@ -46,33 +48,58 @@ void Shell::onClose() {
 }
 
 void Shell::loop() {
-    if (t) t->read();    
+    if (t) t->read();
+}
+
+void Shell::setEditBuffer(String& str) {
+    t->setEditBuffer((const uint8_t*) str.c_str(), str.length());
+    t->print(str);
 }
 
 void Shell::onTabPress() {
 #ifdef DEBUG_SHELL
     DEBUG.println("[shell] onTabPress");
 #endif
-    if (strlen(prevInput) > 0) {
-        if (t->input()->length() > 0) {
+    if (history.size() > 0) {
+        if (t->getEditBuffer()->available()) {
             t->println();
             print_prompt();
         }
-        t->input()->set(prevInput);
-        t->print(prevInput);
+        String str;
+        if (getLastInput(str)) { 
+            setEditBuffer(str); 
+        };        
     }
 }
 
-void Shell::onInput(const char* str) {
+bool Shell::getLastInput(String& str) {
+    if (history.size() > 0) {
+        str = String(history.back());
+        history.pop_back();
+        return true;
+    }
+    return false;
+}
+
+void Shell::addHistory(const char* str) {
+    if (str == NULL) return;
+    String buf(str);
+    if (buf.length() > 0) {
+        history.push_back(buf);
+        if (history.size() > SHELL_HISTORY_SIZE) history.pop_back();
+    } 
+}
+
+void Shell::onLineInput(const char* str) {
 #ifdef DEBUG_SHELL
-    DEBUG.printf("[shell] onInput(%s)", str);
+    DEBUG.printf("[shell] onLineInput(%s)", str);
 #endif
     cli->parse(str);
     while (cli->available()) {
         t->println();
         cli->getCmd().run();
     }
-    setstr(prevInput, str, sizeof(prevInput));
+    addHistory(str);
     print_prompt();
 }
 
@@ -93,11 +120,11 @@ void Shell::print_welcome() {
 }
 
 void Shell::print_prompt() {
-    #ifdef DEBUG_SHELL
+#ifdef DEBUG_SHELL
     DEBUG.print("[shell] print_prompt");
-    #endif
+#endif
     char buf[OUTPUT_MAX_LENGTH];
-    strcpy(buf, rtc.getLocalFormated().c_str());
+    strcpy(buf, rtc.getLocalTimeStr().c_str());
     uint8_t x = strlen(buf);
     buf[x] = '>';
     buf[++x] = CHAR_SP;

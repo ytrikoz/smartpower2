@@ -24,7 +24,6 @@ void ShowLoop::exec(Print* p) {
         case Profiler::CAPTURE_IN_PROGRESS:
             p->print(getStrP(str_capturing));
             p->printf_P(strf_lu_ms, watchDog.getDuration());
-            p->print(getStrP(str_left, false));
             p->println();
             break;
         case Profiler::CAPTURE_DONE:

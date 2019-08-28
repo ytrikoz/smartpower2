@@ -9,7 +9,7 @@
 #define SET_VOLTAGE 'w'
 #define SET_BOOT_POWER_MODE 'a'
 #define SET_NETWORK 'n'
-#define SET_MEASURE_MODE 'm'
+#define SET_LOG_WATTHOURS 'm'
 
 #define GET_PAGE_STATE 'p'
 

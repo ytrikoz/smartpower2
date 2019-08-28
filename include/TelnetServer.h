@@ -30,7 +30,7 @@ class TelnetServer {
     uint16_t port;
     bool active;
     bool initialized;
-    bool connected;
+    bool connected;    
     WiFiClient client;
     WiFiServer *server;
     TelnetConnectEventHandler onConnectEvent;

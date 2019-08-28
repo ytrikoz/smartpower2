@@ -1,52 +1,52 @@
 #pragma once
-#include <Arduino.h>
 
 #include "CommonTypes.h"
 #include "Config.h"
-#include "Consts.h"
-#include "FileStorage.h"
+#include "FileStore.h"
 
-typedef std::function<void(const char *)> TimeChangedEvent;
+typedef std::function<void(const char*)> TimeEventHandler;
 
 class SystemClock {
+   private:
+    bool storeEpoch(EpochTime);
+    bool restoreEpoch(EpochTime&);
+    bool isExpired(unsigned long);
    public:
     SystemClock();
+    void setOptions(Config* config);
+    void setEpoch(EpochTime& epochTime, bool trusted = false);
+    void setTimeZone(sint8_t timeZone_h);
+    void setBackupInterval(unsigned long time_s);
+    void useFileStorage(bool enabled);
     void begin();
     void loop();
-    void setTime(unsigned long epoch_s);
-    void setConfig(Config *config);
-    void setTimeZone(sint8_t timeZone);
-    void setBackupInterval(uint16_t time_s);
-    void setOutput(Print *output);
-    void setOnTimeChanged(TimeChangedEvent);
-    bool isSynced();
-    uint32_t getUptimeEpoch();
-    unsigned long getUtcEpoch();
-    unsigned long getLocalEpoch();
-    String getLocalFormated();
-    String getUptimeFormated();
-    uint8_t getWeekDay();
-    uint8_t getHours();
-    uint8_t getMinutes();
-    uint8_t getSeconds();
-
-    tm getDateTime();
+    unsigned long getUtc();
+    unsigned long getLocal();
+    unsigned long getSystemUptime();
+    String getDateTimeStr();
+    String getSystemUptimeStr();
+    String getLocalTimeStr();
+    void setOnTimeChange(TimeEventHandler h);
+    void printDiag(Print* p);
 
    private:
-    bool store();
-    bool restore();
-    TimeChangedEvent onTimeChanged;
+    void onTimeChanged();
+    void onTick();
+    TimeEventHandler onTimeChangeEvent;
+    bool useFS;
+    bool active;
+    bool trusted;
 
-    bool active = false;
-    bool synced = false;
-    unsigned long utcEpochTime_s;
-    sint16_t timeOffset_s;
-    unsigned long backupInterval;
+    EpochTime epoch;
+    sint16_t timeOffset;
+    unsigned long lastStored;
+    unsigned long storeInterval;
     unsigned long lastUpdated;
-    unsigned long lastBackup_ms;    
+    unsigned long leftStore;
     uint8_t rollover;
-    FileStorage *storage;
-    Print *output;
+    
+    Print* output = &USE_SERIAL;
+    Print* err = &ERROR;
 };
 
 extern SystemClock rtc;

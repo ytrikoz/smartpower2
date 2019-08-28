@@ -22,7 +22,7 @@ bool OTAUpdate::begin(const char *host, uint16_t port) {
     // arduinoOTA->setPassword("admin");
     // arduinoOTA->setPasswordHash("21232f297a57a5a743894a0e4a801fc3"); //
     // MD5(admin)   
-    USE_SERIAL.print(getSquareBracketsStrP(str_update));
+    USE_SERIAL.print(getIdentStrP(str_update));
     if (strlen(host) == 0)
     {
         output->print(getStrP(str_failed));
@@ -48,7 +48,7 @@ bool OTAUpdate::begin(const char *host, uint16_t port) {
 
 void OTAUpdate::onStart(void) {
     total_progress = 0;
-    output->print(getSquareBracketsStrP(str_update));
+    output->print(getIdentStrP(str_update));
     output->print(getStrP(str_start));
     PGM_P strP;
     switch (this->ota->getCommand()) {
@@ -67,7 +67,7 @@ void OTAUpdate::onStart(void) {
 }
 
 void OTAUpdate::onEnd() {
-    output->print(getSquareBracketsStrP(str_update));
+    output->print(getIdentStrP(str_update));
     output->print(getStrP(str_update));
     output->println(getStrP(str_complete));
 }
@@ -83,7 +83,7 @@ void OTAUpdate::onProgress(unsigned int progress, unsigned int total) {
 }
 
 void OTAUpdate::onError(ota_error_t error) {
-    output->print(getSquareBracketsStrP(str_update));
+    output->print(getIdentStrP(str_update));
     if (error == OTA_AUTH_ERROR) {
         output->print(getStrP(str_auth));
     } else if (error == OTA_BEGIN_ERROR) {

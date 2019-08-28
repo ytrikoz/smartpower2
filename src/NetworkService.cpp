@@ -6,71 +6,68 @@ NetworkService::NetworkService() {
     dns = new DNSServer();
     mdns = new esp8266::MDNSImplementation::MDNSResponder();
     netbios = new ESP8266NetBIOS();
-
     has_dns = false;
     has_mdns = false;
     has_netbios = false;
     active = false;
 }
 
-void NetworkService::setOutput(Print *p) { output = p; }
+void NetworkService::setOutput(Print *p) { this->p = p; }
 
 void NetworkService::begin() {
-    has_dns = Wireless::getWirelessMode() == WLAN_AP ? begin_dns() : false;
-    if (!has_netbios) has_netbios = begin_netbios();
-    if (!has_mdns) has_mdns = begin_mdns();
-    active = true;
+    String host_name = Wireless::hostName();
+    if (!has_dns) has_dns = begin_dns(host_name);
+    if (!has_netbios) has_netbios = begin_netbios(host_name);
+    if (!has_mdns) has_mdns = begin_mdns(host_name);    
+    active = has_dns || has_netbios || has_mdns;
 }
 
 void NetworkService::stop() {
     if (dns) dns->stop();
-    has_dns = false;
-
     if (netbios) netbios->end();
+    has_dns = false;
     has_netbios = false;
-
     active = false;
 }
 
-bool NetworkService::begin_dns() {
+bool NetworkService::begin_dns(String& host_name) {
     IPAddress ip = Wireless::hostIP();
-    char dns_name[] = "*";
-    output->print(FPSTR(str_dns));
-    output->print(dns_name);
-    output->print(' ');
-    output->printf_P(strf_s_d, StrUtils::iptos(ip).c_str(), DNS_PORT);
-    if (dns->start(DNS_PORT, dns_name, ip)) {
-        output->println();
-        return true;
-    }
-    output->println(FPSTR(str_failed));
-    return false;
+    String dns_name = host_name;
+    dns_name += ".";
+    dns_name += HOST_DOMAIN;
+    
+    p->print(getIdentStrP(str_dns));
+    p->print(getStr(dns_name));
+    p->printf_P(strf_s_d, StrUtils::iptoa(ip), DNS_PORT);
+    bool result = dns->start(DNS_PORT, dns_name, ip);
+    if (result)
+        p->println();
+    else
+        p->println(getStrP(str_failed));
+    return result;
 }
 
-bool NetworkService::begin_mdns() {
-    output->print(getSquareBracketsStrP(str_mdns));    
-    String host_name = Wireless::hostName();
+bool NetworkService::begin_mdns(String& host_name) {
+    p->print(getIdentStrP(str_mdns));
     bool result = mdns->begin(host_name);
-    if (result) {        
-        mdns->addService(NULL, "telnet", "tcp", TELNET_PORT);
-        mdns->addService(NULL, "http", "tcp", HTTP_PORT);
+    if (result) {
+        mdns->addService(NULL, getStrP(str_telnet).c_str(), getStrP(str_tcp).c_str(), TELNET_PORT);
+        mdns->addService(NULL, getStrP(str_http).c_str(),  getStrP(str_tcp).c_str(), HTTP_PORT);
         mdns->enableArduino(OTA_PORT);
-        output->print(host_name);
-        output->println();        
+        p->println(host_name);
     } else {
-        output->println(getStrP(str_failed));
+        p->println(getStrP(str_failed));
     }
     return result;
 }
 
-bool NetworkService::begin_netbios() {
-    output->print(getSquareBracketsStrP(str_netbios));
-    String host_name = Wireless::hostName();
+bool NetworkService::begin_netbios(String& host_name) {
+    p->print(getIdentStrP(str_netbios));
     bool result = netbios->begin(host_name.c_str());
-    if (result) {        
-        output->println(host_name);
+    if (result) {
+        p->println(host_name);
     } else {
-        output->println(getStrP(str_failed));
+        p->println(getStrP(str_failed));
     }
     return result;
 }

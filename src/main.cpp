@@ -91,7 +91,7 @@ void onHttpClientData(uint8_t n, String data) {
         case SET_BOOT_POWER_MODE: {
             if (config->setBootPowerState(
                     BootPowerState(data.substring(1).toInt()))) {
-                config->save();
+                config->saveConfig();
                 sendToClients(SET_BOOT_POWER_MODE + data.substring(1).c_str(),
                               PG_SETTINGS, n);
             }
@@ -103,19 +103,24 @@ void onHttpClientData(uint8_t n, String data) {
                 WIFI, SSID, PASSWD, DHCP, IPADDR, NETMASK, GATEWAY, DNS};
             uint8_t last = 0, pos = 0, index = 0;
             while (index < paramCount && (pos = data.indexOf(",", last))) {
-                config->getConfig()->setValue(
+                config->get()->setValueString(
                     items[index++], data.substring(last, pos).c_str());
                 last = pos + 1;
             }
-            config->save();
+            config->saveConfig();
             break;
         }
-        case SET_MEASURE_MODE: {
+        case SET_LOG_WATTHOURS: {
             char ch = data.charAt(1);
             if (isdigit(ch)) {
                 bool mode = (uint8_t)ch - CHR_ZERO;
-                psu->enableWattHoursCalculation(mode);
-                sendToClients(data, PG_HOME, n);
+                if (!psu->enableWhStore(mode)) {
+                    // To all 
+                    sendToClients(data, PG_HOME);
+                } else {
+                    // Except sender
+                    sendToClients(data, PG_HOME, n);
+                }
                 break;
             }
         }
@@ -144,8 +149,8 @@ void sendPageState(uint8_t n, uint8_t page) {
             text += String(psu->getState());
             http->sendTxt(n, text.c_str());
             // WattHour
-            text = String(SET_MEASURE_MODE);
-            text += String(psu->isWattHoursCalculationEnabled());
+            text = String(SET_LOG_WATTHOURS);
+            text += String(psu->isWattHoursLogEnabled());
             http->sendTxt(n, text.c_str());
             break;
         }
@@ -153,7 +158,7 @@ void sendPageState(uint8_t n, uint8_t page) {
             String text;
             // Power mod
             text = String(SET_BOOT_POWER_MODE);
-            text += config->getConfig()->getStrValue(POWER);
+            text += config->get()->getValueAsByte(POWER);
             http->sendTxt(n, text.c_str());
             // Output voltage
             text = String(SET_VOLTAGE);
@@ -161,7 +166,7 @@ void sendPageState(uint8_t n, uint8_t page) {
             http->sendTxt(n, text.c_str());
             // Network config
             text = String(SET_NETWORK);
-            text += config->getConfig()->getStrValue(WIFI);
+            text += config->get()->getValueAsByte(WIFI);
             text += ',';
             text += config->getSSID();
             text += ',';
@@ -175,7 +180,7 @@ void sendPageState(uint8_t n, uint8_t page) {
             text += ',';
             text += config->getGatewayStr();
             text += ',';
-            text += config->getDNSStr();
+            text += config->getDnsStr();
             http->sendTxt(n, text.c_str());
             break;
         }
@@ -234,7 +239,7 @@ void display_boot_progress(uint8_t per, const char *text) {
 }
 
 void delay_print(Print *p) {
-    p->print(getSquareBracketsStrP(str_wait));
+    p->print(getIdentStrP(str_wait));
     for (uint8_t t = BOOT_WAIT_s; t > 0; t--) {
         p->print(t);
         p->print(' ');
@@ -298,7 +303,6 @@ void setup() {
     display_boot_progress(0, BUILD_DATE);
 
     config = new ConfigHelper();
-    config->init(FILE_CONFIG);
 
     start_clock();
     start_psu();
@@ -483,7 +487,8 @@ void power_button_handler() {
     } else if (millis_passed(powerButtonUpdated, now) >= ONE_SECOND_ms) {
         if (power_btn_state == BTN_PRESSED) {
             if (++powerBtnLongPressCounter >= 10) {
-                config->reset();
+                config->setDefault();
+                config->saveConfig();
                 setup_restart_timer();
             } else if (powerBtnLongPressCounter == 5) {
                 power_led->set(Led::BLINK_ERROR);

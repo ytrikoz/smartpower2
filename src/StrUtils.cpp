@@ -33,8 +33,19 @@ IPAddress atoip(const char *input) {
     return IPAddress(parts[0], parts[1], parts[2], parts[3]);
 }
 
-String iptos(IPAddress ip) {
-    return ip.toString();
+String iptos(IPAddress& ip) { return ip.toString(); }
+
+const char* iptoa(IPAddress& ip) {return iptos(ip).c_str(); }
+
+void setnnstr(char *dest, const char *src) {
+    if (src == NULL) {
+        dest = new char[1];
+        dest[0] = '\x00';
+    } else {
+        size_t len = strlen(src);
+        dest = new char[len + 1];
+        setstr(dest, src, len);
+    }
 }
 
 bool setstr(char *dest, const char *src, size_t size) {
@@ -54,9 +65,9 @@ bool setstr(char *dest, const char *src, size_t size) {
 
 String formatSize(size_t size) {
     if (size < 1024)
-        return String(size) + "B";
+        return String(size) + "b";
     else if (size < (1024 * 1024))
-        return String(size / 1024.0) + "KB";
+        return String(size / 1024.0) + "kB";
     else if (size < (1024 * 1024 * 1024))
         return String(size / 1024.0 / 1024.0) + "MB";
     else

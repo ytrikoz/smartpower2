@@ -1,17 +1,17 @@
 #pragma once
 
 #include "Actions.h"
-#include "SystemClock.h"
+#include "Psu.h"
 
 namespace Actions {
 
-class ShowClock : public Action {
+class ShowPsu : public Action {
    public:
     void exec(Print* p);
 };
 
-void ShowClock::exec(Print* p) {    
-    rtc.printDiag(p);
+void ShowPsu::exec(Print* p) {    
+    psu->printDiag(p);
 }
 
 }  // namespace Actions

@@ -1,56 +1,47 @@
 #pragma once
 
 #include <Arduino.h>
-#include <IPAddress.h>
 
 #include "CommonTypes.h"
 
-typedef std::function<void(Parameter)> ConfigEventHandler;
-
-typedef struct {
-    char name[PARAM_NAME_STR_SIZE];
-    size_t size;
-    const char *def;
-} Metadata;
+typedef std::function<void(Parameter)> ParameterChangedEventHandler;
 
 class Config {
    public:
     Config();
     ~Config();
+    bool load(const char *str, size_t size);
+    void setOnParameterChanged(ParameterChangedEventHandler);
+    void setDefaultValue(Parameter param);
+    String toString(Parameter param);
+    bool setValueString(const Parameter param, const char *str);
+    bool setValueStringByName(const char *name, const char *value);
+    bool setValueChar(const Parameter param, char ch);
+    bool setValueBool(const Parameter param, const bool value);
+    bool setValueSignedByte(const Parameter param, const sint8_t value);
+    bool setValueByte(const Parameter param, const uint8_t value);
+    bool setValueInt(const Parameter param, const uint16_t value);
+    bool setValueFloat(const Parameter param, const float value);
 
-    void setDefault();
-    void setOnEvents(ConfigEventHandler eventHandler);
-    bool setValue(Parameter param, const char value);
-    bool setValue(Parameter param, bool value);
-    bool setValue(Parameter param, sint8_t value);
-    bool setValue(Parameter param, uint8_t value);
-    bool setValue(Parameter param, uint16_t value);
-    bool setValue(Parameter param, float value);
-    bool setValue(Parameter param, const char *value);
-    bool setValue(const char *name, const char *value);
-    void setValue(String str);
-
-    IPAddress getIPAddrValue(Parameter param);
-    const char *getStrValue(Parameter param);
-    float getFloatValue(Parameter param);
-    bool getBoolValue(Parameter param);
-    uint8_t getByteValue(Parameter param);
-    uint16_t getIntValue(Parameter param);
-    sint8_t getSignedValue(Parameter param);
+    Metadata getMetadata(size_t index);
+    bool getValueAsBool(Parameter param);
+    uint8_t getValueAsByte(Parameter param);
+    sint8_t getValueAsSignedByte(Parameter param);
+    uint16_t getValueAsInt(Parameter param);
+    IPAddress getValueAsIPAddress(Parameter param);
+    float getValueAsFloat(Parameter param);
+    const char *getValueAsString(Parameter param);
 
     bool getParameter(const char *name, Parameter &param);
     bool getParameter(const char *name, Parameter &param, size_t &size);
-    void getConfigLine(Parameter param, char *str);
     const char *getName(Parameter param);
-    const size_t getValueSize(Parameter param);
+    const size_t getSize(Parameter param);
+    const char *getDefaultValue(Parameter param);
 
    private:
-    void onConfigChangeEvent(Parameter param);
-
-    ConfigEventHandler onEvents;
-
+    void onChangedEvent(Parameter param);
     char *values[PARAM_COUNT];
-
+    ParameterChangedEventHandler onParameterChanged;
     Metadata metadata[PARAM_COUNT] = {
         {"wifi", PARAM_BOOL_SIZE, "2"},
         {"ssid", PARAM_STR_SIZE, "MyNetwork"},
@@ -70,7 +61,11 @@ class Config {
         {"time_zone", PARAM_NUMBER_SIZE, "3"},
         {"twp", PARAM_NUMBER_SIZE, "82"},
         {"ntp_sync", PARAM_LARGE_NUMBER_SIZE, "3600"},
-        {"ntp_pool", PARAM_STR_SIZE, DEF_NTP_POOL_SERVER},
-        {"time_backup", PARAM_LARGE_NUMBER_SIZE, DEF_TIME_BACKUP_INTERVAL_s},
-    };
+        {"ntp_pool", PARAM_STR_SIZE, "pool.ntp.org"},
+        {"time_backup", PARAM_LARGE_NUMBER_SIZE, "3600"},
+        {"store_wh", PARAM_BOOL_SIZE, "0"}};
+
+#ifdef DEBUG_CONFIG
+    Print *dbg = &DEBUG;
+#endif
 };

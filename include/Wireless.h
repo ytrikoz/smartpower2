@@ -16,6 +16,7 @@ bool hasNetwork();
 String hostSSID();
 IPAddress hostIP();
 String wifiModeInfo();
+String networkStateInfo();
 String hostIPInfo();
 String hostName();
 String RSSIInfo();
@@ -38,7 +39,7 @@ void onNetworkDown();
 bool scanNetworks(const char* ssid);
 bool disconnectWiFi();
 
-void setMode(WirelessMode);
+void changeMode(WirelessMode mode);
 void setupAP(IPAddress);
 bool startAP(const char* ssid, const char* password);
 

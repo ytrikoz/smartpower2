@@ -12,7 +12,7 @@ class ShowClients : public Action {
 void ShowClients::exec(Print* p) {
     if ((Wireless::getWirelessMode() != WLAN_STA) &&
         !getConnectedStationInfo().equals("")) {
-        p->print(getSquareBracketsStrP(str_wifi));
+        p->print(getIdentStrP(str_wifi));
         p->print(getConnectedStationInfo().c_str());
     }
     p->print(getStrP(str_http));

@@ -73,6 +73,14 @@ float ina231_read_power(void) {
     return (float)(power * LSB_P);
 }
 
+void ina231_set_bus_conversation(const INA231_AVERAGES avgs) {
+    uint16_t config = ina231_read_config(); 
+    uint16_t update = avgs << 9;
+    config &= ~INA231_CONFIG_AVG_MASK;    
+    config |= update;    
+    ina231_write_config(config);
+}
+
 void ina231_set_avg(const INA231_AVERAGES avgs) {
     uint16_t config = ina231_read_config(); 
     uint16_t update = avgs << 9;

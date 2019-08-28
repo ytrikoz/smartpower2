@@ -5,8 +5,8 @@
 
 #define POWER_SWITCH_PIN D6
 
-enum PsuStatus {PSU_OK, PSU_ERROR, PSU_ALERT};
-enum PsuAlert {PSU_ALERT_NONE, PSU_ALERT_VOLTAGE_LOW, PSU_ALERT_LOAD_LOW};
+enum PsuStatus { PSU_OK, PSU_ERROR, PSU_ALERT };
+enum PsuAlert { PSU_ALERT_NONE, PSU_ALERT_VOLTAGE_LOW, PSU_ALERT_LOAD_LOW };
 
 typedef std::function<void()> PsuEventHandler;
 
@@ -32,19 +32,26 @@ class Psu : public PsuInfoProvider {
     PsuInfo getInfo();
     String toString();
     PowerState getState();
-    String getStateInfo();    
+    String getStateInfo();
     String getDurationInfo();
-    float getVoltage();
-    float getCurrent();
-    float getPower();
-    double getWattHours();
+    float getP();
+    float getV();
+    float getI();
+    double getWh();
     unsigned long getDuration();
-    void setWattHours(double value);
-    void enableWattHoursCalculation(bool enabled);
-    bool isWattHoursCalculationEnabled();
-    
+    void setWh(double value);
+    bool enableWhStore(bool enabled = true);
+    bool isWattHoursLogEnabled();
+
     void printDiag(Print* p);
+
    private:
+    bool storeWh(double value);
+    bool restoreWh(double &value);
+   private:
+    bool storeState(PowerState);
+    bool restoreState(PowerState&);
+
     void onStart();
     void onStop();
     void clearError();
@@ -53,20 +60,20 @@ class Psu : public PsuInfoProvider {
     void init();
     void storePowerState(PowerState state);
     PowerState restorePowerState();
-    
+
     PsuStatus status;
     PsuAlert alert;
-    unsigned long startedAt, lastUpdated, lastPowerRead, lastAlertCheck;
+    unsigned long startedAt, lastUpdated, lastPowerRead, lastCheck;
     bool active;
     bool initialized;
-    bool wattHoursCalculationEnabled;
+    bool wh_store;
     PsuInfo info;
     ConfigHelper* config;
-    PowerState state;    
+    PowerState state;
     float outputVoltage;
-    PsuEventHandler onPsuOn, onPsuOff, onPsuError, onPsuAlert;    
+    PsuEventHandler onPsuOn, onPsuOff, onPsuError, onPsuAlert;
     Print* output = &USE_SERIAL;
-
+    Print* err = &USE_SERIAL;
     static int quadratic_regression(double volt) {
         double a = 0.0000006562;
         double b = 0.0022084236;

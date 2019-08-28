@@ -4,7 +4,6 @@ Led::Led *wifi_led, *power_led;
 
 SimpleTimer timer;
 SimpleCLI *cli;
-
 NetworkService *discovery;
 ConfigHelper *config;
 Display *display;
@@ -41,17 +40,15 @@ void refresh_wifi_led() {
 }
 
 void setBroadcastTo(uint8_t broadcast_if) {
-    uint8_t old_if = wifi_get_broadcast_if();
-
-    USE_SERIAL.print(getSquareBracketsStrP(str_wifi));
+    String old_if = String(wifi_get_broadcast_if(), DEC);
+    USE_SERIAL.print(getIdentStrP(str_wifi));
     USE_SERIAL.print(getStrP(str_set));
     USE_SERIAL.print(getStrP(str_broadcast));
-    USE_SERIAL.print(old_if);
+    USE_SERIAL.print(getStr(old_if));
     USE_SERIAL.print(getStrP(str_arrow_dest));
     USE_SERIAL.print(broadcast_if);
-
     if (!wifi_set_broadcast_if(broadcast_if))
-        USE_SERIAL.print(FPSTR(str_failed));
+        USE_SERIAL.print(getStrP(str_failed));
     USE_SERIAL.println();
 }
 
@@ -59,15 +56,12 @@ void start_services() {
     WirelessMode mode = Wireless::getWirelessMode();
 
     // only AP_STA
-    if (mode == WLAN_AP_STA) {
-        setBroadcastTo(3);
-    }
+    if (mode == WLAN_AP_STA) setBroadcastTo(3);
 
-    if (mode == WLAN_STA || mode == WLAN_AP_STA) {
 #ifndef DISABLE_NTP
-        start_ntp();
+    if (mode == WLAN_STA || mode == WLAN_AP_STA) start_ntp();
 #endif
-    }
+
 #ifndef DISABLE_TELNET
     start_telnet();
 #endif
@@ -87,7 +81,7 @@ void start_telnet() {
         telnet = new TelnetServer(TELNET_PORT);
         telnet->setOutput(&USE_SERIAL);
         telnet->setOnClientConnect([](Stream *stream) {
-            USE_SERIAL.print(getSquareBracketsStrP(str_telnet));
+            USE_SERIAL.print(getIdentStrP(str_telnet));
             USE_SERIAL.println(getStrP(str_connected));
 #ifndef DISABLE_TELNET_CLI
             start_telnet_shell(stream);
@@ -96,7 +90,7 @@ void start_telnet() {
             return true;
         });
         telnet->setOnCLientDisconnect([]() {
-            USE_SERIAL.print(getSquareBracketsStrP(str_telnet));
+            USE_SERIAL.print(getIdentStrP(str_telnet));
             USE_SERIAL.println(getStrP(str_disconnected));
             refresh_wifi_led();
         });
@@ -116,20 +110,19 @@ void start_telnet_shell(Stream *s) {
     telnetTerm->enableControlCodes();
 
     telnetShell = new Shell(cli, telnetTerm);
-    telnetShell->enableWelcome();    
+    telnetShell->enableWelcome();
 }
 
 void start_clock() {
-    rtc.setConfig(config->getConfig());
-    rtc.setOutput(&USE_SERIAL);
-    rtc.setOnTimeChanged(onSystemTimeChanged);
+    rtc.setOptions(config->get());
+    rtc.setOnTimeChange(onTimeChangeEvent);
     rtc.begin();
 }
 
 void start_psu() {
     psu = new Psu();
     psu->setConfig(config);
-    psuLog = new PsuLogger(psu, PSU_LOG_SIZE);
+    psuLog = new PsuLogger(psu);
 
     psu->setOnOn([]() {
         power_led->set(Led::BLINK);
@@ -140,16 +133,16 @@ void start_psu() {
     psu->setOnOff([]() {
         power_led->set(Led::ON);
         psuLog->end();
-        if (int size = psuLog->size()) {
-            float *vals = new float[size];
-            psuLog->getVoltages(vals);
-            if (display) {
-                size_t cols = fill_data(display->getData(), vals, size);
-                display->drawPlot(8 - cols);
-                display->lock(15000);
-            }
-            delete[] vals;
-        }
+        // if (size > 0) {
+        //     float val[size];
+        //     psuLog->fill(PP_VOLTAGE, val, size);
+        //     if (display) {
+        //         size_t cols = fill_data(display->getData(), val, size);
+        //         display->drawPlot(8 - cols);
+        //         display->lock(15000);
+        //     }
+        //     delete[] val;
+        // }
     });
 
     psu->setOnError([]() { power_led->set(Led::BLINK_ERROR); });
@@ -160,9 +153,9 @@ void start_psu() {
 void start_ntp() {
     if (!ntp) {
         ntp = new NtpClient();
-        ntp->setConfig(config->getConfig());
+        ntp->setConfig(config->get());
         ntp->setOutput(&USE_SERIAL);
-        ntp->setOnTimeSynced([](EpochTime &time) { rtc.setTime(time.get()); });
+        ntp->setOnResponse([](EpochTime &epoch) { rtc.setEpoch(epoch, true); });
     }
 }
 
@@ -202,23 +195,24 @@ uint8_t get_telnet_clients_count() {
 #endif
 }
 
-void onSystemTimeChanged(const char *str) {
-    USE_SERIAL.print(getSquareBracketsStrP(str_clock));
-    USE_SERIAL.print(getStrP(str_set));
+void onTimeChangeEvent(const char *str) {
+    USE_SERIAL.print(getIdentStrP(str_clock));
+    USE_SERIAL.print(getStrP(str_time));
+    USE_SERIAL.print(getStrP(str_change));
     USE_SERIAL.println(str);
 }
 
 void load_screen_psu_pvi() {
-    String str = String(psu->getVoltage(), 3);
+    String str = String(psu->getV(), 3);
     str += " V ";
-    str += String(psu->getCurrent(), 3);
+    str += String(psu->getI(), 3);
     str += " A ";
     display->addScreenItem(0, str.c_str());
 
-    double watt = psu->getPower();
+    double watt = psu->getP();
     str = String(watt, (watt < 10) ? 3 : 2);
     str += " W ";
-    double rwatth = psu->getWattHours();
+    double rwatth = psu->getWh();
     if (rwatth < 1000) {
         str += String(rwatth, rwatth < 10 ? 3 : rwatth < 100 ? 2 : 1);
         str += " Wh";
@@ -234,7 +228,7 @@ void load_screen_sta_wifi() {
     display->addScreenItem(0, "WIFI> ",
                            Wireless::getConnectionStatus().c_str());
     display->addScreenItem(1, "STA> ", Wireless::hostSTA_SSID().c_str());
-    
+
     display->addScreenItem(2, "IP> ", Wireless::hostIP().toString().c_str());
     display->addScreenItem(3, "RSSI> ", Wireless::RSSIInfo().c_str());
     display->setScreen(SCREEN_WIFI_STA, 4);
@@ -268,7 +262,7 @@ void update_display() {
     WirelessMode mode = Wireless::getWirelessMode();
     if (psu->getState() == POWER_OFF) {
         if (mode == WLAN_STA) {
-            load_screen_sta_wifi(); 
+            load_screen_sta_wifi();
         } else if (mode == WLAN_AP) {
             load_screen_ap_wifi();
         } else if (mode == WLAN_AP_STA) {

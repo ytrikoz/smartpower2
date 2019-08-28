@@ -9,115 +9,102 @@ static const Month calendar[] = {
     {"May", 31, 120}, {"Jun", 30, 151}, {"Jul", 31, 181}, {"Aug", 31, 212},
     {"Sep", 30, 273}, {"Oct", 31, 304}, {"Nov", 30, 334}, {"Dec", 31, 365}};
 
-static const char stre_invalid_date[] PROGMEM =
-    "%d/%d/%d - is not a valid date\r\n";
-static const char stre_invalid_time[] PROGMEM =
-    "%2d:%2d:%2d - is not a valid time\r\n";
-
-bool is_leap_year(uint16_t year) {
-    uint16_t today = (year < 100) ? 1970 + year : year;
-    return (((today) > 0) && !((today) % 4) &&
-            (((today) % 100) || !((today) % 400)));
+bool isLeapYear(uint16_t year) {
+    return (((year) > 0) && !((year) % 4) &&
+            (((year) % 100) || !((year) % 400)));
 }
 
-bool is_valid_year(uint16_t year) {
-    uint16_t today = (year < 100) ? 1970 + year : year;
-    return today >= 2019;
+uint16_t encodeYear(uint16_t &year) {
+    year += (year < 100) ? 1970 : 0;
+    return (year >= 2019) ? year : 1970;
 }
 
-bool is_valid_month(uint8_t n) { return (n >= 1) && (n <= 12); }
+bool isValidMonth(uint8_t month) { return (month >= 1) && (month <= 12); }
 
-bool is_valid_day(uint8_t n, uint8_t month, int year) {
-    uint8_t daym = get_days_in_month(month, year);
-    return (n >= 1) && (n <= daym);
+bool isValidDay(uint8_t mday, uint8_t month, uint16_t year) {
+    return (mday >= 1) && (mday <= getDaysInMonth(month, year));
 }
 
-bool is_valid_hour(uint8_t n) { return n >= 0 && n < 24; }
+bool isValidHour(uint8_t n) { return n >= 0 && n < 24; }
 
-bool is_valid_minute(uint8_t n) { return n >= 0 && n < 60; }
+bool isValidMinute(uint8_t n) { return n >= 0 && n < 60; }
 
-bool is_valid_seconds(uint8_t n) { return n >= 0 && n < 60; }
+bool isValidSecond(uint8_t n) { return n >= 0 && n < 60; }
 
-bool is_valid_date(int day, int month, int year) {
-    bool res = is_valid_year(year) && is_valid_month(month) &&
-               is_valid_day(day, month, year);
-
+bool isValidDate(uint8_t day, uint8_t month, uint16_t year) {
+    year = encodeYear(year);
+    bool res = year && isValidMonth(month) && isValidDay(day, month, year);
     if (!res) {
-        USE_SERIAL.printf_P(stre_invalid_date, day, month, year);
-        USE_SERIAL.println();
+        DEBUG.print(getStrP(str_invalid));
+        DEBUG.print(getStrP(str_date));
+        DEBUG.println();
     }
     return res;
 }
 
-bool is_valid_passed(uint8_t hour, uint8_t minute, uint8_t seconds) {
-    bool res = is_valid_hour(hour) && is_valid_minute(minute) &&
-               is_valid_seconds(seconds);
-
+bool isValidTime(uint8_t hour, uint8_t minute, uint8_t second) {
+    bool res =
+        isValidHour(hour) && isValidMinute(minute) && isValidSecond(second);
     if (!res) {
-        USE_SERIAL.printf_P(stre_invalid_time, hour, minute, seconds);
-        USE_SERIAL.println();
+        DEBUG.print(getStrP(str_invalid));
+        DEBUG.print(getStrP(str_time));
     }
     return res;
 }
 
-uint8_t get_days_in_month(uint8_t month, uint16_t year) {
-    if (is_valid_month(month)) {
-        return month == 1 ? (is_leap_year(year) ? 29 : 28)
-                          : calendar[month].days;
-    }
-    return 0;
+uint8_t getDaysInMonth(uint8_t month, uint16_t year) {
+    return isValidMonth(month) ? (month == 1 ? (isLeapYear(year) ? 29 : 28)
+                                             : calendar[month].mdays)
+                               : 0;
 }
 
-uint16_t get_days_in_year(uint16_t year) {
-    return is_leap_year(year) ? 366 : 365;
+uint16_t getDaysInTheYear(uint16_t year) {
+    return isLeapYear(year) ? 366 : 365;
 }
 
-uint8_t str_to_month(String str) {
+uint8_t encodeMonth(String str) {
     for (uint8_t n = 0; n < 11; n++)
         if (str.equalsIgnoreCase(calendar[n].name) == 1) return n + 1;
     return 0;
 }
 
-bool str_to_passed(char *str, struct tm &tm) {
+bool encodeTime(char *str, struct tm &tm) {
     tm.tm_hour = atoi(strtok(str, ":"));
     tm.tm_min = atoi(strtok(NULL, ":"));
     tm.tm_sec = atoi(str);
-    return is_valid_hour(tm.tm_hour) && is_valid_minute(tm.tm_min) &&
-           is_valid_seconds(tm.tm_sec);
+    if (!isValidTime(tm.tm_hour, tm.tm_min, tm.tm_sec)) {
+        tm.tm_hour = 0;
+        tm.tm_min = 0;
+        tm.tm_sec = 0;
+        return false;
+    }
+    return true;
 }
 
-bool str_to_date(char *str, struct tm &tm) {
-    char month[8];
-    strcpy(month, strtok(str, " "));
-    tm.tm_mon = str_to_month(month);
+bool encodeDate(char *str, struct tm &tm) {
+    char buf[8];
+    strcpy(buf, strtok(str, " "));        
+    tm.tm_mon = encodeMonth(buf);
     tm.tm_mday = atoi(strtok(NULL, " "));
     tm.tm_year = atoi(strtok(NULL, " "));
-    return is_valid_date(tm.tm_mday, tm.tm_mon, tm.tm_year);
+    if (!isValidDate(tm.tm_mday, tm.tm_mon, tm.tm_year)) {
+        tm.tm_mon = 1;
+        tm.tm_mday = 1;
+        tm.tm_year = 1970;
+        return false;
+    }
+    return true;
 }
 
-uint32_t get_epoch(tm datepassed) {
-    return get_epoch(datepassed.tm_year, datepassed.tm_mon, datepassed.tm_mday,
-                     datepassed.tm_hour, datepassed.tm_min, datepassed.tm_sec);
-}
-
-uint32_t get_epoch(int year, int month, int day, int hour, int minute,
-                   int second) {
-    if (!is_valid_date(day, month, year) ||
-        !is_valid_passed(hour, minute, second))
-        return 0;
-
-    uint32_t unixdays = (year - 1970) * 365 + ((year - 1969) / 4);
-    unixdays += calendar[month].days + (day - 1) +
-                ((year % 4 == 0 && month > 2) ? 1 : 0);
-    return unixdays * ONE_DAY_s + hour * ONE_HOUR_s + minute * ONE_MINUTE_s +
-           second;
+uint32_t encodeEpoch(tm tm) {
+    return DateTime(tm).asEpoch();
 }
 
 unsigned long millis_since(unsigned long sinse) {
     return millis_passed(sinse, millis());
 }
 
-unsigned long  millis_passed(unsigned long start, unsigned long finish) {
+unsigned long millis_passed(unsigned long start, unsigned long finish) {
     unsigned long result = 0;
     if (start <= finish) {
         unsigned long passed = finish - start;
@@ -139,9 +126,7 @@ unsigned long  millis_passed(unsigned long start, unsigned long finish) {
     return result;
 }
 
-void month_to_str(uint8_t monthN, char *buf) {}
-
-void epoch_to_tm(unsigned long epoch_s, struct tm &tm) {
+void epochToDateTime(unsigned long epoch_s, struct tm &tm) {
 #ifdef DEBUG_passed_UTILS
     USE_SERIAL.printf("epoch_to_tm (%lu) ", epoch_s);
 #endif
@@ -159,55 +144,54 @@ void epoch_to_tm(unsigned long epoch_s, struct tm &tm) {
 
     tm.tm_wday = ((passed + 4) % 7) + 1;
 
-    int year = 0;
+    uint16_t year = 0;
     unsigned long days = 0;
-    while ((unsigned)(days += is_leap_year(year) ? 366 : 365) <= passed) year++;
-    tm.tm_year = 1970 + year;
-    passed = passed - (days - (is_leap_year(year) ? 366 : 365));
-    uint8_t monthN;
-    for (monthN = 1; monthN <= 12; monthN++) {
-        uint8_t monthDays = get_days_in_month(monthN, year);
-        if (passed >= monthDays)
-            passed = passed - monthDays;
+    while ((days += getDaysInTheYear(year)) <= passed) year++;
+    tm.tm_year = encodeYear(year);
+    passed = passed - (days - getDaysInTheYear(tm.tm_year));
+    uint8_t monthNumber;
+    for (monthNumber = 1; monthNumber <= 12; monthNumber++) {
+        uint8_t daysInMonth = getDaysInMonth(monthNumber, tm.tm_year);
+        if (passed >= daysInMonth)
+            passed -= daysInMonth;
         else
             break;
     }
-    tm.tm_mon = monthN;
+    tm.tm_mon = monthNumber;
     tm.tm_mday = passed + 1;
-
-#ifdef DEBUG_passed_UTILS
-    USE_SERIAL.printf(
-        "year %d month %d day %d weekday %d passed %02d:%02d:%02d ", tm.tm_year,
-        tm.tm_mon, tm.tm_mday, tm.tm_wday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-    USE_SERIAL.println();
+#ifdef DEBUG_TIME_UTILS
+    DEBUG.printf("year %d buf %d day %d weekday %d passed %02d:%02d:%02d \r\n",
+                 tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_wday, tm.tm_hour,
+                 tm.tm_min, tm.tm_sec);
 #endif
 }
 
-unsigned long get_appbuild_epoch() {
+unsigned long getAppBuildEpoch() {
     tm tm;
-    char buf[16];
-    strcpy(buf, BUILD_DATE);
-    if (!str_to_date(buf, tm)) {
-#ifdef DEBUG_passed_UTILS
-        USE_SERIAL.printf("[error] str_to_passed:'%s'", buf);
+    char str[16];
+    strcpy(str, BUILD_DATE);
+    if (!encodeDate(str, tm)) {
+#ifdef DEBUG_TIME_UTILS
+        USE_SERIAL.printf("[error] str_to_date:'%s'", str);
         USE_SERIAL.println();
 #endif
         return 0;
     }
-    memset(&buf[0], 0, sizeof(buf[0]) * 16);
-    strcpy(buf, BUILD_TIME);
-    if (!str_to_passed(buf, tm)) {
-#ifdef DEBUG_passed_UTILS
-        USE_SERIAL.printf("[error] str_to_passed: '%s'", buf);
+    memset(&str[0], 0, sizeof(str[0]) * 16);
+    strcpy(str, BUILD_TIME);
+    if (!encodeTime(str, tm)) {
+#ifdef DEBUG_TIME_UTILS
+        USE_SERIAL.printf("[error] str_to_passed: '%s'", str);
         USE_SERIAL.println();
 #endif
         return 0;
     }
-    return get_epoch(tm) - BUILD_TIMEZONE_h * ONE_HOUR_s;
+    return encodeEpoch(tm) - (BUILD_TIMEZONE_h * ONE_HOUR_s);
 }
 
-char *tmtoa(struct tm *tm, char *buf) {
-    sprintf(buf, DATETIME_FORMAT, tm->tm_mday, tm->tm_mon, tm->tm_year,
-            tm->tm_hour, tm->tm_min, tm->tm_sec);
-    return buf;
+
+size_t tmtodtf(struct tm &tm, char *str) {
+    sprintf(str, DATETIME_FORMAT, tm.tm_mday, tm.tm_mon, tm.tm_year, tm.tm_hour,
+            tm.tm_min, tm.tm_sec);
+    return strlen(str);
 }

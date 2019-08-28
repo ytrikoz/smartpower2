@@ -4,6 +4,7 @@
 #include <SimpleCLI.h>
 
 namespace Cli {
+
 void init();
 void open(Print *);
 void close();
@@ -27,8 +28,6 @@ void onLog(cmd *c);
 
 void onGetConfigParameter(const char *, const char *);
 void onConfigParameterChanged(const char *, const char *, const char *);
-void onDone();
-void onDone(String &action, String &param);
 void onIOResult(const char *, const char *);
 
 }  // namespace Cli

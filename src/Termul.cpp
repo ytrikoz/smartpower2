@@ -2,17 +2,16 @@
 
 #include <mcurses.h>
 
+#include "ArrayBuffer.h"
 #include "SysInfo.h"
 
 Termul::Termul(Stream *s) {
-    this->s = s;
-    this->in_buf = new Buffer(INPUT_MAX_LENGTH);
+    this->input = new EditBuffer(INPUT_MAX_LENGTH);
+    setStream(s);
 }
 
-Termul::~Termul() { delete[] in_buf; }
-
-void Termul::setStream(Stream *s) { this->s = s; }
 bool Termul::available() { return s->available(); }
+void Termul::setStream(Stream *s) { this->s = s; }
 
 void Termul::setOnTab(TermulEventHandler handler) { onTabPressed = handler; }
 void Termul::setOnInput(TermulInputEventHandler handler) {
@@ -23,6 +22,7 @@ void Termul::setOnQuit(TermulEventHandler handler) { onQuitEvent = handler; }
 
 void Termul::setEOL(EOLCode code) { this->eol = code; }
 void Termul::enableEcho(bool enabled) { this->echoEnabled = enabled; }
+void Termul::enableColors(bool enabled) { this->colorEnabled = enabled; }
 void Termul::enableControlCodes(bool enabled) {
     this->controlCodesEnabled = enabled;
 }
@@ -35,28 +35,28 @@ void Termul::read() {
     sint8_t moveX = 0;
 
     while (s->available()) {
-        int ch = s->read();
-
-        // WHEN INACTIVE
+        int c = s->read();
+        unsigned long now = millis();
+        // when inactive
         if (state == ST_INACTIVE) {
-            // ENTER PRESSED
-            if (ch == CHAR_CR) {
+            // wait for cr
+            if (c == CHAR_CR) {
                 if (onStartEvent) onStartEvent();
                 state = ST_NORMAL;
             }
-            // IGNORE
+            // or ignore all other
             continue;
         }
-        if (ch == CHAR_LF || ch == CHAR_NULL || ch == CHAR_BIN) continue;
+        if (c == CHAR_LF || c == CHAR_NULL || c == CHAR_BIN) continue;
 #ifdef DEBUG_TERMUL
         DEBUG.printf("#%d", int(ch));
 #endif
         // ESC SEQUENCE
         if (state == ST_ESC_SEQ) {
-            if (millis() - lastControlCodeRecived > 100) {
-                if (ch == CHAR_ESC) {
+            if (now - lastReceived >= 100) {
+                if (c == CHAR_ESC) {
                     cc_index = 0;
-                    if (in_buf->empty()) {
+                    if (!input->available()) {
                         // QUIT
                         if (onQuitEvent) onQuitEvent();
                         state = ST_INACTIVE;
@@ -68,7 +68,7 @@ void Termul::read() {
                         } else {
                             println();
                         }
-                        in_buf->clear();
+                        input->clear();
                         state = ST_NORMAL;
                         continue;
                     }
@@ -77,8 +77,8 @@ void Termul::read() {
                 }
             } else {
                 // ESC SEQUENCE RECEIVING
-                cc_buf[cc_index] = ch;
-                if ((ch == '[') || ((ch >= 'A' && ch <= 'Z') || ch == '~')) {
+                cc_buf[cc_index] = c;
+                if ((c == '[') || ((c >= 'A' && c <= 'Z') || c == '~')) {
                     cc_index++;
                 }
                 cc_buf[cc_index] = '\x00';
@@ -86,13 +86,13 @@ void Termul::read() {
                 uint8_t idx;
                 for (idx = 0; idx < MAX_FN_KEY; idx++) {
                     if (!strcmp(cc_buf, fn_keys[idx])) {
-                        ch = idx + 0x80;
+                        c = idx + 0x80;
                         state = ST_NORMAL;
                         break;
                     }
                 }
 
-                lastControlCodeRecived = millis();
+                lastReceived = now;
 
                 if (state == ST_NORMAL) {
 #ifdef DEBUG_TERMUL
@@ -106,61 +106,65 @@ void Termul::read() {
 
         // WHEN NORMAL
         if (state == ST_NORMAL) {
-            if (ch == CHAR_ESC) {
+            if (c == CHAR_ESC) {
                 state = ST_ESC_SEQ;
                 continue;
             }
-            if (ch == CHAR_CR) {
+            if (c == CHAR_CR) {
                 println();
-                if (onInputEvent) onInputEvent(in_buf->c_str());
-                in_buf->clear();
+                if (onInputEvent) onInputEvent(input->c_str());
+                input->clear();
                 continue;
             }
-            if (ch == CHAR_TAB) {
+            if (c == CHAR_TAB) {
                 if (onTabPressed) onTabPressed();
                 continue;
             }
 
-            switch (ch) {
+            switch (c) {
                 case CHAR_LEFT:
-                    in_buf->prev();
+                    input->prev();
                     moveX--;
                     break;
                 case CHAR_RIGHT:
-                    in_buf->next();
+                    input->next();
                     moveX++;
                     break;
                 case CHAR_HOME:
-                    moveX = -1 * in_buf->length();
-                    in_buf->first();
+                    moveX = -1 * input->available();
+                    input->first();
                     break;
                 case CHAR_END:
-                    moveX = in_buf->length();
-                    in_buf->last();
+                    moveX = input->available();
+                    input->last();
                     break;
                 case CHAR_BS:
                 case CHAR_DEL:
-                    if (in_buf->length() > 0) {
+                    if (input->available()) {
                         backsp();
-                        in_buf->backsp();
+                        input->onBackspace();
                     }
                     break;
                 default:
                     // printable ascii 7bit or printable 8bit ISO8859
-                    if ((in_buf->length() < in_buf->size()) &&
-                        (ch & '\x7F') >= 32 && (ch & '\x7F') < 127) {
-                        in_buf->insert(ch);
-                        if (echoEnabled) {
-                            write(ch);
-                        }
-                    }
+                    if ((c & '\x7F') >= 32 && (c & '\x7F') < 127)
+                        if (input->write((uint8_t)c) && echoEnabled) write(c);
+                    break;
             }
             if (controlCodesEnabled) move(startY, startX + moveX);
         }
     }
 }
 
-Buffer *Termul::input() { return this->in_buf; }
+bool Termul::setEditBuffer(const uint8_t *bytes, size_t size) {
+    input->clear();
+    size_t max_len = input->free() - 1;
+    if (size > max_len) size = max_len;
+    return input->write(bytes, size);
+    //((const uint8_t*) str, strlen(str));
+}
+
+EditBuffer *Termul::getEditBuffer() { return this->input; }
 
 void Termul::start() {
     if (controlCodesEnabled) initscr();

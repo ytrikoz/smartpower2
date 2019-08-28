@@ -3,10 +3,10 @@
 #include "Global.h"
 
 #include "Actions/Backlight.h"
-#include "Actions/ClockSet.h"
+#include "Actions/ClockSetTime.h"
+#include "Actions/LogPrint.h"
 #include "Actions/PlotPrint.h"
 #include "Actions/PowerAvg.h"
-#include "Actions/PowerLog.h"
 #include "Actions/PowerOff.h"
 #include "Actions/PowerOn.h"
 #include "Actions/ShowClients.h"
@@ -14,6 +14,7 @@
 #include "Actions/ShowDiag.h"
 #include "Actions/ShowLoop.h"
 #include "Actions/ShowNtp.h"
+#include "Actions/ShowPsu.h"
 #include "Actions/ShowStatus.h"
 #include "Actions/ShowWifi.h"
 
@@ -38,6 +39,20 @@ enum CommandAction {
     ACTION_UPTIME
 };
 
+enum CommandItems {
+    ITEM_CLIENT,
+    ITEM_CLOCK,
+    ITEM_POWER,
+    ITEM_LOG,
+    ITEM_NETWORK,
+    ITEM_INFO,
+    ITEM_STATUS,
+    ITEM_LOOP,
+    ITEM_NTP,
+    ITEM_DIAG,
+    ITEM_WIFI,
+};
+
 Command cmdConfig, cmdPower, cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet,
     cmdGet, cmdRm, cmdClock, cmdPlot, cmdLog;
 
@@ -56,7 +71,7 @@ String getItemStr(Command& command) {
     return command.getArgument("item").getValue();
 }
 String getValueStr(Command& command) {
-    return command.getArgument("value").getValue();
+    return command.getArgument("valueStr").getValue();
 }
 
 CommandAction getAction(Command& cmd) {
@@ -94,8 +109,13 @@ CommandAction getAction(Command& cmd) {
 bool active() { return output != NULL; }
 
 void open(Print* p) {
-    if (output != NULL) output->println(FPSTR(msg_session_interrupted));
+    if (output != NULL) output->println(getStrP(msg_session_interrupted));
     output = p;
+}
+
+void close() {
+    output->println(getStrP(str_shell_start_hint, false));
+    output = NULL;
 }
 
 void init() {
@@ -131,7 +151,7 @@ void init() {
     // Set
     cmdSet = cli->addCommand("set");
     cmdSet.addPositionalArgument("param");
-    cmdSet.addPositionalArgument("value");
+    cmdSet.addPositionalArgument("valueStr");
     cmdSet.setCallback(Cli::onSet);
     // Get
     cmdGet = cli->addCommand("get");
@@ -153,51 +173,43 @@ void init() {
     cmdPlot.setCallback(Cli::onPlot);
     // Log
     cmdPlot = cli->addCommand("log");
-    cmdPlot.addPositionalArgument("action", "status");
-    cmdPlot.addPositionalArgument("param", "-1");
+    cmdPlot.addPositionalArgument("action", "print");
+    cmdPlot.addPositionalArgument("param", "");
     cmdPlot.setCallback(Cli::onLog);
 }
 
-void close() {
-    output->print(FPSTR(str_shell_start_hint));
-    output->println();
-    output = nullptr;
-}
-
-void onGetConfigParameter(const char* name, const char* value) {
+void onGetConfigParameter(const char* name, const char* valueStr) {
     char buf[INPUT_MAX_LENGTH];
-    sprintf_P(buf, strf_config_param_value, name, value);
+    sprintf_P(buf, strf_config_param_value, name, valueStr);
     output->println(buf);
 }
 
-void onConfigParameterChanged(const char* name, const char* old_value,
+void onConfigParameterChanged(const char* paramStr, const char* old_value,
                               const char* new_value) {
     char buf[OUTPUT_MAX_LENGTH];
-    sprintf_P(buf, strf_config_param_changed, new_value, name);
+    sprintf_P(buf, strf_config_param_changed, new_value, paramStr);
     output->print(buf);
 }
 
-void unknownCommandItem(const char* command, const char* item) {
+void unknownCommandItem(const char* commandStr, const char* itemStr) {
     char buf[128];
-    sprintf_P(buf, strf_unknown_command_item, item, command);
+    sprintf_P(buf, strf_unknown_command_item, itemStr, commandStr);
     output->println(buf);
 }
 
-void unknownConfigParam(const char* param) {
-    char buf[128];
-    sprintf_P(buf, strf_config_unknown_param, param);
-    output->println(buf);
+void print_unknown_param(Print* p, String& str) {
+    p->print(getStrP(str_unknown));
+    p->print(getStrP(str_param));
+    p->print(getQuotedStr(str));
 }
 
-void print_unknown_action(String str) {
-    output->printf_P(msgf_unknown_action, str.c_str());
-    output->println();
+void print_unknown_action(Print* p, String& str) {
+    p->print(getStrP(str_unknown));
+    p->print(getStrP(str_action));
+    p->print(getQuotedStr(str));
 }
 
-void print_done(Print* p) {
-    p->print(FPSTR(str_done));
-    p->println();
-};
+void println_done(Print* p) { p->println(getStrP(str_done)); };
 
 void print_done(String& action, String& param) {
     output->print(action.c_str());
@@ -219,11 +231,32 @@ void onCommandError(cmd_error* e) {
 void onLog(cmd* c) {
     Command cmd(c);
     CommandAction action = getAction(cmd);
-    if (action == ACTION_STATUS) {
-        psuLog->printDiag(output);
-    } else {
-        print_unknown_action(getActionStr(cmd));
+    bool handled = false;
+    if (action == ACTION_PRINT) {
+        String paramStr = getParamStr(cmd);
+        if (!paramStr.length()) {
+            psuLog->printDiag(output);
+            return;
+        }
+        if (paramStr.indexOf("p") != -1) {
+            psuLog->print(output, POWER_LOG);
+            handled = true;
+        }
+        if (paramStr.indexOf("v") != -1) {
+            psuLog->print(output, VOLTAGE_LOG);
+            handled = true;
+        }
+        if (paramStr.indexOf("i") != -1) {
+            psuLog->print(output, CURRENT_LOG);
+            handled = true;
+        }
+        if (paramStr.indexOf("wh") != -1) {
+            psuLog->print(output, WATTSHOURS_LOG);
+            handled = true;
+        }
+        if (!handled) print_unknown_param(output, paramStr);
     }
+    output->println();
 }
 
 void onHelp(cmd* c) {
@@ -236,26 +269,28 @@ void onConfig(cmd* c) {
     CommandAction action = getAction(cmd);
     switch (action) {
         case ACTION_PRINT:
-            config->printTo(output);
+            config->printTo(*output);
             break;
         case ACTION_RESET:
-            config->reset();
-            print_done(output);
+            config->setDefault();
+            println_done(output);
             break;
         case ACTION_SAVE:
-            config->save();
-            print_done(output);
+            config->saveConfig();
+            println_done(output);
             break;
         case ACTION_LOAD:
-            config->reload();
-            print_done(output);
+            config->loadConfig();
+            println_done(output);
             break;
         case ACTION_APPLY:
-            config->save();
+            config->saveConfig();
             setup_restart_timer();
             break;
         default:
-            print_unknown_action(getActionStr(cmd));
+            String actionStr = getActionStr(cmd);
+            print_unknown_action(output, actionStr);
+            output->println();
             break;
     }
 }
@@ -273,11 +308,6 @@ void onPower(cmd* c) {
             Actions::PowerAvg(param.toInt()).exec(output);
             break;
         }
-        case ACTION_LOG: {
-            String param = getParamStr(cmd);
-            Actions::PowerLog(param.toInt()).exec(output);
-            break;
-        }
         case ACTION_ON: {
             Actions::PowerOn().exec(output);
             break;
@@ -287,7 +317,9 @@ void onPower(cmd* c) {
             break;
         }
         default: {
-            print_unknown_action(getActionStr(cmd));
+            String actionStr = getActionStr(cmd);
+            print_unknown_action(output, actionStr);
+            output->println();
             return;
         }
     }
@@ -311,11 +343,13 @@ void onSystem(cmd* c) {
             break;
         }
         case ACTION_UPTIME: {
-            output->println(rtc.getUptimeFormated());
+            output->println(rtc.getSystemUptimeStr());
             break;
         }
         default: {
-            print_unknown_action(getActionStr(cmd));
+            String actionStr = getActionStr(cmd);
+            print_unknown_action(output, actionStr);
+            output->println();
             return;
         }
     }
@@ -325,25 +359,22 @@ void onClock(cmd* c) {
     Command cmd(c);
     String action = getActionStr(cmd);
     String param = getParamStr(cmd);
-    if (action.equals("set")) {
-        Actions::ClockSet(param).exec(output);
-    }
+    if (action.equals("set")) Actions::ClockSetTime(param).exec(output);
 }
 
 void onWifiScan(cmd* c) {
     Command cmd(c);
-    output->print(FPSTR(str_wifi));
-    output->print(FPSTR(str_scanning));
-
+    output->print(getIdentStrP(str_wifi));
+    output->print(getStrP(str_scanning));
     int8_t n = WiFi.scanNetworks();
-    output->print(str_wifi);
     if (n == 0) {
-        output->print(str_network_not_found);
-        output->println();
+        output->print(getStrP(str_network));
+        output->print(getStrP(str_not));
+        output->print(getStrP(str_found));
     }
+    output->println();
     for (int i = 0; i < n; ++i) {
-        // Print SSID and RSSI for each network found
-        output->print(FPSTR(str_wifi));
+        output->print(getIdentStrP(str_wifi));
         output->printf_P(strf_wifi_scan_results, i + 1, WiFi.SSID(i).c_str(),
                          WiFi.RSSI(i));
     }
@@ -352,37 +383,39 @@ void onWifiScan(cmd* c) {
 
 void onSet(cmd* c) {
     Command cmd(c);
-    String name = getParamStr(cmd);
-    String value = getValueStr(cmd);
-    Config* cfg = config->getConfig();
+    String paramStr = getParamStr(cmd);
+    String valueStr = getValueStr(cmd);
     Parameter param;
-    size_t old_size;
-    if (cfg->getParameter(name.c_str(), param, old_size)) {
-        char old[old_size];
-        strcpy(old, cfg->getStrValue(param));
-        if (cfg->setValue(param, value.c_str())) {
-            onConfigParameterChanged(name.c_str(), old, value.c_str());
+    size_t size;
+    Config* cfg = config->get();
+    if (cfg->getParameter(paramStr.c_str(), param, size)) {
+        char buf[size];
+        StrUtils::setstr(buf, cfg->getValueAsString(param), size);
+        if (cfg->setValueString(param, valueStr.c_str())) {
+            onConfigParameterChanged(paramStr.c_str(), buf, valueStr.c_str());
         } else {
-            output->printf_P(strf_config_param_unchanged, name.c_str());
+            output->printf_P(strf_config_param_unchanged, paramStr.c_str());
         }
     } else {
-        unknownConfigParam(name.c_str());
+        print_unknown_param(output, paramStr);
     }
     output->println();
 }
 
 void onGet(cmd* c) {
     Command cmd(c);
-    String name = getParamStr(cmd);
-    Config* cfg = config->getConfig();
+    String paramStr = getParamStr(cmd);
+    Config* cfg = config->get();
     Parameter param;
-    size_t value_size;
-    if (cfg->getParameter(name.c_str(), param, value_size)) {
-        char value[value_size];
-        strcpy(value, cfg->getStrValue(param));
-        onGetConfigParameter(name.c_str(), value);
+    size_t value_size = 0;
+    if (cfg->getParameter(paramStr.c_str(), param, value_size)) {
+        char valueStr[value_size + 1];
+        StrUtils::setstr(valueStr, cfg->getValueAsString(param),
+                         value_size + 1);
+        onGetConfigParameter(paramStr.c_str(), valueStr);
     } else {
-        unknownConfigParam(name.c_str());
+        print_unknown_param(output, paramStr);
+        output->println();
     }
 }
 
@@ -394,21 +427,23 @@ void onShow(cmd* c) {
     } else if (item.equals("clock")) {
         Actions::ShowClock().exec(output);
     } else if (item.equals("power")) {
-        psu->printDiag(output);
+        Actions::ShowPsu().exec(output);
     } else if (item.equals("log")) {
         psuLog->printDiag(output);
     } else if (item.equals("network")) {
         output->println(getNetworkInfoJson().c_str());
-    } else if (item.equals("info")) {
+    } else if (item.equals("system")) {
         output->println(getSystemInfoJson().c_str());
     } else if (item.equals("status")) {
         Actions::ShowStatus().exec(output);
-    } else if (item.equals("loop")) {
+    }
+#ifdef DEBUG_LOOP
+    else if (item.equals("loop")) {
         Actions::ShowLoop().exec(output);
-    } else if (item.equals("ntp")) {
+    }
+#endif
+    else if (item.equals("ntp")) {
         Actions::ShowNtp().exec(output);
-    } else if (item.equals("diag")) {
-        Actions::ShowDiag().exec(output);
     } else if (item.equals("wifi")) {
         Actions::ShowWifi().exec(output);
     } else {

@@ -5,24 +5,24 @@
 using StrUtils::setstr;
 
 NtpClient::NtpClient() {
-    active = false;
-    lastUpdated = 0;
-    udp = new WiFiUDP();
+    udp = new WiFiUDP();    
     onDisconnected = WiFi.onStationModeDisconnected(
         {[this](const WiFiEventStationModeDisconnected &event) { end(); }});
     onGotIp = WiFi.onStationModeGotIP(
         {[this](const WiFiEventStationModeGotIP &event) { begin(); }});
+    active = false;
+    lastUpdated = 0;    
 }
 
 void NtpClient::setOutput(Print *p) { output = p; }
 
 void NtpClient::setConfig(Config *config) {
-    setInterval(config->getIntValue(NTP_SYNC_INTERVAL));
-    setServer(config->getStrValue(NTP_POOL_SERVER));
+    setInterval(config->getValueAsInt(NTP_SYNC_INTERVAL));
+    setServer(config->getValueAsString(NTP_POOL_SERVER));
 }
 
-void NtpClient::setInterval(uint16_t seconds) {
-    syncInterval = seconds * ONE_SECOND_ms;
+void NtpClient::setInterval(uint16_t time_s) {
+    syncInterval = time_s * ONE_SECOND_ms;
 }
 
 void NtpClient::setServer(const char *str) {
@@ -32,7 +32,7 @@ void NtpClient::setServer(const char *str) {
 }
 
 bool NtpClient::begin() {
-    output->print(getSquareBracketsStrP(str_ntp));
+    output->print(getIdentStrP(str_ntp));
     output->printf_P(strf_s_d, server, NTP_REMOTE_PORT);
     active = udp->begin(NTP_LOCAL_PORT);
     if (!active) output->print(getStrP(str_failed));
@@ -42,7 +42,7 @@ bool NtpClient::begin() {
 
 void NtpClient::end() {
     if (active) {
-        output->print(getSquareBracketsStrP(str_ntp));
+        output->print(getIdentStrP(str_ntp));
         output->println(getStrP(str_stopped));
         udp->stop();
         active = false;
@@ -88,7 +88,7 @@ void NtpClient::sync() {
         cb = udp->parsePacket();
         if (timeout > 10) {
 #ifdef DEBUG_NTP
-            output->print("timeout");
+            output->print(getStrP(str_timeout));
 #endif
             return;
         }
@@ -100,25 +100,25 @@ void NtpClient::sync() {
     uint16_t high = word(buf[40], buf[41]);
     uint16_t low = word(buf[42], buf[43]);
 
-    epoch =
+    epochTime =
         EpochTime((high << 16 | low) - SEVENTY_YEARS_ms + (10 * (timeout + 1)));
 #ifdef DEBUG_NTP
-    output->print("got ");
-    output->println(epoch.get());
+    output->print(getStrP(str_gpt));
+    output->println(epoch.asEpoch());
 #endif
-    if (onTimeSynced) onTimeSynced(epoch);
+    if (onResponse) onResponse(epochTime);
 }
 
-void NtpClient::setOnTimeSynced(NtpClientEventHandler handler) {
-    onTimeSynced = handler;
-    if (epoch.get() > 0) onTimeSynced(epoch);
+void NtpClient::setOnResponse(NtpClientEventHandler handler) {
+    onResponse = handler;
+    if (epochTime.toEpoch() > 0) onResponse(epochTime);
 }
 
 void NtpClient::printDiag(Print *p) {
     p->print(getStrP(str_active));
-    p->println(active);
+    p->println(getBoolStr(active));
     p->print(getStrP(str_interval));
     p->println(syncInterval / ONE_SECOND_ms);
     p->print(getStrP(str_epoch));
-    p->println(epoch.get());
+    p->println(epochTime.toEpoch());
 }

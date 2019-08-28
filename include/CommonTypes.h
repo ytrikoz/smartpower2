@@ -1,89 +1,147 @@
 #pragma once
 
-#include <Print.h>
+#include <Arduino.h>
 #include <time.h>
 
+#include "Consts.h"
+#include "StrUtils.h"
 #include "Strings.h"
 #include "TimeUtils.h"
 
-struct Month {
-    char name[4];
-    uint8_t days;
-    uint16_t dayOfyear;
+typedef enum { SS_UNSET, SS_CLOSED, SS_READING, SS_WRITING, SS_EOF } StoreState;
+
+typedef enum {
+    SE_OK,
+    SE_INVALID,
+    SE_NOT_EXIST,
+    SE_ERROR_CLOSE,
+    SE_ERROR_READ,
+    SE_ERROR_WRITE,
+} StoreError;
+
+class Storable {
+   public:
+    void set(String&);
+    bool get(String&);
 };
 
-struct Time : public Printable {
+struct EpochTime : public Printable {
    public:
+    virtual size_t printTo(Print& p) const { return p.print(epoch_s); }
+    uint8_t n = sizeof(EpochTime);
+
+   public:
+    EpochTime() : EpochTime(0) {}
+    EpochTime(unsigned long epoch_s) { this->epoch_s = epoch_s; }
+    void tick() { this->epoch_s++; };
+    unsigned long toEpoch() { return this->epoch_s; }
+    String toString() { return String(this->epoch_s); }
+    uint8_t getDayOfWeek(unsigned long epoch_s) {
+        return (((epoch_s / ONE_DAY_s) + 4) % ONE_WEEK_days);
+    }
+    uint8_t asTimeHour(unsigned long epoch_s) {
+        return (epoch_s % ONE_DAY_s) / ONE_HOUR_s;
+    }
+    uint8_t asTimeMinute(unsigned long epoch_s) {
+        return (epoch_s % ONE_HOUR_s) / ONE_MINUTE_s;
+    }
+    uint8_t asTimeSecond(unsigned long epoch_s) {
+        return epoch_s % ONE_MINUTE_s;
+    }
+
+   private:
+    unsigned long epoch_s;
+};
+
+struct Time : EpochTime {
+   public:
+    Time() : Time(0, 0, 0) {}
+    Time(struct tm& tm) : Time(tm.tm_hour, tm.tm_min, tm.tm_sec) {}
     Time(uint8_t hours, uint8_t minutes, uint8_t seconds) {
         this->hour = hour;
         this->minute = minute;
         this->seconds = seconds;
     }
-    size_t printTo(Print& p) const {
-        size_t n = p.printf("%02d:%02d:%02d", hour, minute, seconds);
-        return n;
+    String timeAsString() {
+        char buf[64];
+        sprintf(buf, "%02d:%02d:%02d", hour, minute, seconds);
+        return String(buf);
     }
-    unsigned long get() {
+    unsigned long asEpoch() {
         return hour * ONE_HOUR_s + minute * ONE_MINUTE_s + seconds;
     }
 
-   private:
-    uint8_t hour = 0;
-    uint8_t minute = 0;
-    uint8_t seconds = 0;
+   protected:
+    uint8_t hour;
+    uint8_t minute;
+    uint8_t seconds;
 };
 
-struct Date : public Printable {
+struct DateTime : Time {
    public:
-    Date(struct tm& tm) {
-        this->day = tm.tm_mday;
-        this->month = tm.tm_mon;
-        this->month = tm.tm_year;
-    }
-    Date(uint8_t day, uint8_t month, int year) {
-        this->day = day;
+    DateTime(struct tm& tm)
+        : DateTime(tm.tm_mday, tm.tm_mon, tm.tm_year, tm.tm_hour, tm.tm_min,
+                   (uint8_t)tm.tm_sec) {}
+
+    DateTime(uint16_t year, uint8_t month, uint8_t mday, uint8_t hour,
+             uint8_t minute, uint8_t second) {
+        this->mday = mday;
         this->month = month;
         this->year = year;
     }
-    unsigned long get() { return 0; }
-    size_t printTo(Print& p) const {
-        size_t n = p.printf("%02d/%02d/%4d", day, month, year);
-        return n;
+
+    unsigned long asEpoch() {
+        return (this->year - START_YEAR) * ONE_YEAR_days +
+               ((this->year - START_YEAR - 1) / 4) +
+               isLeapYear(this->year) * ONE_DAY_s +
+               getDaysInMonth(this->month, this->year) + this->mday - 1;
+    }
+
+    String asString() {
+        char buf[64];
+        sprintf(buf, "%02d:%02d:%04d ", mday, month, year);
+        sprintf(buf, timeAsString().c_str());
+        return String(buf);
     }
 
    private:
-    uint8_t day = 0;
-    uint8_t month = 0;
-    uint16_t year = 0;
+    uint8_t mday;
+    uint8_t month;
+    uint16_t year;
 };
 
-struct LogItem { 
-    unsigned long time;
-    float value;  
+struct Month {
+    const char* name;
+    uint8_t mdays;
+    uint16_t yday;
+    Month(const char* name, uint8_t mdays, uint16_t yday) {
+        this->name = name;
+        this->mdays = mdays;
+        this->yday = yday;
+    }
+    unsigned long toEpoch() { return this->mdays * ONE_DAY_s; }
+};
+
+enum PsuLogItem { VOLTAGE_LOG = 0, CURRENT_LOG, POWER_LOG, WATTSHOURS_LOG };
+
+struct LogItem {
+    size_t n;
+    float value;
+    LogItem() : n(0), value(0){};
+    LogItem(size_t n, float value) : n(n), value(value){};
 };
 
 struct PsuInfo {
     unsigned long time;
-    float voltage;
-    float current;
-    float power;
-    double wattSeconds;
-
+    float V;
+    float I;    
+    float P;        
+    double mWh;
    public:
-    PsuInfo() {
-        time = 0;
-        voltage = 0;
-        current = 0;
-        power = 0;
-        wattSeconds = 0;
-    }
-    PsuInfo(unsigned long time_ms, float voltage, float current, float power,
-            double wattSeconds)
-        : time(time_ms),
-          voltage(voltage),
-          current(current),
-          power(power),
-          wattSeconds(wattSeconds){};
+    PsuInfo() { time = V = I = P = mWh = 0; }
+
+    PsuInfo(unsigned long time_ms, float V, float I, float P, double mWh)
+        : time(time_ms), V(V), I(I), P(P), mWh(mWh){};
 };
 
 class PsuInfoProvider {
@@ -109,7 +167,13 @@ enum WirelessMode { WLAN_OFF = 0, WLAN_STA = 1, WLAN_AP = 2, WLAN_AP_STA = 3 };
 
 enum NetworkState { NETWORK_DOWN, NETWORK_UP };
 
-enum Parameter {
+typedef struct {
+    const char* name;
+    size_t size;
+    const char* default_value;
+} Metadata;
+
+typedef enum {
     WIFI,
     SSID,
     PASSWORD,
@@ -129,5 +193,6 @@ enum Parameter {
     TPW,
     NTP_SYNC_INTERVAL,
     NTP_POOL_SERVER,
-    TIME_BACKUP_INTERVAL
-};
+    TIME_BACKUP_INTERVAL,
+    WH_STORE_ENABLED
+} Parameter;

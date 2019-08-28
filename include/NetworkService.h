@@ -17,10 +17,10 @@ class NetworkService {
     void setOutput(Print *p);
 
    private:
-    bool begin_dns();
-    bool begin_mdns();
-    bool begin_netbios();
-    Print *output;
+    bool begin_dns(String& hostname);
+    bool begin_mdns(String& hostname);
+    bool begin_netbios(String& hostname);
+    Print *p;
 
     bool active;
     

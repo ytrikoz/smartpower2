@@ -112,7 +112,7 @@ bool Display::ready() { return connected; }
 
 bool Display::init() {
     if (!connected) {
-        output->print(getSquareBracketsStrP(str_lcd));
+        output->print(getIdentStrP(str_lcd));
         if (connect()) {
             output->print("0x");
             output->println(addr, HEX);
@@ -128,7 +128,8 @@ bool Display::init() {
             backlight = true;
             connected = true;
         } else {
-            output->println(FPSTR(str_not_found));
+            output->print(getStrP(str_not));
+            output->println(getStrP(str_found));
         }
     }
     return connected;

@@ -2,6 +2,8 @@
 
 #include <Arduino.h>
 
+#include "Strings.h"
+
 namespace Actions {
 
 class Action {
@@ -27,12 +29,8 @@ class StringAction : public Action {
     String param;
 };
 
-NumericAction::NumericAction(size_t param) {
-    this->param = param;
-};
+NumericAction::NumericAction(size_t param) { this->param = param; };
 
-StringAction::StringAction(String param) {
-    this->param = param;
-};
+StringAction::StringAction(String param) { this->param = param; };
 
 }  // namespace Actions
