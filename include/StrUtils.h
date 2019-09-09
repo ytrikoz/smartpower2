@@ -1,14 +1,17 @@
 #pragma once
 
+#include <Arduino.h>
 #include <IPAddress.h>
+#include "Strings.h"
 
 namespace StrUtils {
 
 typedef enum { LEFT, CENTER, RIGHT } Align;
 
-void stringToBytes(const char *str, char sep, uint8_t *bytes, int len, int base);
-String iptos(IPAddress& ip);
-const char* iptoa(IPAddress& ip);
+void stringToBytes(const char *str, char sep, uint8_t *bytes, int len,
+                   int base);
+String iptos(IPAddress &ip);
+const char *iptoa(IPAddress &ip);
 IPAddress atoip(const char *);
 
 void setnnstr(char *dest, const char *src);

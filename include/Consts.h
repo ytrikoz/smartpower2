@@ -2,6 +2,24 @@
 
 #include "BuildConfig.h"
 
+#define PG_HOME 1
+#define PG_SETTINGS 2
+#define PG_STATUS 3
+
+#define SET_POWER_ON_OFF 'o'
+#define SET_DEFAULT_VOLTAGE 'v'
+#define SET_VOLTAGE 'w'
+#define SET_BOOT_POWER_MODE 'a'
+#define SET_NETWORK 'n'
+#define SET_LOG_WATTHOURS 'm'
+
+#define GET_PAGE_STATE 'p'
+
+#define TAG_PVI 'd'
+#define TAG_FIRMWARE_INFO 'f'
+#define TAG_SYSTEM_INFO 'S'
+#define TAG_NETWORK_INFO 'N'
+
 #define BOOT_WAIT_s 5
 #define BUILD_TIMEZONE_h 3
 #define BUILD_DATE __DATE__

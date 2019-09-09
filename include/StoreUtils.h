@@ -38,11 +38,11 @@ inline bool restoreDouble(const char *file, double &value) {
     return result;
 }
 
-inline bool storeString(const char *file, String value) {
+inline bool storeString(const char *file, String& value) {
 	FileStore* store = new FileStore(file);
-    StringQueue* payload = new StringQueue(1);
-    payload->put(value);        
-    return store->write(payload);
+    StringQueue* queue = new StringQueue(1);
+    queue->put(value);        
+    return store->write(queue);
 }
 
 inline bool storeInt(const char *file, int value) {

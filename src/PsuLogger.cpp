@@ -7,8 +7,15 @@
 
 using StrUtils::formatSize;
 
-PsuLog* PsuLogger::getLog(PsuLogItem log) { return psuLog[log]; }
+PsuLog* PsuLogger::getLog(PsuLogItem logItem) { return psuLog[logItem]; }
 
+bool PsuLogger::getLogValues(PsuLogItem logItem, float* values, size_t& size) {
+    PsuLog* log = getLog(logItem);
+    size = log->count();
+    if (size) log->values(values, size);
+    return size;
+}
+ 
 PsuLogger::PsuLogger(Psu* psu) {
     this->psu = psu;
     this->psuLog[VOLTAGE_LOG] = new PsuLog("V", PSU_LOG_VOLTAGE_SIZE);
@@ -17,7 +24,7 @@ PsuLogger::PsuLogger(Psu* psu) {
     this->psuLog[WATTSHOURS_LOG] = new PsuLog("Wh", PSU_LOG_WATTHOURS_SIZE);
 }
 
-void PsuLogger::begin() {
+void PsuLogger::start() {
     for (uint8_t i = 0; i < 4; ++i) getLog(PsuLogItem(i))->clear();
     lastUpdated = 0;
     startTime = millis();
@@ -25,7 +32,7 @@ void PsuLogger::begin() {
     v_enabled = i_enabled = p_enabled = wh_enabled = true;
 }
 
-void PsuLogger::end() { active = false; }
+void PsuLogger::stop() { active = false; }
 
 void PsuLogger::log(PsuInfo& item) {
     if (!active) return;
@@ -44,12 +51,6 @@ void PsuLogger::loop() {
         log(pi);
         lastUpdated = now;
     }
-}
-
-void PsuLogger::fill(PsuLogItem param, float* array, size_t& size) {
-    PsuLog* log = psuLog[param];
-    size = log->count();
-    log->values(array, size);
 }
 
 void PsuLogger::print(Print* p, PsuLogItem param) { psuLog[param]->printTo(p); }

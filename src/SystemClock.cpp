@@ -6,22 +6,6 @@
 
 SystemClock rtc;
 
-bool SystemClock::isExpired(unsigned long now) {
-    return millis_passed(lastStored, now) >= storeInterval;
-}
-
-bool SystemClock::restoreEpoch(EpochTime& value) {
-    String buf;
-    bool res = StoreUtils::restoreString(FILE_VAR_UTC, buf);
-    if (res) value = EpochTime(buf.toInt());
-    return res;
-}
-
-bool SystemClock::storeEpoch(EpochTime value) {
-    String buf = value.toString();
-    return StoreUtils::storeString(FILE_VAR_UTC, buf);
-}
-
 SystemClock::SystemClock() {
     timeOffset = 0;
     storeInterval = 0;
@@ -60,9 +44,8 @@ void SystemClock::printDiag(Print* p) {
 void SystemClock::begin() {
     output->print(getIdentStrP(str_clock));
     output->println(getStrP(str_start));
-    if (!trusted) {
+    if (!trusted)
         if (restoreEpoch(epoch)) setEpoch(epoch);
-    }
 }
 
 void SystemClock::setOptions(Config* config) {
@@ -81,26 +64,22 @@ void SystemClock::setBackupInterval(unsigned long time) {
                  : time;
 }
 
-void SystemClock::setOnTimeChange(TimeEventHandler h) { onTimeChangeEvent = h; }
-
 void SystemClock::loop() {
     unsigned long now = millis();
-
     if (now < lastUpdated) rollover++;
-
     while (millis_passed(lastUpdated, now) >= ONE_SECOND_ms) {
         epoch.tick();
         lastUpdated += ONE_SECOND_ms;
     }
-    if (!trusted) return;
-
-    if (isExpired(now) || !lastStored) {
-        if (!storeEpoch(epoch)) {
-            err->print(getIdentStrP(str_clock));
-            err->print(getStrP(str_store));
-            err->println(getStrP(str_error));
-        }        
-        lastStored =  now; 
+    if (trusted) {
+        if (isExpired(now) || !lastStored) {
+            if (!storeEpoch(epoch)) {
+                err->print(getIdentStrP(str_clock));
+                err->print(getStrP(str_store));
+                err->println(getStrP(str_error));
+            }
+            lastStored = now;
+        }
     }
 }
 
@@ -153,4 +132,22 @@ String SystemClock::getDateTimeStr() {
     char buf[64];
     tmtodtf(tm, buf);
     return String(buf);
+}
+
+void SystemClock::setOnTimeChange(TimeEventHandler h) { onTimeChangeEvent = h; }
+
+bool SystemClock::isExpired(unsigned long now) {
+    return millis_passed(lastStored, now) >= storeInterval;
+}
+
+bool SystemClock::restoreEpoch(EpochTime& value) {
+    String buf;
+    bool res = StoreUtils::restoreString(FILE_VAR_UTC, buf);
+    if (res) value = EpochTime(buf.toInt());
+    return res;
+}
+
+bool SystemClock::storeEpoch(EpochTime value) {
+    String buf = value.toString();
+    return StoreUtils::storeString(FILE_VAR_UTC, buf);
 }

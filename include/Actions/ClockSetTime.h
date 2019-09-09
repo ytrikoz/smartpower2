@@ -21,7 +21,7 @@ void ClockSetTime::exec(Print* p) {
         strcpy(paramStr, param.c_str());
     } else {
         p->print(getStrP(str_invalid));
-        p->print(getStr(str_time));
+        p->print(getStrP(str_time));
     }
     tm tm;
     if (encodeTime(paramStr, tm)) {

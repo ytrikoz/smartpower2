@@ -6,13 +6,13 @@
 class PsuLogger {
    public:
     PsuLogger(Psu* psu);
-    void begin();
-    void end();
-    void loop();
-    PsuLog* getLog(PsuLogItem param);    
-    void fill(PsuLogItem log, float* array, size_t& cnt);
+    void start();
+    void stop();
+    void loop();        
     void print(Print* p, PsuLogItem log);
     void printDiag(Print* p);
+    PsuLog* getLog(PsuLogItem log);    
+    bool getLogValues(PsuLogItem log, float* values, size_t& size);
    private:
     void clear();
     void log(PsuInfo& item);

@@ -2,6 +2,7 @@
 
 Led::Led *wifi_led, *power_led;
 
+WebClient clients[MAX_WEB_CLIENTS];
 SimpleTimer timer;
 SimpleCLI *cli;
 NetworkService *discovery;
@@ -54,14 +55,11 @@ void setBroadcastTo(uint8_t broadcast_if) {
 
 void start_services() {
     WirelessMode mode = Wireless::getWirelessMode();
-
     // only AP_STA
     if (mode == WLAN_AP_STA) setBroadcastTo(3);
-
 #ifndef DISABLE_NTP
     if (mode == WLAN_STA || mode == WLAN_AP_STA) start_ntp();
 #endif
-
 #ifndef DISABLE_TELNET
     start_telnet();
 #endif
@@ -119,20 +117,24 @@ void start_clock() {
     rtc.begin();
 }
 
-void start_psu() {
+void init_psu() {
     psu = new Psu();
     psu->setConfig(config);
     psuLog = new PsuLogger(psu);
 
-    psu->setOnOn([]() {
-        power_led->set(Led::BLINK);
-        if (display) display->unlock();
-        psuLog->begin();
+    psu->setOnTogglePower([]() {
+        sendPageState(PG_HOME);    
     });
 
-    psu->setOnOff([]() {
+    psu->setOnPowerOn([]() {
+        power_led->set(Led::BLINK);
+        if (display) display->unlock();
+        psuLog->start();
+    });
+
+    psu->setOnPowerOff([]() {
         power_led->set(Led::ON);
-        psuLog->end();
+        psuLog->stop();
         // if (size > 0) {
         //     float val[size];
         //     psuLog->fill(PP_VOLTAGE, val, size);

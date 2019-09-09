@@ -9,6 +9,8 @@ class PowerOff : public Action {
     void exec(Print* p);
 };
 
-void PowerOff::exec(Print* p) { psu->setState(POWER_OFF); }
+void PowerOff::exec(Print* p) {
+    if (psu->getState() == POWER_ON) psu->togglePower();
+}    
 
 }  // namespace Actions

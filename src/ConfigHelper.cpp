@@ -33,19 +33,19 @@ void ConfigHelper::loadConfig() {
     }
 }
 
-String  ConfigHelper::extractName(String &str) {
+String ConfigHelper::extractName(String &str) {
     int split_index = str.indexOf("=");
-    if (split_index==-1)  
+    if (split_index == -1)
         return String("");
-    else 
+    else
         return str.substring(0, split_index);
 }
 
-String  ConfigHelper::extractValue(String &str) {
+String ConfigHelper::extractValue(String &str) {
     int split_index = str.indexOf("=");
-    if (split_index==-1)  
+    if (split_index == -1)
         return String("");
-    else 
+    else
         return str.substring(split_index + 2, str.length() - 2);
 }
 
@@ -57,7 +57,7 @@ void ConfigHelper::loadConfig(Config *config, StringQueue *data) {
         String valueStr = extractValue(buf);
         if (paramStr.length() && valueStr.length()) {
             config->setValueStringByName(paramStr.c_str(), valueStr.c_str());
-        } else  {
+        } else {
             err->print(getIdentStrP(str_config));
             err->print(getStrP(str_load));
             err->print(getStrP(str_error));
@@ -105,7 +105,7 @@ String ConfigHelper::getConfigJson() {
     return str;
 }
 
-bool ConfigHelper::getWatthHoursLogEnabled() {
+bool ConfigHelper::getWhStoreEnabled() {
     return config->getValueAsBool(WH_STORE_ENABLED);
 }
 
@@ -137,14 +137,13 @@ bool ConfigHelper::setNetworkSTAConfig(uint8_t wifi, const char *ssid,
 }
 
 bool ConfigHelper::setPowerConfig(BootPowerState state, float voltage) {
-    return setBootPowerState(state) | setOutputVoltage(voltage);
+    return setBootPowerState(state) && setOutputVoltage(voltage);
 }
 
 bool ConfigHelper::setWiFiMode(uint8_t value) {
-    if (value >= WIFI_OFF && value <= WIFI_AP_STA) {
-        return config->setValueByte(WIFI, value);
-    }
-    return false;
+    return (value >= WIFI_OFF) && (value <= WIFI_AP_STA)
+               ? config->setValueByte(WIFI, value)
+               : false;
 }
 
 bool ConfigHelper::setWiFiMode(WiFiMode_t value) {
@@ -179,12 +178,16 @@ bool ConfigHelper::setDns(const char *value) {
     return config->setValueString(DNS, value);
 }
 
-bool ConfigHelper::setDHCP(bool value) { return config->setValueBool(DHCP, value); }
+bool ConfigHelper::setDHCP(bool value) {
+    return config->setValueBool(DHCP, value);
+}
 
 bool ConfigHelper::setOutputVoltage(float value) {
-    bool result = (value > 4 && value < 6) || (value > 11 && value < 13);
-    if (result) result = config->setValueFloat(OUTPUT_VOLTAGE, value);
-    return result;
+    return config->setValueFloat(OUTPUT_VOLTAGE, value);
+}
+
+float ConfigHelper::getOutputVoltage() {
+    return config->getValueAsFloat(OUTPUT_VOLTAGE);
 }
 
 WiFiMode_t ConfigHelper::getWiFiMode() {
@@ -211,17 +214,6 @@ IPAddress ConfigHelper::getIPAddr_AP() {
 
 bool ConfigHelper::getDHCP() { return config->getValueAsBool(DHCP); }
 
-float ConfigHelper::getOutputVoltage() {
-    float res = config->getValueAsFloat(OUTPUT_VOLTAGE);
-    if (!(res > 4 && res < 6) && !(res > 11 && res < 13)) {
-        USE_SERIAL.print(getIdentStrP(str_config));
-        USE_SERIAL.print(getStrP(str_invalid));
-        USE_SERIAL.print(getStrP(str_output));
-        USE_SERIAL.println(getStrP(str_voltage));
-        res = 5.0;
-    }
-    return res;
-}
 IPAddress ConfigHelper::getDns() { return config->getValueAsIPAddress(DNS); }
 
 IPAddress ConfigHelper::getNetmask() {

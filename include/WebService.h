@@ -24,8 +24,7 @@ class WebService {
     void begin();
     void end();
     void loop();
-    void sendTxt(uint8_t, const char *);
-
+    void sendTxt(uint8_t num, String& str);
    private:
     bool captivePortal();
 
@@ -53,6 +52,6 @@ class WebService {
     ESP8266WebServer *server;
     WebSocketsServer *websocket;
     SSDPClass *ssdp;
-    Print *output;
+    Print *out;
     File fsUploadFile;
 };

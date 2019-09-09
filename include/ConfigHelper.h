@@ -37,8 +37,8 @@ class ConfigHelper : public Printable {
     const char *getGatewayStr();
     IPAddress getDns();
     const char *getDnsStr();
-    bool getWatthHoursLogEnabled();
-    
+    bool getWhStoreEnabled();
+
     bool setWiFiMode(uint8_t);
     bool setWiFiMode(WiFiMode_t);
     bool setSSID(const char *);

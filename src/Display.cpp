@@ -195,13 +195,11 @@ void Display::setScreen(Screen screen, size_t size) {
     if (locked()) return;
 
     if (this->screen != screen) {
-        if (screen == SCREEN_BOOT) {
-            loadBank(BANK_PROGRESS);
-        }
+        if (screen == SCREEN_BOOT) loadBank(BANK_PROGRESS);
         lcd->clear();
-
         this->screen = screen;
         this->items_size = size;
+
         this->item_pos = 0;
         this->lastScroll = millis();
         this->active = items_size > 0;

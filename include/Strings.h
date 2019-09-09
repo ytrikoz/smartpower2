@@ -1,7 +1,7 @@
 #pragma once
 
 #include <pgmspace.h>
-
+#include "CommonTypes.h"
 #include "Consts.h"
 
 static const char HOST_NAME[] PROGMEM = "smartpower2";
@@ -35,7 +35,8 @@ static const char strf_host[] PROGMEM = "hostname %s";
 static const char strf_tpw[] PROGMEM = "tpw %d";
 static const char strf_ip[] PROGMEM = "ip %s";
 static const char strf_in_second[] PROGMEM = "in %d seconds";
-static const char strf_config_param_changed[] PROGMEM = "new value '%s' for the '%s' has been set!";
+static const char strf_config_param_changed[] PROGMEM =
+    "new value '%s' for the '%s' has been set!";
 static const char strf_config_param_unchanged[] PROGMEM = "'%s' unchanged";
 static const char strf_unknown_command_item[] PROGMEM =
     "unknown item '%s' for command '%s'";
@@ -57,10 +58,8 @@ static const char strf_ssid[] PROGMEM = "ssid %s";
 static const char strf_heap[] PROGMEM = "heap %s";
 static const char strf_passwd[] PROGMEM = "passwd %s";
 static const char strf_ipaddr[] PROGMEM = "ipaddr %s";
-static const char strf_unhandled[] PROGMEM = "unhandled %d";
 static const char strf_ntp[] PROGMEM = "[ntp] %s";
 static const char strf_interval[] PROGMEM = "interval %d";
-static const char strf_output_voltage[] PROGMEM = "Vout %.2f";
 static const char strf_filelist[] PROGMEM = "filelist %s";
 static const char strf_power[] PROGMEM = "power %s";
 static const char strf_f_sec[] PROGMEM = "%.2f sec";
@@ -169,6 +168,8 @@ static const char str_print[] PROGMEM = "print";
 static const char str_reload[] PROGMEM = "reload";
 static const char str_reset[] PROGMEM = "reset";
 static const char str_psu[] PROGMEM = "psu";
+static const char str_ping[] PROGMEM = "ping";
+static const char str_pong[] PROGMEM = "pong";
 static const char str_power[] PROGMEM = "power";
 static const char str_rollover[] PROGMEM = "rollover";
 static const char str_save[] PROGMEM = "save";
@@ -210,6 +211,7 @@ static const char str_tpw[] PROGMEM = "tpw";
 static const char str_two_dots[] PROGMEM = ":";
 static const char str_up[] PROGMEM = "up";
 static const char str_unknown[] PROGMEM = "unknown";
+static const char str_unhandled[] PROGMEM = "unhandled";
 static const char str_unset[] PROGMEM = "unset";
 static const char str_unsecured[] PROGMEM = "unsecured";
 static const char str_update[] PROGMEM = "update";
@@ -271,7 +273,18 @@ inline String getStrP(PGM_P strP, bool space = true) {
 inline String getBoolStr(bool value, bool space = true) {
     return value ? getStrP(str_true, space) : getStrP(str_false, space);
 }
-inline String getStr(String str) { return str + " "; }
+
+inline String getStr(const char* str) {
+    String res(str);
+    return res + " ";
+}
+
+inline String getStr(int num) {
+    String res(num, DEC);
+    return res + " ";
+}
+
+inline String getStr(const String& str) { return str + " "; }
 
 inline String getModuleName(uint8_t index) {
     return getStrP((char*)pgm_read_ptr(&(module_name[index])), true);

@@ -19,12 +19,6 @@ typedef enum {
     SE_ERROR_WRITE,
 } StoreError;
 
-class Storable {
-   public:
-    void set(String&);
-    bool get(String&);
-};
-
 struct EpochTime : public Printable {
    public:
     virtual size_t printTo(Print& p) const { return p.print(epoch_s); }
@@ -122,7 +116,7 @@ struct Month {
     unsigned long toEpoch() { return this->mdays * ONE_DAY_s; }
 };
 
-enum PsuLogItem { VOLTAGE_LOG = 0, CURRENT_LOG, POWER_LOG, WATTSHOURS_LOG };
+enum PsuLogItem { VOLTAGE_LOG, CURRENT_LOG, POWER_LOG, WATTSHOURS_LOG };
 
 struct LogItem {
     size_t n;
@@ -134,9 +128,10 @@ struct LogItem {
 struct PsuInfo {
     unsigned long time;
     float V;
-    float I;    
-    float P;        
+    float I;
+    float P;
     double mWh;
+
    public:
     PsuInfo() { time = V = I = P = mWh = 0; }
 
@@ -146,7 +141,7 @@ struct PsuInfo {
 
 class PsuInfoProvider {
    public:
-    virtual PsuInfo getInfo();
+    virtual PsuInfo getInfo() = 0;
 };
 
 enum BootPowerState {
@@ -196,3 +191,8 @@ typedef enum {
     TIME_BACKUP_INTERVAL,
     WH_STORE_ENABLED
 } Parameter;
+
+typedef struct {
+    bool connected = false;
+    uint8_t page = 0;
+} WebClient;

@@ -28,6 +28,24 @@ class Store {
     virtual bool doWrite(StringQueue& data) = 0;
     virtual bool doValidate() = 0;
 
+   private:
+    void onValidate();
+    void onClose();
+    void onOpenRead();
+    void onOpenWrite();
+    void onRead();
+    void onWrite();
+    void setError(StoreError error);
+
+   private:
+    StringQueue* data;
+
+   protected:
+    Print* dbg = &DEBUG;
+    Print* err = &ERROR;
+    StoreState state;
+    StoreError error;
+
    protected:
     static String getErrorInfo(StoreError error) {
         String str;
@@ -49,7 +67,7 @@ class Store {
             case SE_ERROR_CLOSE:
                 str = getStrP(str_close);
                 break;
-            case SE_OK: 
+            case SE_OK:
                 str = getStrP(str_unset);
                 break;
             default:
@@ -81,22 +99,4 @@ class Store {
         };
         return str;
     }
-
-   private:
-    void onValidate();
-    void onClose();
-    void onOpenRead();
-    void onOpenWrite();
-    void onRead();
-    void onWrite();
-    void setError(StoreError error);
-
-   private:
-    StringQueue* data;
-
-   protected:
-    Print* dbg = &DEBUG;
-    Print* err = &ERROR;
-    StoreState state;
-    StoreError error;
 };

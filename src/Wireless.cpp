@@ -175,15 +175,16 @@ void start_safe_wifi_ap() {
 
 void init_wifi() {
     uint8_t tpw = config->getTPW();
+    String host = Wireless::getConfigHostname();
     system_phy_set_max_tpw(tpw);
-    WiFi.hostname(Wireless::getConfigHostname());
+    WiFi.hostname(host);
     WiFi.setAutoConnect(false);
 
     USE_SERIAL.print(getIdentStrP(str_wifi));
     USE_SERIAL.print(getStrP(str_tpw));
-    USE_SERIAL.print(getStr(String(tpw)));
+    USE_SERIAL.print(getStr(tpw));
     USE_SERIAL.print(getStrP(str_host));
-    USE_SERIAL.println(WiFi.hostname());
+    USE_SERIAL.println(host);
 }
 
 void start_wifi() {
@@ -264,7 +265,7 @@ void start_wifi() {
         ap_enabled = startAP(ap_ssid, ap_passwd);
         if (ap_enabled) {
             USE_SERIAL.print(getIdentStrP(str_wifi));
-            USE_SERIAL.print(getStr(str_ssid));
+            USE_SERIAL.print(getStrP(str_ssid));
             USE_SERIAL.print(getStr(ap_ssid));
             USE_SERIAL.print(getStrP(str_ip));
             USE_SERIAL.println(getStr(ap_ipaddr.toString()));

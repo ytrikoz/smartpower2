@@ -44,8 +44,8 @@ class Config {
     ParameterChangedEventHandler onParameterChanged;
     Metadata metadata[PARAM_COUNT] = {
         {"wifi", PARAM_BOOL_SIZE, "2"},
-        {"ssid", PARAM_STR_SIZE, "MyNetwork"},
-        {"passwd", PARAM_STR_SIZE, "SomePassword"},
+        {"ssid", PARAM_STR_SIZE, "LocalNetwork"},
+        {"passwd", PARAM_STR_SIZE, "Password"},
         {"dhcp", PARAM_BOOL_SIZE, "1"},
         {"ipaddr", PARAM_IPADDR_SIZE, "192.168.1.4"},
         {"netmask", PARAM_IPADDR_SIZE, "255.255.255.0"},

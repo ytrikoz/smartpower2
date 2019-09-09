@@ -1,8 +1,5 @@
 #include "StrUtils.h"
 
-#include <Arduino.h>
-#include "Strings.h"
-
 namespace StrUtils {
 
 void strfill(char *str, char chr, size_t len) {
@@ -33,9 +30,9 @@ IPAddress atoip(const char *input) {
     return IPAddress(parts[0], parts[1], parts[2], parts[3]);
 }
 
-String iptos(IPAddress& ip) { return ip.toString(); }
+String iptos(IPAddress &ip) { return ip.toString(); }
 
-const char* iptoa(IPAddress& ip) {return iptos(ip).c_str(); }
+const char *iptoa(IPAddress &ip) { return iptos(ip).c_str(); }
 
 void setnnstr(char *dest, const char *src) {
     if (src == NULL) {

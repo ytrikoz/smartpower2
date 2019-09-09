@@ -11,13 +11,9 @@
 #include "SysInfo.h"
 #include "Wireless.h"
 
+#ifdef DEBUG_LOOP
 Profiler::LoopWatchDog watchDog;
-
-typedef struct {
-    bool connected = false;
-    uint8_t page = 0;
-} WebClient;
-WebClient clients[MAX_WEB_CLIENTS];
+#endif
 
 uint8_t get_http_clients_count() {
     uint8_t result = 0;
@@ -36,8 +32,7 @@ void cancel_system_restart() {
 }
 
 void on_restart_sequence() {
-    if (restartCount == 0) system_restart();
-    --restartCount;
+    if (restartCount-- == 0) system_restart();
 }
 
 void setup_restart_timer(uint8_t delay_s) {
@@ -70,11 +65,12 @@ void onHttpClientData(uint8_t n, String data) {
         }
         case SET_POWER_ON_OFF: {
             PowerState new_state = PowerState(data.substring(1).toInt());
-            psu->setState(new_state);
-
-            String text = String(SET_POWER_ON_OFF);
-            text += psu->getState();
-            sendToClients(text, PG_HOME, n);
+            if (new_state != psu->getState()) {
+                psu->togglePower();
+                String payload = String(SET_POWER_ON_OFF);
+                payload += psu->getState();
+                sendToClients(payload, PG_HOME, n);
+            }
             break;
         }
         case SET_VOLTAGE: {
@@ -115,89 +111,94 @@ void onHttpClientData(uint8_t n, String data) {
             if (isdigit(ch)) {
                 bool mode = (uint8_t)ch - CHR_ZERO;
                 if (!psu->enableWhStore(mode)) {
-                    // To all 
+                    // To all
                     sendToClients(data, PG_HOME);
                 } else {
                     // Except sender
                     sendToClients(data, PG_HOME, n);
                 }
-                break;
             }
+            break;
         }
     }
 }
 
-void sendToClients(String text, uint8_t page, uint8_t except_n) {
+void sendToClients(String payload, uint8_t page, uint8_t except_n) {
     for (uint8_t i = 0; i < WEBSOCKETS_SERVER_CLIENT_MAX; i++)
         if (clients[i].connected && (clients[i].page == page) &&
             (except_n != i))
-            http->sendTxt(i, text.c_str());
+            http->sendTxt(i, payload);
 }
 
-void sendToClients(String text, uint8_t page) {
+void sendToClients(String payload, uint8_t page) {
     for (uint8_t i = 0; i < WEBSOCKETS_SERVER_CLIENT_MAX; i++)
         if (clients[i].connected && clients[i].page == page)
-            http->sendTxt(i, text.c_str());
+            http->sendTxt(i, payload);
+}
+
+void sendPageState(uint8_t page) {
+    for (uint8_t i = 0; i < WEBSOCKETS_SERVER_CLIENT_MAX; i++)
+        if (clients[i].connected && clients[i].page == page)
+            sendPageState(i, page);
 }
 
 void sendPageState(uint8_t n, uint8_t page) {
     switch (page) {
-        case PG_HOME: {
-            String text;
+        case PG_HOME: {            
             // State
-            text = String(SET_POWER_ON_OFF);
-            text += String(psu->getState());
-            http->sendTxt(n, text.c_str());
+            String stateStr = String(SET_POWER_ON_OFF);
+            stateStr += String(psu->getState());
+            http->sendTxt(n, stateStr);
             // WattHour
-            text = String(SET_LOG_WATTHOURS);
-            text += String(psu->isWattHoursLogEnabled());
-            http->sendTxt(n, text.c_str());
+            String whStoreEnabledStr = String(SET_LOG_WATTHOURS);
+            whStoreEnabledStr += String(psu->isWhStoreEnabled());
+            http->sendTxt(n, whStoreEnabledStr);
             break;
         }
         case PG_SETTINGS: {
-            String text;
+            String payload;
             // Power mod
-            text = String(SET_BOOT_POWER_MODE);
-            text += config->get()->getValueAsByte(POWER);
-            http->sendTxt(n, text.c_str());
+            payload = String(SET_BOOT_POWER_MODE);
+            payload += config->get()->getValueAsByte(POWER);
+            http->sendTxt(n, payload);
             // Output voltage
-            text = String(SET_VOLTAGE);
-            text += psu->getOutputVoltage();
-            http->sendTxt(n, text.c_str());
+            payload = String(SET_VOLTAGE);
+            payload += String(psu->getOutputVoltage(), 2);
+            http->sendTxt(n, payload);
             // Network config
-            text = String(SET_NETWORK);
-            text += config->get()->getValueAsByte(WIFI);
-            text += ',';
-            text += config->getSSID();
-            text += ',';
-            text += config->getPassword();
-            text += ',';
-            text += config->getDHCP();
-            text += ',';
-            text += config->getIPAddrStr();
-            text += ',';
-            text += config->getNetmaskStr();
-            text += ',';
-            text += config->getGatewayStr();
-            text += ',';
-            text += config->getDnsStr();
-            http->sendTxt(n, text.c_str());
+            payload = String(SET_NETWORK);
+            payload += config->getWiFiMode();
+            payload += ',';
+            payload += config->getSSID();
+            payload += ',';
+            payload += config->getPassword();
+            payload += ',';
+            payload += config->getDHCP();
+            payload += ',';
+            payload += config->getIPAddrStr();
+            payload += ',';
+            payload += config->getNetmaskStr();
+            payload += ',';
+            payload += config->getGatewayStr();
+            payload += ',';
+            payload += config->getDnsStr();
+            http->sendTxt(n, payload);
             break;
         }
         case PG_STATUS: {
-            String text;
+            String payload;
             // Version info
-            text = String(TAG_FIRMWARE_INFO);
-            text += getVersionInfoJson();
-            http->sendTxt(n, text.c_str());
+            payload = String(TAG_FIRMWARE_INFO);
+            payload += getVersionInfoJson();
+            http->sendTxt(n, payload);
             // System info
-            text = String(TAG_SYSTEM_INFO);
-            text += getSystemInfoJson();
-            http->sendTxt(n, text.c_str());
+            payload = String(TAG_SYSTEM_INFO);
+            payload += getSystemInfoJson();
+            http->sendTxt(n, payload);
             // Network info
-            text = String(TAG_NETWORK_INFO);
-            text += getNetworkInfoJson();
-            http->sendTxt(n, text.c_str());
+            payload = String(TAG_NETWORK_INFO);
+            payload += getNetworkInfoJson();
+            http->sendTxt(n, payload);
             break;
         }
     }
@@ -225,7 +226,7 @@ void send_psu_data_to_clients() {
 }
 
 uint8_t boot_progress = 0;
-void display_boot_progress(uint8_t per, const char *text) {
+void display_boot_progress(uint8_t per, const char *payload) {
     while (per - boot_progress > 0) {
         boot_progress += 5;
 #ifndef DISABLE_LCD
@@ -234,7 +235,7 @@ void display_boot_progress(uint8_t per, const char *text) {
         delay(100);
     }
 #ifndef DISABLE_LCD
-    if (display && text != NULL) display->drawTextCenter(LCD_ROW_1, text);
+    if (display && payload != NULL) display->drawTextCenter(LCD_ROW_1, payload);
 #endif
 }
 
@@ -243,7 +244,7 @@ void delay_print(Print *p) {
     for (uint8_t t = BOOT_WAIT_s; t > 0; t--) {
         p->print(t);
         p->print(' ');
-        delay(1000);
+        delay(ONE_SECOND_ms);
     }
     p->println();
     p->flush();
@@ -289,7 +290,7 @@ void setup() {
 
     Wire.begin(I2C_SDA, I2C_SCL);
 
-    memset(&clients[0], 0x00, sizeof(WebClient) * WEBSOCKETS_SERVER_CLIENT_MAX);
+    memset(clients, 0, sizeof(WebClient) * WEBSOCKETS_SERVER_CLIENT_MAX);
 
 #ifndef DISABLE_LCD
     display = new Display();
@@ -305,7 +306,8 @@ void setup() {
     config = new ConfigHelper();
 
     start_clock();
-    start_psu();
+
+    init_psu();
 
     display_boot_progress(40, "<WIFI>");
 

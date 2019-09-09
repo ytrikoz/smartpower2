@@ -21,27 +21,25 @@
 #include "TelnetServer.h"
 #include "WebService.h"
 
-extern Profiler::LoopWatchDog watchDog;
-
-extern Led::Led *wifi_led, *power_led;
-
-extern SimpleCLI *cli;
-extern SimpleTimer timer;
-
-extern NetworkService *discovery;
 extern ConfigHelper *config;
 extern Display *display;
-extern Psu *psu;
-extern PsuLogger *psuLog;
+extern Led::Led *wifi_led, *power_led;
+extern Profiler::LoopWatchDog watchDog;
+extern SimpleCLI *cli;
+extern SimpleTimer timer;
+extern NetworkService *discovery;
 extern NtpClient *ntp;
 extern OTAUpdate *ota;
-extern TelnetServer *telnet;
-extern WebService *http;
+extern Psu *psu;
+extern PsuLogger *psuLog;
 extern Shell *telnetShell;
 extern Shell *consoleShell;
+extern TelnetServer *telnet;
+extern WebClient clients[MAX_WEB_CLIENTS];
+extern WebService *http;
 
 void start_clock();
-void start_psu();
+void init_psu();
 
 void start_services();
 void start_ntp();
@@ -62,6 +60,7 @@ uint8_t get_telnet_clients_count();
 void onTimeChangeEvent(const char *str);
 
 // main
+extern void sendPageState(uint8_t page);
 extern void onHttpClientConnect(uint8_t num);
 extern void onHttpClientDisconnect(uint8_t num);
 extern void onHttpClientData(uint8_t num, String data);
