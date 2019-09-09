@@ -33,7 +33,7 @@
 //#define DEBUG_WIRELESS
 //#define DEBUG_NTP
 //#define DEBUG_TELNET
-#define DEBUG_WEB_SERVICE
+//#define DEBUG_WEB_SERVICE
 //#define DEBUG_SHELL
 //#define DEBUG_TERMUL
 
