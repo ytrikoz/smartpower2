@@ -4,10 +4,11 @@
 
 class PsuLog {
    public:
+    virtual void push(unsigned long time, float value);
+    virtual void values(float array[], size_t& array_size);   
+   public:
     PsuLog(const char* label, size_t size);
     ~PsuLog();
-    void push(unsigned long time, float value);
-    char* label();
     void clear();
     bool available();
     size_t free();
@@ -15,31 +16,36 @@ class PsuLog {
     size_t first();
     size_t last();
     size_t count();
-    unsigned long duration();
-    LogItem* get(size_t pos);
+
+    LogItem* getFirst();
+    LogItem* getLast();    
+    LogItem* getPrev();
+    LogItem* getItem(size_t pos);
     LogItem* getPrev(size_t pos);
     LogItem* getNext(size_t pos);
-    LogItem* getFirst();
-    LogItem* getLast();
-    void values(float* values, size_t& size);
     void printTo(Print* p);
     void printFirst(Print* p, size_t n);
     void printLast(Print* p, size_t n);
     void printDiag(Print* p);
-
    protected:
-    void calcStat(float value);
-    float value_min, value_max, value_avg;
-   private:
+    virtual uint16_t convert(float value);
+    virtual float revert(uint16_t value);
+    virtual void pushItem(const size_t n, const float val);
+    LogItem* getItem();
+    size_t getItemIndex(size_t pos);
+    virtual size_t write(const size_t n, const float val);
+    void calcMinMaxAvg(const float value, const size_t cnt);
     void print(Print* p, size_t n, float value);
     size_t next(size_t pos);
     size_t prev(size_t pos);
+    private:
+    float value_min, value_max, value_avg;
     unsigned long lastTime;
     size_t counter;
     size_t capacity;
     size_t writePos;
-    char* name;
     LogItem* items;
-    bool rotated;
-    bool active;
+    private:
+    char* name;
+
 };

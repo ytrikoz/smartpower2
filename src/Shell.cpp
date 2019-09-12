@@ -84,7 +84,7 @@ bool Shell::getLastInput(String& str) {
 void Shell::addHistory(const char* str) {
     if (str == NULL) return;
     String buf(str);
-    if (buf.length() > 0) {
+    if (buf.length()) {
         history.push_back(buf);
         if (history.size() > SHELL_HISTORY_SIZE) history.pop_back();
     } 

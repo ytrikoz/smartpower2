@@ -11,19 +11,74 @@ enum PsuAlert { PSU_ALERT_NONE, PSU_ALERT_LOAD_LOW };
 
 typedef std::function<void()> PsuEventHandler;
 
-struct PsuState {
+struct PsuState : Printable {
     PsuStatus status;
     PsuError error;
     PsuAlert alert;
-    PsuState() { setOK(); }
-    void setOK() {
-        this->status = PSU_OK;
-        this->error = PSU_ERROR_NONE;
-        this->alert = PSU_ALERT_NONE;
+    PsuEventHandler onPsuError, onPsuAlert;
+    PsuState() { clear(); }
+    void clear() {
+        status = PSU_OK;
+        alert = PSU_ALERT_NONE;
+        error = PSU_ERROR_NONE;
     }
     bool isOK() {
         update();
         return this->status == PSU_OK;
+    }
+    void setError(PsuError e) {
+        this->status = PSU_ERROR;
+        error = e;
+        if (onPsuError) onPsuError();
+    }
+    void setAlert(PsuAlert a) {
+        status = PSU_ALERT;
+        alert = a;
+        if (onPsuAlert) onPsuAlert();
+    }
+    size_t printTo(Print& p) const {
+        size_t n = 0;
+        switch (status) {
+            case PSU_ALERT:
+                n = p.println(getAlertStr(alert));
+                break;
+            case PSU_ERROR:
+                n = p.println(getErrorStr(error));
+                break;
+            default:
+                break;
+        }
+        return n;
+    }
+
+    static String getAlertStr(PsuAlert alert) {
+        String str = "";
+        if (alert == PSU_ALERT_NONE) return str;
+        str = getStrP(str_alert);
+        switch (alert) {
+            case PSU_ALERT_LOAD_LOW:
+                str += getStrP(str_load_low, false);
+                break;
+            default:
+                str += getStrP(str_unknown);
+                break;
+        }
+        return str;
+    }
+
+    static String getErrorStr(PsuError error) {
+        String str = "";
+        if (error == PSU_ERROR_NONE) return str;
+        str = getStrP(str_error);
+        switch (error) {
+            case PSU_ERROR_DC_IN_LOW:
+                str += getStrP(str_low_voltage, false);
+                break;
+            default:
+                str += getStrP(str_unknown);
+                break;
+        }
+        return str;
     }
 
    private:
@@ -51,22 +106,18 @@ class Psu : public PsuInfoProvider {
     void begin();
     void loop();
     PowerState getState();
-    String getAlertStr(PsuAlert a);
-    String getErrorStr(PsuError e);
     void setOutputVoltage(float voltage);
     float getOutputVoltage();
     PsuInfo getInfo();
-    String toString();
     float getP();
     float getV();
     float getI();
     double getWh();
     unsigned long getUptime();
-    String getUptimeStr();   
     bool enableWhStore(bool enabled = true);
     bool isWhStoreEnabled();
-    void printDiag(Print* p);
     void setWh(double value);
+    void printDiag(Print* p);
    private:
     void init();
     void setState(PowerState value, bool forceUpdate = false);
@@ -77,21 +128,16 @@ class Psu : public PsuInfoProvider {
 
     void onStart();
     void onStop();
-    void setAlert(PsuAlert);
-    void setError(PsuError);
-    void clearError();
 
+    PowerState state;
     bool active;
     bool initialized;
-    PsuStatus status;
-    PsuAlert alert;
-    PsuError error;
+    PsuState psuState;
     unsigned long startTime, infoUpdated, powerInfoUpdated, lastCheck;
     double outputVoltage;
     bool wh_store;
     PsuInfo info;
     ConfigHelper* config;
-    PowerState state;
 
     Print* out = &USE_SERIAL;
     Print* err = &USE_SERIAL;

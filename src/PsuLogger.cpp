@@ -15,7 +15,7 @@ bool PsuLogger::getLogValues(PsuLogItem logItem, float* values, size_t& size) {
     if (size) log->values(values, size);
     return size;
 }
- 
+
 PsuLogger::PsuLogger(Psu* psu) {
     this->psu = psu;
     this->psuLog[VOLTAGE_LOG] = new PsuLog("V", PSU_LOG_VOLTAGE_SIZE);
@@ -70,8 +70,6 @@ void PsuLogger::printDiag(Print* p) {
     p->print('\t');
     p->print(getStrP(str_max));
     p->print('\t');
-    p->print(getStrP(str_avg));
-    p->print('\t');
-    p->println(getStrP(str_size));
+    p->println(getStrP(str_avg));
     for (uint8_t i = 0; i < 4; ++i) getLog(PsuLogItem(i))->printDiag(p);
 }

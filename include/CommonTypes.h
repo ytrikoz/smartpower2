@@ -21,7 +21,7 @@ typedef enum {
 
 struct EpochTime : public Printable {
    public:
-    virtual size_t printTo(Print& p) const { return p.print(epoch_s); }
+    size_t printTo(Print& p) const { return p.print(epoch_s); }
     uint8_t n = sizeof(EpochTime);
 
    public:
@@ -120,12 +120,12 @@ enum PsuLogItem { VOLTAGE_LOG, CURRENT_LOG, POWER_LOG, WATTSHOURS_LOG };
 
 struct LogItem {
     size_t n;
-    float value;
+    uint16_t value;
     LogItem() : n(0), value(0){};
-    LogItem(size_t n, float value) : n(n), value(value){};
+    LogItem(size_t n, uint16_t value) : n(n), value(value){};
 };
 
-struct PsuInfo {
+struct PsuInfo : Printable {
     unsigned long time;
     float V;
     float I;
@@ -137,6 +137,32 @@ struct PsuInfo {
 
     PsuInfo(unsigned long time_ms, float V, float I, float P, double mWh)
         : time(time_ms), V(V), I(I), P(P), mWh(mWh){};
+
+    String toString() const {
+        String res = "";
+        res += String(V, 3);
+        res += "V, ";
+        res += String(I, 3);
+        res += "A, ";
+        res += String(P, 3);
+        res += "W, ";
+        res += String(mWh / ONE_WATT_mW, 3);
+        res += "Wh";
+        return res;
+    }
+
+    size_t printTo(Print& p) const {
+        size_t n = 0;
+        n += p.print(V, 3);
+        n += p.print("V, ");
+        n += p.print(I, 3);
+        n += p.print("A, ");
+        n += p.print(P, 3);
+        n += p.print("W, ");
+        n += p.print(mWh / ONE_WATT_mW, 3);
+        n += p.print("Wh");
+        return n;
+    }
 };
 
 class PsuInfoProvider {

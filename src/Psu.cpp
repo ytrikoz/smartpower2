@@ -10,6 +10,7 @@
 
 Psu::Psu() {
     info = PsuInfo();
+    psuState = PsuState();
 
     wh_store = false;
     startTime = 0;
@@ -17,16 +18,16 @@ Psu::Psu() {
     powerInfoUpdated = 0;
 
     pinMode(POWER_SWITCH_PIN, OUTPUT);
-
-    clearError();
+    
     active = false;
     initialized = false;
 }
 
 PsuInfo Psu::getInfo() { return info; }
 
-void Psu::togglePower() {
+void Psu::togglePower() {   
     setState(state == POWER_OFF ? POWER_ON : POWER_OFF);
+
     if (onTogglePower) onTogglePower();
 }
 
@@ -125,9 +126,10 @@ void Psu::begin() {
 void Psu::onStart() {
     startTime = infoUpdated = powerInfoUpdated = lastCheck = millis();
 
-    clearError();
+    psuState.clear();
 
     if (onPowerOn) onPowerOn();
+    
     active = true;
 }
 
@@ -157,36 +159,18 @@ void Psu::loop() {
         info.time = now;
     }
 
-    if (status == PSU_OK) {
+    if (psuState.isOK()) {
         if (millis_passed(lastCheck, now) >
             PSU_CHECK_INTERVAL_s * ONE_SECOND_ms) {
             if (info.V < PSU_VOLTAGE_LOW_v) {
-                setError(PSU_ERROR_DC_IN_LOW);
+               psuState.setError(PSU_ERROR_DC_IN_LOW);
             } else if (info.I <= PSU_LOAD_LOW_a) {
-                setAlert(PSU_ALERT_LOAD_LOW);
+                psuState.setAlert(PSU_ALERT_LOAD_LOW);
             } else {
-                clearError();
+                psuState.clear();
             }
         }
     }
-}
-
-void Psu::clearError() {
-    status = PSU_OK;
-    alert = PSU_ALERT_NONE;
-    error = PSU_ERROR_NONE;
-}
-
-void Psu::setError(PsuError e) {
-    status = PSU_ERROR;
-    error = e;
-    if (onPsuError) onPsuError();
-}
-
-void Psu::setAlert(PsuAlert a) {
-    status = PSU_ALERT;
-    alert = a;
-    if (onPsuAlert) onPsuAlert();
 }
 
 void Psu::setWh(double value) {
@@ -216,18 +200,6 @@ float Psu::getI() { return info.I; }
 
 double Psu::getWh() { return info.mWh / ONE_WATT_mW; }
 
-String Psu::toString() {
-    String str = String(getV(), 3);
-    str += "V, ";
-    str += String(getI(), 3);
-    str += "A, ";
-    str += String(getP(), 3);
-    str += "W, ";
-    str += String(getWh(), 3);
-    str += "Wh";
-    return str;
-}
-
 void Psu::init() {
     // meter
     ina231_configure();
@@ -239,42 +211,6 @@ void Psu::init() {
 
 unsigned long Psu::getUptime() {
     return millis_passed(startTime, infoUpdated) / ONE_SECOND_ms;
-}
-
-String Psu::getErrorStr(PsuError e) {
-    String str = "";
-    if (e == PSU_ERROR_NONE) return str;
-    str = getStrP(str_error);
-    switch (e) {
-        case PSU_ERROR_DC_IN_LOW:
-            str += getStrP(str_low_voltage, false);
-            break;
-        default:
-            str += getStrP(str_unknown);
-            break;
-    }
-    return str;
-}
-
-String Psu::getAlertStr(PsuAlert a) {
-    String str = "";
-    if (a == PSU_ALERT_NONE) return str;
-    str = getStrP(str_alert);
-    switch (a) {
-        case PSU_ALERT_LOAD_LOW:
-            str += getStrP(str_load_low, false);
-            break;
-        default:
-            str += getStrP(str_unknown);
-            break;
-    }
-    return str;
-}
-
-String Psu::getUptimeStr() {
-    char buf[32];
-    sprintf_P(buf, strf_lu_sec, getUptime());
-    return buf;
 }
 
 bool Psu::storeState(PowerState value) {
@@ -289,20 +225,15 @@ bool Psu::restoreState(PowerState &value) {
 }
 
 void Psu::printDiag(Print *p) {
+    p->println(psuState);    
     p->print(getStrP(str_power));
     p->println(getStateStr(state));
     p->print(getStrP(str_output));
     p->print(getStrP(str_voltage));
     p->println(getOutputVoltage(), 2);    
-    if (state == POWER_ON) p->println(getUptimeStr());
-    switch (status) {
-        case PSU_ALERT:
-            p->println(getAlertStr(alert));
-            break;
-        case PSU_ERROR:
-            p->println(getErrorStr(error));
-            break;
-        default:
-            break;
+    if (state == POWER_ON) {    
+        p->print(getUptime());
+        p->println(getStrP(str_sec, false));        
     }
+ 
 }

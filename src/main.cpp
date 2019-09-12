@@ -32,7 +32,7 @@ void cancel_system_restart() {
 }
 
 void on_restart_sequence() {
-    if (restartCount-- == 0) system_restart();
+    if (--restartCount == 0) system_restart();
 }
 
 void setup_restart_timer(uint8_t delay_s) {
@@ -144,7 +144,7 @@ void sendPageState(uint8_t page) {
 
 void sendPageState(uint8_t n, uint8_t page) {
     switch (page) {
-        case PG_HOME: {            
+        case PG_HOME: {
             // State
             String stateStr = String(SET_POWER_ON_OFF);
             stateStr += String(psu->getState());
@@ -206,10 +206,11 @@ void sendPageState(uint8_t n, uint8_t page) {
 
 void send_psu_data_to_clients() {
     if (psu->getState() == POWER_ON) {
+        PsuInfo pi = psu->getInfo();
         if (Wireless::hasNetwork()) {
 #ifndef DISABLE_TELNET
             if (get_telnet_clients_count() && !telnetShell->isActive()) {
-                String data = psu->toString();
+                String data = pi.toString();
                 data += '\r';
                 telnet->write(data.c_str());
             }
@@ -217,7 +218,7 @@ void send_psu_data_to_clients() {
 #ifndef DISABLE_HTTP
             if (get_http_clients_count()) {
                 String data = String(TAG_PVI);
-                data += psu->toString();
+                data += pi.toString();
                 sendToClients(data, PG_HOME);
             }
 #endif

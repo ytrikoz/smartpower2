@@ -13,7 +13,7 @@ SystemClock::SystemClock() {
     rollover = 0;
 
     lastUpdated = millis();
-    epoch = EpochTime();
+    epoch = EpochTime(getAppBuildEpoch());
     trusted = false;
 }
 
