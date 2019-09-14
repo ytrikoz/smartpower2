@@ -1,3 +1,4 @@
+![Build](https://github.com/ytrikoz/smartpower2/workflows/Build/badge.svg)
 # SmartPower2
 Firmware for PSU based on ESP2866 [SmartPower2](https://wiki.odroid.com/accessory/power_supply_battery/smartpower2) 
 ## OTA firmware update
