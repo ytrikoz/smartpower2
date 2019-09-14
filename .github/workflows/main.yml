@@ -1,12 +1,13 @@
 name: Build
-on: push
-
+  on: push
+    paths:
+      - 'src/*
 jobs:
   main:
     name: Main
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@platformio
       - name: Setup Python
         uses: actions/setup-python@master
         with:
@@ -16,6 +17,5 @@ jobs:
           python -m pip install --upgrade pip
           pip install -U platformio
       - name: Build
-        run: |
-          platformio run
+        run: platformio run
         if: failure()
