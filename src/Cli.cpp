@@ -56,7 +56,7 @@ enum CommandItems {
 Command cmdConfig, cmdPower, cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet,
     cmdGet, cmdRm, cmdClock, cmdPlot, cmdLog;
 
-Print* output;
+Print* out;
 
 String getActionStr(Command& command) {
     return command.getArgument("action").getValue();
@@ -106,16 +106,16 @@ CommandAction getAction(Command& cmd) {
     return ACTION_UNKNOWN;
 }
 
-bool active() { return output != NULL; }
+bool active() { return out != NULL; }
 
 void open(Print* p) {
-    if (output != NULL) output->println(getStrP(msg_session_interrupted));
-    output = p;
+    if (out != NULL) out->println(StrUtils::getStrP(msg_session_interrupted));
+    out = p;
 }
 
 void close() {
-    output->println(getStrP(str_shell_start_hint, false));
-    output = NULL;
+    out->println(StrUtils::getStrP(str_shell_start_hint, false));
+    out = NULL;
 }
 
 void init() {
@@ -181,51 +181,51 @@ void init() {
 void onGetConfigParameter(const char* name, const char* valueStr) {
     char buf[INPUT_MAX_LENGTH];
     sprintf_P(buf, strf_config_param_value, name, valueStr);
-    output->println(buf);
+    out->println(buf);
 }
 
 void onConfigParameterChanged(const char* paramStr, const char* old_value,
                               const char* new_value) {
     char buf[OUTPUT_MAX_LENGTH];
     sprintf_P(buf, strf_config_param_changed, new_value, paramStr);
-    output->print(buf);
+    out->print(buf);
 }
 
 void unknownCommandItem(const char* commandStr, const char* itemStr) {
     char buf[128];
     sprintf_P(buf, strf_unknown_command_item, itemStr, commandStr);
-    output->println(buf);
+    out->println(buf);
 }
 
 void print_unknown_param(Print* p, String& str) {
-    p->print(getStrP(str_unknown));
-    p->print(getStrP(str_param));
-    p->print(getQuotedStr(str));
+    p->print(StrUtils::getStrP(str_unknown));
+    p->print(StrUtils::getStrP(str_param));
+    p->print(StrUtils::getQuotedStr(str));
 }
 
 void print_unknown_action(Print* p, String& str) {
-    p->print(getStrP(str_unknown));
-    p->print(getStrP(str_action));
-    p->print(getQuotedStr(str));
+    p->print(StrUtils::getStrP(str_unknown));
+    p->print(StrUtils::getStrP(str_action));
+    p->print(StrUtils::getQuotedStr(str));
 }
 
-void println_done(Print* p) { p->println(getStrP(str_done)); };
+void println_done(Print* p) { p->println(StrUtils::getStrP(str_done)); };
 
 void print_done(String& action, String& param) {
-    output->print(action.c_str());
-    output->print(' ');
-    output->print(param.c_str());
-    output->print(": ");
+    out->print(action.c_str());
+    out->print(' ');
+    out->print(param.c_str());
+    out->print(": ");
 }
 
 void onIOResult(PGM_P str, const char* filename) {
-    output->printf_P(str, filename);
-    output->println();
+    out->printf_P(str, filename);
+    out->println();
 }
 
 void onCommandError(cmd_error* e) {
     CommandError cmdError(e);
-    output->println(cmdError.toString().c_str());
+    out->println(cmdError.toString().c_str());
 }
 
 void onLog(cmd* c) {
@@ -235,33 +235,33 @@ void onLog(cmd* c) {
     if (action == ACTION_PRINT) {
         String paramStr = getParamStr(cmd);
         if (!paramStr.length()) {
-            psuLog->printDiag(output);
+            psuLog->printDiag(out);
             return;
         }
         if (paramStr.indexOf("p") != -1) {
-            psuLog->print(output, POWER_LOG);
+            psuLog->print(out, POWER_LOG);
             handled = true;
         }
         if (paramStr.indexOf("v") != -1) {
-            psuLog->print(output, VOLTAGE_LOG);
+            psuLog->print(out, VOLTAGE_LOG);
             handled = true;
         }
         if (paramStr.indexOf("i") != -1) {
-            psuLog->print(output, CURRENT_LOG);
+            psuLog->print(out, CURRENT_LOG);
             handled = true;
         }
         if (paramStr.indexOf("wh") != -1) {
-            psuLog->print(output, WATTSHOURS_LOG);
+            psuLog->print(out, WATTSHOURS_LOG);
             handled = true;
         }
-        if (!handled) print_unknown_param(output, paramStr);
+        if (!handled) print_unknown_param(out, paramStr);
     }
-    output->println();
+    out->println();
 }
 
 void onHelp(cmd* c) {
     Command cmd(c);
-    output->println(cli->toString().c_str());
+    out->println(cli->toString().c_str());
 }
 
 void onConfig(cmd* c) {
@@ -269,19 +269,19 @@ void onConfig(cmd* c) {
     CommandAction action = getAction(cmd);
     switch (action) {
         case ACTION_PRINT:
-            config->printTo(*output);
+            config->printTo(*out);
             break;
         case ACTION_RESET:
             config->setDefault();
-            println_done(output);
+            println_done(out);
             break;
         case ACTION_SAVE:
             config->saveConfig();
-            println_done(output);
+            println_done(out);
             break;
         case ACTION_LOAD:
             config->loadConfig();
-            println_done(output);
+            println_done(out);
             break;
         case ACTION_APPLY:
             config->saveConfig();
@@ -289,8 +289,8 @@ void onConfig(cmd* c) {
             break;
         default:
             String actionStr = getActionStr(cmd);
-            print_unknown_action(output, actionStr);
-            output->println();
+            print_unknown_action(out, actionStr);
+            out->println();
             break;
     }
 }
@@ -300,26 +300,26 @@ void onPower(cmd* c) {
     CommandAction action = getAction(cmd);
     switch (action) {
         case ACTION_STATUS: {
-            psu->printDiag(output);
+            psu->printDiag(out);
             break;
         }
         case ACTION_AVG: {
             String param = getParamStr(cmd);
-            Actions::PowerAvg(param.toInt()).exec(output);
+            Actions::PowerAvg(param.toInt()).exec(out);
             break;
         }
         case ACTION_ON: {
-            Actions::PowerOn().exec(output);
+            Actions::PowerOn().exec(out);
             break;
         }
         case ACTION_OFF: {
-            Actions::PowerOff().exec(output);
+            Actions::PowerOff().exec(out);
             break;
         }
         default: {
             String actionStr = getActionStr(cmd);
-            print_unknown_action(output, actionStr);
-            output->println();
+            print_unknown_action(out, actionStr);
+            out->println();
             return;
         }
     }
@@ -332,24 +332,24 @@ void onSystem(cmd* c) {
 
     switch (action) {
         case ACTION_RESTART: {
-            output->print(FPSTR(msg_system_restart));
-            output->println();
+            out->print(FPSTR(msg_system_restart));
+            out->println();
             setup_restart_timer(param.toInt());
             break;
         }
         case ACTION_BACKLIGHT: {
             bool enabled = param.length() == 0 ? true : param.toInt();
-            Actions::Backlight(enabled).exec(output);
+            Actions::Backlight(enabled).exec(out);
             break;
         }
         case ACTION_UPTIME: {
-            output->println(rtc.getSystemUptimeStr());
+            out->println(rtc.getSystemUptimeStr());
             break;
         }
         default: {
             String actionStr = getActionStr(cmd);
-            print_unknown_action(output, actionStr);
-            output->println();
+            print_unknown_action(out, actionStr);
+            out->println();
             return;
         }
     }
@@ -359,26 +359,25 @@ void onClock(cmd* c) {
     Command cmd(c);
     String action = getActionStr(cmd);
     String param = getParamStr(cmd);
-    if (action.equals("set")) Actions::ClockSetTime(param).exec(output);
+    if (action.equals("set")) Actions::ClockSetTime(param).exec(out);
 }
 
 void onWifiScan(cmd* c) {
     Command cmd(c);
-    output->print(getIdentStrP(str_wifi));
-    output->print(getStrP(str_scanning));
+    out->print(StrUtils::getIdentStrP(str_wifi));
+    out->print(StrUtils::getStrP(str_scanning));
     int8_t n = WiFi.scanNetworks();
     if (n == 0) {
-        output->print(getStrP(str_network));
-        output->print(getStrP(str_not));
-        output->print(getStrP(str_found));
+        out->print(StrUtils::getStrP(str_network));
+        out->print(StrUtils::getStrP(str_not));
+        out->print(StrUtils::getStrP(str_found));
     }
-    output->println();
+    out->println();
     for (int i = 0; i < n; ++i) {
-        output->print(getIdentStrP(str_wifi));
-        output->printf_P(strf_wifi_scan_results, i + 1, WiFi.SSID(i).c_str(),
-                         WiFi.RSSI(i));
+        out->print(StrUtils::getIdentStrP(str_wifi));
+        out->printf("#%d %s %d", i + 1, WiFi.SSID(i).c_str(), WiFi.RSSI(i));
     }
-    output->println();
+    out->println();
 }
 
 void onSet(cmd* c) {
@@ -394,12 +393,12 @@ void onSet(cmd* c) {
         if (cfg->setValueString(param, valueStr.c_str())) {
             onConfigParameterChanged(paramStr.c_str(), buf, valueStr.c_str());
         } else {
-            output->printf_P(strf_config_param_unchanged, paramStr.c_str());
+            out->printf_P(strf_config_param_unchanged, paramStr.c_str());
         }
     } else {
-        print_unknown_param(output, paramStr);
+        print_unknown_param(out, paramStr);
     }
-    output->println();
+    out->println();
 }
 
 void onGet(cmd* c) {
@@ -414,8 +413,8 @@ void onGet(cmd* c) {
                          value_size + 1);
         onGetConfigParameter(paramStr.c_str(), valueStr);
     } else {
-        print_unknown_param(output, paramStr);
-        output->println();
+        print_unknown_param(out, paramStr);
+        out->println();
     }
 }
 
@@ -423,29 +422,29 @@ void onShow(cmd* c) {
     Command cmd(c);
     String item = getItemStr(cmd);
     if (item.equals("clients")) {
-        Actions::ShowClients().exec(output);
+        Actions::ShowClients().exec(out);
     } else if (item.equals("clock")) {
-        Actions::ShowClock().exec(output);
+        Actions::ShowClock().exec(out);
     } else if (item.equals("power")) {
-        Actions::ShowPsu().exec(output);
+        Actions::ShowPsu().exec(out);
     } else if (item.equals("log")) {
-        psuLog->printDiag(output);
+        psuLog->printDiag(out);
     } else if (item.equals("network")) {
-        output->println(getNetworkInfoJson().c_str());
+        out->println(getNetworkInfoJson().c_str());
     } else if (item.equals("system")) {
-        output->println(getSystemInfoJson().c_str());
+        out->println(getSystemInfoJson().c_str());
     } else if (item.equals("status")) {
-        Actions::ShowStatus().exec(output);
+        Actions::ShowStatus().exec(out);
     }
 #ifdef DEBUG_LOOP
     else if (item.equals("loop")) {
-        Actions::ShowLoop().exec(output);
+        Actions::ShowLoop().exec(out);
     }
 #endif
     else if (item.equals("ntp")) {
-        Actions::ShowNtp().exec(output);
+        Actions::ShowNtp().exec(out);
     } else if (item.equals("wifi")) {
-        Actions::ShowWifi().exec(output);
+        Actions::ShowWifi().exec(out);
     } else {
         unknownCommandItem(cmd.getName().c_str(), item.c_str());
     }
@@ -458,9 +457,9 @@ void onPlot(cmd* c) {
         uint8_t y = map_to_plot_min_max(data, x);
         char tmp[PLOT_ROWS * 8 + 1];
         StrUtils::strfill(tmp, '*', y);
-        output->printf("#%d %2.4f ", x + 1, data->cols[x]);
-        output->print(tmp);
-        output->println();
+        out->printf("#%d %2.4f ", x + 1, data->cols[x]);
+        out->print(tmp);
+        out->println();
     }
 }
 
@@ -469,7 +468,7 @@ void onPrint(cmd* c) {
     String file = getFileStr(cmd);
     if (SPIFFS.exists(file)) {
         File f = SPIFFS.open(file, "r");
-        while (f.available()) output->println(f.readString());
+        while (f.available()) out->println(f.readString());
         f.close();
     } else {
         onIOResult(strf_file_not_found, file.c_str());
@@ -480,9 +479,16 @@ void onRemove(cmd* c) {
     Command cmd(c);
     String file = getFileStr(cmd);
     if (SPIFFS.exists(file)) {
-        if (SPIFFS.remove(file)) onIOResult(strf_file_deleted, file.c_str());
+        out->print(StrUtils::getStrP(str_file));
+        out->print(file);
+        if (SPIFFS.remove(file)) {
+            out->print(StrUtils::getStrP(str_deleted));
+        } else {
+            out->print(StrUtils::getStrP(str_failed));
+        }
     } else {
-        onIOResult(strf_file_not_found, file.c_str());
+        out->print(StrUtils::getStrP(str_not));
+        out->print(StrUtils::getStrP(str_found));
     }
 }
 

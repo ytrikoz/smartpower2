@@ -2,6 +2,9 @@
 
 namespace StrUtils {
 
+#define ONE_MHz_hz 1000000UL
+static const char strf_mac[] PROGMEM = "mac %02x:%02x:%02x:%02x:%02x:%02x";
+
 void strfill(char *str, char chr, size_t len) {
     memset(&str[0], chr, sizeof(char) * len);
     str[len - 1] = '\x00';
@@ -31,8 +34,6 @@ IPAddress atoip(const char *input) {
 }
 
 String iptos(IPAddress &ip) { return ip.toString(); }
-
-const char *iptoa(IPAddress &ip) { return iptos(ip).c_str(); }
 
 void setnnstr(char *dest, const char *src) {
     if (src == NULL) {
@@ -142,5 +143,65 @@ bool isip(const char *str) {
 }
 
 bool isip(const String &str) { return isip(str.c_str()); }
+
+String getStr(String &str) { return str + " "; }
+
+String getStr(long unsigned int value) {     
+    String res  = String(value);
+    return res;
+}
+
+String getStr(IPAddress& value) {
+    String res  = value.toString() + " ";
+    return res;
+}
+
+String getStr(const char* str) {
+    String res(str);
+    return res + " ";
+}
+
+String getStrP(PGM_P strP, bool space) {
+    char buf[64];
+    strcpy_P(buf, strP);
+    if (space) {
+        size_t size = strlen(buf);
+        buf[size] = '\x20';
+        buf[++size] = '\x00';
+    }
+    return String(buf);
+}
+
+String getBoolStr(bool value, bool space) {
+    return String(value ? "true" : "false");
+}
+
+String getIdentStrP(PGM_P strP, bool with_space) {
+    char buf[64];
+    memset(buf, 0, 64);
+    strcpy_P(buf, strP);
+    return getIdentStr(buf, with_space);
+}
+
+String getQuotedStr(const char* str, bool with_space, char ch) {
+    return getIdentStr(str, with_space, ch, ch);
+}
+
+String getQuotedStr(String& str, bool with_space) {
+    return getIdentStr(str.c_str(), with_space, '\'');
+}
+
+String getIdentStr(const char* str, bool with_space,
+                          char left, char right) {
+    char buf[64];
+    memset(buf, 0, 64);
+    buf[0] = left;
+    strcpy(&buf[1], str);
+    size_t x = strlen(buf);
+    buf[x] = right;
+    if (with_space) buf[++x] = ' ';
+    buf[++x] = '\x00';
+    return String(buf);
+}
 
 }  // namespace StrUtils

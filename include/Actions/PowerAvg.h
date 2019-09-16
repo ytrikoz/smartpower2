@@ -53,8 +53,8 @@ void PowerAvg::exec(Print* p) {
         avg = AVG_1;
         nearest = 1;
     }
-    p->print(getStrP(str_avg));
-    p->print(getStrP(str_set));
+    p->print(StrUtils::getStrP(str_avg));
+    p->print(StrUtils::getStrP(str_set));
     p->println(nearest);
 
     ina231_set_avg(avg);

@@ -17,7 +17,7 @@ StoreError Store::getError() { return this->error; };
 bool Store::read(StringQueue* queue) {
 #ifdef DEBUG_FILE_STORAGE
     dbg->print(getIdentStrP(str_store));
-    dbg->println(getStrP(str_read));
+    dbg->println(StrUtils::getStrP(str_read));
 #endif
     data = queue;
     return setState(SS_READING);
@@ -26,7 +26,7 @@ bool Store::read(StringQueue* queue) {
 bool Store::write(StringQueue* queue) {
 #ifdef DEBUG_FILE_STORAGE
     dbg->print(getIdentStrP(str_store));
-    dbg->println(getStrP(str_write));
+    dbg->println(StrUtils::getStrP(str_write));
 #endif
     data = queue;
     return setState(SS_WRITING);
@@ -112,7 +112,7 @@ void Store::onStateChange(StoreState state, const StoreState to) {
 #ifdef DEBUG_FILE_STORAGE
     dbg->print(getIdentStrP(str_store));
     dbg->print(getStateInfo(state));
-    dbg->print(getStrP(str_arrow_dest));
+    dbg->print(StrUtils::getStrP(str_arrow_dest));
     dbg->println(getStateInfo(to));
 #endif
     clearError();

@@ -27,7 +27,6 @@
 #define APPNAME "SmartPower2"
 #define FW_VERSION "0.6.7"            
 #define DATETIME_FORMAT "%02d/%02d/%04d %02d:%02d:%02d"
-#define ONE_MHz_hz 1000000UL
 #define ONE_MILLISECOND_mi 1000
 #define ONE_SECOND_ms 1000
 #define ONE_MINUTE_s 60

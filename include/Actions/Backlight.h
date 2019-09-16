@@ -14,9 +14,9 @@ Backlight::Backlight(size_t param) : NumericAction(param) {}
 
 void Backlight::exec(Print* p) {
     bool enabled = (param > 0);
-    p->print(getStrP(str_lcd));
-    p->print(getStrP(str_backlight));
-    p->println(enabled ? getStrP(str_on) : getStrP(str_off));
+    p->print(StrUtils::getStrP(str_lcd));
+    p->print(StrUtils::getStrP(str_backlight));
+    p->println(StrUtils::getStrP(enabled ? str_on: str_off));
     if (enabled)
         display->backlightOn();
     else

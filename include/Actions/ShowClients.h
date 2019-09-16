@@ -12,13 +12,13 @@ class ShowClients : public Action {
 void ShowClients::exec(Print* p) {
     if ((Wireless::getWirelessMode() != WLAN_STA) &&
         !getConnectedStationInfo().equals("")) {
-        p->print(getIdentStrP(str_wifi));
+        p->print(StrUtils::getIdentStrP(str_wifi));
         p->print(getConnectedStationInfo().c_str());
     }
-    p->print(getStrP(str_http));
+    p->print(StrUtils::getStrP(str_http));
     p->println(get_http_clients_count());
 
-    p->print(getStrP(str_telnet));
+    p->print(StrUtils::getStrP(str_telnet));
     p->println(get_telnet_clients_count());
 }
 

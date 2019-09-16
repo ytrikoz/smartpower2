@@ -46,10 +46,10 @@ void Psu::setOnAlert(PsuEventHandler h) { onPsuAlert = h; }
 void Psu::setState(PowerState value, bool force) {
     if (!force && state == value) return;
 
-    out->print(getIdentStrP(str_psu));
+    out->print(StrUtils::getIdentStrP(str_psu));
     out->print(getStateStr(state));
     state = value;
-    out->print(getStrP(str_arrow_dest));
+    out->print(StrUtils::getStrP(str_arrow_dest));
     out->println(getStateStr(value));
 
     digitalWrite(POWER_SWITCH_PIN, state);
@@ -74,10 +74,10 @@ float Psu::getOutputVoltage() { return outputVoltage; }
 void Psu::setOutputVoltage(float value) {
     outputVoltage = constrain(value, 4, 6);
 
-    out->print(getIdentStrP(str_psu));
-    out->print(getStrP(str_set));
-    out->print(getStrP(str_output));
-    out->print(getStrP(str_voltage));
+    out->print(StrUtils::getIdentStrP(str_psu));
+    out->print(StrUtils::getStrP(str_set));
+    out->print(StrUtils::getStrP(str_output));
+    out->print(StrUtils::getStrP(str_voltage));
     out->print(outputVoltage, 2);
     if (value != outputVoltage) {
         out->print('(');
@@ -226,14 +226,14 @@ bool Psu::restoreState(PowerState &value) {
 
 void Psu::printDiag(Print *p) {
     p->println(psuState);    
-    p->print(getStrP(str_power));
+    p->print(StrUtils::getStrP(str_power));
     p->println(getStateStr(state));
-    p->print(getStrP(str_output));
-    p->print(getStrP(str_voltage));
+    p->print(StrUtils::getStrP(str_output));
+    p->print(StrUtils::getStrP(str_voltage));
     p->println(getOutputVoltage(), 2);    
     if (state == POWER_ON) {    
         p->print(getUptime());
-        p->println(getStrP(str_sec, false));        
+        p->println(StrUtils::getStrP(str_sec, false));        
     }
  
 }

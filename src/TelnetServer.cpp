@@ -12,7 +12,7 @@ void TelnetServer::setOutput(Print *p) { output = p; }
 
 void TelnetServer::begin() {
     if (!initialized) {
-        output->print(getIdentStrP(str_telnet));
+        output->print(StrUtils::getIdentStrP(str_telnet));
         output->println(port);
         
         server = new WiFiServer(port);
@@ -22,8 +22,8 @@ void TelnetServer::begin() {
         initialized = server->status() != CLOSED;
 
         if (!initialized) {
-            output->print(getIdentStrP(str_telnet));
-            output->print(getStrP(str_failed));
+            output->print(StrUtils::getIdentStrP(str_telnet));
+            output->print(StrUtils::getStrP(str_failed));
         }
     }
     active = initialized;
@@ -31,8 +31,8 @@ void TelnetServer::begin() {
 
 void TelnetServer::stop() {
     if (active) {
-        output->print(getIdentStrP(str_telnet));
-        output->println(getStrP(str_stopped));
+        output->print(StrUtils::getIdentStrP(str_telnet));
+        output->println(StrUtils::getStrP(str_stopped));
         if (hasClientConnected()) client.stop();
         server->stop();        
         active = false;            
@@ -66,7 +66,7 @@ void TelnetServer::loop() {
             } else {
                 WiFiClient reject;
                 reject = server->available();
-                reject.write(getStrP(msg_connection_is_busy, false).c_str());
+                reject.write(StrUtils::getStrP(msg_connection_is_busy, false).c_str());
                 reject.stop();
             }
         }

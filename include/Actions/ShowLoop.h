@@ -15,14 +15,14 @@ void ShowLoop::exec(Print* p) {
     Profiler::State state = watchDog.getState();
     switch (state) {
         case Profiler::CAPTURE_IDLE:
-            p->print(getStrP(str_start));
-            p->print(getStrP(str_capture));
+            p->print(StrUtils::getStrP(str_start));
+            p->print(StrUtils::getStrP(str_capture));
             p->printf_P(strf_lu_ms, watchDog.getDuration());
             p->println();
             watchDog.start();
             break;
         case Profiler::CAPTURE_IN_PROGRESS:
-            p->print(getStrP(str_capturing));
+            p->print(StrUtils::getStrP(str_capturing));
             p->printf_P(strf_lu_ms, watchDog.getDuration());
             p->println();
             break;
@@ -33,7 +33,7 @@ void ShowLoop::exec(Print* p) {
 }
 
 void ShowLoop::printCapture(Print* p, Profiler::Capture* cap) {
-    p->print(getStrP(str_capture));
+    p->print(StrUtils::getStrP(str_capture));
     p->printf_P(strf_lu_ms, cap->duration);
     p->println();
 
@@ -51,7 +51,7 @@ void ShowLoop::printCapture(Print* p, Profiler::Capture* cap) {
     }
 
     if (cap->overrange > 0) {
-        p->print(getStrP(str_over));
+        p->print(StrUtils::getStrP(str_over));
         p->printf_P(strf_lu_ms, time_range / 2);
         p->print('\t');
         p->println(cap->overrange);
@@ -60,7 +60,7 @@ void ShowLoop::printCapture(Print* p, Profiler::Capture* cap) {
         p->println();
     }
 
-    p->print(getStrP(str_total));
+    p->print(StrUtils::getStrP(str_total));
     p->print('\t');
     p->print(cap->total);
     p->print('\t');
@@ -80,7 +80,7 @@ void ShowLoop::printCapture(Print* p, Profiler::Capture* cap) {
         p->printf_P(strf_per, load * 100);
         p->println();
     }
-    p->print(getStrP(str_system));
+    p->print(StrUtils::getStrP(str_system));
     p->print('\t');
     p->printf_P(
         strf_per,

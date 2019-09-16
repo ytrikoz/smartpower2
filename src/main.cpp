@@ -241,7 +241,7 @@ void display_boot_progress(uint8_t per, const char *payload) {
 }
 
 void delay_print(Print *p) {
-    p->print(getIdentStrP(str_wait));
+    p->print(StrUtils::getIdentStrP(str_wait));
     for (uint8_t t = BOOT_WAIT_s; t > 0; t--) {
         p->print(t);
         p->print(' ');
@@ -269,6 +269,9 @@ void print_welcome(Print *p) {
 }
 
 void setup() {
+    // Try pushing frequency to 160MHz.
+    system_update_cpu_freq(SYS_CPU_160MHZ);
+
     USE_SERIAL.begin(115200);
 #ifdef SERIAL_DEBUG
     USE_SERIAL.setDebugOutput(true);

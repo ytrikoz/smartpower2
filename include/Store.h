@@ -51,30 +51,30 @@ class Store {
         String str;
         switch (error) {
             case SE_INVALID:
-                str = getStrP(str_invalid);
-                str += getStrP(str_state);
+                str = StrUtils::getStrP(str_invalid);
+                str += StrUtils::getStrP(str_state);
                 break;
             case SE_NOT_EXIST:
-                str = getStrP(str_not);
-                str += getStrP(str_exist);
+                str = StrUtils::getStrP(str_not);
+                str += StrUtils::getStrP(str_exist);
                 break;
             case SE_ERROR_READ:
-                str = getStrP(str_read);
+                str = StrUtils::getStrP(str_read);
                 break;
             case SE_ERROR_WRITE:
-                str = getStrP(str_write);
+                str = StrUtils::getStrP(str_write);
                 break;
             case SE_ERROR_CLOSE:
-                str = getStrP(str_close);
+                str = StrUtils::getStrP(str_close);
                 break;
             case SE_OK:
-                str = getStrP(str_unset);
+                str = StrUtils::getStrP(str_unset);
                 break;
             default:
-                str = getStrP(str_unknown);
+                str = StrUtils::getStrP(str_unknown);
                 break;
         }
-        str += getStrP(str_error, false);
+        str += StrUtils::getStrP(str_error, false);
         return str;
     }
 
@@ -82,19 +82,19 @@ class Store {
         String str;
         switch (state) {
             case SS_UNSET:
-                str = getStrP(str_unset);
+                str = StrUtils::getStrP(str_unset);
                 break;
             case SS_CLOSED:
-                str = getStrP(str_close);
+                str = StrUtils::getStrP(str_close);
                 break;
             case SS_READING:
-                str = getStrP(str_read);
+                str = StrUtils::getStrP(str_read);
                 break;
             case SS_WRITING:
-                str = getStrP(str_write);
+                str = StrUtils::getStrP(str_write);
                 break;
             case SS_EOF:
-                str = getStrP(str_eof);
+                str = StrUtils::getStrP(str_eof);
                 break;
         };
         return str;

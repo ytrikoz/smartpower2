@@ -18,32 +18,32 @@ SystemClock::SystemClock() {
 }
 
 void SystemClock::printDiag(Print* p) {
-    p->print(getStrP(str_time));
-    p->print(getStrP(str_off, false) + getStrP(str_set));
+    p->print(StrUtils::getStrP(str_time));
+    p->print(StrUtils::getStrP(str_off, false) + StrUtils::getStrP(str_set));
     p->println(timeOffset);
 
-    p->print(getStrP(str_backup) + getStrP(str_interval));
+    p->print(StrUtils::getStrP(str_backup) + StrUtils::getStrP(str_interval));
     p->println(storeInterval);
 
-    p->print(getStrP(str_last) + getStrP(str_update));
+    p->print(StrUtils::getStrP(str_last) + StrUtils::getStrP(str_update));
     p->println(lastUpdated);
 
-    p->print(getStrP(str_last) + getStrP(str_backup));
+    p->print(StrUtils::getStrP(str_last) + StrUtils::getStrP(str_backup));
     p->println(lastStored);
 
-    p->print(getStrP(str_rollover));
+    p->print(StrUtils::getStrP(str_rollover));
     p->println(rollover);
 
-    p->print(getStrP(str_epoch));
+    p->print(StrUtils::getStrP(str_epoch));
     p->println(epoch);
 
-    p->print(getStrP(str_trusted));
-    p->println(getBoolStr(trusted, false));
+    p->print(StrUtils::getStrP(str_trusted));
+    p->println(StrUtils::getBoolStr(trusted, false));
 }
 
 void SystemClock::begin() {
-    output->print(getIdentStrP(str_clock));
-    output->println(getStrP(str_start));
+    output->print(StrUtils::getIdentStrP(str_clock));
+    output->println(StrUtils::getStrP(str_start));
     if (!trusted)
         if (restoreEpoch(epoch)) setEpoch(epoch);
 }
@@ -74,9 +74,9 @@ void SystemClock::loop() {
     if (trusted) {
         if (isExpired(now) || !lastStored) {
             if (!storeEpoch(epoch)) {
-                err->print(getIdentStrP(str_clock));
-                err->print(getStrP(str_store));
-                err->println(getStrP(str_error));
+                err->print(StrUtils::getIdentStrP(str_clock));
+                err->print(StrUtils::getStrP(str_store));
+                err->println(StrUtils::getStrP(str_error));
             }
             lastStored = now;
         }

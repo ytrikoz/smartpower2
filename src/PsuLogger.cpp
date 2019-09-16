@@ -57,19 +57,19 @@ void PsuLogger::print(Print* p, PsuLogItem param) { psuLog[param]->printTo(p); }
 
 void PsuLogger::printDiag(Print* p) {
     if (!lastUpdated) {
-        p->println(getStrP(str_empty, false));
+        p->println(StrUtils::getStrP(str_empty, false));
         return;
     }
-    p->print(getStrP(str_name));
+    p->print(StrUtils::getStrP(str_name));
     p->print('\t');
-    p->print(getStrP(str_sec));
+    p->print(StrUtils::getStrP(str_sec));
     p->print('\t');
-    p->print(getStrP(str_store));
+    p->print(StrUtils::getStrP(str_store));
     p->print('\t');
-    p->print(getStrP(str_min));
+    p->print(StrUtils::getStrP(str_min));
     p->print('\t');
-    p->print(getStrP(str_max));
+    p->print(StrUtils::getStrP(str_max));
     p->print('\t');
-    p->println(getStrP(str_avg));
+    p->println(StrUtils::getStrP(str_avg));
     for (uint8_t i = 0; i < 4; ++i) getLog(PsuLogItem(i))->printDiag(p);
 }

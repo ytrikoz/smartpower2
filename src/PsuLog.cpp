@@ -123,10 +123,10 @@ void PsuLog::printTo(Print* p) {
 }
 
 void PsuLog::printDiag(Print* p) {
-    p->print(getStrP(name));
+    p->print(StrUtils::getStrP(name));
     p->print('\t');
     if (!available()) {
-        p->println(getStrP(str_empty, false));
+        p->println(StrUtils::getStrP(str_empty, false));
     } else {
         unsigned long interval_s =
             floor(count() * PSU_LOG_INTERVAL_ms / ONE_SECOND_ms);

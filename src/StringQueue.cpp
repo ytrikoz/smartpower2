@@ -7,7 +7,7 @@ StringQueue::StringQueue(size_t capacity) {
 void StringQueue::put(String& str) {
 #ifdef DEBUG_FILE_STORAGE
     dbg->print(getIdentStrP(str_data));
-    dbg->print(getStrP(str_arrow_src));
+    dbg->print(StrUtils::getStrP(str_arrow_src));
     dbg->println(str);
 #endif
     items.push_back(str);
@@ -32,7 +32,7 @@ void  StringQueue::get(String& str) {
     }
 #ifdef DEBUG_FILE_STORAGE
     dbg->print(getIdentStrP(str_data));
-    dbg->print(getStrP(str_arrow_dest));
+    dbg->print(StrUtils::getStrP(str_arrow_dest));
     dbg->println(str);
 #endif
 }

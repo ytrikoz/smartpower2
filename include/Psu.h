@@ -54,13 +54,13 @@ struct PsuState : Printable {
     static String getAlertStr(PsuAlert alert) {
         String str = "";
         if (alert == PSU_ALERT_NONE) return str;
-        str = getStrP(str_alert);
+        str = StrUtils::getStrP(str_alert);
         switch (alert) {
             case PSU_ALERT_LOAD_LOW:
-                str += getStrP(str_load_low, false);
+                str += StrUtils::getStrP(str_load_low, false);
                 break;
             default:
-                str += getStrP(str_unknown);
+                str += StrUtils::getStrP(str_unknown);
                 break;
         }
         return str;
@@ -69,13 +69,13 @@ struct PsuState : Printable {
     static String getErrorStr(PsuError error) {
         String str = "";
         if (error == PSU_ERROR_NONE) return str;
-        str = getStrP(str_error);
+        str = StrUtils::getStrP(str_error);
         switch (error) {
             case PSU_ERROR_DC_IN_LOW:
-                str += getStrP(str_low_voltage, false);
+                str += StrUtils::getStrP(str_low_voltage, false);
                 break;
             default:
-                str += getStrP(str_unknown);
+                str += StrUtils::getStrP(str_unknown);
                 break;
         }
         return str;
@@ -148,9 +148,9 @@ class Psu : public PsuInfoProvider {
     static String getStateStr(PowerState state) {
         String str = "";
         if (state == POWER_ON) {
-            str = getStrP(str_on);
+            str = StrUtils::getStrP(str_on);
         } else if (state == POWER_OFF) {
-            str = getStrP(str_off);
+            str = StrUtils::getStrP(str_off);
         }
         return str;
     };

@@ -19,7 +19,7 @@ bool FileStore::doOpenWrite() { return file = SPIFFS.open(this->name, "w"); };
 bool FileStore::doRead(StringQueue& data) {
     #ifdef DEBUG_FILE_STORAGE 
         dbg->print(getIdentStrP(str_file));
-        dbg->print(getStrP(str_read));
+        dbg->print(StrUtils::getStrP(str_read));
         dbg->println(getQuotedStr(name));   
     #endif
     bool result = file.available();
@@ -52,9 +52,9 @@ bool FileStore::doValidate() {
     size_t len = strlen(this->name);
     bool result = len > 0 && len < FILENAME_SIZE + 1;
     if (!result) {
-        err->print(getIdentStrP(str_file));
-        err->print(getQuotedStr(name));
-        err->println(getStrP(str_invalid));
+        err->print(StrUtils::getIdentStrP(str_file));
+        err->print(StrUtils::getQuotedStr(name));
+        err->println(StrUtils::getStrP(str_invalid));
     }
     return result;
 }

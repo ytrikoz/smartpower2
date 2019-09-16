@@ -35,8 +35,8 @@ bool isValidDate(uint8_t day, uint8_t month, uint16_t year) {
     year = encodeYear(year);
     bool res = year && isValidMonth(month) && isValidDay(day, month, year);
     if (!res) {
-        DEBUG.print(getStrP(str_invalid));
-        DEBUG.print(getStrP(str_date));
+        DEBUG.print(StrUtils::getStrP(str_invalid));
+        DEBUG.print(StrUtils::getStrP(str_date));
         DEBUG.println();
     }
     return res;
@@ -46,8 +46,8 @@ bool isValidTime(uint8_t hour, uint8_t minute, uint8_t second) {
     bool res =
         isValidHour(hour) && isValidMinute(minute) && isValidSecond(second);
     if (!res) {
-        DEBUG.print(getStrP(str_invalid));
-        DEBUG.print(getStrP(str_time));
+        DEBUG.print(StrUtils::getStrP(str_invalid));
+        DEBUG.print(StrUtils::getStrP(str_time));
     }
     return res;
 }

@@ -42,14 +42,14 @@ void refresh_wifi_led() {
 
 void setBroadcastTo(uint8_t broadcast_if) {
     String old_if = String(wifi_get_broadcast_if(), DEC);
-    USE_SERIAL.print(getIdentStrP(str_wifi));
-    USE_SERIAL.print(getStrP(str_set));
-    USE_SERIAL.print(getStrP(str_broadcast));
-    USE_SERIAL.print(getStr(old_if));
-    USE_SERIAL.print(getStrP(str_arrow_dest));
+    USE_SERIAL.print(StrUtils::getIdentStrP(str_wifi));
+    USE_SERIAL.print(StrUtils::getStrP(str_set));
+    USE_SERIAL.print(StrUtils::getStrP(str_broadcast));
+    USE_SERIAL.print(StrUtils::getStr(old_if));
+    USE_SERIAL.print(StrUtils::getStrP(str_arrow_dest));
     USE_SERIAL.print(broadcast_if);
     if (!wifi_set_broadcast_if(broadcast_if))
-        USE_SERIAL.print(getStrP(str_failed));
+        USE_SERIAL.print(StrUtils::getStrP(str_failed));
     USE_SERIAL.println();
 }
 
@@ -79,8 +79,8 @@ void start_telnet() {
         telnet = new TelnetServer(TELNET_PORT);
         telnet->setOutput(&USE_SERIAL);
         telnet->setOnClientConnect([](Stream *stream) {
-            USE_SERIAL.print(getIdentStrP(str_telnet));
-            USE_SERIAL.println(getStrP(str_connected));
+            USE_SERIAL.print(StrUtils::getIdentStrP(str_telnet));
+            USE_SERIAL.println(StrUtils::getStrP(str_connected));
 #ifndef DISABLE_TELNET_CLI
             start_telnet_shell(stream);
 #endif
@@ -88,8 +88,8 @@ void start_telnet() {
             return true;
         });
         telnet->setOnCLientDisconnect([]() {
-            USE_SERIAL.print(getIdentStrP(str_telnet));
-            USE_SERIAL.println(getStrP(str_disconnected));
+            USE_SERIAL.print(StrUtils::getIdentStrP(str_telnet));
+            USE_SERIAL.println(StrUtils::getStrP(str_disconnected));
             refresh_wifi_led();
         });
     }
@@ -155,8 +155,8 @@ void init_psu() {
 void start_ntp() {
     if (!ntp) {
         ntp = new NtpClient();
-        ntp->setConfig(config->get());
         ntp->setOutput(&USE_SERIAL);
+        ntp->setConfig(config->get());
         ntp->setOnResponse([](EpochTime &epoch) { rtc.setEpoch(epoch, true); });
     }
 }
@@ -198,9 +198,9 @@ uint8_t get_telnet_clients_count() {
 }
 
 void onTimeChangeEvent(const char *str) {
-    USE_SERIAL.print(getIdentStrP(str_clock));
-    USE_SERIAL.print(getStrP(str_time));
-    USE_SERIAL.print(getStrP(str_change));
+    USE_SERIAL.print(StrUtils::getIdentStrP(str_clock));
+    USE_SERIAL.print(StrUtils::getStrP(str_time));
+    USE_SERIAL.print(StrUtils::getStrP(str_change));
     USE_SERIAL.println(str);
 }
 

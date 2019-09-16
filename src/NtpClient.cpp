@@ -4,17 +4,24 @@
 
 using StrUtils::setstr;
 
-NtpClient::NtpClient() {
-    udp = new WiFiUDP();    
+NtpClient::NtpClient() : AppModule(MOD_NTP) {
+    udp = new WiFiUDP();
     onDisconnected = WiFi.onStationModeDisconnected(
-        {[this](const WiFiEventStationModeDisconnected &event) { end(); }});
+        {[this](const WiFiEventStationModeDisconnected &event) {
+            if (active) {
+                say_P(str_stopped);
+                udp->stop();
+                active = false;
+            }
+        }});
     onGotIp = WiFi.onStationModeGotIP(
-        {[this](const WiFiEventStationModeGotIP &event) { begin(); }});
+        {[this](const WiFiEventStationModeGotIP &event) {
+            sayf("%s:%d", timeServerPool, NTP_REMOTE_PORT);
+            active = udp->begin(NTP_LOCAL_PORT);
+        }});
     active = false;
-    lastUpdated = 0;    
+    lastUpdated = 0;
 }
-
-void NtpClient::setOutput(Print *p) { output = p; }
 
 void NtpClient::setConfig(Config *config) {
     setInterval(config->getValueAsInt(NTP_SYNC_INTERVAL));
@@ -27,26 +34,8 @@ void NtpClient::setInterval(uint16_t time_s) {
 
 void NtpClient::setServer(const char *str) {
     size_t len = strlen(str);
-    this->server = new char[len + 1];
-    setstr(this->server, str, len + 1);
-}
-
-bool NtpClient::begin() {
-    output->print(getIdentStrP(str_ntp));
-    output->printf_P(strf_s_d, server, NTP_REMOTE_PORT);
-    active = udp->begin(NTP_LOCAL_PORT);
-    if (!active) output->print(getStrP(str_failed));
-    output->println();
-    return active;
-}
-
-void NtpClient::end() {
-    if (active) {
-        output->print(getIdentStrP(str_ntp));
-        output->println(getStrP(str_stopped));
-        udp->stop();
-        active = false;
-    }
+    this->timeServerPool = new char[len + 1];
+    strcpy(this->timeServerPool, str);    
 }
 
 void NtpClient::loop() {
@@ -58,8 +47,8 @@ void NtpClient::loop() {
 }
 
 void NtpClient::sync() {
-    IPAddress serverIP;
-    WiFi.hostByName(server, serverIP);
+    IPAddress timeSrvIpAddr;
+    WiFi.hostByName(timeServerPool, timeSrvIpAddr);
 
     uint8_t buf[NTP_PACKET_SIZE];
     memset(buf, 0, NTP_PACKET_SIZE);
@@ -73,11 +62,11 @@ void NtpClient::sync() {
     buf[14] = 49;
     buf[15] = 52;
 #ifdef DEBUG_NTP
-    output->printf("[ntp] %s:%d ", serverIP.toString().c_str(),
-                   NTP_REMOTE_PORT);
+    out->printf("[ntp] %s:%d ", timeSrvIpAddr.toString().c_str(),
+                NTP_REMOTE_PORT);
 #endif
     // send a packet requesting a timestamp
-    udp->beginPacket(serverIP, NTP_REMOTE_PORT);
+    udp->beginPacket(timeSrvIpAddr, NTP_REMOTE_PORT);
     udp->write(buf, NTP_PACKET_SIZE);
     udp->endPacket();
 
@@ -88,7 +77,7 @@ void NtpClient::sync() {
         cb = udp->parsePacket();
         if (timeout > 10) {
 #ifdef DEBUG_NTP
-            output->print(getStrP(str_timeout));
+            out->print(StrUtils::getStrP(str_timeout));
 #endif
             return;
         }
@@ -103,22 +92,22 @@ void NtpClient::sync() {
     epochTime =
         EpochTime((high << 16 | low) - SEVENTY_YEARS_ms + (10 * (timeout + 1)));
 #ifdef DEBUG_NTP
-    output->print(getStrP(str_gpt));
-    output->println(epoch.asEpoch());
+    out->print(StrUtils::getStrP(str_gpt));
+    out->println(epoch.asEpoch());
 #endif
-    if (onResponse) onResponse(epochTime);
+    if (responseHandler) responseHandler(epochTime);
 }
 
 void NtpClient::setOnResponse(NtpClientEventHandler handler) {
-    onResponse = handler;
-    if (epochTime.toEpoch() > 0) onResponse(epochTime);
+    responseHandler = handler;
+    if (responseHandler && epochTime.toEpoch() > 0) responseHandler(epochTime);
 }
 
 void NtpClient::printDiag(Print *p) {
-    p->print(getStrP(str_active));
-    p->println(getBoolStr(active));
-    p->print(getStrP(str_interval));
+    p->print(StrUtils::getStrP(str_active));
+    p->println(StrUtils::getBoolStr(active));
+    p->print(StrUtils::getStrP(str_interval));
     p->println(syncInterval / ONE_SECOND_ms);
-    p->print(getStrP(str_epoch));
+    p->print(StrUtils::getStrP(str_epoch));
     p->println(epochTime.toEpoch());
 }

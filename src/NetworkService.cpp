@@ -32,42 +32,41 @@ void NetworkService::stop() {
 
 bool NetworkService::begin_dns(String& host_name) {
     IPAddress ip = Wireless::hostIP();
-    String dns_name = host_name;
-    dns_name += ".";
-    dns_name += HOST_DOMAIN;
-    
-    p->print(getIdentStrP(str_dns));
-    p->print(getStr(dns_name));
-    p->printf_P(strf_s_d, StrUtils::iptoa(ip), DNS_PORT);
+    String dns_name = host_name + "." + HOST_DOMAIN;        
+    p->print(StrUtils::getIdentStrP(str_dns));
+    p->print(dns_name);
+    p->print(StrUtils::iptos(ip));
+    p->print(':');
+    p->print(DNS_PORT);    
     bool result = dns->start(DNS_PORT, dns_name, ip);
     if (result)
         p->println();
     else
-        p->println(getStrP(str_failed));
+        p->println(StrUtils::getStrP(str_failed));
     return result;
 }
 
 bool NetworkService::begin_mdns(String& host_name) {
-    p->print(getIdentStrP(str_mdns));
+    p->print(StrUtils::getIdentStrP(str_mdns));
     bool result = mdns->begin(host_name);
     if (result) {
-        mdns->addService(NULL, getStrP(str_telnet).c_str(), getStrP(str_tcp).c_str(), TELNET_PORT);
-        mdns->addService(NULL, getStrP(str_http).c_str(),  getStrP(str_tcp).c_str(), HTTP_PORT);
+        mdns->addService(NULL, StrUtils::getStrP(str_telnet).c_str(), StrUtils::getStrP(str_tcp).c_str(), TELNET_PORT);
+        mdns->addService(NULL, StrUtils::getStrP(str_http).c_str(),  StrUtils::getStrP(str_tcp).c_str(), HTTP_PORT);
         mdns->enableArduino(OTA_PORT);
         p->println(host_name);
     } else {
-        p->println(getStrP(str_failed));
+        p->println(StrUtils::getStrP(str_failed));
     }
     return result;
 }
 
 bool NetworkService::begin_netbios(String& host_name) {
-    p->print(getIdentStrP(str_netbios));
+    p->print(StrUtils::getIdentStrP(str_netbios));
     bool result = netbios->begin(host_name.c_str());
     if (result) {
         p->println(host_name);
     } else {
-        p->println(getStrP(str_failed));
+        p->println(StrUtils::getStrP(str_failed));
     }
     return result;
 }

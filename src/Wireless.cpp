@@ -84,7 +84,7 @@ String hostName() {
 }
 
 void changeMode(WirelessMode mode) {
-    USE_SERIAL.print(getIdentStrP(str_wifi));
+    USE_SERIAL.print(StrUtils::getIdentStrP(str_wifi));
     WiFi.mode((WiFiMode_t)mode);
     WiFi.disconnect();
     delay(100);
@@ -97,9 +97,9 @@ void setupAP(IPAddress ap_ip) {
 
     WiFi.softAPConfig(ap_ip, gateway, subnet);
 
-    USE_SERIAL.print(getIdentStrP(str_wifi));
-    USE_SERIAL.print(getStrP(str_ap));
-    USE_SERIAL.print(getStrP(str_arrow_dest));
+    USE_SERIAL.print(StrUtils::getIdentStrP(str_wifi));
+    USE_SERIAL.print(StrUtils::getStrP(str_ap));
+    USE_SERIAL.print(StrUtils::getStrP(str_arrow_dest));
     USE_SERIAL.print(ap_ip.toString());
     USE_SERIAL.print('/');
     USE_SERIAL.print(subnet.toString());
@@ -109,12 +109,12 @@ void setupAP(IPAddress ap_ip) {
 
 void setupSTA(IPAddress ip, IPAddress gateway, IPAddress subnet,
               IPAddress dns) {
-    USE_SERIAL.print(getIdentStrP(str_wifi));
-    USE_SERIAL.print(getStrP(str_sta));
-    USE_SERIAL.print(getStrP(str_arrow_dest));
+    USE_SERIAL.print(StrUtils::getIdentStrP(str_wifi));
+    USE_SERIAL.print(StrUtils::getStrP(str_sta));
+    USE_SERIAL.print(StrUtils::getStrP(str_arrow_dest));
     if (ip.operator== IP4_ADDR_ANY) {
-        USE_SERIAL.print(getStrP(str_dhcp));
-        USE_SERIAL.print(getStrP(str_on));
+        USE_SERIAL.print(StrUtils::getStrP(str_dhcp));
+        USE_SERIAL.print(StrUtils::getStrP(str_on));
     } else {
         USE_SERIAL.printf_P(strf_ip_params, ip.toString().c_str(),
                             subnet.toString().c_str(),
@@ -130,19 +130,19 @@ void setupSTA() {
 }
 
 bool startSTA(const char *ssid, const char *password) {
-    USE_SERIAL.print(getIdentStrP(str_wifi));
-    USE_SERIAL.print(getStrP(str_sta));
-    USE_SERIAL.print(getStrP(str_arrow_dest));
-    USE_SERIAL.print(getStrP(str_ssid));
+    USE_SERIAL.print(StrUtils::getIdentStrP(str_wifi));
+    USE_SERIAL.print(StrUtils::getStrP(str_sta));
+    USE_SERIAL.print(StrUtils::getStrP(str_arrow_dest));
+    USE_SERIAL.print(StrUtils::getStrP(str_ssid));
     USE_SERIAL.println(ssid);
 
     WiFi.begin(ssid, password);
 
     uint8_t result = WiFi.waitForConnectResult();
     if (result != WL_CONNECTED) {
-        USE_SERIAL.print(getIdentStrP(str_wifi));
-        USE_SERIAL.print(getStrP(str_sta));
-        USE_SERIAL.print(getStrP(str_arrow_src));
+        USE_SERIAL.print(StrUtils::getIdentStrP(str_wifi));
+        USE_SERIAL.print(StrUtils::getStrP(str_sta));
+        USE_SERIAL.print(StrUtils::getStrP(str_arrow_src));
         USE_SERIAL.println(getConnectionStatus());
     }
     return result;
@@ -155,9 +155,9 @@ bool startAP(const char *ssid, const char *passwd) {
 boolean disconnectWiFi() { return WiFi.disconnect(); }
 
 void start_safe_wifi_ap() {
-    USE_SERIAL.print(getIdentStrP(str_wifi));
-    USE_SERIAL.print(getStrP(str_safe));
-    USE_SERIAL.print(getStrP(str_mode, false));
+    USE_SERIAL.print(StrUtils::getIdentStrP(str_wifi));
+    USE_SERIAL.print(StrUtils::getStrP(str_safe));
+    USE_SERIAL.print(StrUtils::getStrP(str_mode, false));
 
     char ap_ssid[32];
     strcpy(ap_ssid, APPNAME);
@@ -170,7 +170,7 @@ void start_safe_wifi_ap() {
 #endif
     changeMode(WLAN_AP);
     setupAP(ap_ipaddr);
-    if (!startAP(ap_ssid, ap_passwd)) USE_SERIAL.print(getStrP(str_failed));
+    if (!startAP(ap_ssid, ap_passwd)) USE_SERIAL.print(StrUtils::getStrP(str_failed));
 }
 
 void init_wifi() {
@@ -180,10 +180,10 @@ void init_wifi() {
     WiFi.hostname(host);
     WiFi.setAutoConnect(false);
 
-    USE_SERIAL.print(getIdentStrP(str_wifi));
-    USE_SERIAL.print(getStrP(str_tpw));
-    USE_SERIAL.print(getStr(tpw));
-    USE_SERIAL.print(getStrP(str_host));
+    USE_SERIAL.print(StrUtils::getIdentStrP(str_wifi));
+    USE_SERIAL.print(StrUtils::getStrP(str_tpw));
+    USE_SERIAL.print(StrUtils::getStr(tpw));
+    USE_SERIAL.print(StrUtils::getStrP(str_host));
     USE_SERIAL.println(host);
 }
 
@@ -194,11 +194,12 @@ void start_wifi() {
 
     staConnectedEventHandler =
         WiFi.onStationModeConnected([](const WiFiEventStationModeConnected &e) {
-            USE_SERIAL.print(getIdentStrP(str_wifi));
-            USE_SERIAL.print(getStrP(str_sta));
-            USE_SERIAL.print(getStrP(str_arrow_src));
-            USE_SERIAL.print(getStrP(str_ssid));
-            USE_SERIAL.print(getStr(e.ssid));
+            USE_SERIAL.print(StrUtils::getIdentStrP(str_wifi));
+            USE_SERIAL.print(StrUtils::getStrP(str_sta));
+            USE_SERIAL.print(StrUtils::getStrP(str_arrow_src));
+            USE_SERIAL.print(StrUtils::getStrP(str_ssid));
+            String ssid = e.ssid;
+            USE_SERIAL.print(StrUtils::getStr(ssid));
             USE_SERIAL.printf_P(strf_bssid, e.bssid[0], e.bssid[1], e.bssid[2],
                                 e.bssid[3], e.bssid[4], e.bssid[5]);
             USE_SERIAL.printf_P(strf_channel, e.channel);
@@ -213,10 +214,10 @@ void start_wifi() {
             gateway = e.gw;
             dns = WiFi.dnsIP();
 
-            USE_SERIAL.print(getIdentStrP(str_wifi));
-            USE_SERIAL.print(getStrP(str_sta));
-            USE_SERIAL.print(getStrP(str_arrow_src));
-            USE_SERIAL.print(getStrP(str_got));
+            USE_SERIAL.print(StrUtils::getIdentStrP(str_wifi));
+            USE_SERIAL.print(StrUtils::getStrP(str_sta));
+            USE_SERIAL.print(StrUtils::getStrP(str_arrow_src));
+            USE_SERIAL.print(StrUtils::getStrP(str_got));
             USE_SERIAL.printf_P(strf_ip_params, ip.toString().c_str(),
 
                                 subnet.toString().c_str(),
@@ -229,10 +230,10 @@ void start_wifi() {
     staDisconnectedEventHandler = WiFi.onStationModeDisconnected(
         [](const WiFiEventStationModeDisconnected &e) {
             if (network == NETWORK_UP) {
-                USE_SERIAL.print(getIdentStrP(str_wifi));
-                USE_SERIAL.print(getStrP(str_sta));
-                USE_SERIAL.print(getStrP(str_arrow_src));
-                USE_SERIAL.println(getStrP(str_disconnected));
+                USE_SERIAL.print(StrUtils::getIdentStrP(str_wifi));
+                USE_SERIAL.print(StrUtils::getStrP(str_sta));
+                USE_SERIAL.print(StrUtils::getStrP(str_arrow_src));
+                USE_SERIAL.println(StrUtils::getStrP(str_disconnected));
             }
             updateState();
         });
@@ -264,11 +265,11 @@ void start_wifi() {
         setupAP(ap_ipaddr);
         ap_enabled = startAP(ap_ssid, ap_passwd);
         if (ap_enabled) {
-            USE_SERIAL.print(getIdentStrP(str_wifi));
-            USE_SERIAL.print(getStrP(str_ssid));
-            USE_SERIAL.print(getStr(ap_ssid));
-            USE_SERIAL.print(getStrP(str_ip));
-            USE_SERIAL.println(getStr(ap_ipaddr.toString()));
+            USE_SERIAL.print(StrUtils::getIdentStrP(str_wifi));
+            USE_SERIAL.print(StrUtils::getStrP(str_ssid));
+            USE_SERIAL.print(StrUtils::getStr(ap_ssid));
+            USE_SERIAL.print(StrUtils::getStrP(str_ip));
+            USE_SERIAL.println(StrUtils::getStr(ap_ipaddr));
         }
         if (ap_enabled)
             setNetworkState(NETWORK_UP);
@@ -280,9 +281,9 @@ void start_wifi() {
 void updateState() {
     switch (getWirelessMode()) {
         case WLAN_OFF:
-            USE_SERIAL.print(getStrP(str_wifi));
-            USE_SERIAL.print(getStrP(str_switched));
-            USE_SERIAL.println(getStrP(str_off));
+            USE_SERIAL.print(StrUtils::getStrP(str_wifi));
+            USE_SERIAL.print(StrUtils::getStrP(str_switched));
+            USE_SERIAL.println(StrUtils::getStrP(str_off));
             setNetworkState(NETWORK_DOWN);
             break;
         case WIFI_AP:
@@ -299,18 +300,18 @@ void updateState() {
 
 void setNetworkState(NetworkState state) {
     if (network != state) {
-        USE_SERIAL.print(getIdentStrP(str_wifi));
-        USE_SERIAL.print(getStrP(str_network));
+        USE_SERIAL.print(StrUtils::getIdentStrP(str_wifi));
+        USE_SERIAL.print(StrUtils::getStrP(str_network));
         network = state;
         if (network == NETWORK_UP) {
-            USE_SERIAL.print(getStrP(str_up));
+            USE_SERIAL.print(StrUtils::getStrP(str_up));
             USE_SERIAL.print(millis_since(lastNetworkDown));
-            USE_SERIAL.println(getStrP(str_ms, false));
+            USE_SERIAL.println(StrUtils::getStrP(str_ms, false));
             onNetworkUp();
         } else if (network == NETWORK_DOWN) {
-            USE_SERIAL.print(getStrP(str_down));
+            USE_SERIAL.print(StrUtils::getStrP(str_down));
             USE_SERIAL.print(millis_since(lastNetworkUp));
-            USE_SERIAL.println(getStrP(str_ms, false));
+            USE_SERIAL.println(StrUtils::getStrP(str_ms, false));
             onNetworkDown();
         }
     }
@@ -340,49 +341,49 @@ void setOnNetworkStateChange(NetworkStateChangeEventHandler h) {
 }
 
 String networkStateInfo() {
-    String str = getStrP(str_network);
+    String str = StrUtils::getStrP(str_network);
     if (network == NETWORK_UP) {
-        str += getStrP(str_up);
-        str += getStr(String(millis_since(lastNetworkDown)));
+        str += StrUtils::getStrP(str_up);
+        str += getStr(millis_since(lastNetworkDown));
         onNetworkUp();
     } else if (network == NETWORK_DOWN) {
-        str += getStrP(str_down);
-        str += getStr(String(millis_since(lastNetworkUp)));
+        str += StrUtils::getStrP(str_down);
+        str += StrUtils::getStr(millis_since(lastNetworkUp));
         onNetworkDown();
     }
-    str += getStrP(str_ms, false);
+    str += StrUtils::getStrP(str_ms, false);
     return str;
 }
 
 String wifiModeInfo() {
-    String str = getStrP(str_mode);
+    String str = StrUtils::getStrP(str_mode);
     switch (Wireless::getWirelessMode()) {
         case WLAN_AP:
-            str += getStrP(str_ap);
+            str += StrUtils::getStrP(str_ap);
             break;
         case WLAN_STA:
-            str += getStrP(str_sta);
-            str += getStrP(str_reconnect);
-            str += wifi_station_get_reconnect_policy() ? getStrP(str_yes)
-                                                       : getStrP(str_no);
+            str += StrUtils::getStrP(str_sta);
+            str += StrUtils::getStrP(str_reconnect);
+            str += wifi_station_get_reconnect_policy() ? StrUtils::getStrP(str_yes)
+                                                       : StrUtils::getStrP(str_no);
             break;
         case WLAN_AP_STA:
-            str += getStrP(str_ap);
-            str += getStrP(str_sta);
+            str += StrUtils::getStrP(str_ap);
+            str += StrUtils::getStrP(str_sta);
             break;
         case WLAN_OFF:
-            str += getStrP(str_switched);
-            str += getStrP(str_off);
+            str += StrUtils::getStrP(str_switched);
+            str += StrUtils::getStrP(str_off);
             break;
     }
     return str;
 }
 
 String hostIPInfo() {
-    String str = getStrP(str_ip);
+    String str = StrUtils::getStrP(str_ip);
     switch (getWirelessMode()) {
         case WLAN_OFF:
-            str += getStrP(str_none);
+            str += StrUtils::getStrP(str_none);
             break;
         case WLAN_STA:
             str += Wireless::hostSTA_IP().toString();
@@ -409,26 +410,26 @@ String getConnectionStatus() {
     String str;
     switch (status) {
         case STATION_CONNECTING:
-            str = getStrP(str_connecting, false);
+            str = StrUtils::getStrP(str_connecting, false);
             break;
         case STATION_GOT_IP:
-            str = getStrP(str_connected, false);
+            str = StrUtils::getStrP(str_connected, false);
             break;
         case STATION_NO_AP_FOUND:
             str =
-                getStrP(str_ap) + getStrP(str_not) + getStrP(str_found, false);
+                StrUtils::getStrP(str_ap) + StrUtils::getStrP(str_not) + StrUtils::getStrP(str_found, false);
             break;
         case STATION_CONNECT_FAIL:
-            str = getStrP(str_connection) + getStrP(str_failed, false);
+            str = StrUtils::getStrP(str_connection) + StrUtils::getStrP(str_failed, false);
             break;
         case STATION_WRONG_PASSWORD:
-            str = getStrP(str_wrong) + getStrP(str_password, false);
+            str = StrUtils::getStrP(str_wrong) + StrUtils::getStrP(str_password, false);
             break;
         case STATION_IDLE:
-            str = getStrP(str_idle, false);
+            str = StrUtils::getStrP(str_idle, false);
             break;
         default:
-            str = getStrP(str_disconnected, false);
+            str = StrUtils::getStrP(str_disconnected, false);
             break;
     }
     return str;

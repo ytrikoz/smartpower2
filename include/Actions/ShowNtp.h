@@ -13,7 +13,7 @@ void ShowNtp::exec(Print* p) {
     if (ntp) {
         ntp->printDiag(p);
     } else {
-        p->println(getStrP(str_disabled));
+        p->println(StrUtils::getStrP(str_disabled));
     }
 }
 

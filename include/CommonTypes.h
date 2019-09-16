@@ -8,16 +8,32 @@
 #include "Strings.h"
 #include "TimeUtils.h"
 
-typedef enum { SS_UNSET, SS_CLOSED, SS_READING, SS_WRITING, SS_EOF } StoreState;
+enum StoreState { SS_UNSET, SS_CLOSED, SS_READING, SS_WRITING, SS_EOF };
 
-typedef enum {
+enum StoreError {
     SE_OK,
     SE_INVALID,
     SE_NOT_EXIST,
     SE_ERROR_CLOSE,
     SE_ERROR_READ,
     SE_ERROR_WRITE,
-} StoreError;
+};
+
+enum AppModuleEnum {
+    MOD_BTN,
+    MOD_CLOCK,
+    MOD_LED,
+    MOD_PSU,
+    MOD_TASK,
+    MOD_TELNET_SHELL,
+    MOD_LCD,
+    MOD_HTTP,
+    MOD_NETSVC,
+    MOD_NTP,
+    MOD_TELNET,
+    MOD_SERIAL_SHELL,
+    MOD_UPDATE
+};
 
 struct EpochTime : public Printable {
    public:

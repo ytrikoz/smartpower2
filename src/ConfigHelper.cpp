@@ -25,7 +25,7 @@ void ConfigHelper::loadConfig() {
             saveConfig();
         } else {
             err->print(getIdentStrP(str_config));
-            err->print(getStrP(str_load));
+            err->print(StrUtils::getStrP(str_load));
             err->println(store->getErrorInfo());
         }
     } else {
@@ -59,8 +59,8 @@ void ConfigHelper::loadConfig(Config *config, StringQueue *data) {
             config->setValueStringByName(paramStr.c_str(), valueStr.c_str());
         } else {
             err->print(getIdentStrP(str_config));
-            err->print(getStrP(str_load));
-            err->print(getStrP(str_error));
+            err->print(StrUtils::getStrP(str_load));
+            err->print(StrUtils::getStrP(str_error));
             err->println(buf);
         }
     }

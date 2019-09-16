@@ -74,8 +74,8 @@ WebService::WebService() {
 
 void WebService::begin() {
     String ip_str = Wireless::hostIP().toString();
-    out->print(getIdentStrP(str_http));
-    out->print(getStr(web_root));
+    out->print(StrUtils::getIdentStrP(str_http));
+    out->print(StrUtils::getStr(web_root));
     out->print(ip_str);
     out->print(':');
     out->print(port_http);
@@ -95,8 +95,8 @@ void WebService::begin() {
 }
 
 void WebService::end() {
-    out->print(getIdentStrP(str_http));
-    out->println(getStr(str_stopped));
+    out->print(StrUtils::getIdentStrP(str_http));
+    out->println(StrUtils::getStrP(str_stopped));
 
     active = false;
 }
@@ -120,9 +120,9 @@ void WebService::handleUri() {
 void WebService::handleNotFound(String &uri) {
 #ifdef DEBUG_WEB_SERVICE
     DEBUG.print(getIdentStrP(str_http));
-    DEBUG.print(getStrP(str_file));
-    DEBUG.print(getStrP(str_not));
-    DEBUG.print(getStrP(str_found));
+    DEBUG.print(StrUtils::getStrP(str_file));
+    DEBUG.print(StrUtils::getStrP(str_not));
+    DEBUG.print(StrUtils::getStrP(str_found));
     DEBUG.println(uri);
 #endif
     String str = F("File Not Found\n");
@@ -149,7 +149,7 @@ void WebService::sendTxt(uint8_t num, String &payload) {
     out->print(getIdentStrP(str_http));
     out->print('#');
     out->print(getStr(num));
-    out->print(getStrP(str_arrow_dest));
+    out->print(StrUtils::getStrP(str_arrow_dest));
     out->println(payload);
 #endif
     websocket->sendTXT(num, payload);
@@ -170,19 +170,19 @@ void WebService::webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
     switch (type) {
         case WStype_CONNECTED:
 #ifdef DEBUG_WEB_SERVICE
-            out->println(getStrP(str_connected));
+            out->println(StrUtils::getStrP(str_connected));
 #endif
             onConnectEvent(num);
             return;
         case WStype_DISCONNECTED:
 #ifdef DEBUG_WEB_SERVICE
-            out->println(getStrP(str_disconnected));
+            out->println(StrUtils::getStrP(str_disconnected));
 #endif
             onDisconnectEvent(num);
             return;
         case WStype_TEXT: {
 #ifdef DEBUG_WEB_SERVICE
-            out->print(getStrP(str_arrow_src));
+            out->print(StrUtils::getStrP(str_arrow_src));
             out->println((char *)&payload[0]);
 #endif
             onDataEvent(num, (char *)&payload[0]);
@@ -190,23 +190,23 @@ void WebService::webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
         }
         case WStype_BIN:
 #ifdef DEBUG_WEB_SERVICE
-            out->print(getStrP(str_arrow_src));
+            out->print(StrUtils::getStrP(str_arrow_src));
             out->println(StrUtils::formatSize(lenght).c_str());
 #endif
             return;
         case WStype_PING:
 #ifdef DEBUG_WEB_SERVICE
-            out->println(getStrP(str_ping, false));
+            out->println(StrUtils::getStrP(str_ping, false));
 #endif
             return;
         case WStype_PONG:
 #ifdef DEBUG_WEB_SERVICE
-            out->println(getStrP(str_pong, false));
+            out->println(StrUtils::getStrP(str_pong, false));
 #endif
             return;
         default:
 #ifdef DEBUG_WEB_SERVICE
-            out->print(getStrP(str_unhandled));
+            out->print(StrUtils::getStrP(str_unhandled));
             out->println(type);
 #endif
             return;
@@ -226,6 +226,7 @@ String WebService::getFilePath(String uri) {
 }
 
 bool WebService::sendFileContent(String path) {
+    size_t sent = 0;
     if (SPIFFS.exists(path)) {
         String type;
         if (server->hasArg("download"))
@@ -233,7 +234,7 @@ bool WebService::sendFileContent(String path) {
         else
             type = getContentType(path);
         File f = SPIFFS.open(path, "r");
-        size_t sent = server->streamFile(f, type);
+        sent = server->streamFile(f, type);
         f.close();
 
 #ifdef DEBUG_WEB_SERVICE
@@ -244,7 +245,7 @@ bool WebService::sendFileContent(String path) {
 #endif
         return true;
     }
-    return false;
+    return sent;
 }
 
 void WebService::handleFileList() {
@@ -276,7 +277,7 @@ void WebService::fileUpload() {
         int ac = server->args();
         int i;
         for (i = 0; i < ac; i++) {
-            out->print(getIdentStrP(str_http));
+            out->print(StrUtils::getIdentStrP(str_http));
             out->printf("%d %s=%s", i, server->argName(i).c_str(),
                         server->arg(i).c_str());
             out->println();
@@ -294,9 +295,10 @@ void WebService::fileUpload() {
             }
         }
         filename = getFilePath(filename);
-        out->print(getIdentStrP(str_http));
-        out->print(getStrP(str_upload));
-        out->print(filename);
+        //sayf("%s %s", StrUtils::getStrP(str_upload).c_str(), filename.c_str());
+        //out->print(getIdentStrP(str_http));
+        //out->print(StrUtils::getStrP(str_upload));
+        //out->print(filename);
 
         fsUploadFile = SPIFFS.open(filename, "w");
     } else if (upload.status == UPLOAD_FILE_WRITE) {
@@ -322,8 +324,8 @@ void WebService::fileUpload() {
 
 bool WebService::captivePortal() {
 #ifdef DEBUG_WEB_SERVICE
-    out->print(getStrP(str_http));
-    out->print(getStrP(str_redirected));
+    out->print(StrUtils::getStrP(str_http));
+    out->print(StrUtils::getStrP(str_redirected));
     out->println(server->hostHeader());
 #endif
     if (!isip(server->hostHeader()) &&

@@ -19,7 +19,6 @@ const SET_SSID = 's';
 const SET_IP_ADDR = 'i';
 const SET_PASSWD = 'x';
 */
-let displayAccuracity = 3;
 
 const PAGE_HOME = 1;
 const PAGE_OPTIONS = 2;
@@ -28,17 +27,17 @@ const PAGE_INFO = 3;
 function parseIP(ipaddress) { if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ipaddress)) { return ipaddress; } return ''; }
 
 function onVoltChange(item) {
-	$('#volt_ss').sevenSeg({ digits: 5, decimalPlaces: displayAccuracity, value: item.last });
+	$('#volt_ss').sevenSeg({ digits: 5, decimalPlaces: 3, value: item.last });
 	$('#volt_range').html(item.stat);
 }
 
 function onAmpChange(item) {
-	$('#amp_ss').sevenSeg({ digits: 5, decimalPlaces: displayAccuracity, value: item.last });
+	$('#amp_ss').sevenSeg({ digits: 5, decimalPlaces: 3, value: item.last });
 	$('#amp_range').html(item.stat);
 }
 
 function onWattChange(item) {
-	$('#watt_ss').sevenSeg({ digits: 5, decimalPlaces: displayAccuracity, value: item.last });
+	$('#watt_ss').sevenSeg({ digits: 5, decimalPlaces: 3, value: item.last });
 	$('#watt_range').html(item.stat);
 }
 
@@ -102,7 +101,7 @@ function enableLivePVI(enabled = true) {
 		$containers.removeClass('ui-state-disabled');
 	} else {
 		$containers.addClass('ui-state-disabled');
-		$containers.sevenSeg().sevenSeg({ digits: 5, decimalPlaces: displayAccuracity, value: 0.0 });
+		$containers.sevenSeg().sevenSeg({ digits: 5, decimalPlaces: 3, value: 0.0 });
 	}
 }
 
@@ -265,66 +264,66 @@ function sendNetwork(wifi, ssid, passwd, dhcp, ipaddr, netmask, gateway, dns) {
 
 function updateUI(param, value) {
 	switch (param) {
-	case SET_ONOFF:
-		showOnOff(!parseInt(value, 2));
-		break;
-	case SET_MEASUREWATTHOUR:
-		showEnableLog(parseInt(value, 2));
-		break;
-	case SET_VOLTAGE:
-		showOutputVoltage(parseFloat(value));
-		break;
-	case SET_POWER_MODE:
-		showPowerMode(parseInt(value, 10));
-		break;
-	case SET_NETWORK: {
-		const str = value.split(',');
-		const wifi = parseInt(str[0], 10);
-		const ssid = str[1];
-		const passwd = str[2];
-		const dhcp = parseInt(str[3], 2);
-		const ipaddr = parseIP(str[4]);
-		const netmask = parseIP(str[5]);
-		const gateway = parseIP(str[6]);
-		const dns = parseIP(str[7]);
-		showWiFi(wifi);
-		showSSID(ssid);
-		showPassword(passwd);
-		showDHCP(dhcp);
-		showIPAddr(ipaddr);
-		showNetmask(netmask);
-		showGateway(gateway);
-		showDns(dns);
-		break;
-	}
-	case TAG_PVI: {
-		const strArray = value.split(',');
-		const volts = parseFloat(strArray[0]);
-		const amps = parseFloat(strArray[1]);
-		const watt = parseFloat(strArray[2]);
-		const watth = parseFloat(strArray[3]);
+		case SET_ONOFF:
+			showOnOff(!parseInt(value, 2));
+			break;
+		case SET_MEASUREWATTHOUR:
+			showEnableLog(parseInt(value, 2));
+			break;
+		case SET_VOLTAGE:
+			showOutputVoltage(parseFloat(value));
+			break;
+		case SET_POWER_MODE:
+			showPowerMode(parseInt(value, 10));
+			break;
+		case SET_NETWORK: {
+			const str = value.split(',');
+			const wifi = parseInt(str[0], 10);
+			const ssid = str[1];
+			const passwd = str[2];
+			const dhcp = parseInt(str[3], 2);
+			const ipaddr = parseIP(str[4]);
+			const netmask = parseIP(str[5]);
+			const gateway = parseIP(str[6]);
+			const dns = parseIP(str[7]);
+			showWiFi(wifi);
+			showSSID(ssid);
+			showPassword(passwd);
+			showDHCP(dhcp);
+			showIPAddr(ipaddr);
+			showNetmask(netmask);
+			showGateway(gateway);
+			showDns(dns);
+			break;
+		}
+		case TAG_PVI: {
+			const strArray = value.split(',');
+			const volts = parseFloat(strArray[0]);
+			const amps = parseFloat(strArray[1]);
+			const watt = parseFloat(strArray[2]);
+			const watth = parseFloat(strArray[3]);
 
-		voltMeasurement.setValue(volts);
-		ampMeasurement.setValue(amps);
-		wattMeasurement.setValue(watt);
-		watthMeasurement.setValue(watth);
+			voltMeasurement.setValue(volts);
+			ampMeasurement.setValue(amps);
+			wattMeasurement.setValue(watt);
+			watthMeasurement.setValue(watth);
 
-		break;
-	}
-	case SYS_INFO: {
-		showSysInfo(value);
-		break;
-	}
-	case NETWORK_INFO: {
-		showNetworkInfo(value);
-		break;
-	}
-	case FW_VERSION:
-		showVersion(value);
-		break;
-	default:
-		console.log('unknown', param, value);
-		break;
+			break;
+		}
+		case SYS_INFO: {
+			showSysInfo(value);
+			break;
+		}
+		case NETWORK_INFO: {
+			showNetworkInfo(value);
+			break;
+		}
+		case FW_VERSION:
+			showVersion(value);
+			break;
+		default:
+			console.log('unknown', param, value);
+			break;
 	}
 }
 
@@ -477,7 +476,7 @@ $(document).ready(() => {
 	});
 
 	$('#slider_accuracity').change(() => {
-		displayAccuracity = $('#slider_accuracity').val();
+		var averaging = $('#slider_accuracity').val();
 	});
 
 	$('#dlg_restart_no').click(() => {
@@ -490,42 +489,25 @@ $(document).ready(() => {
 
 	$('#watt_ss').sevenSeg({
 		digits: 5,
-		decimalPlaces: displayAccuracity,
-		value: 0.0,
+		value: null,
 	});
 
 	$('#amp_ss').sevenSeg({
 		digits: 5,
-		decimalPlaces: displayAccuracity,
 		colorOff: '#003200',
 		colorOn: 'Lime',
-		value: 0.0,
+		value: null,
 	});
 
 	$('#volt_ss').sevenSeg({
 		digits: 5,
-		decimalPlaces: displayAccuracity,
-		value: 0.0,
+		value: null,
 	});
 
 	$('#watth_ss').sevenSeg({
 		digits: 5,
-		decimalPlaces: displayAccuracity,
-		value: 0.0,
+		value: null,
 	});
 
 	enableLivePVI(false);
-
-	$('GaugeMeter').gaugeMeter();
-
-	$('#volt_range').circleProgress({
-		size: 100.0,
-		thickness: 16,
-		emptyFill: 'rgba(0, 0, 0, .5)',
-		startAngle: -Math.PI,
-		value: 0.25,
-		lineCap: 'round',
-	});
-
-	$('#stat_table').treetable();
 });
