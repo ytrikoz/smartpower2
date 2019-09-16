@@ -1,9 +1,14 @@
 #pragma once
 
 #include "Actions.h"
-
+#include "AppModule.h"
 
 namespace Actions {
+
+static String getModuleName(uint8_t index) {
+    PGM_P pgmStr = (char*)pgm_read_ptr(&(module_strP[index]));
+    return StrUtils::getStrP(pgmStr);
+}
 
 class ShowLoop : public Action {
    public:

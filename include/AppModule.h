@@ -4,44 +4,41 @@
 #include <CommonTypes.h>
 #include "Config.h"
 
-template <typename T>
+static PGM_P module_strP[] PROGMEM = {
+    str_btn,  str_clock,  str_led, str_psu,    str_task,  str_shell, str_lcd,
+    str_http, str_netsvc, str_ntp, str_telnet, str_shell, str_update};
 
-T pgmtoc(T pgmstr) {
-    char buf[128];
-    strcpy_P(buf, (char*)pgm_read_ptr(&pgmstr));
-    return buf;
+static String getModuleName(AppModuleEnum module) {
+    PGM_P pgmStr = (char*)pgm_read_ptr(&(module_strP[module]));
+    return StrUtils::getStrP(pgmStr);
 }
 
 template <Print*, typename... Args>
-void say(Print* p, Args... args) {
-    for (size_t n = 0; n < sizeof...(args); ++n) {
-        char buf[128];
-        p->print(args...);
+void sayArgsP(Print* p, Args... args) {
+    char buf[128]; 
+    for (size_t n = 0; n < sizeof...(args); ++n) {        
+        memset(buf, 0, 128);
+        strcpy(buf, (char*)pgm_read_ptr(&args[n]...));
+        p->print(buf);
     }
 }
 
 template <Print*, AppModuleEnum, const char*, typename... Args>
 void say(Print* p, AppModuleEnum module, const char* fmt, Args... args) {
     char buf[32];
-    buf[0] = '[';
-    strcat_P(&buf[1], module_strP[module]);
+    buf[0] = '[';    
+    strcpy_P(buf[1], getModuleName(module).c_str());
     size_t n = strlen(buf);
     buf[n] = ']';
     buf[++n] = '\x00';
 
-    foo(bar(args)...);
+    sayArgsP(args...);
 }
 
 class AppModule {
    public:
-    AppModule(AppModuleEnum module) {
-        char buf[32] = "[";
-        PGM_P pgmStr = module_strP[module];
-        strcpy_P(&buf[1], (char*)pgm_read_ptr(&pgmStr));
-        size_t n = strlen(buf);
-        buf[n] = ']';
-        buf[++n] = '\x00';
-        moduleName = String(buf);
+    AppModule(AppModuleEnum module) {        
+        moduleName = getModuleName(module);
     }
     AppModuleEnum getModule() { return module; }
     
@@ -49,42 +46,31 @@ class AppModule {
     
     void setOutput(Print* p) { this->out = p; }
 
-    String getModuleName() { return moduleName; }
-
    public:
     virtual void setConfig(Config* config){};
 
    protected:
     size_t say_P(PGM_P pgmStr) { return out->print(pgmStr); };
-
+ 
     size_t say(char* str) { return out->print(str); };
 
     size_t sayf_P(const char* fmt, ...) {
-        char buf[128];
-        size_t n = out->print(getModuleName());
-        n += out->print(' ');
         va_list args;
-        va_start(args, fmt);
-        vsprintf(buf, fmt, args);
-        va_end(args);
-        n += out->print(buf);
-        return n;
+        return sayf(fmt, args);
     }
 
     size_t sayf(const char* fmt, ...) {
         char buf[128];
-        size_t n = out->print(getModuleName());
-        n += out->print(' ');
         va_list args;
         va_start(args, fmt);
         vsprintf(buf, fmt, args);
         va_end(args);
-        n += out->print(buf);
-        return n;
+        return out->print(buf);
     }
     Print* out = &USE_SERIAL;
 
    private:
+
     AppModuleEnum module;
     String moduleName;
 };

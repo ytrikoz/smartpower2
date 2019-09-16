@@ -12,6 +12,8 @@
 
 namespace Wireless {
 
+static const char str_bssid[] PROGMEM = "bssid %02x:%02x:%02x:%02x:%02x:%02x";
+
 bool ap_enabled = false;
 WirelessMode mode = WLAN_OFF;
 NetworkState network = NETWORK_DOWN;
@@ -200,9 +202,10 @@ void start_wifi() {
             USE_SERIAL.print(StrUtils::getStrP(str_ssid));
             String ssid = e.ssid;
             USE_SERIAL.print(StrUtils::getStr(ssid));
-            USE_SERIAL.printf_P(strf_bssid, e.bssid[0], e.bssid[1], e.bssid[2],
+            USE_SERIAL.printf_P(str_bssid, e.bssid[0], e.bssid[1], e.bssid[2],
                                 e.bssid[3], e.bssid[4], e.bssid[5]);
-            USE_SERIAL.printf_P(strf_channel, e.channel);
+            USE_SERIAL.print("ch ");
+            USE_SERIAL.print(e.channel);
             USE_SERIAL.println();
         });
 
@@ -399,9 +402,10 @@ String hostIPInfo() {
     return str;
 }
 
+static const char host_name[] PROGMEM = "smartpower2";
 String getConfigHostname() {
     char buf[32];
-    strcpy_P(buf, HOST_NAME);
+    strcpy_P(buf, host_name);
     return String(buf);
 }
 

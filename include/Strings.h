@@ -4,9 +4,8 @@
 #include "CommonTypes.h"
 #include "StrUtils.h"
 
-static const char HOST_NAME[] PROGMEM = "smartpower2";
-static const char str_build_date[] PROGMEM = BUILD_DATE;
 
+static const char str_build_date[] PROGMEM = BUILD_DATE;
 static const char str_shell_start_hint[] PROGMEM =
     "[shell] press \"enter\" to start";
 static const char msg_system_restart[] PROGMEM =
@@ -15,7 +14,6 @@ static const char msg_session_interrupted[] PROGMEM =
     "the session was interrupted!";
 static const char msg_connection_is_busy[] PROGMEM = "connection is busy";
 
-static const char strf_file_deleted[] PROGMEM = "";
 static const char strf_file_not_found[] PROGMEM = "file '%s' not found";
 static const char strf_config_param_value[] PROGMEM = "%s=\"%s\"";
 static const char strf_synced[] PROGMEM = "synced %d";
@@ -41,7 +39,7 @@ static const char strf_client[] PROGMEM = "#%d";
 static const char strf_set_broadcast[] PROGMEM = "set broadcast if%d to if%d";
 static const char strf_ip_params[] PROGMEM =
     "ip %s subnet %s gateway %s dns %s";
-static const char strf_bssid[] PROGMEM = "bssid %02x:%02x:%02x:%02x:%02x:%02x";
+
 static const char strf_channel[] PROGMEM = "ch %d";
 static const char strf_ssid[] PROGMEM = "ssid %s";
 static const char strf_heap[] PROGMEM = "heap %s";
@@ -216,16 +214,6 @@ static const char str_wrong[] PROGMEM = "wrong";
 static const char str_wait[] PROGMEM = "wait";
 static const char str_write[] PROGMEM = "write";
 static const char str_yes[] PROGMEM = "yes";
-
-static PGM_P module_strP[] PROGMEM = {
-    str_btn,  str_clock,  str_led, str_psu,    str_task,  str_shell, str_lcd,
-    str_http, str_netsvc, str_ntp, str_telnet, str_shell, str_update};
-
-inline String getModuleName(uint8_t index) {
-    PGM_P pgmStr = (char*)pgm_read_ptr(&(module_strP[index]));
-    return StrUtils::getStrP(pgmStr);
-}
-
 
 inline String getStr(int num) {
     String res(num, DEC);

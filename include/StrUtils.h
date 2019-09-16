@@ -61,8 +61,4 @@ String getQuotedStr(const char *str, bool with_space = true, char ch = '\'');
 
 String getQuotedStr(String& str, bool with_space = true);
 
-
-
-
-
 }  // namespace StrUtils

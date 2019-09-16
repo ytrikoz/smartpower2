@@ -34,7 +34,7 @@ bool NetworkService::begin_dns(String& host_name) {
     IPAddress ip = Wireless::hostIP();
     String dns_name = host_name + "." + HOST_DOMAIN;        
     p->print(StrUtils::getIdentStrP(str_dns));
-    p->print(dns_name);
+    p->print(StrUtils::getStr(dns_name));
     p->print(StrUtils::iptos(ip));
     p->print(':');
     p->print(DNS_PORT);    

@@ -4,8 +4,8 @@
 
 #include "Strings.h"
 
-#define LOOP_COUNTERS 10
 #define MODULES_COUNT 13
+#define LOOP_COUNTERS 10
 #define LOOP_CAPTURE_INTERVAL 10000
 
 namespace Profiler {
