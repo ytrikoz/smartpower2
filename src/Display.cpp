@@ -143,7 +143,7 @@ void Display::turnOn() {
         if (backlight)
             backlightOn();
         else
-            lcd->backlightOff();
+            backlightOff();
     }
 }
 
