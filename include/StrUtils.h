@@ -52,13 +52,18 @@ String getStrP(PGM_P strP, bool space = true);
 
 String getBoolStr(bool value, bool space = true);
 
+String getEnabledStr(bool value, bool space = true);
+
+String getStr(int num);
+
+String getIdentStr(String& str, bool with_space = true);
+String getIdentStr(const char* str, bool with_space);
+String getIdentStr(const char *str, bool with_space, char ch);
+String getIdentStr(const char *str, bool with_space, char left, char right);
 String getIdentStrP(PGM_P strP, bool with_space = true);
 
-String getIdentStr(const char *str, bool with_space = true, char left = '[',
-                   char right = ']');
-
+String getQuotedStrP(PGM_P str, bool with_space, char ch = '\'') ;
 String getQuotedStr(const char *str, bool with_space = true, char ch = '\'');
-
 String getQuotedStr(String& str, bool with_space = true);
 
 }  // namespace StrUtils

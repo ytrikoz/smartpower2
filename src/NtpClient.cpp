@@ -2,8 +2,6 @@
 
 #include "TimeUtils.h"
 
-using StrUtils::setstr;
-
 NtpClient::NtpClient() : AppModule(MOD_NTP) {
     udp = new WiFiUDP();
     onDisconnected = WiFi.onStationModeDisconnected(
@@ -15,12 +13,21 @@ NtpClient::NtpClient() : AppModule(MOD_NTP) {
             }
         }});
     onGotIp = WiFi.onStationModeGotIP(
-        {[this](const WiFiEventStationModeGotIP &event) {
+        {[this](const WiFiEventStationModeGotIP &event) {            
             sayf("%s:%d", timeServerPool, NTP_REMOTE_PORT);
             active = udp->begin(NTP_LOCAL_PORT);
         }});
+
     active = false;
     lastUpdated = 0;
+}
+
+void NtpClient::loop() {
+    if (!active) return;
+    if ((millis_since(lastUpdated) >= syncInterval) || lastUpdated == 0) {
+        sync();
+        lastUpdated = millis();
+    }
 }
 
 void NtpClient::setConfig(Config *config) {
@@ -36,14 +43,6 @@ void NtpClient::setServer(const char *str) {
     size_t len = strlen(str);
     this->timeServerPool = new char[len + 1];
     strcpy(this->timeServerPool, str);    
-}
-
-void NtpClient::loop() {
-    if (!active) return;
-    if ((millis_since(lastUpdated) >= syncInterval) || lastUpdated == 0) {
-        sync();
-        lastUpdated = millis();
-    }
 }
 
 void NtpClient::sync() {
@@ -95,19 +94,18 @@ void NtpClient::sync() {
     out->print(StrUtils::getStrP(str_gpt));
     out->println(epoch.asEpoch());
 #endif
-    if (responseHandler) responseHandler(epochTime);
+    if (onResponse) onResponse(epochTime);
 }
 
-void NtpClient::setOnResponse(NtpClientEventHandler handler) {
-    responseHandler = handler;
-    if (responseHandler && epochTime.toEpoch() > 0) responseHandler(epochTime);
+void NtpClient::setOnResponse(EpochTimeEventHandler h) {
+    onResponse = h;
+    if (onResponse && epochTime.toEpoch() > 0) onResponse(epochTime);
 }
 
-void NtpClient::printDiag(Print *p) {
-    p->print(StrUtils::getStrP(str_active));
-    p->println(StrUtils::getBoolStr(active));
-    p->print(StrUtils::getStrP(str_interval));
-    p->println(syncInterval / ONE_SECOND_ms);
-    p->print(StrUtils::getStrP(str_epoch));
-    p->println(epochTime.toEpoch());
+void NtpClient::printDiag() {
+    sayf("%s: %s", StrUtils::getStrP(str_active, false).c_str(), StrUtils::getBoolStr(active).c_str());
+    sayf("%s: %s:%d", StrUtils::getStrP(str_server, false).c_str(), timeServerPool, NTP_LOCAL_PORT);
+    sayf("%s: %lu", StrUtils::getStrP(str_epoch, false).c_str(), epochTime.toEpoch());
+    sayf("%s: %d", StrUtils::getStrP(str_interval, false).c_str(), syncInterval / ONE_SECOND_ms);
+    sayf("%s: %lu", StrUtils::getStrP(str_update, false).c_str(), lastUpdated);
 }

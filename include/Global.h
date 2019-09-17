@@ -5,6 +5,7 @@
 #include <SimpleTimer.h>
 #include <mcurses.h>
 
+#include "Backlight.h"
 #include "CommonTypes.h"
 #include "ConfigHelper.h"
 #include "Display.h"
@@ -21,6 +22,7 @@
 #include "TelnetServer.h"
 #include "WebService.h"
 
+extern AppModule* appModule[];
 extern ConfigHelper *config;
 extern Display *display;
 extern Led::Led *wifi_led, *power_led;

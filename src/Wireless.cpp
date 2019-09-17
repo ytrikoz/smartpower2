@@ -347,7 +347,7 @@ String networkStateInfo() {
     String str = StrUtils::getStrP(str_network);
     if (network == NETWORK_UP) {
         str += StrUtils::getStrP(str_up);
-        str += getStr(millis_since(lastNetworkDown));
+        str +=  StrUtils::getStr(millis_since(lastNetworkDown));
         onNetworkUp();
     } else if (network == NETWORK_DOWN) {
         str += StrUtils::getStrP(str_down);

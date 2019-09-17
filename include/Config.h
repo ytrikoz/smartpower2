@@ -4,66 +4,71 @@
 
 #include "CommonTypes.h"
 
-typedef std::function<void(Parameter)> ParameterChangedEventHandler;
+typedef std::function<void(ConfigItem)> ConfigChangeEventHandler;
 
 class Config {
    public:
     Config();
     ~Config();
     bool load(const char *str, size_t size);
-    void setOnParameterChanged(ParameterChangedEventHandler);
-    void setDefaultValue(Parameter param);
-    String toString(Parameter param);
-    bool setValueString(const Parameter param, const char *str);
+    void setOnConfigChaged(ConfigChangeEventHandler);
+    void setDefaultValue(ConfigItem param);
+    String toString(ConfigItem param);
+    bool setValueString(const ConfigItem param, const char *str);
     bool setValueStringByName(const char *name, const char *value);
-    bool setValueChar(const Parameter param, char ch);
-    bool setValueBool(const Parameter param, const bool value);
-    bool setValueSignedByte(const Parameter param, const sint8_t value);
-    bool setValueByte(const Parameter param, const uint8_t value);
-    bool setValueInt(const Parameter param, const uint16_t value);
-    bool setValueFloat(const Parameter param, const float value);
+    bool setValueChar(const ConfigItem param, char ch);
+    bool setValueBool(const ConfigItem param, const bool value);
+    bool setValueSignedByte(const ConfigItem param, const sint8_t value);
+    bool setValueByte(const ConfigItem param, const uint8_t value);
+    bool setValueInt(const ConfigItem param, const uint16_t value);
+    bool setValueFloat(const ConfigItem param, const float value);
 
-    Metadata getMetadata(size_t index);
-    bool getValueAsBool(Parameter param);
-    uint8_t getValueAsByte(Parameter param);
-    sint8_t getValueAsSignedByte(Parameter param);
-    uint16_t getValueAsInt(Parameter param);
-    IPAddress getValueAsIPAddress(Parameter param);
-    float getValueAsFloat(Parameter param);
-    const char *getValueAsString(Parameter param);
+    ConfigDefine getDefine(size_t index);
+    const char *getName(ConfigItem param);
+    const size_t getSize(ConfigItem param);
+    const char *getDefaults(ConfigItem param);
 
-    bool getParameter(const char *name, Parameter &param);
-    bool getParameter(const char *name, Parameter &param, size_t &size);
-    const char *getName(Parameter param);
-    const size_t getSize(Parameter param);
-    const char *getDefaultValue(Parameter param);
+    bool getValueAsBool(ConfigItem param);
+    uint8_t getValueAsByte(ConfigItem param);
+    sint8_t getValueAsSignedByte(ConfigItem param);
+    uint16_t getValueAsInt(ConfigItem param);
+    IPAddress getValueAsIPAddress(ConfigItem param);
+    float getValueAsFloat(ConfigItem param);
+    const char *getValueAsString(ConfigItem param);
+
+    bool getConfig(const char *name, ConfigItem &param);
+    bool getConfig(String &name, ConfigItem &param, size_t &size);
+    bool getConfig(const char *name, ConfigItem &param, size_t &size);
 
    private:
-    void onChangedEvent(Parameter param);
+    void onChangedEvent(ConfigItem param);
     char *values[PARAM_COUNT];
-    ParameterChangedEventHandler onParameterChanged;
-    Metadata metadata[PARAM_COUNT] = {
-        {"wifi", PARAM_BOOL_SIZE, "2"},
-        {"ssid", PARAM_STR_SIZE, "LocalNetwork"},
-        {"passwd", PARAM_STR_SIZE, "Password"},
-        {"dhcp", PARAM_BOOL_SIZE, "1"},
-        {"ipaddr", PARAM_IPADDR_SIZE, "192.168.1.4"},
-        {"netmask", PARAM_IPADDR_SIZE, "255.255.255.0"},
-        {"gateway", PARAM_IPADDR_SIZE, "192.168.1.1"},
-        {"dns", PARAM_IPADDR_SIZE, "192.168.1.1"},
-        {"voltage", PARAM_OUTPUT_VOLTAGE_SIZE, "5.0"},
-        {"bootpwr", PARAM_BOOL_SIZE, "0"},
-        {"login", PARAM_STR_SIZE, "admin"},
-        {"password", PARAM_STR_SIZE, "1234"},
-        {"ap_ssid", PARAM_STR_SIZE, "SmartPower2"},
-        {"ap_passwd", PARAM_STR_SIZE, "12345678"},
-        {"ap_ipaddr", PARAM_IPADDR_SIZE, "192.168.4.1"},
-        {"time_zone", PARAM_NUMBER_SIZE, "3"},
-        {"twp", PARAM_NUMBER_SIZE, "82"},
-        {"ntp_sync", PARAM_LARGE_NUMBER_SIZE, "3600"},
-        {"ntp_pool", PARAM_STR_SIZE, "pool.ntp.org"},
-        {"time_backup", PARAM_LARGE_NUMBER_SIZE, "3600"},
-        {"store_wh", PARAM_BOOL_SIZE, "0"}};
+    ConfigChangeEventHandler onChangeEventHandler;
+
+   private:
+    ConfigDefine define[PARAM_COUNT] = {
+        {"wifi", CONFIG_CHAR, "2"},
+        {"ssid", CONFIG_STR, "LocalNetwork"},
+        {"passwd", CONFIG_STR, "Password"},
+        {"dhcp", CONFIG_CHAR, "1"},
+        {"ipaddr", CONFIG_IPADDR, "192.168.1.4"},
+        {"netmask", CONFIG_IPADDR, "255.255.255.0"},
+        {"gateway", CONFIG_IPADDR, "192.168.1.1"},
+        {"dns", CONFIG_IPADDR, "192.168.1.1"},
+        {"voltage", CONFIG_FLOAT, "5.0"},
+        {"bootpwr", CONFIG_CHAR, "0"},
+        {"login", CONFIG_STR, "admin"},
+        {"password", CONFIG_STR, "1234"},
+        {"ap_ssid", CONFIG_STR, "SmartPower2"},
+        {"ap_passwd", CONFIG_STR, "12345678"},
+        {"ap_ipaddr", CONFIG_IPADDR, "192.168.4.1"},
+        {"time_zone", CONFIG_NUMBER, "3"},
+        {"twp", CONFIG_NUMBER, "82"},
+        {"ntp_sync", CONFIG_NUMBER, "3600"},
+        {"ntp_pool", CONFIG_STR, "pool.ntp.org"},
+        {"time_backup", CONFIG_NUMBER, "3600"},
+        {"store_wh", CONFIG_CHAR, "0"},
+        {"backlight", CONFIG_CHAR, "1"}};
 
 #ifdef DEBUG_CONFIG
     Print *dbg = &DEBUG;

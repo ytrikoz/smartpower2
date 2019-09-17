@@ -4,17 +4,15 @@
 #include "CommonTypes.h"
 #include "StrUtils.h"
 
-
 static const char str_build_date[] PROGMEM = BUILD_DATE;
-static const char str_shell_start_hint[] PROGMEM =
-    "[shell] press \"enter\" to start";
+
+static const char msg_shell_start_hint[] PROGMEM = "press \"enter\" to start";
 static const char msg_system_restart[] PROGMEM =
     "the system is going down for restart!";
 static const char msg_session_interrupted[] PROGMEM =
     "the session was interrupted!";
-static const char msg_connection_is_busy[] PROGMEM = "connection is busy";
+static const char msg_connection_is_busy[] PROGMEM = "connection is busy!";
 
-static const char strf_file_not_found[] PROGMEM = "file '%s' not found";
 static const char strf_config_param_value[] PROGMEM = "%s=\"%s\"";
 static const char strf_synced[] PROGMEM = "synced %d";
 static const char strf_timezone[] PROGMEM = "timezone %d";
@@ -28,9 +26,6 @@ static const char strf_config_param_changed[] PROGMEM =
 static const char strf_config_param_unchanged[] PROGMEM = "'%s' unchanged";
 static const char strf_unknown_command_item[] PROGMEM =
     "unknown item '%s' for command '%s'";
-static const char strf_unknown_action_param[] PROGMEM =
-    "unknown param '%s' for action '%s'";
-static const char strf_config_unknown_param[] PROGMEM = "Unknown param '%s'";
 static const char strf_date[] PROGMEM = "%2d/%2d/%4d";
 static const char strf_set_s[] PROGMEM = "set %s";
 static const char strf_progress[] PROGMEM = " %u%%\r";
@@ -103,6 +98,7 @@ static const char str_init[] PROGMEM = "init";
 static const char str_idle[] PROGMEM = "idle";
 static const char str_input[] PROGMEM = "input";
 static const char str_ip[] PROGMEM = "ip";
+static const char str_item[] PROGMEM = "item";
 static const char str_ms[] PROGMEM = "ms";
 static const char str_read[] PROGMEM = "read";
 static const char str_false[] PROGMEM = "false";
@@ -171,6 +167,7 @@ static const char str_receive[] PROGMEM = "receive";
 static const char str_samples[] PROGMEM = "samples";
 static const char str_safe[] PROGMEM = "safe";
 static const char str_sec[] PROGMEM = "sec";
+static const char str_server[] PROGMEM = "server";
 static const char str_size[] PROGMEM = "size";
 static const char str_spiffs[] PROGMEM = "spiffs";
 static const char str_scanning[] PROGMEM = "scanning";
@@ -206,6 +203,7 @@ static const char str_unsecured[] PROGMEM = "unsecured";
 static const char str_update[] PROGMEM = "update";
 static const char str_upload[] PROGMEM = "upload";
 static const char str_uptime[] PROGMEM = "uptime";
+static const char str_utc[] PROGMEM = "utc";
 static const char str_used[] PROGMEM = "used";
 static const char str_valid[] PROGMEM = "valid";
 static const char str_voltage[] PROGMEM = "voltage";
@@ -214,8 +212,3 @@ static const char str_wrong[] PROGMEM = "wrong";
 static const char str_wait[] PROGMEM = "wait";
 static const char str_write[] PROGMEM = "write";
 static const char str_yes[] PROGMEM = "yes";
-
-inline String getStr(int num) {
-    String res(num, DEC);
-    return res + " ";
-}

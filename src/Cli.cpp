@@ -1,8 +1,6 @@
 #include "Cli.h"
-
 #include "Global.h"
 
-#include "Actions/Backlight.h"
 #include "Actions/ClockSetTime.h"
 #include "Actions/LogPrint.h"
 #include "Actions/PlotPrint.h"
@@ -17,6 +15,7 @@
 #include "Actions/ShowPsu.h"
 #include "Actions/ShowStatus.h"
 #include "Actions/ShowWifi.h"
+#include "Actions/SwitchBacklight.h"
 
 #include "StrUtils.h"
 
@@ -114,7 +113,7 @@ void open(Print* p) {
 }
 
 void close() {
-    out->println(StrUtils::getStrP(str_shell_start_hint, false));
+    out->println(StrUtils::getStrP(msg_shell_start_hint, false));
     out = NULL;
 }
 
@@ -191,36 +190,44 @@ void onConfigParameterChanged(const char* paramStr, const char* old_value,
     out->print(buf);
 }
 
-void unknownCommandItem(const char* commandStr, const char* itemStr) {
-    char buf[128];
-    sprintf_P(buf, strf_unknown_command_item, itemStr, commandStr);
-    out->println(buf);
+void print_unknown_item(Print* p, String& itemStr) {
+    p->print(StrUtils::getStrP(str_unknown));
+    p->print(StrUtils::getStrP(str_item));
+    p->print(StrUtils::getQuotedStr(itemStr));
 }
 
-void print_unknown_param(Print* p, String& str) {
+void print_unknown_param(Print* p, String& paramStr) {
     p->print(StrUtils::getStrP(str_unknown));
     p->print(StrUtils::getStrP(str_param));
-    p->print(StrUtils::getQuotedStr(str));
+    p->print(StrUtils::getQuotedStr(paramStr));
 }
 
-void print_unknown_action(Print* p, String& str) {
+void print_unknown_action(Print* p, String& actionStr) {
     p->print(StrUtils::getStrP(str_unknown));
     p->print(StrUtils::getStrP(str_action));
-    p->print(StrUtils::getQuotedStr(str));
+    p->print(StrUtils::getQuotedStr(actionStr));
 }
 
-void println_done(Print* p) { p->println(StrUtils::getStrP(str_done)); };
+void print_file_not_found(Print* p, String& fileStr) {
+    p->print(StrUtils::getStrP(str_file));
+    p->print(StrUtils::getQuotedStr(fileStr));
+    p->print(StrUtils::getStrP(str_not));
+    p->print(StrUtils::getStrP(str_found));
+}
+
+void println(Print* p) { p->println(); }
+
+void println() {
+    if (out) println(out);
+}
+
+void print_done(Print* p) { p->print(StrUtils::getStrP(str_done)); };
 
 void print_done(String& action, String& param) {
     out->print(action.c_str());
     out->print(' ');
     out->print(param.c_str());
     out->print(": ");
-}
-
-void onIOResult(PGM_P str, const char* filename) {
-    out->printf_P(str, filename);
-    out->println();
 }
 
 void onCommandError(cmd_error* e) {
@@ -270,18 +277,15 @@ void onConfig(cmd* c) {
     switch (action) {
         case ACTION_PRINT:
             config->printTo(*out);
-            break;
+            return;
         case ACTION_RESET:
             config->setDefault();
-            println_done(out);
             break;
         case ACTION_SAVE:
             config->saveConfig();
-            println_done(out);
             break;
         case ACTION_LOAD:
             config->loadConfig();
-            println_done(out);
             break;
         case ACTION_APPLY:
             config->saveConfig();
@@ -290,9 +294,11 @@ void onConfig(cmd* c) {
         default:
             String actionStr = getActionStr(cmd);
             print_unknown_action(out, actionStr);
-            out->println();
-            break;
+            println();
+            return;
     }
+    print_done(out);
+    println();
 }
 
 void onPower(cmd* c) {
@@ -339,7 +345,7 @@ void onSystem(cmd* c) {
         }
         case ACTION_BACKLIGHT: {
             bool enabled = param.length() == 0 ? true : param.toInt();
-            Actions::Backlight(enabled).exec(out);
+            Actions::SwitchBacklight(enabled).exec(out);
             break;
         }
         case ACTION_UPTIME: {
@@ -384,10 +390,10 @@ void onSet(cmd* c) {
     Command cmd(c);
     String paramStr = getParamStr(cmd);
     String valueStr = getValueStr(cmd);
-    Parameter param;
+    ConfigItem param;
     size_t size;
     Config* cfg = config->get();
-    if (cfg->getParameter(paramStr.c_str(), param, size)) {
+    if (cfg->getConfig(paramStr.c_str(), param, size)) {
         char buf[size];
         StrUtils::setstr(buf, cfg->getValueAsString(param), size);
         if (cfg->setValueString(param, valueStr.c_str())) {
@@ -405,9 +411,9 @@ void onGet(cmd* c) {
     Command cmd(c);
     String paramStr = getParamStr(cmd);
     Config* cfg = config->get();
-    Parameter param;
+    ConfigItem param;
     size_t value_size = 0;
-    if (cfg->getParameter(paramStr.c_str(), param, value_size)) {
+    if (cfg->getConfig(paramStr.c_str(), param, value_size)) {
         char valueStr[value_size + 1];
         StrUtils::setstr(valueStr, cfg->getValueAsString(param),
                          value_size + 1);
@@ -435,18 +441,14 @@ void onShow(cmd* c) {
         out->println(getSystemInfoJson().c_str());
     } else if (item.equals("status")) {
         Actions::ShowStatus().exec(out);
-    }
-#ifdef DEBUG_LOOP
-    else if (item.equals("loop")) {
+    } else if (item.equals("loop")) {
         Actions::ShowLoop().exec(out);
-    }
-#endif
-    else if (item.equals("ntp")) {
+    } else if (item.equals("ntp")) {
         Actions::ShowNtp().exec(out);
     } else if (item.equals("wifi")) {
         Actions::ShowWifi().exec(out);
     } else {
-        unknownCommandItem(cmd.getName().c_str(), item.c_str());
+        print_unknown_item(out, item);
     }
 }
 
@@ -471,7 +473,7 @@ void onPrint(cmd* c) {
         while (f.available()) out->println(f.readString());
         f.close();
     } else {
-        onIOResult(strf_file_not_found, file.c_str());
+        print_file_not_found(out, file);
     }
 }
 

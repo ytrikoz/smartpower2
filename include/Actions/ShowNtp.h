@@ -11,7 +11,10 @@ class ShowNtp : public Action {
 
 void ShowNtp::exec(Print* p) {
     if (ntp) {
-        ntp->printDiag(p);
+        Print* old = ntp->getOutput();
+        ntp->setOutput(p);
+        ntp->printDiag();
+        ntp->setOutput(old);
     } else {
         p->println(StrUtils::getStrP(str_disabled));
     }

@@ -57,14 +57,12 @@
 #define FILE_VAR_UTC "/var/utc"
 #define FILE_VAR_WH "/var/wh"
 
-#define PARAM_COUNT 21
-#define PARAM_NAME_STR_SIZE 32
-#define PARAM_BOOL_SIZE 1
-#define PARAM_STR_SIZE 31
-#define PARAM_IPADDR_SIZE 16
-#define PARAM_OUTPUT_VOLTAGE_SIZE 8
-#define PARAM_NUMBER_SIZE 4
-#define PARAM_LARGE_NUMBER_SIZE 9
+#define CONFIG_CHAR 1
+#define CONFIG_STR 31
+#define CONFIG_IPADDR 16
+#define CONFIG_FLOAT 8
+#define CONFIG_BYTE 4
+#define CONFIG_NUMBER 9
 
 #define HOST_DOMAIN "local"
 #define WIFI_CONNECT_TIMEOUT 40

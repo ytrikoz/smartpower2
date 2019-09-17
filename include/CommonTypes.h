@@ -204,13 +204,16 @@ enum WirelessMode { WLAN_OFF = 0, WLAN_STA = 1, WLAN_AP = 2, WLAN_AP_STA = 3 };
 
 enum NetworkState { NETWORK_DOWN, NETWORK_UP };
 
-typedef struct {
-    const char* name;
-    size_t size;
-    const char* default_value;
-} Metadata;
+struct ConfigDefine {
+    const char* key_name;
+    size_t value_size;
+    const char* defaults;
+};
 
-typedef enum {
+
+#define PARAM_COUNT 22
+
+enum ConfigItem {
     WIFI,
     SSID,
     PASSWORD,
@@ -231,10 +234,11 @@ typedef enum {
     NTP_SYNC_INTERVAL,
     NTP_POOL_SERVER,
     TIME_BACKUP_INTERVAL,
-    WH_STORE_ENABLED
-} Parameter;
+    WH_STORE_ENABLED,
+    BACKLIGHT
+};
 
-typedef struct {
+struct WebClient {
     bool connected = false;
     uint8_t page = 0;
-} WebClient;
+};

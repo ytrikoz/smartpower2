@@ -2,6 +2,7 @@
 
 Led::Led *wifi_led, *power_led;
 
+AppModule *appModule[13] = {0};
 WebClient clients[MAX_WEB_CLIENTS];
 SimpleTimer timer;
 SimpleCLI *cli;
@@ -18,6 +19,12 @@ Termul *consoleTerm;
 Termul *telnetTerm;
 Shell *telnetShell;
 Shell *consoleShell;
+
+void start_module(AppModule* module) {
+    module->setOutput(&USE_SERIAL);
+    module->setConfig(config->get());
+    module->begin();
+}
 
 void refresh_wifi_led() {
     uint8_t level = 0;
@@ -122,9 +129,7 @@ void init_psu() {
     psu->setConfig(config);
     psuLog = new PsuLogger(psu);
 
-    psu->setOnTogglePower([]() {
-        sendPageState(PG_HOME);    
-    });
+    psu->setOnTogglePower([]() { sendPageState(PG_HOME); });
 
     psu->setOnPowerOn([]() {
         power_led->set(Led::BLINK);
@@ -155,11 +160,12 @@ void init_psu() {
 void start_ntp() {
     if (!ntp) {
         ntp = new NtpClient();
-        ntp->setOutput(&USE_SERIAL);
-        ntp->setConfig(config->get());
-        ntp->setOnResponse([](EpochTime &epoch) { rtc.setEpoch(epoch, true); });
+        ntp->setOnResponse([](EpochTime &epoch) { rtc.setEpoch(epoch, true); });       
     }
+    appModule[MOD_NTP] = ntp;
+    start_module(appModule[MOD_NTP]);
 }
+
 
 void start_http() {
     if (!http) {
@@ -169,7 +175,7 @@ void start_http() {
         http->setOnClientDisconnected(onHttpClientDisconnect);
         http->setOnClientData(onHttpClientData);
     }
-    http->begin();
+    http->begin();    
 }
 
 void start_ota_update() {

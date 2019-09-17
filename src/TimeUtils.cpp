@@ -195,3 +195,13 @@ size_t tmtodtf(struct tm &tm, char *str) {
             tm.tm_min, tm.tm_sec);
     return strlen(str);
 }
+
+
+String getTimeStr(unsigned long now) {
+    uint8_t hours = (now % 86400L) / 3600;
+    uint8_t minutes = (now % 3600) / 60;
+    uint8_t seconds = now % 60;
+    char buf[16];
+    sprintf_P(buf, strf_time, hours, minutes, seconds);
+    return String(buf);
+}

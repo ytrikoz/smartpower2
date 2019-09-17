@@ -2,19 +2,16 @@
 
 #include "FileStore.h"
 
-using namespace StrUtils;
-
-void ConfigHelper::handleParameterChanged(Parameter param) { synced = false; }
+void ConfigHelper::onConfigChanged(ConfigItem param) { stored = false; }
 
 ConfigHelper::ConfigHelper() {
-    size_t filename_len = strlen(FILE_CONFIG);
-    this->filename = new char[filename_len + 1];
+    this->filename = new char[sizeof(FILE_CONFIG)];
     strcpy(this->filename, FILE_CONFIG);
 
     this->config = new Config();
     loadConfig();
-    this->config->setOnParameterChanged(
-        [this](Parameter param) { handleParameterChanged(param); });
+    this->config->setOnConfigChaged(
+        [this](ConfigItem param) { onConfigChanged(param); });
 }
 
 void ConfigHelper::loadConfig() {
@@ -24,12 +21,12 @@ void ConfigHelper::loadConfig() {
         if (store->getError(SE_NOT_EXIST)) {
             saveConfig();
         } else {
-            err->print(getIdentStrP(str_config));
+            err->print(StrUtils::getIdentStrP(str_config));
             err->print(StrUtils::getStrP(str_load));
             err->println(store->getErrorInfo());
         }
     } else {
-        if (data->available()) this->loadConfig(config, data);
+        if (data->available()) this->loadStrings(config, data);
     }
 }
 
@@ -49,21 +46,24 @@ String ConfigHelper::extractValue(String &str) {
         return str.substring(split_index + 2, str.length() - 2);
 }
 
-void ConfigHelper::loadConfig(Config *config, StringQueue *data) {
+bool ConfigHelper::loadStrings(Config *config, StringQueue *data) {
     String buf;
+    unsigned long started = millis();
     while (data->available()) {
         data->get(buf);
         String paramStr = extractName(buf);
         String valueStr = extractValue(buf);
-        if (paramStr.length() && valueStr.length()) {
+        if (paramStr.length() && valueStr.length()) {            
             config->setValueStringByName(paramStr.c_str(), valueStr.c_str());
         } else {
-            err->print(getIdentStrP(str_config));
+            err->print(StrUtils::getIdentStrP(str_config));
             err->print(StrUtils::getStrP(str_load));
             err->print(StrUtils::getStrP(str_error));
             err->println(buf);
         }
-    }
+        if (millis_since(started) > 10) break;    
+    }    
+    return data->available();
 }
 
 bool ConfigHelper::saveConfig() {
@@ -72,9 +72,8 @@ bool ConfigHelper::saveConfig() {
 }
 
 bool ConfigHelper::saveConfig(Config *config, StringQueue *data) {
-    for (uint8_t i = 0; i < PARAM_COUNT; ++i) {
-        Parameter param = Parameter(i);
-        String str = config->toString(param);
+    for (size_t index = 0; index < PARAM_COUNT; ++index) {
+        String str = config->toString(ConfigItem(index));
         data->put(str);
     }
     FileStore *store = new FileStore(FILE_CONFIG);
@@ -84,20 +83,20 @@ bool ConfigHelper::saveConfig(Config *config, StringQueue *data) {
 size_t ConfigHelper::printTo(Print &p) const {
     size_t n = 0;
     for (size_t i = 0; i < PARAM_COUNT; ++i)
-        n += p.println(config->toString(Parameter(i)));
+        n += p.println(config->toString(ConfigItem(i)));
     return n;
 }
 
 void ConfigHelper::setDefault() {
     for (size_t i = 0; i < PARAM_COUNT; ++i)
-        config->setDefaultValue(Parameter(i));
+        config->setDefaultValue(ConfigItem(i));
 }
 
 String ConfigHelper::getConfigJson() {
     DynamicJsonDocument doc(1024);
     String str;
     for (uint8_t i = 0; i < PARAM_COUNT; ++i) {
-        Parameter param = Parameter(i);
+        ConfigItem param = ConfigItem(i);
         JsonObject item = doc.createNestedObject();
         item[config->getName(param)] = config->getValueAsString(param);
     }
@@ -132,7 +131,7 @@ bool ConfigHelper::setNetworkSTAConfig(uint8_t wifi, const char *ssid,
                       setPassword(passwd) | setDHCP(dhcp) |
                       setIPAddress(ipaddr) | setNetmask(netmask) |
                       setGateway(gateway) | setDns(dns);
-    synced |= hasChanged;
+    stored |= hasChanged;
     return hasChanged;
 }
 

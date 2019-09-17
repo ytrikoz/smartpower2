@@ -168,7 +168,7 @@ EditBuffer *Termul::getEditBuffer() { return this->input; }
 
 void Termul::start() {
     if (controlCodesEnabled) initscr();
-    write_P(str_shell_start_hint);
+    write_P(msg_shell_start_hint);
     println();
 }
 

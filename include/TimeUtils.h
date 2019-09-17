@@ -23,3 +23,4 @@ uint32_t encodeEpoch(tm tm);
 uint32_t encodeEpochTime(uint8_t hour, uint8_t minute, uint8_t second);
 uint32_t encodeEpochDate(uint16_t year, uint8_t month, uint16_t day);
 size_t tmtodtf(struct tm &tm, char *str);
+String getTimeStr(unsigned long now);

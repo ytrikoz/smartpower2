@@ -68,12 +68,12 @@ class ConfigHelper : public Printable {
     String extractName(String &str);
     String extractValue(String &str);
     void loadConfig(Config *config);
-    void loadConfig(Config *config, StringQueue *data);
+    bool loadStrings(Config *config, StringQueue *data);
     bool saveConfig(Config *config, StringQueue *data);
-    void handleParameterChanged(Parameter param);
+    void onConfigChanged(ConfigItem param);
     Config *config;
     char *filename;
-    bool synced;
+    bool stored;
 #ifdef DEBUG_CONFIG
     Print *dbg = &DEBUG;
 #endif

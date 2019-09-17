@@ -11,9 +11,7 @@
 #include "SysInfo.h"
 #include "Wireless.h"
 
-#ifdef DEBUG_LOOP
 Profiler::LoopWatchDog watchDog;
-#endif
 
 uint8_t get_http_clients_count() {
     uint8_t result = 0;
@@ -94,10 +92,12 @@ void onHttpClientData(uint8_t n, String data) {
             break;
         }
         case SET_NETWORK: {
-            static const uint8_t paramCount = 8;
-            static const Parameter items[paramCount] = {
+            static const ConfigItem items[] = {
                 WIFI, SSID, PASSWD, DHCP, IPADDR, NETMASK, GATEWAY, DNS};
-            uint8_t last = 0, pos = 0, index = 0;
+            static const size_t paramCount = sizeof(items) / sizeof(ConfigItem);
+            size_t index = 0;
+            size_t last = 0;
+            size_t pos = 0;
             while (index < paramCount && (pos = data.indexOf(",", last))) {
                 config->get()->setValueString(
                     items[index++], data.substring(last, pos).c_str());
@@ -341,51 +341,39 @@ void setup() {
 void loop() {
     // Button
     {
-#ifdef DEBUG_LOOP
         Profiler::TimeProfiler tp = watchDog.run(Profiler::BUTTONS);
-#endif
         power_button_handler();
     }
     delay(0);
     // Clock
     {
-#ifdef DEBUG_LOOP
         Profiler::TimeProfiler tp = watchDog.run(Profiler::CLOCK);
-#endif
         rtc.loop();
     }
     delay(0);
     // LEDs
     {
-#ifdef DEBUG_LOOP
         Profiler::TimeProfiler tp = watchDog.run(Profiler::LEDS);
-#endif
         wifi_led->loop();
         power_led->loop();
     }
     delay(0);
     // PSU
     {
-#ifdef DEBUG_LOOP
         Profiler::TimeProfiler tp = watchDog.run(Profiler::PSU);
-#endif
         psu->loop();
         psuLog->loop();
     }
     delay(0);
     // Tasks
     {
-#ifdef DEBUG_LOOP
         Profiler::TimeProfiler tp = watchDog.run(Profiler::TASKS);
-#endif
         timer.run();
     }
     delay(0);
 #ifndef DISABLE_CONSOLE_SHELL
     {
-#ifdef DEBUG_LOOP
         Profiler::TimeProfiler tp = watchDog.run(Profiler::SERIAL_SHELL);
-#endif
         if (consoleShell) consoleShell->loop();
     }
     delay(0);
@@ -395,9 +383,7 @@ void loop() {
  */
 #ifndef DISABLE_LCD
     {
-#ifdef DEBUG_LOOP
         Profiler::TimeProfiler tp = watchDog.run(Profiler::LCD);
-#endif
         if (display) display->loop();
     }
     delay(0);
@@ -405,62 +391,48 @@ void loop() {
     if (Wireless::hasNetwork()) {
 #ifndef DISABLE_HTTP
         {
-#ifdef DEBUG_LOOP
             Profiler::TimeProfiler tp = watchDog.run(Profiler::HTTP);
-#endif
             if (http) http->loop();
         }
         delay(0);
 #endif
 #ifndef DISABLE_NETWORK_DISCOVERY
         {
-#ifdef DEBUG_LOOP
             Profiler::TimeProfiler tp = watchDog.run(Profiler::NETSVC);
-#endif
             if (discovery) discovery->loop();
         }
         delay(0);
 #endif
 #ifndef DISABLE_OTA_UPDATE
         {
-#ifdef DEBUG_LOOP
             Profiler::TimeProfiler tp = watchDog.run(Profiler::OTA_UPDATE);
-#endif
             if (ota) ota->loop();
         }
         delay(0);
 #endif
 #ifndef DISABLE_NTP
         {
-#ifdef DEBUG_LOOP
             Profiler::TimeProfiler tp = watchDog.run(Profiler::NTP);
-#endif
             if (ntp) ntp->loop();
         }
         delay(0);
 #endif
 #ifndef DISABLE_TELNET
         {
-#ifdef DEBUG_LOOP
             Profiler::TimeProfiler tp = watchDog.run(Profiler::TELNET);
-#endif
             if (telnet) telnet->loop();
         }
         delay(0);
 #endif
 #ifndef DISABLE_TELNET_SHELL
         {
-#ifdef DEBUG_LOOP
             Profiler::TimeProfiler tp = watchDog.run(Profiler::TELNET_SHELL);
-#endif
             if (telnetShell) telnetShell->loop();
         }
         delay(0);
 #endif
     }
-#ifdef DEBUG_LOOP
     watchDog.loop();
-#endif
 }
 
 enum ButtonState { BTN_PRESSED, BTN_RELEASED };

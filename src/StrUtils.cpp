@@ -146,17 +146,17 @@ bool isip(const String &str) { return isip(str.c_str()); }
 
 String getStr(String &str) { return str + " "; }
 
-String getStr(long unsigned int value) {     
-    String res  = String(value);
+String getStr(long unsigned int value) {
+    String res = String(value);
     return res;
 }
 
-String getStr(IPAddress& value) {
-    String res  = value.toString() + " ";
+String getStr(IPAddress &value) {
+    String res = value.toString() + " ";
     return res;
 }
 
-String getStr(const char* str) {
+String getStr(const char *str) {
     String res(str);
     return res + " ";
 }
@@ -173,7 +173,12 @@ String getStrP(PGM_P strP, bool space) {
 }
 
 String getBoolStr(bool value, bool space) {
-    return String(value ? "true" : "false");
+    return String(value ? F("true") : F("false"));
+}
+
+String getEnabledStr(bool value, bool space) {
+    String res(value ? F("enabled") : F("disabled"));
+    return res;
 }
 
 String getIdentStrP(PGM_P strP, bool with_space) {
@@ -183,16 +188,32 @@ String getIdentStrP(PGM_P strP, bool with_space) {
     return getIdentStr(buf, with_space);
 }
 
-String getQuotedStr(const char* str, bool with_space, char ch) {
+String getIdentStr(const char *str, bool with_space, char ch) {
     return getIdentStr(str, with_space, ch, ch);
 }
 
-String getQuotedStr(String& str, bool with_space) {
-    return getIdentStr(str.c_str(), with_space, '\'');
+String getIdentStr(String &str, bool with_space) {
+    return getIdentStr(str.c_str(), with_space);
 }
 
-String getIdentStr(const char* str, bool with_space,
-                          char left, char right) {
+String getIdentStr(const char* str, bool with_space) {
+    return getIdentStr(str, with_space, '[', ']');
+}
+
+String getQuotedStrP(PGM_P str, bool with_space, char ch) {
+    String res = getStrP(str);
+    return getQuotedStr(str, with_space);
+}
+
+String getQuotedStr(const char *str, bool with_space, char ch) {
+    return getIdentStr(str, with_space, ch, ch);
+}
+
+String getQuotedStr(String &str, bool with_space) {
+    return getQuotedStr(str.c_str(), with_space, '\'');
+}
+
+String getIdentStr(const char *str, bool with_space, char left, char right) {
     char buf[64];
     memset(buf, 0, 64);
     buf[0] = left;
@@ -200,8 +221,12 @@ String getIdentStr(const char* str, bool with_space,
     size_t x = strlen(buf);
     buf[x] = right;
     if (with_space) buf[++x] = ' ';
-    buf[++x] = '\x00';
     return String(buf);
+}
+
+String getStr(int num) {
+    String res(num, DEC);
+    return res + " ";
 }
 
 }  // namespace StrUtils
