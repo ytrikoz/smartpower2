@@ -13,36 +13,21 @@ static const char msg_session_interrupted[] PROGMEM =
     "the session was interrupted!";
 static const char msg_connection_is_busy[] PROGMEM = "connection is busy!";
 
-static const char strf_config_param_value[] PROGMEM = "%s=\"%s\"";
-static const char strf_synced[] PROGMEM = "synced %d";
-static const char strf_timezone[] PROGMEM = "timezone %d";
-static const char strf_mode[] PROGMEM = "mode %d";
-static const char strf_host[] PROGMEM = "hostname %s";
-static const char strf_tpw[] PROGMEM = "tpw %d";
 static const char strf_ip[] PROGMEM = "ip %s";
 static const char strf_in_second[] PROGMEM = "in %d seconds";
 static const char strf_config_param_changed[] PROGMEM =
     "new value '%s' for the '%s' has been set!";
 static const char strf_config_param_unchanged[] PROGMEM = "'%s' unchanged";
-static const char strf_unknown_command_item[] PROGMEM =
-    "unknown item '%s' for command '%s'";
-static const char strf_date[] PROGMEM = "%2d/%2d/%4d";
-static const char strf_set_s[] PROGMEM = "set %s";
 static const char strf_progress[] PROGMEM = " %u%%\r";
-static const char strf_boot_progress[] PROGMEM = "%s %u%%";
-static const char strf_client[] PROGMEM = "#%d";
-static const char strf_set_broadcast[] PROGMEM = "set broadcast if%d to if%d";
 static const char strf_ip_params[] PROGMEM =
     "ip %s subnet %s gateway %s dns %s";
 
-static const char strf_channel[] PROGMEM = "ch %d";
 static const char strf_ssid[] PROGMEM = "ssid %s";
 static const char strf_heap[] PROGMEM = "heap %s";
 static const char strf_passwd[] PROGMEM = "passwd %s";
 static const char strf_ipaddr[] PROGMEM = "ipaddr %s";
 static const char strf_ntp[] PROGMEM = "[ntp] %s";
 static const char strf_interval[] PROGMEM = "interval %d";
-static const char strf_filelist[] PROGMEM = "filelist %s";
 static const char strf_power[] PROGMEM = "power %s";
 static const char strf_f_sec[] PROGMEM = "%.2f sec";
 static const char strf_lu_sec[] PROGMEM = "%lu sec";
@@ -113,6 +98,7 @@ static const char str_led[] PROGMEM = "led";
 static const char str_load[] PROGMEM = "load";
 static const char str_last[] PROGMEM = "last";
 static const char str_left[] PROGMEM = "left";
+static const char str_list[] PROGMEM = "list";
 static const char str_low_voltage[] PROGMEM = "low voltage";
 static const char str_load_low[] PROGMEM = "load low";
 static const char str_lcd[] PROGMEM = "lcd";

@@ -20,10 +20,10 @@ Termul *telnetTerm;
 Shell *telnetShell;
 Shell *consoleShell;
 
-void start_module(AppModule* module) {
+bool start_module(AppModule* module) {
     module->setOutput(&USE_SERIAL);
     module->setConfig(config->get());
-    module->begin();
+    return module->begin();
 }
 
 void refresh_wifi_led() {
@@ -118,6 +118,12 @@ void start_telnet_shell(Stream *s) {
     telnetShell->enableWelcome();
 }
 
+void start_lcd() {
+    display = new Display();
+    appModule[MOD_LCD] = display;    
+    if (start_module(appModule[MOD_LCD])) display->turnOn();
+}
+
 void start_clock() {
     rtc.setOptions(config->get());
     rtc.setOnTimeChange(onTimeChangeEvent);
@@ -170,12 +176,12 @@ void start_ntp() {
 void start_http() {
     if (!http) {
         http = new WebService();
-        http->setOutput(&USE_SERIAL);
         http->setOnClientConnection(onHttpClientConnect);
         http->setOnClientDisconnected(onHttpClientDisconnect);
         http->setOnClientData(onHttpClientData);
     }
-    http->begin();    
+    appModule[MOD_HTTP] = http;
+    start_module(appModule[MOD_HTTP]);  
 }
 
 void start_ota_update() {

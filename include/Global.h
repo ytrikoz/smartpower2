@@ -5,7 +5,6 @@
 #include <SimpleTimer.h>
 #include <mcurses.h>
 
-#include "Backlight.h"
 #include "CommonTypes.h"
 #include "ConfigHelper.h"
 #include "Display.h"
@@ -40,9 +39,9 @@ extern TelnetServer *telnet;
 extern WebClient clients[MAX_WEB_CLIENTS];
 extern WebService *http;
 
+void start_lcd();
 void start_clock();
 void init_psu();
-
 void start_services();
 void start_ntp();
 void start_http();

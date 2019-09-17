@@ -7,7 +7,7 @@ using StoreUtils::storeString;
 using StrUtils::isip;
 using StrUtils::setstr;
 
-WebService::WebService() {
+WebService::WebService() : AppModule(MOD_HTTP) {
     this->port_http = HTTP_PORT;
     this->port_websocket = WEBSOCKET_PORT;
     this->web_root = new char[strlen(HTTP_WEB_ROOT) + 1];
@@ -15,7 +15,7 @@ WebService::WebService() {
 
     server = new ESP8266WebServer(port_http);
     server->on("/upload", HTTP_POST, [this]() { server->send(200); },
-               [this]() { fileUpload(); });
+               [this]() { handleUpload(); });
 
     server->on("/filelist", HTTP_GET, [this]() { handleFileList(); });
 
@@ -37,8 +37,7 @@ WebService::WebService() {
     });
 
     // Android captive portal.
-    server->on("/generate_204", [this]() { noContent(); });
-    // server->on("/generate_204", [this]() { handleRoot(); });
+    server->on("/generate_204", [this]() { handleNoContent(); });
     // Microsoft captive portal.
     server->on("/fwlink", [this]() { handleRoot(); });
     server->on("/", [this]() { handleRoot(); });
@@ -69,18 +68,18 @@ WebService::WebService() {
         server->on(F("/description.xml"), HTTP_GET,
                    [this]() { ssdp->schema(server->client()); });
     }
-    active = false;
+    active = false; 
 }
 
-void WebService::begin() {
+void WebService::printDiag() {
+    sayf("%s: %s", StrUtils::getStrP(str_active, false).c_str(),
+         StrUtils::getBoolStr(active).c_str());
+}
+
+bool WebService::begin() {
     String ip_str = Wireless::hostIP().toString();
-    out->print(StrUtils::getIdentStrP(str_http));
-    out->print(StrUtils::getStr(web_root));
-    out->print(ip_str);
-    out->print(':');
-    out->print(port_http);
-    out->print(',');
-    out->println(port_websocket);
+    sayf("%s %s:%d,%d", web_root, ip_str.c_str(),
+         port_http, port_websocket);
 
     String tmp = "ipaddr=\"";
     tmp += ip_str;
@@ -92,12 +91,12 @@ void WebService::begin() {
     websocket->begin();
 
     active = true;
+
+    return true;
 }
 
 void WebService::end() {
-    out->print(StrUtils::getIdentStrP(str_http));
-    out->println(StrUtils::getStrP(str_stopped));
-
+    say_P(str_stopped);
     active = false;
 }
 
@@ -109,7 +108,6 @@ void WebService::loop() {
 
 void WebService::handleRoot() {
     if (!captivePortal()) handleUri();
-    ;
 }
 
 void WebService::handleUri() {
@@ -155,9 +153,9 @@ void WebService::sendTxt(uint8_t num, String &payload) {
     websocket->sendTXT(num, payload);
 }
 
-void WebService::setOutput(Print *p) { this->out = p; }
-
-void WebService::noContent() { server->send(204, "text/plan", "No Content"); }
+void WebService::handleNoContent() {
+    server->send(204, "text/plan", "No Content");
+}
 
 void WebService::webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
                                 size_t lenght) {
@@ -251,9 +249,8 @@ bool WebService::sendFileContent(String path) {
 void WebService::handleFileList() {
     String path = server->hasArg("path") ? server->arg("path") : web_root;
     if (!path.startsWith("/")) path = "/" + path;
-    out->print(FPSTR(str_http));
-    out->printf(strf_filelist, path.c_str());
-    out->println();
+    sayf("%s%s %s", StrUtils::getStrP(str_file, false).c_str(),
+         StrUtils::getStrP(str_list, false).c_str(), path.c_str());
     Dir dir = SPIFFS.openDir(path);
     String output = "[";
     while (dir.next()) {
@@ -271,17 +268,12 @@ void WebService::handleFileList() {
     server->send(200, "text/json", output);
 }
 
-void WebService::fileUpload() {
+void WebService::handleUpload() {
     HTTPUpload &upload = server->upload();
     if (upload.status == UPLOAD_FILE_START) {
         int ac = server->args();
         int i;
-        for (i = 0; i < ac; i++) {
-            out->print(StrUtils::getIdentStrP(str_http));
-            out->printf("%d %s=%s", i, server->argName(i).c_str(),
-                        server->arg(i).c_str());
-            out->println();
-        }
+        for (i = 0; i < ac; i++) sayf("%d %s=%s", i, server->argName(i).c_str(), server->arg(i).c_str());
         String filename = upload.filename;
         if (server->hasArg("path")) {
             String path = server->arg("path");
@@ -295,10 +287,10 @@ void WebService::fileUpload() {
             }
         }
         filename = getFilePath(filename);
-        //sayf("%s %s", StrUtils::getStrP(str_upload).c_str(), filename.c_str());
-        //out->print(getIdentStrP(str_http));
-        //out->print(StrUtils::getStrP(str_upload));
-        //out->print(filename);
+        // sayf("%s %s", StrUtils::getStrP(str_upload).c_str(),
+        // filename.c_str()); out->print(getIdentStrP(str_http));
+        // out->print(StrUtils::getStrP(str_upload));
+        // out->print(filename);
 
         fsUploadFile = SPIFFS.open(filename, "w");
     } else if (upload.status == UPLOAD_FILE_WRITE) {
@@ -311,8 +303,8 @@ void WebService::fileUpload() {
         if (fsUploadFile) {
             // Close the file again
             fsUploadFile.close();
-            out->print("size: ");
-            out->println(upload.totalSize);
+            String size_str = StrUtils::formatSize(upload.totalSize);
+            sayf("%s: %s", StrUtils::getStrP(str_size).c_str(), size_str.c_str());
             // Redirect the client to the success page
             server->sendHeader("location", "/success.html");
             server->send(303);

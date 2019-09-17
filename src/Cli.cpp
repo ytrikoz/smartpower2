@@ -179,7 +179,7 @@ void init() {
 
 void onGetConfigParameter(const char* name, const char* valueStr) {
     char buf[INPUT_MAX_LENGTH];
-    sprintf_P(buf, strf_config_param_value, name, valueStr);
+    sprintf(buf, "%s=\"%s\"", name, valueStr);
     out->println(buf);
 }
 

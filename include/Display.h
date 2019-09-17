@@ -6,6 +6,7 @@
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
 
+#include "AppModule.h"
 #include "BuildConfig.h"
 #include "Plot.h"
 #include "StrUtils.h"
@@ -55,13 +56,14 @@ struct ScreenItem {
     }
 };
 
-class Display {
+class Display: public AppModule {
    public:
     Display();
-    bool init();
-    bool ready();
+    bool begin();
     void loop();
-    void setOutput(Print *p);
+    void setConfig(Config* config);
+public:
+    bool ready();    
     void backlightOn();
     void backlightOff();
     void drawTextLeft(uint8_t row, const char *str);
@@ -82,7 +84,6 @@ class Display {
     void unlock();
     bool locked();
     PlotData *getData();
-
    private:
     bool connect();
     bool locked(unsigned long now);
@@ -102,7 +103,6 @@ class Display {
     unsigned long lastUpdated;
     unsigned long lastScroll;
     LiquidCrystal_I2C *lcd;
-    Print *output;
     PlotData data;
 
     Screen screen;

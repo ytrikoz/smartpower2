@@ -182,10 +182,8 @@ String getEnabledStr(bool value, bool space) {
 }
 
 String getIdentStrP(PGM_P strP, bool with_space) {
-    char buf[64];
-    memset(buf, 0, 64);
-    strcpy_P(buf, strP);
-    return getIdentStr(buf, with_space);
+    String str = getStrP(strP, false);
+    return getIdentStr(str, with_space);
 }
 
 String getIdentStr(const char *str, bool with_space, char ch) {
@@ -200,6 +198,17 @@ String getIdentStr(const char* str, bool with_space) {
     return getIdentStr(str, with_space, '[', ']');
 }
 
+String getIdentStr(const char *str, bool with_space, char left, char right) {
+    char buf[64];
+    memset(buf, 0, 64);
+    buf[0] = left;
+    strcpy(&buf[1], str);
+    size_t x = strlen(buf);
+    buf[x] = right;
+    if (with_space) buf[++x] = ' ';
+    return String(buf);
+}
+
 String getQuotedStrP(PGM_P str, bool with_space, char ch) {
     String res = getStrP(str);
     return getQuotedStr(str, with_space);
@@ -211,17 +220,6 @@ String getQuotedStr(const char *str, bool with_space, char ch) {
 
 String getQuotedStr(String &str, bool with_space) {
     return getQuotedStr(str.c_str(), with_space, '\'');
-}
-
-String getIdentStr(const char *str, bool with_space, char left, char right) {
-    char buf[64];
-    memset(buf, 0, 64);
-    buf[0] = left;
-    strcpy(&buf[1], str);
-    size_t x = strlen(buf);
-    buf[x] = right;
-    if (with_space) buf[++x] = ' ';
-    return String(buf);
 }
 
 String getStr(int num) {

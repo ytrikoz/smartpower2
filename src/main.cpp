@@ -92,8 +92,8 @@ void onHttpClientData(uint8_t n, String data) {
             break;
         }
         case SET_NETWORK: {
-            static const ConfigItem items[] = {
-                WIFI, SSID, PASSWD, DHCP, IPADDR, NETMASK, GATEWAY, DNS};
+            static const ConfigItem items[] = {WIFI,   SSID,    PASSWD,  DHCP,
+                                               IPADDR, NETMASK, GATEWAY, DNS};
             static const size_t paramCount = sizeof(items) / sizeof(ConfigItem);
             size_t index = 0;
             size_t last = 0;
@@ -276,6 +276,10 @@ void setup() {
 #ifdef SERIAL_DEBUG
     USE_SERIAL.setDebugOutput(true);
 #endif
+    Wire.begin(I2C_SDA, I2C_SCL);
+    SPIFFS.begin();
+    config = new ConfigHelper();
+
     // Leds
     power_led = new Led::Led(POWER_LED_PIN, Led::LIGHT_ON, true);
     wifi_led = new Led::Led(WIFI_LED_PIN, Led::LIGHT_OFF, true);
@@ -288,26 +292,18 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(POWER_BTN_PIN),
                     power_button_state_change, CHANGE);
 
-    printResetInfo(&USE_SERIAL);
-
-    SPIFFS.begin();
-
-    Wire.begin(I2C_SDA, I2C_SCL);
 
     memset(clients, 0, sizeof(WebClient) * WEBSOCKETS_SERVER_CLIENT_MAX);
 
+    printResetInfo(&USE_SERIAL);    
 #ifndef DISABLE_LCD
-    display = new Display();
-    display->setOutput(&USE_SERIAL);
-    if (display->init()) display->turnOn();
+    start_lcd();
 #endif
     delay_print(&USE_SERIAL);
 
     display->setScreen(SCREEN_BOOT, 0);
 
     display_boot_progress(0, BUILD_DATE);
-
-    config = new ConfigHelper();
 
     start_clock();
 

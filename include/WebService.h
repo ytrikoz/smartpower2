@@ -6,6 +6,7 @@
 #include <FS.h>
 #include <WebSocketsServer.h>
 
+#include "AppModule.h"
 #include "BuildConfig.h"
 #include "Consts.h"
 #include "StrUtils.h"
@@ -14,31 +15,33 @@
 typedef std::function<void(uint8_t)> SocketConnectionEventHandler;
 typedef std::function<void(uint8_t, String)> SocketDataEventHandler;
 
-class WebService {
+class WebService : public AppModule {
    public:
     WebService();
-    void setOutput(Print *output);
+    bool begin();
+    void end();
+    void loop();
+    void printDiag();
+
+   public:
     void setOnClientConnection(SocketConnectionEventHandler h);
     void setOnClientDisconnected(SocketConnectionEventHandler h);
     void setOnClientData(SocketDataEventHandler h);
-    void begin();
-    void end();
-    void loop();
-    void sendTxt(uint8_t num, String& str);
+    void sendTxt(uint8_t num, String &str);
+
    private:
     bool captivePortal();
 
     bool sendFile(String uri);
     bool sendFileContent(String path);
     String getFilePath(String uri);
-    const char *getContentType(String filename);
-    void noContent();
+    void handleUpload();
     void handleRoot();
     void handleUri();
     void handleFileList();
+    void handleNoContent();
     void handleNotFound(String &uri);
-    void fileUpload();
-
+    const char *getContentType(String filename);
     void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
                         size_t lenght);
 
@@ -47,11 +50,10 @@ class WebService {
 
     bool active = false;
     int16_t port_http, port_websocket;
-    char* web_root;
+    char *web_root;
 
     ESP8266WebServer *server;
     WebSocketsServer *websocket;
     SSDPClass *ssdp;
-    Print *out;
     File fsUploadFile;
 };

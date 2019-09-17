@@ -99,37 +99,29 @@ using StrUtils::setstr;
 using StrUtils::strfill;
 using StrUtils::strpadd;
 
-Display::Display() {
+Display::Display() : AppModule(MOD_LCD) {
     addr = 0x00;
     connected = false;
     lastUpdated = 0;
     lockTimeout = 0;
 }
 
-void Display::setOutput(Print *p) { output = p; }
-
 bool Display::ready() { return connected; }
 
-bool Display::init() {
+bool Display::begin() {
     if (!connected) {
-        output->print(StrUtils::getIdentStrP(str_lcd));
         if (connect()) {
-            output->print("0x");
-            output->println(addr, HEX);
-
+            sayf("0x%s", String(addr, HEX).c_str());
             lcd = new LiquidCrystal_I2C(addr, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
             lcd->begin(LCD_COLS, LCD_ROWS);
             lcd->clear();
-
             memset(items, 0, sizeof(ScreenItem) * DISPLAY_VIRTUAL_ROWS);
-
             loadBank(BANK_NONE, true);
-
-            backlight = true;
             connected = true;
         } else {
-            output->print(StrUtils::getStrP(str_not));
-            output->println(StrUtils::getStrP(str_found));
+            sayf("%s %s %s", StrUtils::getStrP(str_file, false).c_str(),
+                 StrUtils::getStrP(str_not, false).c_str(),
+                 StrUtils::getStrP(str_found, false).c_str());
         }
     }
     return connected;
@@ -146,14 +138,17 @@ void Display::backlightOn() {
 }
 
 void Display::turnOn() {
-    if (lcd) {
+    if (lcd && connected) {
         lcd->display();
-        if (backlight) lcd->backlight();
+        if (backlight)
+            backlightOn();
+        else
+            lcd->backlightOff();
     }
 }
 
 void Display::turnOff() {
-    if (lcd) {
+    if (lcd && connected) {
         lcd->noDisplay();
         lcd->noBacklight();
     }
@@ -237,6 +232,10 @@ bool Display::locked(unsigned long now) {
 ScreenItem *Display::getItemForRow(uint8_t row) {
     size_t pos = item_pos + row;
     return &items[pos];
+}
+
+void Display::setConfig(Config *config) {
+    backlight = config->getValueAsBool(BACKLIGHT);
 }
 
 void Display::loop() {
@@ -478,7 +477,7 @@ void Display::drawPlot(uint8_t col_start) {
     uint8_t col = col_start + this->data.size + 2;
     drawFloat(col, LCD_ROW_1, this->data.max_value);
     drawFloat(col, LCD_ROW_2, this->data.min_value);
-} 
+}
 
 void Display::drawFloat(uint8_t col, uint8_t row, float value) {
     char buf[16];

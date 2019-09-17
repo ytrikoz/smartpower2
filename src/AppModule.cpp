@@ -20,8 +20,10 @@ size_t AppModule::sayf(const char* fmt, ...) {
 }
 
 size_t AppModule::say_P(PGM_P pgmStr) {
-    size_t n = out->print(moduleName);
-    n = out->print(pgmStr);
+    String str = StrUtils::getIdentStr(moduleName);
+    size_t n = say(str);
+    str = StrUtils::getStrP(pgmStr);
+    n += out->print(str);
     return n;
 };
 

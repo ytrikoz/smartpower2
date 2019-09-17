@@ -34,7 +34,7 @@ class AppModule {
     virtual void setConfig(Config* config){};
     virtual bool begin() { return true; };
     virtual void end(){};
-    virtual void printDiag() = 0;
+    virtual void printDiag() { };
 
    protected:
     size_t sayf(const char* fmt, ...);
