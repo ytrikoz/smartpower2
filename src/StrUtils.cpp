@@ -3,6 +3,7 @@
 namespace StrUtils {
 
 #define ONE_MHz_hz 1000000UL
+
 static const char strf_mac[] PROGMEM = "mac %02x:%02x:%02x:%02x:%02x:%02x";
 
 void strfill(char *str, char chr, size_t len) {
@@ -146,13 +147,13 @@ bool isip(const String &str) { return isip(str.c_str()); }
 
 String getStr(String &str) { return str + " "; }
 
-String getStr(long unsigned int value) {
-    String res = String(value);
+String getStr(IPAddress &value) {
+    String res = value.toString() + " ";
     return res;
 }
 
-String getStr(IPAddress &value) {
-    String res = value.toString() + " ";
+String getStr(long unsigned int value) {
+    String res(value);
     return res;
 }
 
@@ -161,19 +162,24 @@ String getStr(const char *str) {
     return res + " ";
 }
 
+String getStr(int num) {
+    String res(num, DEC);
+    return res + " ";
+}
+
 String getStrP(PGM_P strP, bool space) {
     char buf[64];
     strcpy_P(buf, strP);
-    if (space) {
-        size_t size = strlen(buf);
-        buf[size] = '\x20';
-        buf[++size] = '\x00';
-    }
     return String(buf);
 }
 
 String getBoolStr(bool value, bool space) {
     return String(value ? F("true") : F("false"));
+}
+
+String getOnOffStr(bool value, bool space) {
+    String res(value ? F("on") : F("off"));
+    return res;
 }
 
 String getEnabledStr(bool value, bool space) {
@@ -194,13 +200,12 @@ String getIdentStr(String &str, bool with_space) {
     return getIdentStr(str.c_str(), with_space);
 }
 
-String getIdentStr(const char* str, bool with_space) {
+String getIdentStr(const char *str, bool with_space) {
     return getIdentStr(str, with_space, '[', ']');
 }
 
 String getIdentStr(const char *str, bool with_space, char left, char right) {
-    char buf[64];
-    memset(buf, 0, 64);
+    char buf[32] = {0};
     buf[0] = left;
     strcpy(&buf[1], str);
     size_t x = strlen(buf);
@@ -209,9 +214,10 @@ String getIdentStr(const char *str, bool with_space, char left, char right) {
     return String(buf);
 }
 
-String getQuotedStrP(PGM_P str, bool with_space, char ch) {
-    String res = getStrP(str);
-    return getQuotedStr(str, with_space);
+String getQuotedStrP(PGM_P strP, bool with_space, char ch) {
+    char buf[64];
+    strcpy_P(buf, strP);
+    return getQuotedStr(buf, with_space);
 }
 
 String getQuotedStr(const char *str, bool with_space, char ch) {
@@ -222,9 +228,13 @@ String getQuotedStr(String &str, bool with_space) {
     return getQuotedStr(str.c_str(), with_space, '\'');
 }
 
-String getStr(int num) {
-    String res(num, DEC);
-    return res + " ";
+template <Print *, typename... Args>
+void sayArgsP(Print *p, Args... args) {
+    char buf[128];
+    for (size_t n = 0; n < sizeof...(args); ++n) {
+        memset(buf, 0, 128);
+        strcpy(buf, (char *)pgm_read_ptr(&args[n]...));
+        p->print(buf);
+    }
 }
-
 }  // namespace StrUtils

@@ -2,20 +2,19 @@
 
 #include <FS.h>
 
+#include "AppModule.h"
 #include "Consts.h"
 #include "StoreUtils.h"
 #include "TimeUtils.h"
 #include "ina231.h"
 #include "mcp4652.h"
 
-Psu::Psu() {
+Psu::Psu(): AppModule(MOD_PSU) {
     info = PsuInfo();
     psuState = PsuState();
 
     wh_store = false;
-    startTime = 0;
-    infoUpdated = 0;
-    powerInfoUpdated = 0;
+    startTime = infoUpdated = powerInfoUpdated = 0;
 
     pinMode(POWER_SWITCH_PIN, OUTPUT);
     
@@ -31,8 +30,6 @@ void Psu::togglePower() {
     if (onTogglePower) onTogglePower();
 }
 
-void Psu::setConfig(ConfigHelper *config) { this->config = config; }
-
 void Psu::setOnTogglePower(PsuEventHandler h) { onTogglePower = h; }
 
 void Psu::setOnPowerOn(PsuEventHandler h) { onPowerOn = h; }
@@ -45,15 +42,11 @@ void Psu::setOnAlert(PsuEventHandler h) { onPsuAlert = h; }
 
 void Psu::setState(PowerState value, bool force) {
     if (!force && state == value) return;
-
-    out->print(StrUtils::getIdentStrP(str_psu));
-    out->print(getStateStr(state));
+    saylnf("%s -> %s",getStateStr(state).c_str(), getStateStr(value).c_str());
+    
     state = value;
-    out->print(StrUtils::getStrP(str_arrow_dest));
-    out->println(getStateStr(value));
-
+    
     digitalWrite(POWER_SWITCH_PIN, state);
-
     if (state == POWER_ON) {
         if (wh_store) restoreWh(info.mWh);
         onStart();
@@ -66,22 +59,19 @@ void Psu::setState(PowerState value, bool force) {
 }
 
 bool Psu::isWhStoreEnabled() { return wh_store; }
-
 PowerState Psu::getState() { return state; }
 
 float Psu::getOutputVoltage() { return outputVoltage; }
 
 void Psu::setOutputVoltage(float value) {
     outputVoltage = constrain(value, 4, 6);
-
     out->print(StrUtils::getIdentStrP(str_psu));
-    out->print(StrUtils::getStrP(str_set));
     out->print(StrUtils::getStrP(str_output));
     out->print(StrUtils::getStrP(str_voltage));
     out->print(outputVoltage, 2);
     if (value != outputVoltage) {
         out->print('(');
-        out->print(value, 2);
+        out->print(value);
         out->print(')');
     }
     out->println();
@@ -89,12 +79,17 @@ void Psu::setOutputVoltage(float value) {
     mcp4652_write(WRITE_WIPER0_ADDR, quadratic_regression(outputVoltage));
 }
 
-void Psu::begin() {
-    if (!initialized) init();
-    double v = config->getOutputVoltage();
+bool Psu::begin() {
+    if (!initialized) {        
+        ina231_configure();
+        mcp4652_init();
+        initialized = true;   
+    }
+
+    double v = config->getValueAsFloat(OUTPUT_VOLTAGE);
     this->setOutputVoltage(v);
     wh_store = false;
-    if (config->getWhStoreEnabled()) {
+    if (config->getValueAsBool(WH_STORE_ENABLED)) {
         if (!restoreWh(info.mWh)) {
             info.mWh = 0;
             wh_store = storeWh(info.mWh);
@@ -102,7 +97,7 @@ void Psu::begin() {
     }
 
     PowerState ps; 
-    switch (config->getBootPowerState()) {
+    switch (config->getValueAsByte(POWER)) {
         case BOOT_POWER_OFF:
             ps = POWER_OFF;
             break;
@@ -121,6 +116,14 @@ void Psu::begin() {
     }
 
     setState(ps, true);
+
+    onStart();
+
+    return true;
+}
+
+void Psu::end() {
+    onStop();
 }
 
 void Psu::onStart() {
@@ -200,15 +203,6 @@ float Psu::getI() { return info.I; }
 
 double Psu::getWh() { return info.mWh / ONE_WATT_mW; }
 
-void Psu::init() {
-    // meter
-    ina231_configure();
-    // pot
-    mcp4652_init();
-
-    initialized = true;
-}
-
 unsigned long Psu::getUptime() {
     return millis_passed(startTime, infoUpdated) / ONE_SECOND_ms;
 }
@@ -218,22 +212,18 @@ bool Psu::storeState(PowerState value) {
 }
 
 bool Psu::restoreState(PowerState &value) {
-    int buf;
+    int buf = 0;
     bool res = StoreUtils::restoreInt(FILE_VAR_POWER_STATE, buf);
     if (res) value = PowerState(buf);
     return res;
 }
 
-void Psu::printDiag(Print *p) {
-    p->println(psuState);    
-    p->print(StrUtils::getStrP(str_power));
-    p->println(getStateStr(state));
-    p->print(StrUtils::getStrP(str_output));
-    p->print(StrUtils::getStrP(str_voltage));
-    p->println(getOutputVoltage(), 2);    
+void Psu::printDiag(Print* p) {
+    saylnf("%s: %s", StrUtils::getStrP(str_power).c_str(), getStateStr(state).c_str());
+    saylnf("%s%s: %.2f", StrUtils::getStrP(str_output).c_str(), StrUtils::getStrP(str_voltage).c_str(), getOutputVoltage());
     if (state == POWER_ON) {    
-        p->print(getUptime());
-        p->println(StrUtils::getStrP(str_sec, false));        
+        out->print(getUptime());
+        out->println(StrUtils::getStrP(str_sec, false));        
     }
  
 }

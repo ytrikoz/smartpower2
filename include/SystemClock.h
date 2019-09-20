@@ -1,52 +1,49 @@
 #pragma once
 
-#include "CommonTypes.h"
+#include "AppModule.h"
+#include "TimeUtils.h"
 #include "Config.h"
 #include "FileStore.h"
 
-typedef std::function<void(const char*)> TimeEventHandler;
+typedef std::function<void(const EpochTime)> TimeEventHandler;
 
-class SystemClock {
-   private:
-    bool storeEpoch(EpochTime);
-    bool restoreEpoch(EpochTime&);
-    bool isExpired(unsigned long);
+class SystemClock : public AppModule {
    public:
     SystemClock();
-    void setOptions(Config* config);
-    void setEpoch(EpochTime& epochTime, bool trusted = false);
-    void setTimeZone(sint8_t timeZone_h);
-    void setBackupInterval(unsigned long time_s);
-    void useFileStorage(bool enabled);
-    void begin();
+    void setConfig(Config* config);
+    bool begin();
     void loop();
+    void printDiag(Print* p);
+   public:
+    void setOnTimeChange(TimeEventHandler);
+    void setEpoch(EpochTime& epochTime, bool trusted = false);
+    unsigned long getUptime();
     unsigned long getUtc();
     unsigned long getLocal();
-    unsigned long getSystemUptime();
-    String getDateTimeStr();
-    String getSystemUptimeStr();
-    String getLocalTimeStr();
-    void setOnTimeChange(TimeEventHandler h);
-    void printDiag(Print* p);
 
    private:
-    void onTimeChanged();
-    void onTick();
-    TimeEventHandler onTimeChangeEvent;
-    bool useFS;
-    bool active;
-    bool trusted;
+    void setTimeZone(sint8_t timeZone_h);
+    void setBackupInterval(unsigned long time_s);
 
+    bool isStoreNeedsUpdate(unsigned long);
+    bool restoreState(EpochTime& value);
+    bool storeState(EpochTime& value);
+
+    void onTimeChange();
+
+   private:
+    TimeEventHandler timeChangeHandler;
+
+    bool trusted;
     EpochTime epoch;
-    sint16_t timeOffset;
-    unsigned long lastStored;
-    unsigned long storeInterval;
-    unsigned long lastUpdated;
-    unsigned long leftStore;
     uint8_t rollover;
-    
-    Print* output = &USE_SERIAL;
-    Print* err = &ERROR;
+
+    sint16_t timeOffset;
+    unsigned long storeInterval;
+
+    unsigned long lastStored;
+    unsigned long leftStore;
+    unsigned long lastUpdated;
 };
 
-extern SystemClock rtc;
+extern SystemClock* rtc;

@@ -19,119 +19,6 @@ enum StoreError {
     SE_ERROR_WRITE,
 };
 
-enum AppModuleEnum {
-    MOD_BTN,
-    MOD_CLOCK,
-    MOD_LED,
-    MOD_PSU,
-    MOD_TASK,
-    MOD_TELNET_SHELL,
-    MOD_LCD,
-    MOD_HTTP,
-    MOD_NETSVC,
-    MOD_NTP,
-    MOD_TELNET,
-    MOD_SERIAL_SHELL,
-    MOD_UPDATE
-};
-
-struct EpochTime : public Printable {
-   public:
-    size_t printTo(Print& p) const { return p.print(epoch_s); }
-    uint8_t n = sizeof(EpochTime);
-
-   public:
-    EpochTime() : EpochTime(0) {}
-    EpochTime(unsigned long epoch_s) { this->epoch_s = epoch_s; }
-    void tick() { this->epoch_s++; };
-    unsigned long toEpoch() { return this->epoch_s; }
-    String toString() { return String(this->epoch_s); }
-    uint8_t getDayOfWeek(unsigned long epoch_s) {
-        return (((epoch_s / ONE_DAY_s) + 4) % ONE_WEEK_days);
-    }
-    uint8_t asTimeHour(unsigned long epoch_s) {
-        return (epoch_s % ONE_DAY_s) / ONE_HOUR_s;
-    }
-    uint8_t asTimeMinute(unsigned long epoch_s) {
-        return (epoch_s % ONE_HOUR_s) / ONE_MINUTE_s;
-    }
-    uint8_t asTimeSecond(unsigned long epoch_s) {
-        return epoch_s % ONE_MINUTE_s;
-    }
-
-   private:
-    unsigned long epoch_s;
-};
-
-struct Time : EpochTime {
-   public:
-    Time() : Time(0, 0, 0) {}
-    Time(struct tm& tm) : Time(tm.tm_hour, tm.tm_min, tm.tm_sec) {}
-    Time(uint8_t hours, uint8_t minutes, uint8_t seconds) {
-        this->hour = hour;
-        this->minute = minute;
-        this->seconds = seconds;
-    }
-    String timeAsString() {
-        char buf[64];
-        sprintf(buf, "%02d:%02d:%02d", hour, minute, seconds);
-        return String(buf);
-    }
-    unsigned long asEpoch() {
-        return hour * ONE_HOUR_s + minute * ONE_MINUTE_s + seconds;
-    }
-
-   protected:
-    uint8_t hour;
-    uint8_t minute;
-    uint8_t seconds;
-};
-
-struct DateTime : Time {
-   public:
-    DateTime(struct tm& tm)
-        : DateTime(tm.tm_mday, tm.tm_mon, tm.tm_year, tm.tm_hour, tm.tm_min,
-                   (uint8_t)tm.tm_sec) {}
-
-    DateTime(uint16_t year, uint8_t month, uint8_t mday, uint8_t hour,
-             uint8_t minute, uint8_t second) {
-        this->mday = mday;
-        this->month = month;
-        this->year = year;
-    }
-
-    unsigned long asEpoch() {
-        return (this->year - START_YEAR) * ONE_YEAR_days +
-               ((this->year - START_YEAR - 1) / 4) +
-               isLeapYear(this->year) * ONE_DAY_s +
-               getDaysInMonth(this->month, this->year) + this->mday - 1;
-    }
-
-    String asString() {
-        char buf[64];
-        sprintf(buf, "%02d:%02d:%04d ", mday, month, year);
-        sprintf(buf, timeAsString().c_str());
-        return String(buf);
-    }
-
-   private:
-    uint8_t mday;
-    uint8_t month;
-    uint16_t year;
-};
-
-struct Month {
-    const char* name;
-    uint8_t mdays;
-    uint16_t yday;
-    Month(const char* name, uint8_t mdays, uint16_t yday) {
-        this->name = name;
-        this->mdays = mdays;
-        this->yday = yday;
-    }
-    unsigned long toEpoch() { return this->mdays * ONE_DAY_s; }
-};
-
 enum PsuLogItem { VOLTAGE_LOG, CURRENT_LOG, POWER_LOG, WATTSHOURS_LOG };
 
 struct LogItem {
@@ -194,7 +81,7 @@ enum BootPowerState {
 
 enum PowerState { POWER_ON = 0, POWER_OFF = 1 };
 
-enum EOLCode { CRLF, LFCR, LF, CR };
+enum EOLType { CRLF, LFCR, LF, CR };
 
 enum MoveDirection { MD_LEFT, MD_RIGHT, MD_UP, MD_DOWN };
 
@@ -209,7 +96,6 @@ struct ConfigDefine {
     size_t value_size;
     const char* defaults;
 };
-
 
 #define PARAM_COUNT 22
 

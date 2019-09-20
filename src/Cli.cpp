@@ -18,6 +18,7 @@
 #include "Actions/SwitchBacklight.h"
 
 #include "StrUtils.h"
+#include "TimeUtils.h"
 
 namespace Cli {
 
@@ -305,10 +306,6 @@ void onPower(cmd* c) {
     Command cmd(c);
     CommandAction action = getAction(cmd);
     switch (action) {
-        case ACTION_STATUS: {
-            psu->printDiag(out);
-            break;
-        }
         case ACTION_AVG: {
             String param = getParamStr(cmd);
             Actions::PowerAvg(param.toInt()).exec(out);
@@ -349,7 +346,8 @@ void onSystem(cmd* c) {
             break;
         }
         case ACTION_UPTIME: {
-            out->println(rtc.getSystemUptimeStr());
+            char buf[16];
+            out->println(TimeUtils::getTimeFormated(buf, rtc->getUptime()));
             break;
         }
         default: {

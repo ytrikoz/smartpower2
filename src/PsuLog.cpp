@@ -14,9 +14,7 @@ PsuLog::PsuLog(const char* label, size_t size) {
 PsuLog::~PsuLog() { delete[] this->name; }
 
 void PsuLog::clear() {
-    lastTime = 0;
-    counter = 0;
-    writePos = 0;
+    lastTime = counter = writePos = 0;
     items[0].n = 0;
     value_max = UNSET_MAX;
     value_min = UNSET_MIN;

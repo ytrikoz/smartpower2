@@ -16,17 +16,16 @@ class ClockSetTime : public StringAction {
 ClockSetTime::ClockSetTime(String param) : StringAction(param) {}
 
 void ClockSetTime::exec(Print* p) {
-    char paramStr[32];
-    if (param.length()) {
-        strcpy(paramStr, param.c_str());
+    tm tm;
+    if (TimeUtils::encodeTime(param.c_str(), tm)) {
+        DateTime dt = DateTime(tm);
+        p->println(dt);
     } else {
         p->print(StrUtils::getStrP(str_invalid));
+        p->print(' ');
         p->print(StrUtils::getStrP(str_time));
-    }
-    tm tm;
-    if (encodeTime(paramStr, tm)) {
-        Time t = Time(tm);
-        p->println(t);
+        p->print(' ');
+        p->println(param);
     }
 }
 

@@ -16,8 +16,8 @@
 #include "Psu.h"
 #include "PsuLogger.h"
 #include "Plot.h"
-#include "Shell.h"
 #include "SystemClock.h"
+#include "Shell.h"
 #include "TelnetServer.h"
 #include "WebService.h"
 
@@ -41,7 +41,7 @@ extern WebService *http;
 
 void start_lcd();
 void start_clock();
-void init_psu();
+void start_psu();
 void start_services();
 void start_ntp();
 void start_http();
@@ -58,7 +58,7 @@ void update_display();
 
 uint8_t get_telnet_clients_count();
 
-void onTimeChangeEvent(const char *str);
+void onTimeChangeEvent(const EpochTime);
 
 // main
 extern void sendPageState(uint8_t page);

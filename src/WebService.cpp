@@ -71,14 +71,14 @@ WebService::WebService() : AppModule(MOD_HTTP) {
     active = false; 
 }
 
-void WebService::printDiag() {
-    sayf("%s: %s", StrUtils::getStrP(str_active, false).c_str(),
+void WebService::printDiag(Print* p) {
+    saylnf("%s: %s", StrUtils::getStrP(str_active, false).c_str(),
          StrUtils::getBoolStr(active).c_str());
 }
 
 bool WebService::begin() {
     String ip_str = Wireless::hostIP().toString();
-    sayf("%s %s:%d,%d", web_root, ip_str.c_str(),
+    saylnf("%s %s:%d,%d", web_root, ip_str.c_str(),
          port_http, port_websocket);
 
     String tmp = "ipaddr=\"";
@@ -96,7 +96,7 @@ bool WebService::begin() {
 }
 
 void WebService::end() {
-    say_P(str_stopped);
+    sayln_P(str_stopped);
     active = false;
 }
 
@@ -249,7 +249,7 @@ bool WebService::sendFileContent(String path) {
 void WebService::handleFileList() {
     String path = server->hasArg("path") ? server->arg("path") : web_root;
     if (!path.startsWith("/")) path = "/" + path;
-    sayf("%s%s %s", StrUtils::getStrP(str_file, false).c_str(),
+    saylnf("%s%s %s", StrUtils::getStrP(str_file, false).c_str(),
          StrUtils::getStrP(str_list, false).c_str(), path.c_str());
     Dir dir = SPIFFS.openDir(path);
     String output = "[";
@@ -273,7 +273,7 @@ void WebService::handleUpload() {
     if (upload.status == UPLOAD_FILE_START) {
         int ac = server->args();
         int i;
-        for (i = 0; i < ac; i++) sayf("%d %s=%s", i, server->argName(i).c_str(), server->arg(i).c_str());
+        for (i = 0; i < ac; i++) saylnf("%d %s=%s", i, server->argName(i).c_str(), server->arg(i).c_str());
         String filename = upload.filename;
         if (server->hasArg("path")) {
             String path = server->arg("path");
@@ -287,7 +287,7 @@ void WebService::handleUpload() {
             }
         }
         filename = getFilePath(filename);
-        // sayf("%s %s", StrUtils::getStrP(str_upload).c_str(),
+        // saylnf("%s %s", StrUtils::getStrP(str_upload).c_str(),
         // filename.c_str()); out->print(getIdentStrP(str_http));
         // out->print(StrUtils::getStrP(str_upload));
         // out->print(filename);
@@ -304,7 +304,7 @@ void WebService::handleUpload() {
             // Close the file again
             fsUploadFile.close();
             String size_str = StrUtils::formatSize(upload.totalSize);
-            sayf("%s: %s", StrUtils::getStrP(str_size).c_str(), size_str.c_str());
+            saylnf("%s: %s", StrUtils::getStrP(str_size).c_str(), size_str.c_str());
             // Redirect the client to the success page
             server->sendHeader("location", "/success.html");
             server->send(303);

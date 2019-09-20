@@ -7,20 +7,31 @@ EditBuffer::EditBuffer(const char *str) : ArrayBuffer(strlen(str) + 1) {
     write((const uint8_t *)str, strlen(str));
 }
 
-void EditBuffer::onBackspace() {
-    prev();
-    onDelete();
+bool EditBuffer::backspace() {
+    if (prev()) {
+        del();
+        return true;
+    }
+    return false;
 }
 
-void EditBuffer::onDelete() {
-    for (size_t pos = writePos; pos < capacity; pos++) buf[pos] = buf[pos + 1];
+void EditBuffer::del() {
+    for (size_t pos = writePos; pos < capacity; ++pos) buf[pos] = buf[pos + 1];
     buf[writePos] = '\x00';
 }
 
-void EditBuffer::next() {
-    if (writePos < capacity - 1) ++writePos;
+bool EditBuffer::next() {
+    if (writePos < capacity - 1) {
+        ++writePos;
+        return true;
+    }
+    return false;
 }
 
-void EditBuffer::prev() {
-    if (writePos > 0) --writePos;
+bool EditBuffer::prev() {
+    if (writePos > 0) {
+        --writePos;
+        return true;
+    }
+    return false;
 }

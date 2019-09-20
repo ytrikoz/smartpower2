@@ -35,7 +35,7 @@
 //#define DEBUG_TELNET
 //#define DEBUG_WEB_SERVICE
 //#define DEBUG_SHELL
-//#define DEBUG_TERMUL
+#define DEBUG_TERMUL
 
 //#define DEBUG_TIME_BACKUP
 //#define DEBUG_TIME_UTILS

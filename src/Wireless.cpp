@@ -270,7 +270,8 @@ void start_wifi() {
         if (ap_enabled) {
             USE_SERIAL.print(StrUtils::getIdentStrP(str_wifi));
             USE_SERIAL.print(StrUtils::getStrP(str_ssid));
-            USE_SERIAL.print(StrUtils::getStr(ap_ssid));
+            USE_SERIAL.print(ap_ssid);            
+            USE_SERIAL.print(' ');
             USE_SERIAL.print(StrUtils::getStrP(str_ip));
             USE_SERIAL.println(StrUtils::getStr(ap_ipaddr));
         }

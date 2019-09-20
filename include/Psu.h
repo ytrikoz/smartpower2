@@ -1,5 +1,6 @@
 #pragma once
 
+#include "AppModule.h"
 #include "CommonTypes.h"
 #include "ConfigHelper.h"
 
@@ -93,18 +94,21 @@ struct PsuState : Printable {
     }
 };
 
-class Psu : public PsuInfoProvider {
+class Psu : public AppModule, public PsuInfoProvider {
    public:
     Psu();
+    bool begin();
+    void end();
+    void loop();
+    void printDiag(Print* p);
+public: 
+    void init();
     void togglePower();
-    void setConfig(ConfigHelper*);
     void setOnTogglePower(PsuEventHandler);
     void setOnPowerOn(PsuEventHandler);
     void setOnPowerOff(PsuEventHandler);
     void setOnError(PsuEventHandler);
     void setOnAlert(PsuEventHandler);
-    void begin();
-    void loop();
     PowerState getState();
     void setOutputVoltage(float voltage);
     float getOutputVoltage();
@@ -117,18 +121,15 @@ class Psu : public PsuInfoProvider {
     bool enableWhStore(bool enabled = true);
     bool isWhStoreEnabled();
     void setWh(double value);
-    void printDiag(Print* p);
    private:
-    void init();
+    void onStart();
+    void onStop();
     void setState(PowerState value, bool forceUpdate = false);
     bool storeWh(double value);
     bool restoreWh(double& value);
     bool storeState(PowerState);
     bool restoreState(PowerState&);
-
-    void onStart();
-    void onStop();
-
+    private:
     PowerState state;
     bool active;
     bool initialized;
@@ -137,11 +138,6 @@ class Psu : public PsuInfoProvider {
     double outputVoltage;
     bool wh_store;
     PsuInfo info;
-    ConfigHelper* config;
-
-    Print* out = &USE_SERIAL;
-    Print* err = &USE_SERIAL;
-
     PsuEventHandler onTogglePower, onPowerOn, onPowerOff, onPsuError,
         onPsuAlert;
 

@@ -2,6 +2,7 @@
 
 Led::Led *wifi_led, *power_led;
 
+SystemClock *rtc;
 AppModule *appModule[13] = {0};
 WebClient clients[MAX_WEB_CLIENTS];
 SimpleTimer timer;
@@ -20,10 +21,11 @@ Termul *telnetTerm;
 Shell *telnetShell;
 Shell *consoleShell;
 
-bool start_module(AppModule* module) {
-    module->setOutput(&USE_SERIAL);
-    module->setConfig(config->get());
-    return module->begin();
+bool start_module(AppModuleEnum module) {
+    AppModule* mod = appModule[module];
+    mod->setOutput(&USE_SERIAL);
+    mod->setConfig(config->get());
+    return mod->begin();
 }
 
 void refresh_wifi_led() {
@@ -105,8 +107,7 @@ void start_telnet() {
 
 void start_console_shell() {
     consoleTerm = new Termul(&USE_SERIAL);
-    consoleTerm->enableEcho();
-
+    consoleTerm->enableEcho();    
     consoleShell = new Shell(cli, consoleTerm);
 }
 
@@ -119,33 +120,30 @@ void start_telnet_shell(Stream *s) {
 }
 
 void start_lcd() {
-    display = new Display();
-    appModule[MOD_LCD] = display;    
-    if (start_module(appModule[MOD_LCD])) display->turnOn();
+    display = new Display();    
+    appModule[MOD_LCD] = display;
+    if (start_module(MOD_LCD)) {
+        display->turnOn();   
+    }
 }
 
-void start_clock() {
-    rtc.setOptions(config->get());
-    rtc.setOnTimeChange(onTimeChangeEvent);
-    rtc.begin();
-}
-
-void init_psu() {
+void start_psu() {
     psu = new Psu();
-    psu->setConfig(config);
+    appModule[MOD_PSU] = psu;
+
     psuLog = new PsuLogger(psu);
+    appModule[MOD_PSU_LOG] = psuLog;
 
     psu->setOnTogglePower([]() { sendPageState(PG_HOME); });
-
     psu->setOnPowerOn([]() {
         power_led->set(Led::BLINK);
         if (display) display->unlock();
-        psuLog->start();
+        psuLog->begin();
     });
 
     psu->setOnPowerOff([]() {
         power_led->set(Led::ON);
-        psuLog->stop();
+        psuLog->end();
         // if (size > 0) {
         //     float val[size];
         //     psuLog->fill(PP_VOLTAGE, val, size);
@@ -159,37 +157,38 @@ void init_psu() {
     });
 
     psu->setOnError([]() { power_led->set(Led::BLINK_ERROR); });
+    
+    start_module(MOD_PSU_LOG);
+    start_module(MOD_PSU);
+}
 
-    psu->begin();
+void start_clock() {
+    rtc = new SystemClock();
+    rtc->setOnTimeChange(onTimeChangeEvent);
+    appModule[MOD_CLOCK] = rtc;
+    start_module(MOD_CLOCK);
 }
 
 void start_ntp() {
-    if (!ntp) {
-        ntp = new NtpClient();
-        ntp->setOnResponse([](EpochTime &epoch) { rtc.setEpoch(epoch, true); });       
-    }
+    ntp = new NtpClient();
+    ntp->setOnResponse([](EpochTime &epoch) { rtc->setEpoch(epoch, true); });
     appModule[MOD_NTP] = ntp;
-    start_module(appModule[MOD_NTP]);
+    start_module(MOD_NTP);
 }
 
-
 void start_http() {
-    if (!http) {
-        http = new WebService();
-        http->setOnClientConnection(onHttpClientConnect);
-        http->setOnClientDisconnected(onHttpClientDisconnect);
-        http->setOnClientData(onHttpClientData);
-    }
+    http = new WebService();
+    http->setOnClientConnection(onHttpClientConnect);
+    http->setOnClientDisconnected(onHttpClientDisconnect);
+    http->setOnClientData(onHttpClientData);
     appModule[MOD_HTTP] = http;
-    start_module(appModule[MOD_HTTP]);  
+    start_module(MOD_HTTP);
 }
 
 void start_ota_update() {
     String host_name = Wireless::hostName();
-    if (!ota) {
-        ota = new OTAUpdate();
-        ota->setOutput(&USE_SERIAL);
-    }
+    ota = new OTAUpdate();
+    ota->setOutput(&USE_SERIAL);    
     ota->begin(host_name.c_str(), OTA_PORT);
 }
 
@@ -209,11 +208,10 @@ uint8_t get_telnet_clients_count() {
 #endif
 }
 
-void onTimeChangeEvent(const char *str) {
+void onTimeChangeEvent(const EpochTime epoch) {
     USE_SERIAL.print(StrUtils::getIdentStrP(str_clock));
     USE_SERIAL.print(StrUtils::getStrP(str_time));
-    USE_SERIAL.print(StrUtils::getStrP(str_change));
-    USE_SERIAL.println(str);
+    USE_SERIAL.println(epoch);
 }
 
 void load_screen_psu_pvi() {

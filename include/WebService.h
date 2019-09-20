@@ -21,8 +21,7 @@ class WebService : public AppModule {
     bool begin();
     void end();
     void loop();
-    void printDiag();
-
+    void printDiag(Print*);
    public:
     void setOnClientConnection(SocketConnectionEventHandler h);
     void setOnClientDisconnected(SocketConnectionEventHandler h);

@@ -21,6 +21,23 @@
 //     p->print(str);
 //     sayArgs(args...);
 // }
+enum AppModuleEnum {
+    MOD_BTN,
+    MOD_CLOCK,
+    MOD_LED,
+    MOD_PSU,
+    MOD_PSU_LOG,
+    MOD_TASK,
+    MOD_TELNET_SHELL,
+    MOD_LCD,
+    MOD_HTTP,
+    MOD_NETSVC,
+    MOD_NTP,
+    MOD_TELNET,
+    MOD_SERIAL_SHELL,
+    MOD_UPDATE
+};
+
 extern String getModuleName(size_t index);
 extern String getModuleName(AppModuleEnum module);
 
@@ -31,22 +48,25 @@ class AppModule {
     Print* getOutput() { return this->out; }
 
    public:
-    virtual void setConfig(Config* config){};
-    virtual bool begin() { return true; };
+    virtual void setConfig(Config* config){ this->config = config;};
+    virtual bool begin() { return false; };
     virtual void end(){};
-    virtual void printDiag() { };
+    void printDiag() { printDiag(out); };
 
    protected:
-    size_t sayf(const char* fmt, ...);
-    size_t say_P(PGM_P pgmStr);
-
+    virtual void printDiag(Print* p) { p->println(); };
+    size_t saylnf(const char* fmt, ...);
+    size_t saylnf_P(const char* fmt, ...);
+    size_t sayln_P(PGM_P pgmStr);
+    Print* err = &USE_SERIAL;
+    Print* out = &USE_SERIAL;
+    Config* config;
    private:
     size_t say(char* str);
     size_t say(String& str);
-    size_t sayf_P(const char* fmt, ...);
+    
 
    private:
     AppModuleEnum module;
     String moduleName;
-    Print* out = &USE_SERIAL;
 };

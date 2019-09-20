@@ -1,21 +1,24 @@
 #include "Shell.h"
 
 #include "Cli.h"
+#include "SystemClock.h"
 
 using StrUtils::setstr;
 using StrUtils::strfill;
 using StrUtils::strpadd;
 
-Shell::Shell(SimpleCLI* cli, Termul* t) {
-    this->cli = cli;
-
-    this->t = t;
-    this->t->setOnStart([this]() { this->onOpen(); });
-    this->t->setOnQuit([this]() { this->onClose(); });
-    this->t->setOnInput([this](const char* str) { this->onLineInput(str); });
-    this->t->setOnTab([this]() { this->onTabPress(); });
-
+Shell::Shell(SimpleCLI* parser, Termul* term) {
+    cli = parser;
+    setTerminal(term);
     active = false;
+}
+
+void Shell::setTerminal(Termul* term) {
+    t = term;
+    t->setOnOpen([this]() { this->onSessionOpen(); });
+    t->setOnClose([this]() { this->onSessionClose(); });
+    t->setOnReadLine([this](const char* str) { this->onSessionData(str); });
+    t->setOnTabKey([this]() { this->requestHistoryHandler(); });
 }
 
 bool Shell::isActive() { return this->active; }
@@ -24,31 +27,30 @@ Termul* Shell::getTerm() { return this->t; }
 
 void Shell::enableWelcome(bool enabled) { welcomeEnabled = enabled; }
 
-void Shell::onOpen() {
+void Shell::onSessionOpen() {
 #ifdef DEBUG_SHELL
-    DEBUG.print("[shell] onOpen");
+    DEBUG.println("[shell] onSessionOpen");
 #endif
     Cli::open(t);
-    if (welcomeEnabled) print_welcome();
-    print_prompt();
+    if (welcomeEnabled) print_welcome(t);
+    print_prompt(t);
     active = true;
 }
 
-void Shell::clearHistory() {
-    history.clear();
-}
-
-void Shell::onClose() {
+void Shell::onSessionClose() {
 #ifdef DEBUG_SHELL
-    DEBUG.println("[shell] onClose");
+    DEBUG.println("[shell] onSessionClose");
 #endif
-    t->println();
     Cli::close();
     active = false;
 }
 
 void Shell::loop() {
-    if (t) t->read();
+    if (t) t->loop();
+}
+
+void Shell::clearHistory() {
+    history.clear();
 }
 
 void Shell::setEditBuffer(String& str) {
@@ -56,14 +58,14 @@ void Shell::setEditBuffer(String& str) {
     t->print(str);
 }
 
-void Shell::onTabPress() {
+void Shell::requestHistoryHandler() {
 #ifdef DEBUG_SHELL
-    DEBUG.println("[shell] onTabPress");
+    DEBUG.println("[shell] requestHistoryHandler");
 #endif
     if (history.size() > 0) {
         if (t->getEditBuffer()->available()) {
             t->println();
-            print_prompt();
+            print_prompt(t);
         }
         String str;
         if (getLastInput(str)) { 
@@ -76,7 +78,7 @@ bool Shell::getLastInput(String& str) {
     if (history.size() > 0) {
         str = String(history.back());
         history.pop_back();
-        return true;
+        return true;        
     }
     return false;
 }
@@ -90,9 +92,9 @@ void Shell::addHistory(const char* str) {
     } 
 }
 
-void Shell::onLineInput(const char* str) {
+void Shell::onSessionData(const char* str) {
 #ifdef DEBUG_SHELL
-    DEBUG.printf("[shell] onLineInput(%s)", str);
+    DEBUG.printf("[shell] onSessionData(%s)", str);
 #endif
     cli->parse(str);
     while (cli->available()) {
@@ -100,10 +102,10 @@ void Shell::onLineInput(const char* str) {
         cli->getCmd().run();
     }
     addHistory(str);
-    print_prompt();
+    print_prompt(t);
 }
 
-void Shell::print_welcome() {
+size_t Shell::print_welcome(Print* p) {
 #ifdef DEBUG_SHELL
     DEBUG.print("[shell] print_welcome");
 #endif
@@ -111,23 +113,25 @@ void Shell::print_welcome() {
     strcpy(title, APPNAME " v" FW_VERSION);
     uint8_t width = SCREEN_WIDTH / 2;
     strpadd(title, StrUtils::CENTER, width, ' ');
-    char tmp[width + 1];
-    strfill(tmp, '#', width);
+    
+    char decor[width + 1];
+    strfill(decor, '#', width + 1);
 
-    t->println(tmp);
-    t->println(title);
-    t->println(tmp);
+    size_t n = p->println(decor);
+    n += p->println(title);
+    n += p->println(decor);
+    return n;
 }
 
-void Shell::print_prompt() {
+size_t Shell::print_prompt(Print* p) {
 #ifdef DEBUG_SHELL
     DEBUG.print("[shell] print_prompt");
 #endif
-    char buf[OUTPUT_MAX_LENGTH];
-    strcpy(buf, rtc.getLocalTimeStr().c_str());
-    uint8_t x = strlen(buf);
-    buf[x] = '>';
-    buf[++x] = CHAR_SP;
-    buf[++x] = '\x00';
-    t->print(buf);
+    char buf[64] = {0};
+    if (rtc) strcpy(buf, TimeUtils::getTimeFormated(buf, rtc->getLocal()));        
+    size_t n = strlen(buf);
+    buf[n] = '>';
+    buf[++n] = '\x20';
+    buf[++n] = '\x00';
+    return p->print(buf);
 }

@@ -26,21 +26,22 @@
 #define BUILD_TIME __TIME__
 #define APPNAME "SmartPower2"
 #define FW_VERSION "0.6.7"            
-#define DATETIME_FORMAT "%02d/%02d/%04d %02d:%02d:%02d"
 #define ONE_MILLISECOND_mi 1000
 #define ONE_SECOND_ms 1000
 #define ONE_MINUTE_s 60
 #define ONE_MINUTE_ms ONE_MINUTE_s * ONE_SECOND_ms
 #define ONE_DAY_s 86400L
-#define ONE_YEAR_days 365
+#define ONE_WEEK_days 7
 #define ONE_HOUR_s 3600
+#define ONE_YEAR_days 365
+
 #define ONE_HOUR_m 60
 #define ONE_DAY_h 24
 #define ONE_HOUR_ms ONE_HOUR_s* ONE_SECOND_ms;
 #define ONE_WATT_mW 1000
 #define SEVENTY_YEARS_ms 2208988800UL
 #define MILLENIUM_s 946684800UL
-#define ONE_WEEK_days 7
+
 #define START_YEAR 1970
 
 #define MEASUREMENT_INTERVAL_ms 250

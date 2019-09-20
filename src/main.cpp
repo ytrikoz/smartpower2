@@ -278,6 +278,7 @@ void setup() {
 #endif
     Wire.begin(I2C_SDA, I2C_SCL);
     SPIFFS.begin();
+
     config = new ConfigHelper();
 
     // Leds
@@ -307,7 +308,7 @@ void setup() {
 
     start_clock();
 
-    init_psu();
+    start_psu();
 
     display_boot_progress(40, "<WIFI>");
 
@@ -344,7 +345,7 @@ void loop() {
     // Clock
     {
         Profiler::TimeProfiler tp = watchDog.run(Profiler::CLOCK);
-        rtc.loop();
+        rtc->loop();
     }
     delay(0);
     // LEDs

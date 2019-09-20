@@ -16,7 +16,7 @@ bool PsuLogger::getLogValues(PsuLogItem logItem, float* values, size_t& size) {
     return size;
 }
 
-PsuLogger::PsuLogger(Psu* psu) {
+PsuLogger::PsuLogger(Psu* psu) : AppModule(MOD_PSU_LOG) {
     this->psu = psu;
     this->psuLog[VOLTAGE_LOG] = new PsuLog("V", PSU_LOG_VOLTAGE_SIZE);
     this->psuLog[CURRENT_LOG] = new PsuLog("I", PSU_LOG_CURRENT_SIZE);
@@ -24,15 +24,17 @@ PsuLogger::PsuLogger(Psu* psu) {
     this->psuLog[WATTSHOURS_LOG] = new PsuLog("Wh", PSU_LOG_WATTHOURS_SIZE);
 }
 
-void PsuLogger::start() {
+bool PsuLogger::begin() {
+    AppModule::begin();
     for (uint8_t i = 0; i < 4; ++i) getLog(PsuLogItem(i))->clear();
     lastUpdated = 0;
     startTime = millis();
-    active = true;
     v_enabled = i_enabled = p_enabled = wh_enabled = true;
+    active = true;
+    return active;
 }
 
-void PsuLogger::stop() { active = false; }
+void PsuLogger::end() { active = false; }
 
 void PsuLogger::log(PsuInfo& item) {
     if (!active) return;

@@ -3,11 +3,11 @@
 #include "Psu.h"
 #include "PsuLog.h"
 
-class PsuLogger {
+class PsuLogger : public AppModule {
    public:
     PsuLogger(Psu* psu);
-    void start();
-    void stop();
+    bool begin();
+    void end();
     void loop();        
     void print(Print* p, PsuLogItem log);
     void printDiag(Print* p);

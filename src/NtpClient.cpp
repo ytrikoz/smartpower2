@@ -4,22 +4,26 @@
 
 NtpClient::NtpClient() : AppModule(MOD_NTP) {
     udp = new WiFiUDP();
+    active = false;
+    lastUpdated = 0;
+}
+
+bool NtpClient::begin() {
     onDisconnected = WiFi.onStationModeDisconnected(
         {[this](const WiFiEventStationModeDisconnected &event) {
             if (active) {
-                say_P(str_stopped);
+                sayln_P(str_stopped);
                 udp->stop();
                 active = false;
             }
         }});
     onGotIp = WiFi.onStationModeGotIP(
         {[this](const WiFiEventStationModeGotIP &event) {            
-            sayf("%s:%d", timeServerPool, NTP_REMOTE_PORT);
+            saylnf("%s:%d", timeServerPool, NTP_REMOTE_PORT);
             active = udp->begin(NTP_LOCAL_PORT);
         }});
 
-    active = false;
-    lastUpdated = 0;
+    return true;
 }
 
 void NtpClient::loop() {
@@ -100,12 +104,12 @@ void NtpClient::sync() {
 void NtpClient::setOnResponse(EpochTimeEventHandler h) {
     onResponse = h;
     if (onResponse && epochTime.toEpoch() > 0) onResponse(epochTime);
-}
+} 
 
-void NtpClient::printDiag() {
-    sayf("%s: %s", StrUtils::getStrP(str_active, false).c_str(), StrUtils::getBoolStr(active).c_str());
-    sayf("%s: %s:%d", StrUtils::getStrP(str_server, false).c_str(), timeServerPool, NTP_LOCAL_PORT);
-    sayf("%s: %lu", StrUtils::getStrP(str_epoch, false).c_str(), epochTime.toEpoch());
-    sayf("%s: %d", StrUtils::getStrP(str_interval, false).c_str(), syncInterval / ONE_SECOND_ms);
-    sayf("%s: %lu", StrUtils::getStrP(str_update, false).c_str(), lastUpdated);
+void NtpClient::printDiag(Print* p) {
+    saylnf("%s: %s", StrUtils::getStrP(str_active, false).c_str(), StrUtils::getBoolStr(active).c_str());
+    saylnf("%s: %s:%d", StrUtils::getStrP(str_server, false).c_str(), timeServerPool, NTP_LOCAL_PORT);
+    saylnf("%s: %lu", StrUtils::getStrP(str_epoch, false).c_str(), epochTime.toEpoch());
+    saylnf("%s: %d", StrUtils::getStrP(str_interval, false).c_str(), syncInterval / ONE_SECOND_ms);
+    saylnf("%s: %lu", StrUtils::getStrP(str_update, false).c_str(), lastUpdated);
 }

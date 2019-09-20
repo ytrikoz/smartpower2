@@ -1,54 +1,41 @@
 #include "SystemClock.h"
 
 #include "BuildConfig.h"
+#include "PrintUtils.h"
 #include "StoreUtils.h"
 #include "TimeUtils.h"
 
-SystemClock rtc;
-
-SystemClock::SystemClock() {
-    timeOffset = 0;
-    storeInterval = 0;
-    lastStored = 0;
-    rollover = 0;
-
-    lastUpdated = millis();
-    epoch = EpochTime(getAppBuildEpoch());
+SystemClock::SystemClock() : AppModule(MOD_CLOCK) {
     trusted = false;
+    timeOffset = storeInterval = lastStored = rollover = 0;
+    epoch = EpochTime(getAppBuildUtc());
+    lastUpdated = millis();
+}
+
+bool SystemClock::begin() {
+    sayln_P(str_start);
+    if (!trusted)
+        if (restoreState(epoch)) setEpoch(epoch);
+    return true;
 }
 
 void SystemClock::printDiag(Print* p) {
-    p->print(StrUtils::getStrP(str_time));
-    p->print(StrUtils::getStrP(str_off, false) + StrUtils::getStrP(str_set));
-    p->println(timeOffset);
-
-    p->print(StrUtils::getStrP(str_backup) + StrUtils::getStrP(str_interval));
-    p->println(storeInterval);
-
-    p->print(StrUtils::getStrP(str_last) + StrUtils::getStrP(str_update));
-    p->println(lastUpdated);
-
-    p->print(StrUtils::getStrP(str_last) + StrUtils::getStrP(str_backup));
-    p->println(lastStored);
-
-    p->print(StrUtils::getStrP(str_rollover));
-    p->println(rollover);
-
-    p->print(StrUtils::getStrP(str_epoch));
-    p->println(epoch);
-
-    p->print(StrUtils::getStrP(str_trusted));
-    p->println(StrUtils::getBoolStr(trusted, false));
+    PrintUtils::print(out, StrUtils::getStrP(str_timezone), ':',
+                      timeOffset / ONE_HOUR_s);
+    PrintUtils::print(out, StrUtils::getStrP(str_backup),
+                      StrUtils::getStrP(str_every), ':',
+                      storeInterval / ONE_SECOND_ms);
+    PrintUtils::print(out, StrUtils::getStrP(str_updated), ':',
+                      lastUpdated / ONE_SECOND_ms);
+    PrintUtils::print(out, StrUtils::getStrP(str_stored), ':',
+                      lastStored / ONE_SECOND_ms);
+    PrintUtils::print(out, StrUtils::getStrP(str_rollover), ':', rollover);
+    PrintUtils::print(out, StrUtils::getStrP(str_epoch), ':', epoch);
+    PrintUtils::println(out, StrUtils::getStrP(str_trusted), ':',
+                        StrUtils::getBoolStr(trusted));
 }
 
-void SystemClock::begin() {
-    output->print(StrUtils::getIdentStrP(str_clock));
-    output->println(StrUtils::getStrP(str_start));
-    if (!trusted)
-        if (restoreEpoch(epoch)) setEpoch(epoch);
-}
-
-void SystemClock::setOptions(Config* config) {
+void SystemClock::setConfig(Config* config) {
     setTimeZone(config->getValueAsSignedByte(TIME_ZONE));
     setBackupInterval(config->getValueAsInt(TIME_BACKUP_INTERVAL));
 }
@@ -61,7 +48,7 @@ void SystemClock::setBackupInterval(unsigned long time) {
     storeInterval =
         time > 0 ? constrain(time, TIME_BACKUP_INTERVAL_MIN_s, ONE_DAY_s) *
                        ONE_SECOND_ms
-                 : time;
+                 : 0;
 }
 
 void SystemClock::loop() {
@@ -72,8 +59,8 @@ void SystemClock::loop() {
         lastUpdated += ONE_SECOND_ms;
     }
     if (trusted) {
-        if (isExpired(now) || !lastStored) {
-            if (!storeEpoch(epoch)) {
+        if (isStoreNeedsUpdate(now)) {
+            if (!storeState(epoch)) {
                 err->print(StrUtils::getIdentStrP(str_clock));
                 err->print(StrUtils::getStrP(str_store));
                 err->println(StrUtils::getStrP(str_error));
@@ -89,65 +76,39 @@ void SystemClock::setEpoch(EpochTime& epoch, bool trusted) {
     this->epoch = epoch;
     this->trusted = trusted;
 
-    onTimeChanged();
+    onTimeChange();
 }
 
-void SystemClock::onTimeChanged() {
-    char buf[64];
-    tm tm;
-    epochToDateTime(getLocal(), tm);
-    tmtodtf(tm, buf);
-    if (onTimeChangeEvent) onTimeChangeEvent(buf);
+void SystemClock::onTimeChange() {
+    if (timeChangeHandler) timeChangeHandler(epoch);
 }
 
-String SystemClock::getLocalTimeStr() {
-    unsigned long now = getLocal();
-    uint8_t hours = (now % 86400L) / 3600;
-    uint8_t minutes = (now % 3600) / 60;
-    uint8_t seconds = now % 60;
-    char buf[16];
-    sprintf_P(buf, strf_time, hours, minutes, seconds);
-    return String(buf);
+void SystemClock::setOnTimeChange(TimeEventHandler h) { 
+    timeChangeHandler = h; 
+    if (trusted) onTimeChange();
 }
 
-unsigned long SystemClock::getSystemUptime() {
+unsigned long SystemClock::getUptime() {
     return (0xFFFFFFFF / ONE_SECOND_ms) * rollover + (millis() / ONE_SECOND_ms);
-}
-
-String SystemClock::getSystemUptimeStr() {
-    unsigned long now = getSystemUptime();
-    char buf[16];
-    sprintf_P(buf, strf_time, (uint8_t)now / 3600 % 24, (uint8_t)now / 60 % 60,
-              (uint8_t)now % 60);
-    return String(buf);
 }
 
 unsigned long SystemClock::getUtc() { return epoch.toEpoch(); }
 
 unsigned long SystemClock::getLocal() { return getUtc() + timeOffset; }
 
-String SystemClock::getDateTimeStr() {
-    tm tm;
-    epochToDateTime(getLocal(), tm);
-    char buf[64];
-    tmtodtf(tm, buf);
-    return String(buf);
+bool SystemClock::isStoreNeedsUpdate(unsigned long now) {
+    return storeInterval > 0 &&
+           (!lastStored || millis_passed(lastStored, now) >= storeInterval);
 }
 
-void SystemClock::setOnTimeChange(TimeEventHandler h) { onTimeChangeEvent = h; }
-
-bool SystemClock::isExpired(unsigned long now) {
-    return millis_passed(lastStored, now) >= storeInterval;
-}
-
-bool SystemClock::restoreEpoch(EpochTime& value) {
+bool SystemClock::restoreState(EpochTime& value) {
     String buf;
     bool res = StoreUtils::restoreString(FILE_VAR_UTC, buf);
     if (res) value = EpochTime(buf.toInt());
     return res;
 }
 
-bool SystemClock::storeEpoch(EpochTime value) {
+bool SystemClock::storeState(EpochTime& value) {
     String buf = value.toString();
     return StoreUtils::storeString(FILE_VAR_UTC, buf);
 }

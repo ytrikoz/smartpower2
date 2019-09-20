@@ -111,7 +111,7 @@ bool Display::ready() { return connected; }
 bool Display::begin() {
     if (!connected) {
         if (connect()) {
-            sayf("0x%s", String(addr, HEX).c_str());
+            saylnf("0x%s", String(addr, HEX).c_str());
             lcd = new LiquidCrystal_I2C(addr, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
             lcd->begin(LCD_COLS, LCD_ROWS);
             lcd->clear();
@@ -119,7 +119,7 @@ bool Display::begin() {
             loadBank(BANK_NONE, true);
             connected = true;
         } else {
-            sayf("%s %s %s", StrUtils::getStrP(str_file, false).c_str(),
+            saylnf("%s %s %s", StrUtils::getStrP(str_file, false).c_str(),
                  StrUtils::getStrP(str_not, false).c_str(),
                  StrUtils::getStrP(str_found, false).c_str());
         }

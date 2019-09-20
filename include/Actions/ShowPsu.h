@@ -11,7 +11,11 @@ class ShowPsu : public Action {
 };
 
 void ShowPsu::exec(Print* p) {    
-    psu->printDiag(p);
+    if (psu) {
+        psu->printDiag(p);
+    } else {
+        p->println(StrUtils::getStrP(str_disabled, false));
+    }
 }
 
 }  // namespace Actions

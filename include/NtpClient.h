@@ -15,7 +15,8 @@ class NtpClient : public AppModule {
     NtpClient();
     void setConfig(Config* config);
     void loop();
-    void printDiag();    
+    bool begin();
+    void printDiag(Print*);    
    public:
     void setOnResponse(EpochTimeEventHandler);
     void setInterval(uint16_t time_s);
