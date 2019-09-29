@@ -53,6 +53,7 @@ String getStrP(PGM_P strP, bool space = true);
 String getBoolStr(bool value, bool space = true);
 String getOnOffStr(bool value, bool space = true);
 String getEnabledStr(bool value, bool space = true);
+char *getUpDownStr(char *buf, bool value, bool space = true);
 
 String getIdentStr(String &str, bool with_space = true);
 String getIdentStr(const char *str, bool with_space);
@@ -64,14 +65,10 @@ String getQuotedStrP(PGM_P str, bool with_space, char ch = '\'');
 String getQuotedStr(const char *str, bool with_space = true, char ch = '\'');
 String getQuotedStr(String &str, bool with_space = true);
 
-template <typename T>
-T concat(T v) {
-    return v;
-}
+template <typename T> T concat(T v) { return v; }
 
-template <typename T, typename... Args>
-String concat(T first, Args... args) {
+template <typename T, typename... Args> String concat(T first, Args... args) {
     return first + " " + concat(args...);
 }
 
-}  // namespace StrUtils
+} // namespace StrUtils

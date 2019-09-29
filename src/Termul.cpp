@@ -5,9 +5,11 @@
 #include "ArrayBuffer.h"
 #include "SysInfo.h"
 
-Termul::Termul(Stream *console) {
+Termul::Termul() {
     this->editor = new EditBuffer(INPUT_MAX_LENGTH);
+}
 
+Termul::Termul(Stream *console):Termul() {
     setConsole(console);
 }
 
@@ -37,7 +39,7 @@ void Termul::enableControlCodes(bool enabled) {
 void Termul::quit() {}
 
 void Termul::loop() {
-    if (!s->available()) return;
+    if ((!s) || (!s->available())) return; 
 
     uint8_t startY = curY;
     uint8_t startX = curX;
@@ -70,9 +72,6 @@ void Termul::loop() {
                 delay(0);
             }
             if (timeout) {
-#ifdef DEBUG_TERMUL
-                DEBUG.printf("[esc_seq] timeout %d\r\n", i);
-#endif
                 state = ST_NORMAL;
                 break;
             }
@@ -96,9 +95,6 @@ void Termul::loop() {
     if (state == ST_ESC_SEQ) {
         state = ST_NORMAL;
         return;
-#ifdef DEBUG_TERMUL
-        DEBUG.printf("[termul] esc_seq reset\r\n");
-#endif
     }
 
     // WHEN NORMAL
@@ -120,19 +116,15 @@ void Termul::loop() {
             return;
         }
 
-        if (c == CHAR_CR) {
-            println();
-            if (onInputEvent) onInputEvent(editor->c_str());
-            editor->clear();
-            return;
-        }
-
-        if (c == CHAR_TAB) {
-            if (onTabPressed) onTabPressed();
-            return;
-        }
-
         switch (c) {
+            case CHAR_CR:
+                println();
+                if (onInputEvent) onInputEvent(editor->c_str());
+                editor->clear();
+                return;            
+            case CHAR_TAB:
+                if (onTabPressed) onTabPressed();
+                return;
             case KEY_LEFT:
                 if (editor->prev()) moveX--;
                 break;
@@ -160,7 +152,8 @@ void Termul::loop() {
                         if (echoEnabled) write(c);
                 break;
         }
-        if (controlCodesEnabled) move(startY, startX + moveX);
+
+        // if (controlCodesEnabled) move(startY, startX + moveX);
     }
 }
 
@@ -169,7 +162,6 @@ bool Termul::setEditBuffer(const uint8_t *bytes, size_t size) {
     size_t max_len = editor->free() - 1;
     if (size > max_len) size = max_len;
     return editor->write(bytes, size);
-    //((const uint8_t*) str, strlen(str));
 }
 
 EditBuffer *Termul::getEditBuffer() { return this->editor; }

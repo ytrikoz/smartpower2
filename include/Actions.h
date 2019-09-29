@@ -7,26 +7,26 @@
 namespace Actions {
 
 class Action {
-   public:
-    virtual void exec(Print* p);
+ public:
+  virtual void exec(Print* p) = 0;
 };
 
 class NumericAction : public Action {
-   public:
-    NumericAction(size_t param);
-    virtual void exec(Print* p) = 0;
+ public:
+  NumericAction(size_t param);
+  virtual void exec(Print* p) = 0;
 
-   protected:
-    int param;
+ protected:
+  int param;
 };
 
 class StringAction : public Action {
-   public:
-    StringAction(String param);
-    virtual void exec(Print* p) = 0;
+ public:
+  StringAction(String param);
+  virtual void exec(Print* p) = 0;
 
-   protected:
-    String param;
+ protected:
+  String param;
 };
 
 NumericAction::NumericAction(size_t param) { this->param = param; };

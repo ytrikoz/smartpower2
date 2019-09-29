@@ -1,5 +1,6 @@
-#include "WebService.h"
+#include "Modules/WebService.h"
 
+#include "AppModule.h"
 #include "StoreUtils.h"
 #include "Wireless.h"
 
@@ -49,14 +50,14 @@ WebService::WebService() : AppModule(MOD_HTTP) {
             webSocketEvent(num, type, payload, lenght);
         });
 
-    if ((Wireless::getWirelessMode() == WLAN_STA ||
-         Wireless::getWirelessMode() == WLAN_AP_STA)) {
+    if ((Wireless::getMode() == Wireless::WLAN_STA ||
+         Wireless::getMode() == Wireless::WLAN_AP_STA)) {
         ssdp = new SSDPClass();
         ssdp->setSchemaURL(F("description.xml"));
         ssdp->setHTTPPort(port_http);
         ssdp->setName(Wireless::hostName());
-        ssdp->setModelName(APPNAME);
-        ssdp->setModelNumber(FW_VERSION);
+        ssdp->setModelName(APP_NAME);
+        ssdp->setModelNumber(APP_VERSION);
         ssdp->setSerialNumber(getChipId());
         ssdp->setURL(F("index.html"));
         ssdp->setModelURL(
@@ -68,18 +69,19 @@ WebService::WebService() : AppModule(MOD_HTTP) {
         server->on(F("/description.xml"), HTTP_GET,
                    [this]() { ssdp->schema(server->client()); });
     }
-    active = false; 
+    active = false;
 }
 
-void WebService::printDiag(Print* p) {
-    saylnf("%s: %s", StrUtils::getStrP(str_active, false).c_str(),
-         StrUtils::getBoolStr(active).c_str());
+size_t WebService::printDiag(Print *p) {
+    char buf[8];
+    size_t n = PrintUtils::print_strP_var(p, str_active, boolStr(buf, active));
+    return n += PrintUtils::println(p, "");
 }
 
 bool WebService::begin() {
     String ip_str = Wireless::hostIP().toString();
-    saylnf("%s %s:%d,%d", web_root, ip_str.c_str(),
-         port_http, port_websocket);
+    // saylnf("%s %s:%d,%d", web_root, ip_str.c_str(), port_http,
+    // port_websocket);
 
     String tmp = "ipaddr=\"";
     tmp += ip_str;
@@ -96,23 +98,27 @@ bool WebService::begin() {
 }
 
 void WebService::end() {
-    sayln_P(str_stopped);
+    String str = StrUtils::getStrP(str_stopped);
+    say(str);
     active = false;
 }
 
 void WebService::loop() {
-    if (!active) return;
+    if (!active)
+        return;
     server->handleClient();
     websocket->loop();
 }
 
 void WebService::handleRoot() {
-    if (!captivePortal()) handleUri();
+    if (!captivePortal())
+        handleUri();
 }
 
 void WebService::handleUri() {
     String uri = server->uri();
-    if (!sendFile(uri)) handleNotFound(uri);
+    if (!sendFile(uri))
+        handleNotFound(uri);
 }
 
 void WebService::handleNotFound(String &uri) {
@@ -166,48 +172,48 @@ void WebService::webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
     ;
 #endif
     switch (type) {
-        case WStype_CONNECTED:
+    case WStype_CONNECTED:
 #ifdef DEBUG_WEB_SERVICE
-            out->println(StrUtils::getStrP(str_connected));
+        out->println(StrUtils::getStrP(str_connected));
 #endif
-            onConnectEvent(num);
-            return;
-        case WStype_DISCONNECTED:
+        onConnectEvent(num);
+        return;
+    case WStype_DISCONNECTED:
 #ifdef DEBUG_WEB_SERVICE
-            out->println(StrUtils::getStrP(str_disconnected));
+        out->println(StrUtils::getStrP(str_disconnected));
 #endif
-            onDisconnectEvent(num);
-            return;
-        case WStype_TEXT: {
+        onDisconnectEvent(num);
+        return;
+    case WStype_TEXT: {
 #ifdef DEBUG_WEB_SERVICE
-            out->print(StrUtils::getStrP(str_arrow_src));
-            out->println((char *)&payload[0]);
+        out->print(StrUtils::getStrP(str_arrow_src));
+        out->println((char *)&payload[0]);
 #endif
-            onDataEvent(num, (char *)&payload[0]);
-            return;
-        }
-        case WStype_BIN:
+        onDataEvent(num, (char *)&payload[0]);
+        return;
+    }
+    case WStype_BIN:
 #ifdef DEBUG_WEB_SERVICE
-            out->print(StrUtils::getStrP(str_arrow_src));
-            out->println(StrUtils::formatSize(lenght).c_str());
+        out->print(StrUtils::getStrP(str_arrow_src));
+        out->println(StrUtils::formatSize(lenght).c_str());
 #endif
-            return;
-        case WStype_PING:
+        return;
+    case WStype_PING:
 #ifdef DEBUG_WEB_SERVICE
-            out->println(StrUtils::getStrP(str_ping, false));
+        out->println(StrUtils::getStrP(str_ping, false));
 #endif
-            return;
-        case WStype_PONG:
+        return;
+    case WStype_PONG:
 #ifdef DEBUG_WEB_SERVICE
-            out->println(StrUtils::getStrP(str_pong, false));
+        out->println(StrUtils::getStrP(str_pong, false));
 #endif
-            return;
-        default:
+        return;
+    default:
 #ifdef DEBUG_WEB_SERVICE
-            out->print(StrUtils::getStrP(str_unhandled));
-            out->println(type);
+        out->print(StrUtils::getStrP(str_unhandled));
+        out->println(type);
 #endif
-            return;
+        return;
     }
 }
 
@@ -219,7 +225,8 @@ bool WebService::sendFile(String uri) {
 String WebService::getFilePath(String uri) {
     String path = String(web_root);
     path += uri;
-    if (uri.endsWith("/")) path.concat("index.html");
+    if (uri.endsWith("/"))
+        path.concat("index.html");
     return path;
 }
 
@@ -248,14 +255,14 @@ bool WebService::sendFileContent(String path) {
 
 void WebService::handleFileList() {
     String path = server->hasArg("path") ? server->arg("path") : web_root;
-    if (!path.startsWith("/")) path = "/" + path;
-    saylnf("%s%s %s", StrUtils::getStrP(str_file, false).c_str(),
-         StrUtils::getStrP(str_list, false).c_str(), path.c_str());
+    if (!path.startsWith("/"))
+        path = "/" + path;
     Dir dir = SPIFFS.openDir(path);
     String output = "[";
     while (dir.next()) {
         File entry = dir.openFile("r");
-        if (output != "[") output += ',';
+        if (output != "[")
+            output += ',';
         bool isDir = false;
         output += "{\"type\":\"";
         output += (isDir) ? "dir" : "file";
@@ -273,7 +280,13 @@ void WebService::handleUpload() {
     if (upload.status == UPLOAD_FILE_START) {
         int ac = server->args();
         int i;
-        for (i = 0; i < ac; i++) saylnf("%d %s=%s", i, server->argName(i).c_str(), server->arg(i).c_str());
+        for (i = 0; i < ac; i++) {
+            char buf[64];
+            sprintf(buf, "%d %s=%s", i, server->argName(i).c_str(),
+                    server->arg(i).c_str());
+            say(buf);
+        }
+
         String filename = upload.filename;
         if (server->hasArg("path")) {
             String path = server->arg("path");
@@ -303,8 +316,6 @@ void WebService::handleUpload() {
         if (fsUploadFile) {
             // Close the file again
             fsUploadFile.close();
-            String size_str = StrUtils::formatSize(upload.totalSize);
-            saylnf("%s: %s", StrUtils::getStrP(str_size).c_str(), size_str.c_str());
             // Redirect the client to the success page
             server->sendHeader("location", "/success.html");
             server->send(303);
@@ -326,10 +337,10 @@ bool WebService::captivePortal() {
             "Location",
             String("http://") + server->client().localIP().toString(), true);
         server->send(302, "text/plain",
-                     "");  // Empty content inhibits Content-length header so we
-                           // have to close the websocket ourselves.
+                     ""); // Empty content inhibits Content-length header so we
+                          // have to close the websocket ourselves.
         server->client()
-            .stop();  // Stop is needed because we sent no content length
+            .stop(); // Stop is needed because we sent no content length
         return true;
     }
     return false;

@@ -3,30 +3,29 @@
 #include <string.h>
 
 #include "CommonTypes.h"
-#include "SystemClock.h"
 
 using StrUtils::formatSize;
 
-PsuLog* PsuLogger::getLog(PsuLogItem logItem) { return psuLog[logItem]; }
-
-bool PsuLogger::getLogValues(PsuLogItem logItem, float* values, size_t& size) {
-    PsuLog* log = getLog(logItem);
-    size = log->count();
-    if (size) log->values(values, size);
-    return size;
-}
-
-PsuLogger::PsuLogger(Psu* psu) : AppModule(MOD_PSU_LOG) {
-    this->psu = psu;
+PsuLogger::PsuLogger() {
     this->psuLog[VOLTAGE_LOG] = new PsuLog("V", PSU_LOG_VOLTAGE_SIZE);
     this->psuLog[CURRENT_LOG] = new PsuLog("I", PSU_LOG_CURRENT_SIZE);
     this->psuLog[POWER_LOG] = new PsuLog("P", PSU_LOG_POWER_SIZE);
     this->psuLog[WATTSHOURS_LOG] = new PsuLog("Wh", PSU_LOG_WATTHOURS_SIZE);
 }
 
+PsuLog* PsuLogger::getLog(PsuLogEnum item) { 
+    return psuLog[item];
+}
+
+bool PsuLogger::getLogValues(PsuLogEnum logItem, float* values, size_t& size) {
+    PsuLog* log = getLog(logItem);
+    size = log->count();
+    if (size) log->values(values, size);
+    return size;
+}
+
 bool PsuLogger::begin() {
-    AppModule::begin();
-    for (uint8_t i = 0; i < 4; ++i) getLog(PsuLogItem(i))->clear();
+    for (uint8_t i = 0; i < 4; ++i) getLog(PsuLogEnum(i))->clear();
     lastUpdated = 0;
     startTime = millis();
     v_enabled = i_enabled = p_enabled = wh_enabled = true;
@@ -45,17 +44,9 @@ void PsuLogger::log(PsuInfo& item) {
         this->psuLog[WATTSHOURS_LOG]->push(item.time, item.mWh / ONE_WATT_mW);
 }
 
-void PsuLogger::loop() {
-    if (!active) return;
-    unsigned long now = millis();
-    if (millis_passed(lastUpdated, now) >= PSU_LOG_INTERVAL_ms) {
-        PsuInfo pi = psu->getInfo();
-        log(pi);
-        lastUpdated = now;
-    }
+void PsuLogger::print(Print* p, PsuLogEnum item) {
+    psuLog[item]->printTo(p); 
 }
-
-void PsuLogger::print(Print* p, PsuLogItem param) { psuLog[param]->printTo(p); }
 
 void PsuLogger::printDiag(Print* p) {
     if (!lastUpdated) {
@@ -73,5 +64,5 @@ void PsuLogger::printDiag(Print* p) {
     p->print(StrUtils::getStrP(str_max));
     p->print('\t');
     p->println(StrUtils::getStrP(str_avg));
-    for (uint8_t i = 0; i < 4; ++i) getLog(PsuLogItem(i))->printDiag(p);
+    for (uint8_t i = 0; i < 4; ++i) getLog(PsuLogEnum(i))->printDiag(p);
 }

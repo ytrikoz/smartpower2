@@ -4,23 +4,21 @@
 #include <ESP8266NetBIOS.h>
 #include <ESP8266mDNS.h>
 
+#include "AppModule.h"
 #include "StrUtils.h"
 #include "SysInfo.h"
 #include "Wireless.h"
 
-class NetworkService {
+class NetworkService : public AppModule {
    public:
     NetworkService();
-    void begin();
+    bool begin();
     void stop();
     void loop();
-    void setOutput(Print *p);
-
    private:
     bool begin_dns(String& hostname);
     bool begin_mdns(String& hostname);
     bool begin_netbios(String& hostname);
-    Print *p;
 
     bool active;
     

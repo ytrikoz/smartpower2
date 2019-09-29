@@ -10,7 +10,7 @@ class PowerOff : public Action {
 };
 
 void PowerOff::exec(Print* p) {
-    if (psu->getState() == POWER_ON) psu->togglePower();
+    if (app.getPsu()->getState() == POWER_ON) app.getPsu()->togglePower();
 }    
 
 }  // namespace Actions

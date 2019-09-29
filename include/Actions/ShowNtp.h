@@ -10,8 +10,9 @@ class ShowNtp : public Action {
 };
 
 void ShowNtp::exec(Print* p) {
-    if (ntp) {
-        ntp->printDiag(p);
+    auto mod = app.getInstance(MOD_NTP);
+    if (mod) {
+        mod->printDiag(p);
     } else {
         p->println(StrUtils::getStrP(str_disabled));
     }

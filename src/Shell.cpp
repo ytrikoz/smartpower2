@@ -1,16 +1,18 @@
 #include "Shell.h"
 
+#include "App.h"
 #include "Cli.h"
-#include "SystemClock.h"
 
 using StrUtils::setstr;
 using StrUtils::strfill;
 using StrUtils::strpadd;
 
-Shell::Shell(SimpleCLI* parser, Termul* term) {
-    cli = parser;
-    setTerminal(term);
+Shell::Shell() {
     active = false;
+}
+
+void Shell::setParser(SimpleCLI* parser) {
+    cli = parser;
 }
 
 void Shell::setTerminal(Termul* term) {
@@ -23,7 +25,7 @@ void Shell::setTerminal(Termul* term) {
 
 bool Shell::isActive() { return this->active; }
 
-Termul* Shell::getTerm() { return this->t; }
+Termul* Shell::getTerminal() { return this->t; }
 
 void Shell::enableWelcome(bool enabled) { welcomeEnabled = enabled; }
 
@@ -31,7 +33,7 @@ void Shell::onSessionOpen() {
 #ifdef DEBUG_SHELL
     DEBUG.println("[shell] onSessionOpen");
 #endif
-    Cli::open(t);
+    Cli::setOutput(t);
     if (welcomeEnabled) print_welcome(t);
     print_prompt(t);
     active = true;
@@ -110,7 +112,7 @@ size_t Shell::print_welcome(Print* p) {
     DEBUG.print("[shell] print_welcome");
 #endif
     char title[SCREEN_WIDTH + 1];
-    strcpy(title, APPNAME " v" FW_VERSION);
+    strcpy(title, APP_NAME " v" APP_VERSION);
     uint8_t width = SCREEN_WIDTH / 2;
     strpadd(title, StrUtils::CENTER, width, ' ');
     
@@ -128,7 +130,7 @@ size_t Shell::print_prompt(Print* p) {
     DEBUG.print("[shell] print_prompt");
 #endif
     char buf[64] = {0};
-    if (rtc) strcpy(buf, TimeUtils::getTimeFormated(buf, rtc->getLocal()));        
+    if (app.getClock()) strcpy(buf, TimeUtils::getTimeFormated(buf, app.getClock()->getLocal()));        
     size_t n = strlen(buf);
     buf[n] = '>';
     buf[++n] = '\x20';

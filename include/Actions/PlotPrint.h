@@ -10,7 +10,7 @@ class PlotPrint : public Action {
 };
 
 void PlotPrint::exec(Print* p) {
-    PlotData* data = display->getData();
+    PlotData* data = app.getDisplay()->getData();
     for (uint8_t x = 0; x < data->size; ++x) {
         uint8_t y = map_to_plot_min_max(data, x);
         char tmp[PLOT_ROWS * 8 + 1];

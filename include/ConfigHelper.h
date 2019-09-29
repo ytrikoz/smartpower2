@@ -4,9 +4,8 @@
 #include <ESP8266WiFi.h>
 
 #include "CommonTypes.h"
-#include "StringQueue.h"
 #include "Config.h"
-#include "Cursor.h"
+#include "StringQueue.h"
 
 class ConfigHelper : public Printable {
    public:
@@ -17,7 +16,6 @@ class ConfigHelper : public Printable {
     void setDefault();
     void loadConfig();
     bool saveConfig();
-    WiFiMode_t getWiFiMode();
     bool setBootPowerState(BootPowerState);
     bool setBootPowerState(uint8_t);
     BootPowerState getBootPowerState();
@@ -25,18 +23,8 @@ class ConfigHelper : public Printable {
     const char *getSSID_AP();
     const char *getPassword();
     const char *getPassword_AP();
-    bool getDHCP();
     float getOutputVoltage();
     uint8_t getTPW();
-    IPAddress getIPAddr();
-    IPAddress getIPAddr_AP();
-    const char *getIPAddrStr();
-    IPAddress getNetmask();
-    const char *getNetmaskStr();
-    IPAddress getGateway();
-    const char *getGatewayStr();
-    IPAddress getDns();
-    const char *getDnsStr();
     bool getWhStoreEnabled();
 
     bool setWiFiMode(uint8_t);

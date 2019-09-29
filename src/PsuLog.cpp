@@ -1,5 +1,8 @@
 #include "PsuLog.h"
 
+#include "Strings.h"
+#include "StrUtils.h"
+
 #define UNSET_MAX -16364
 #define UNSET_MIN 16364
 
@@ -121,7 +124,7 @@ void PsuLog::printTo(Print* p) {
 }
 
 void PsuLog::printDiag(Print* p) {
-    p->print(StrUtils::getStrP(name));
+    p->print(name);
     p->print('\t');
     if (!available()) {
         p->println(StrUtils::getStrP(str_empty, false));

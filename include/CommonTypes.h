@@ -8,6 +8,22 @@
 #include "Strings.h"
 #include "TimeUtils.h"
 
+typedef std::function<void(const EpochTime&)> EpochTimeEventHandler;
+
+enum AppModuleEnum {
+    MOD_BTN,
+    MOD_CLOCK,
+    MOD_HTTP,
+    MOD_LCD,
+    MOD_LED,
+    MOD_NETSVC,
+    MOD_NTP,
+    MOD_PSU,
+    MOD_SHELL,    
+    MOD_TELNET,
+    MOD_UPDATE
+};
+
 enum StoreState { SS_UNSET, SS_CLOSED, SS_READING, SS_WRITING, SS_EOF };
 
 enum StoreError {
@@ -17,15 +33,6 @@ enum StoreError {
     SE_ERROR_CLOSE,
     SE_ERROR_READ,
     SE_ERROR_WRITE,
-};
-
-enum PsuLogItem { VOLTAGE_LOG, CURRENT_LOG, POWER_LOG, WATTSHOURS_LOG };
-
-struct LogItem {
-    size_t n;
-    uint16_t value;
-    LogItem() : n(0), value(0){};
-    LogItem(size_t n, uint16_t value) : n(n), value(value){};
 };
 
 struct PsuInfo : Printable {
@@ -68,7 +75,7 @@ struct PsuInfo : Printable {
     }
 };
 
-class PsuInfoProvider {
+class Logger {
    public:
     virtual PsuInfo getInfo() = 0;
 };
@@ -86,10 +93,6 @@ enum EOLType { CRLF, LFCR, LF, CR };
 enum MoveDirection { MD_LEFT, MD_RIGHT, MD_UP, MD_DOWN };
 
 enum State { ST_INACTIVE, ST_NORMAL, ST_ESC_SEQ, ST_CTRL_SEQ };
-
-enum WirelessMode { WLAN_OFF = 0, WLAN_STA = 1, WLAN_AP = 2, WLAN_AP_STA = 3 };
-
-enum NetworkState { NETWORK_DOWN, NETWORK_UP };
 
 struct ConfigDefine {
     const char* key_name;

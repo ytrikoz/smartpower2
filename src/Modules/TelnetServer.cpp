@@ -1,25 +1,27 @@
-#include "TelnetServer.h"
+#include "Modules/TelnetServer.h"
 
-TelnetServer::TelnetServer(uint16_t port)
-    : port(port), active(false), initialized(false), connected(false) {
-    staDisconnected = WiFi.onStationModeDisconnected(
-        {[this](const WiFiEventStationModeDisconnected &event) { stop(); }});
-    staGotIP = WiFi.onStationModeGotIP(
-        {[this](const WiFiEventStationModeGotIP &event) { begin(); }});
-}
+TelnetServer::TelnetServer() : AppModule(MOD_TELNET) {
+    port = TELNET_PORT;
+    active = initialized = connected = false;
+};
 
-void TelnetServer::setOutput(Print *p) { output = p; }
-
-void TelnetServer::begin() {
+bool TelnetServer::begin() {
     if (!initialized) {
         output->print(StrUtils::getIdentStrP(str_telnet));
         output->println(port);
-        
+
         server = new WiFiServer(port);
         server->begin();
         server->setNoDelay(true);
-       
+
         initialized = server->status() != CLOSED;
+
+        staDisconnected = WiFi.onStationModeDisconnected(
+            {[this](const WiFiEventStationModeDisconnected &event) {
+                stop();
+            }});
+        staGotIP = WiFi.onStationModeGotIP(
+            {[this](const WiFiEventStationModeGotIP &event) { begin(); }});
 
         if (!initialized) {
             output->print(StrUtils::getIdentStrP(str_telnet));
@@ -27,6 +29,8 @@ void TelnetServer::begin() {
         }
     }
     active = initialized;
+
+    return active;
 }
 
 void TelnetServer::stop() {
@@ -34,8 +38,8 @@ void TelnetServer::stop() {
         output->print(StrUtils::getIdentStrP(str_telnet));
         output->println(StrUtils::getStrP(str_stopped));
         if (hasClientConnected()) client.stop();
-        server->stop();        
-        active = false;            
+        server->stop();
+        active = false;
     }
 }
 
@@ -66,7 +70,8 @@ void TelnetServer::loop() {
             } else {
                 WiFiClient reject;
                 reject = server->available();
-                reject.write(StrUtils::getStrP(msg_connection_is_busy, false).c_str());
+                reject.write(
+                    StrUtils::getStrP(msg_connection_is_busy, false).c_str());
                 reject.stop();
             }
         }

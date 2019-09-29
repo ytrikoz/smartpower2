@@ -5,13 +5,17 @@
 
 #include "CommonTypes.h"
 
-typedef std::function<void(bool hasNetwork)> NetworkStateChangeEventHandler;
+typedef std::function<void(bool hasNetwork, unsigned long time)> NetworkStatusChangeEventHandler;
 
 namespace Wireless {
 
+enum Mode { WLAN_OFF = 0, WLAN_STA = 1, WLAN_AP = 2, WLAN_AP_STA = 3 };
+
+enum NetworkStatus { NETWORK_DOWN, NETWORK_UP };
+
 String getConfigHostname();
 String getConnectionStatus();
-WirelessMode getWirelessMode();
+Mode getMode();
 bool hasNetwork();
 String hostSSID();
 IPAddress hostIP();
@@ -30,16 +34,16 @@ IPAddress hostSTA_IP();
 void printDiag(Print* p);
 
 void start_wifi();
-void setOnNetworkStateChange(NetworkStateChangeEventHandler eventHandler);
+void setOnNetworkStatusChange(NetworkStatusChangeEventHandler);
 void updateState();
-void setNetworkState(NetworkState value);
+void setNetworkStatus(NetworkStatus);
 void onNetworkUp();
 void onNetworkDown();
-
+void setBroadcastTo(uint8_t);
 bool scanNetworks(const char* ssid);
 bool disconnectWiFi();
 
-void changeMode(WirelessMode mode);
+void changeMode(Mode mode);
 void setupAP(IPAddress);
 bool startAP(const char* ssid, const char* password);
 

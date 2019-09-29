@@ -1,9 +1,11 @@
-#include "SystemClock.h"
+#include "Modules/SystemClock.h"
 
 #include "BuildConfig.h"
 #include "PrintUtils.h"
 #include "StoreUtils.h"
 #include "TimeUtils.h"
+
+using namespace PrintUtils;
 
 SystemClock::SystemClock() : AppModule(MOD_CLOCK) {
     trusted = false;
@@ -13,29 +15,24 @@ SystemClock::SystemClock() : AppModule(MOD_CLOCK) {
 }
 
 bool SystemClock::begin() {
-    sayln_P(str_start);
     if (!trusted)
-        if (restoreState(epoch)) setEpoch(epoch);
+        if (restoreState(epoch))
+            setEpoch(epoch);
     return true;
 }
 
-void SystemClock::printDiag(Print* p) {
-    PrintUtils::print(out, StrUtils::getStrP(str_timezone), ':',
-                      timeOffset / ONE_HOUR_s);
-    PrintUtils::print(out, StrUtils::getStrP(str_backup),
-                      StrUtils::getStrP(str_every), ':',
-                      storeInterval / ONE_SECOND_ms);
-    PrintUtils::print(out, StrUtils::getStrP(str_updated), ':',
-                      lastUpdated / ONE_SECOND_ms);
-    PrintUtils::print(out, StrUtils::getStrP(str_stored), ':',
-                      lastStored / ONE_SECOND_ms);
-    PrintUtils::print(out, StrUtils::getStrP(str_rollover), ':', rollover);
-    PrintUtils::print(out, StrUtils::getStrP(str_epoch), ':', epoch);
-    PrintUtils::println(out, StrUtils::getStrP(str_trusted), ':',
-                        StrUtils::getBoolStr(trusted));
+size_t SystemClock::printDiag(Print *p) {
+    size_t n = print_strP_var(p, str_timezone, timeOffset / ONE_HOUR_s);
+    n += print_strP_var(p, str_backup, storeInterval / ONE_SECOND_ms);
+    n += print_strP_var(p, str_updated, lastUpdated / ONE_SECOND_ms);
+    n += print_strP_var(p, str_stored, lastStored / ONE_SECOND_ms);
+    n += print_strP_var(p, str_rollover, rollover);
+    n += print_strP_var(p, str_epoch, epoch);
+    n += print_strP_var(p, str_trusted, trusted);
+    return n;
 }
 
-void SystemClock::setConfig(Config* config) {
+void SystemClock::setConfig(Config *config) {
     setTimeZone(config->getValueAsSignedByte(TIME_ZONE));
     setBackupInterval(config->getValueAsInt(TIME_BACKUP_INTERVAL));
 }
@@ -53,25 +50,23 @@ void SystemClock::setBackupInterval(unsigned long time) {
 
 void SystemClock::loop() {
     unsigned long now = millis();
-    if (now < lastUpdated) rollover++;
+    if (now < lastUpdated)
+        rollover++;
     while (millis_passed(lastUpdated, now) >= ONE_SECOND_ms) {
         epoch.tick();
         lastUpdated += ONE_SECOND_ms;
     }
     if (trusted) {
         if (isStoreNeedsUpdate(now)) {
-            if (!storeState(epoch)) {
-                err->print(StrUtils::getIdentStrP(str_clock));
-                err->print(StrUtils::getStrP(str_store));
-                err->println(StrUtils::getStrP(str_error));
-            }
+            storeState(epoch);
             lastStored = now;
         }
     }
 }
 
-void SystemClock::setEpoch(EpochTime& epoch, bool trusted) {
-    if (this->trusted && !trusted) return;
+void SystemClock::setEpoch(const EpochTime &epoch, bool trusted) {
+    if (this->trusted && !trusted)
+        return;
 
     this->epoch = epoch;
     this->trusted = trusted;
@@ -80,12 +75,10 @@ void SystemClock::setEpoch(EpochTime& epoch, bool trusted) {
 }
 
 void SystemClock::onTimeChange() {
-    if (timeChangeHandler) timeChangeHandler(epoch);
-}
-
-void SystemClock::setOnTimeChange(TimeEventHandler h) { 
-    timeChangeHandler = h; 
-    if (trusted) onTimeChange();
+    String time = epoch.toString();
+    if (trusted) {
+        sayP_value(str_time, time.c_str());
+    }
 }
 
 unsigned long SystemClock::getUptime() {
@@ -101,14 +94,15 @@ bool SystemClock::isStoreNeedsUpdate(unsigned long now) {
            (!lastStored || millis_passed(lastStored, now) >= storeInterval);
 }
 
-bool SystemClock::restoreState(EpochTime& value) {
+bool SystemClock::restoreState(EpochTime &value) {
     String buf;
     bool res = StoreUtils::restoreString(FILE_VAR_UTC, buf);
-    if (res) value = EpochTime(buf.toInt());
+    if (res)
+        value = EpochTime(buf.toInt());
     return res;
 }
 
-bool SystemClock::storeState(EpochTime& value) {
+bool SystemClock::storeState(EpochTime &value) {
     String buf = value.toString();
     return StoreUtils::storeString(FILE_VAR_UTC, buf);
 }

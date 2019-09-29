@@ -12,6 +12,6 @@ class LogPrint : public NumericAction {
 
 LogPrint::LogPrint(size_t param) : NumericAction(param) {}
 
-void LogPrint::exec(Print* p) { psuLog->print(p, (PsuLogItem)param); }
+void LogPrint::exec(Print* p) { psuLogger->print(p, PsuLogEnum(param)); }
 
 }  // namespace Actions

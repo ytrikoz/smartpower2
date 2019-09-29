@@ -24,8 +24,11 @@
 #define BUILD_TIMEZONE_h 3
 #define BUILD_DATE __DATE__
 #define BUILD_TIME __TIME__
-#define APPNAME "SmartPower2"
-#define FW_VERSION "0.6.7"            
+
+#define APP_NAME "SmartPower2"
+#define APP_VERSION "0.6.7"            
+#define APP_MODULES 11
+
 #define ONE_MILLISECOND_mi 1000
 #define ONE_SECOND_ms 1000
 #define ONE_MINUTE_s 60

@@ -3,6 +3,7 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266WiFi.h>
 
+#include "AppModule.h"
 #include "BuildConfig.h"
 #include "Consts.h"
 #include "StrUtils.h"
@@ -11,11 +12,10 @@
 typedef std::function<bool(Stream *)> TelnetConnectEventHandler;
 typedef std::function<void()> TelnetDisconnectEventHandler;
 
-class TelnetServer {
+class TelnetServer : public AppModule {
    public:
-    TelnetServer(uint16_t port = TELNET_PORT);
-    void setOutput(Print *p);
-    void begin();
+    TelnetServer();
+    bool begin();
     void stop();
     void loop();
     void write(const char *);
@@ -30,7 +30,7 @@ class TelnetServer {
     uint16_t port;
     bool active;
     bool initialized;
-    bool connected;    
+    bool connected;
     WiFiClient client;
     WiFiServer *server;
     TelnetConnectEventHandler onConnectEvent;

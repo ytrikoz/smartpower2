@@ -18,13 +18,13 @@ String getWiFiPhyMode() {
 
 String getWiFiRSSI() {
     String str = String(WiFi.RSSI());
-    str += F("dB");
+    str += "dB";
     return str;
 }
 
 String getCpuFreq() {
     String str = String(system_get_cpu_freq());
-    str += F("MHz");
+    str += "MHz";
     return str;
 }
 
@@ -141,7 +141,7 @@ String getVersionInfoJson() {
     DynamicJsonDocument doc(size);
 
     JsonObject item = doc.createNestedObject();
-    item["fw"] = FW_VERSION;
+    item["fw"] = APP_VERSION;
 
     item = doc.createNestedObject();
     item["sdk"] = system_get_sdk_version();
@@ -230,21 +230,6 @@ String getVcc() {
 
 String getChipId() { return String(ESP.getChipId(), HEX); }
 
-const char *rssi2human(sint8_t rssi) {
-    if (rssi < -50) {
-        return "fantastic";
-    } else if (rssi <= -60) {
-        return "great";
-    } else if (rssi <= -75) {
-        return "average";
-    } else if (rssi <= -85) {
-        return "poor";
-    } else if (rssi <= -95) {
-        return "unusable";
-    }
-    return "unknown";
-}
-
 String getNetworkInfoJson() {
     size_t size = JSON_ARRAY_SIZE(11) + 11 * JSON_OBJECT_SIZE(1) + 193;
 
@@ -288,16 +273,6 @@ String getNetworkInfoJson() {
     serializeJson(doc, str);
 
     return str;
-}
-
-void printResetInfo(Print* p) {
-    p->print(StrUtils::getIdentStrP(str_reset));    
-    p->print(StrUtils::getStrP(str_reason));
-    p->println(ESP.getResetReason());
-    
-    p->print(StrUtils::getIdentStrP(str_reset));    
-    p->print(StrUtils::getStrP(str_info));
-    p->println(ESP.getResetInfo());    
 }
 
 String getHeapStat() {

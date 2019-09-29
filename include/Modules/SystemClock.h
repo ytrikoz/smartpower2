@@ -5,18 +5,16 @@
 #include "Config.h"
 #include "FileStore.h"
 
-typedef std::function<void(const EpochTime)> TimeEventHandler;
-
 class SystemClock : public AppModule {
    public:
     SystemClock();
     void setConfig(Config* config);
     bool begin();
     void loop();
-    void printDiag(Print* p);
+    size_t printDiag(Print* p);
    public:
-    void setOnTimeChange(TimeEventHandler);
-    void setEpoch(EpochTime& epochTime, bool trusted = false);
+    void setOnChange(EpochTimeEventHandler);
+    void setEpoch(const EpochTime& epochTime, bool trusted = false);
     unsigned long getUptime();
     unsigned long getUtc();
     unsigned long getLocal();
@@ -32,7 +30,7 @@ class SystemClock : public AppModule {
     void onTimeChange();
 
    private:
-    TimeEventHandler timeChangeHandler;
+    EpochTimeEventHandler timeChangeHandler;
 
     bool trusted;
     EpochTime epoch;
@@ -46,4 +44,3 @@ class SystemClock : public AppModule {
     unsigned long lastUpdated;
 };
 
-extern SystemClock* rtc;

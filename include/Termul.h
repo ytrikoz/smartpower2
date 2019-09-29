@@ -3,7 +3,6 @@
 #include "CommonTypes.h"
 #include "EditBuffer.h"
 #include "Strings.h"
-#include "SystemClock.h"
 
 #define CHAR_NULL 0x00
 #define CHAR_BEL 0x07
@@ -63,6 +62,7 @@ typedef std::function<void(const char *)> TermulInputEventHandler;
 
 class Termul : public Print {
    public:
+    Termul();
     Termul(Stream *console);
     ~Termul();
     void setConsole(Stream *);

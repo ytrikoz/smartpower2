@@ -1,21 +1,14 @@
 #pragma once
 
 #include "Actions.h"
-#include "Psu.h"
 
-namespace Actions {
+namespace Actions
+{
 
-class ShowPsu : public Action {
-   public:
-    void exec(Print* p);
+class ShowPsu : public Action
+{
+public:
+    void exec(Print *p) { app.printDiag(MOD_PSU, p); };
 };
 
-void ShowPsu::exec(Print* p) {    
-    if (psu) {
-        psu->printDiag(p);
-    } else {
-        p->println(StrUtils::getStrP(str_disabled, false));
-    }
-}
-
-}  // namespace Actions
+} // namespace Actions

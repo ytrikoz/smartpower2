@@ -1,6 +1,13 @@
 #pragma once
 
-#include "Psu.h"
+#include "Arduino.h"
+
+struct LogItem {
+    size_t n;
+    uint16_t value;
+    LogItem() : n(0), value(0){};
+    LogItem(size_t n, uint16_t value) : n(n), value(value){};
+};
 
 class PsuLog {
    public:

@@ -1,22 +1,20 @@
-#include "LoopWatchDog.h"
+#include "LoopLogger.h"
 
 #include "TimeUtils.h"
 
-namespace Profiler {
+LoopLogger::LoopLogger() { state = CAPTURE_IDLE; }
 
-LoopWatchDog::LoopWatchDog() { state = CAPTURE_IDLE; }
+void LoopLogger::setIdle() { state = CAPTURE_IDLE; }
 
-void LoopWatchDog::setIdle() { state = CAPTURE_IDLE; }
+LoopLoggerState LoopLogger::getState() { return state; }
 
-State LoopWatchDog::getState() { return state; }
-
-Capture *LoopWatchDog::getResults() { return &cap; }
-
-void LoopWatchDog::add(Module module, unsigned long duration) {
+void LoopLogger::logTime(AppModuleEnum module, unsigned long duration) {
     if (state == CAPTURE_IN_PROGRESS) cap.module[module] += duration;
 }
 
-unsigned long LoopWatchDog::getDuration() {
+LoopCapture* LoopLogger::getCapture() { return &cap; }
+
+unsigned long LoopLogger::getDuration() {
     switch (state) {
         case CAPTURE_IN_PROGRESS:
             return captureTimeleft;
@@ -29,14 +27,14 @@ unsigned long LoopWatchDog::getDuration() {
     }
 }
 
-void LoopWatchDog::start() {
+void LoopLogger::start() {
     cap.reset();
     captureTimeleft = LOOP_CAPTURE_INTERVAL;
     state = CAPTURE_IN_PROGRESS;
     loopStarted = 0;
 }
 
-void LoopWatchDog::loop() {
+void LoopLogger::loop() {
     if (state != CAPTURE_IN_PROGRESS) return;
 
     if (loopStarted == 0) {
@@ -45,7 +43,7 @@ void LoopWatchDog::loop() {
     }
     unsigned long now = millis();
     unsigned long passed = millis_passed(loopStarted, now);
-    
+
     cap.total++;
     unsigned long time_range = 2;
     uint8_t i;
@@ -59,28 +57,24 @@ void LoopWatchDog::loop() {
     if (cap.longest < passed) cap.longest = passed;
     if (i == LOOP_COUNTERS) cap.overrange++;
 
-    cap.duration += passed;    
+    cap.duration += passed;
     if (captureTimeleft <= passed) {
         captureTimeleft = 0;
-        state = CAPTURE_DONE;                
+        state = CAPTURE_DONE;
         return;
     }
     captureTimeleft -= passed;
     loopStarted = millis();
 }
 
-TimeProfiler LoopWatchDog::run(Module module) {
-    return TimeProfiler(this, module);
+LiveTimer LoopLogger::onExecute(AppModuleEnum module) {
+    return LiveTimer(this, module);
 }
 
-TimeProfiler::TimeProfiler(ProfilesHolder* holder, Module module) {
-    this->holder = holder;
+LiveTimer::LiveTimer(LiveTimerLogger* logger, AppModuleEnum module) {
+    this->logger = logger;
     this->module = module;
-    started = micros();
+    createTime = micros();
 }
 
-TimeProfiler::~TimeProfiler() {
-    this->holder->add(this->module, micros() - this->started);
-}
-
-}  // namespace Profiler
+LiveTimer::~LiveTimer() { logger->logTime(module, micros() - createTime); }

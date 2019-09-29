@@ -1,20 +1,17 @@
 #pragma once
 
-#include <pgmspace.h>
 #include "CommonTypes.h"
-#include "StrUtils.h"
+#include <pgmspace.h>
 
 static const char str_build_date[] PROGMEM = BUILD_DATE;
 
 static const char msg_shell_start_hint[] PROGMEM = "press \"enter\" to start";
-static const char msg_system_restart[] PROGMEM =
-    "the system is going down for restart!";
+static const char msg_system_restart[] PROGMEM = "restart in %d seconds...";
 static const char msg_session_interrupted[] PROGMEM =
     "the session was interrupted!";
 static const char msg_connection_is_busy[] PROGMEM = "connection is busy!";
 
 static const char strf_ip[] PROGMEM = "ip %s";
-static const char strf_in_second[] PROGMEM = "in %d seconds";
 static const char strf_config_param_changed[] PROGMEM =
     "new value '%s' for the '%s' has been set!";
 static const char strf_config_param_unchanged[] PROGMEM = "'%s' unchanged";
@@ -36,6 +33,7 @@ static const char strf_used_per[] PROGMEM = "used %.2f%%";
 static const char strf_size_d[] PROGMEM = "size %d";
 static const char strf_per[] PROGMEM = "%.2f%%";
 
+static const char str_app[] PROGMEM = "app";
 static const char str_active[] PROGMEM = "active";
 static const char str_action[] PROGMEM = "action";
 static const char str_alert[] PROGMEM = "alert";
@@ -74,7 +72,6 @@ static const char str_disconnected[] PROGMEM = "disconnected";
 static const char str_dhcp[] PROGMEM = "dhcp";
 static const char str_dns[] PROGMEM = "dns";
 static const char str_done[] PROGMEM = "done";
-static const char str_down[] PROGMEM = "down";
 static const char str_duration[] PROGMEM = "duration";
 static const char str_interval[] PROGMEM = "interval";
 static const char str_every[] PROGMEM = "every";
@@ -89,6 +86,7 @@ static const char str_read[] PROGMEM = "read";
 static const char str_false[] PROGMEM = "false";
 static const char str_free[] PROGMEM = "free";
 static const char str_file[] PROGMEM = "file";
+static const char str_for[] PROGMEM = "for";
 static const char str_invalid[] PROGMEM = "invalid";
 static const char str_http[] PROGMEM = "http";
 static const char str_empty[] PROGMEM = "empty";
@@ -135,6 +133,7 @@ static const char str_output[] PROGMEM = "output";
 static const char str_over[] PROGMEM = "over";
 static const char str_password[] PROGMEM = "password";
 static const char str_param[] PROGMEM = "param";
+static const char str_port[] PROGMEM = "port";
 static const char str_print[] PROGMEM = "print";
 static const char str_reload[] PROGMEM = "reload";
 static const char str_reset[] PROGMEM = "reset";
@@ -183,7 +182,7 @@ static const char str_trusted[] PROGMEM = "trusted";
 static const char str_total[] PROGMEM = "total";
 static const char str_telnet[] PROGMEM = "telnet";
 static const char str_tpw[] PROGMEM = "tpw";
-static const char str_up[] PROGMEM = "up";
+
 static const char str_unknown[] PROGMEM = "unknown";
 static const char str_unhandled[] PROGMEM = "unhandled";
 static const char str_unset[] PROGMEM = "unset";

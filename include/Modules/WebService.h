@@ -4,6 +4,7 @@
 #include <ESP8266SSDP.h>
 #include <ESP8266WebServer.h>
 #include <FS.h>
+
 #include <WebSocketsServer.h>
 
 #include "AppModule.h"
@@ -21,7 +22,7 @@ class WebService : public AppModule {
     bool begin();
     void end();
     void loop();
-    void printDiag(Print*);
+    size_t printDiag(Print*);
    public:
     void setOnClientConnection(SocketConnectionEventHandler h);
     void setOnClientDisconnected(SocketConnectionEventHandler h);

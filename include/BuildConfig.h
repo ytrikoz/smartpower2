@@ -9,7 +9,7 @@
 #define WIFI_LED_PIN D4
 #define POWER_BTN_PIN D7
 #define INA231_ALERT_PIN 16
-#define INA231_I2C_ADDR	0x40
+#define INA231_I2C_ADDR 0x40
 
 #define DEBUG Serial
 #define ERROR Serial
@@ -23,6 +23,7 @@
 
 //#define SERIAL_DEBUG
 
+#define DEBUG_APP_MOD
 //#define DEBUG_LEDS
 //#define DEBUG_LOOP
 //#define DEBUG_PLOT

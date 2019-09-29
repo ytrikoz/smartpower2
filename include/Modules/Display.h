@@ -14,6 +14,7 @@
 #include "TimeUtils.h"
 
 // address are 0x27 or 0x3f
+#define NONE_ADDRESS 0x00
 #define LCD_SLAVE_ADDRESS 0x3f
 #define LCD_SLAVE_ADDRESS_ALT 0x27
 #define LCD_SCROLL_INTERVAL 5000
@@ -56,14 +57,14 @@ struct ScreenItem {
     }
 };
 
-class Display: public AppModule {
-   public:
+class Display : public AppModule {
+  public:
     Display();
     bool begin();
     void loop();
-    void setConfig(Config* config);
-public:
-    bool ready();    
+
+  public:
+    bool ready();
     void backlightOn();
     void backlightOff();
     void drawTextLeft(uint8_t row, const char *str);
@@ -84,7 +85,11 @@ public:
     void unlock();
     bool locked();
     PlotData *getData();
-   private:
+
+  protected:
+    void setConfig(Config *config);
+
+  private:
     bool connect();
     bool locked(unsigned long now);
     void loadBank(CharBank bank, bool force = false);
@@ -94,7 +99,6 @@ public:
     void scrollDown();
 
     uint8_t addr;
-    bool connected;
     bool active;
     CharBank bank;
     bool backlight;

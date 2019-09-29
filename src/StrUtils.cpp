@@ -5,6 +5,8 @@ namespace StrUtils {
 #define ONE_MHz_hz 1000000UL
 
 static const char strf_mac[] PROGMEM = "mac %02x:%02x:%02x:%02x:%02x:%02x";
+static const char str_down[] PROGMEM = "down";
+static const char str_up[] PROGMEM = "up";
 
 void strfill(char *str, char chr, size_t len) {
     memset(&str[0], chr, sizeof(char) * len);
@@ -53,7 +55,8 @@ bool setstr(char *dest, const char *src, size_t size) {
     } else if (strcmp(src, dest) != 0) {
         uint8_t len = strlen(src);
         if (len != 0) {
-            if (len > size - 1) len = size - 1;
+            if (len > size - 1)
+                len = size - 1;
             memcpy(dest, src, len);
             dest[len] = '\x00';
         }
@@ -88,26 +91,28 @@ String formatInMHz(uint32_t value) {
 
 void strpadd(char *str, Align align, size_t size, const char ch) {
     uint8_t str_len = strlen(str);
-    if (str_len > size) str_len = size;
+    if (str_len > size)
+        str_len = size;
     char orig_str[str_len + 1];
     strncpy(orig_str, str, str_len);
     strfill(str, ch, size + 1);
     uint8_t str_start = 0;
     switch (align) {
-        // [...str]
-        case RIGHT:
-            str_start = size - str_len;
-            break;
-        // [..str..]
-        case CENTER:
-            str_start = floor((float)(size - str_len) / 2);
-            break;
-        // [str...]
-        case LEFT:
-        default:
-            str_start = 0;
+    // [...str]
+    case RIGHT:
+        str_start = size - str_len;
+        break;
+    // [..str..]
+    case CENTER:
+        str_start = floor((float)(size - str_len) / 2);
+        break;
+    // [str...]
+    case LEFT:
+    default:
+        str_start = 0;
     }
-    for (size_t i = 0; i < str_len; ++i) str[i + str_start] = orig_str[i];
+    for (size_t i = 0; i < str_len; ++i)
+        str[i + str_start] = orig_str[i];
 }
 
 // http://stackoverflow.com/a/35236734
@@ -138,7 +143,8 @@ String getSocketStr(IPAddress ip, int port) {
 bool isip(const char *str) {
     for (size_t i = 0; i < strlen(str); i++) {
         int c = str[i];
-        if (c != '.' && (c < '0' || c > '9')) return false;
+        if (c != '.' && (c < '0' || c > '9'))
+            return false;
     }
     return true;
 }
@@ -167,12 +173,6 @@ String getStr(int num) {
     return res + " ";
 }
 
-String getStrP(PGM_P strP, bool space) {
-    char buf[64];
-    strcpy_P(buf, strP);
-    return String(buf);
-}
-
 String getBoolStr(bool value, bool space) {
     return String(value ? F("true") : F("false"));
 }
@@ -187,9 +187,40 @@ String getEnabledStr(bool value, bool space) {
     return res;
 }
 
+char *getUpDownStr(char *buf, bool value, bool space) {
+    PGM_P strP = value ? str_up : str_down;
+    strcpy_P(buf, strP);
+    return buf;
+}
+
 String getIdentStrP(PGM_P strP, bool with_space) {
     String str = getStrP(strP, false);
     return getIdentStr(str, with_space);
+}
+
+String getQuotedStrP(PGM_P strP, bool with_space, char ch) {
+    char buf[64];
+    strcpy_P(buf, strP);
+    return getQuotedStr(buf, with_space);
+}
+
+String getQuotedStr(const char *str, bool with_space, char ch) {
+    return getIdentStr(str, with_space, ch, ch);
+}
+
+String getQuotedStr(String &str, bool with_space) {
+    return getQuotedStr(str.c_str(), with_space, '\'');
+}
+
+size_t getStrP(PGM_P strP, char *buf) {
+    strcpy_P(buf, strP);
+    return strlen(buf);
+}
+
+String getStrP(PGM_P strP, bool spaced) {
+    char buf[64];
+    strcpy_P(buf, strP);
+    return String(buf);
 }
 
 String getIdentStr(const char *str, bool with_space, char ch) {
@@ -210,31 +241,17 @@ String getIdentStr(const char *str, bool with_space, char left, char right) {
     strcpy(&buf[1], str);
     size_t x = strlen(buf);
     buf[x] = right;
-    if (with_space) buf[++x] = ' ';
+    if (with_space)
+        buf[++x] = ' ';
     return String(buf);
 }
 
-String getQuotedStrP(PGM_P strP, bool with_space, char ch) {
-    char buf[64];
-    strcpy_P(buf, strP);
-    return getQuotedStr(buf, with_space);
-}
-
-String getQuotedStr(const char *str, bool with_space, char ch) {
-    return getIdentStr(str, with_space, ch, ch);
-}
-
-String getQuotedStr(String &str, bool with_space) {
-    return getQuotedStr(str.c_str(), with_space, '\'');
-}
-
-template <Print *, typename... Args>
-void sayArgsP(Print *p, Args... args) {
+template <typename... Args> void sayArgsP(Print *p, Args... args) {
     char buf[128];
     for (size_t n = 0; n < sizeof...(args); ++n) {
-        memset(buf, 0, 128);
         strcpy(buf, (char *)pgm_read_ptr(&args[n]...));
         p->print(buf);
     }
 }
-}  // namespace StrUtils
+
+} // namespace StrUtils

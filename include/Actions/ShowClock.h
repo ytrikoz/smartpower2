@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Actions.h"
-#include "SystemClock.h"
 
 namespace Actions {
 
@@ -10,8 +9,6 @@ class ShowClock : public Action {
     void exec(Print* p);
 };
 
-void ShowClock::exec(Print* p) {
-    rtc->printDiag(p);
-};
+void ShowClock::exec(Print* p) { app.getInstance(MOD_CLOCK)->printDiag(p); };
 
 }  // namespace Actions

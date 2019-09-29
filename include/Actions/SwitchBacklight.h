@@ -16,9 +16,9 @@ void SwitchBacklight::exec(Print* p) {
     bool enabled = (param > 0);
     p->print(StrUtils::getStrP(str_backlight));
     if (enabled)
-        display->backlightOn();        
+        app.getDisplay()->backlightOn();        
     else
-        display->backlightOff();
+        app.getDisplay()->backlightOff();
     p->println(StrUtils::getEnabledStr(enabled));
 
 }

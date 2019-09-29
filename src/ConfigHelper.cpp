@@ -189,16 +189,6 @@ float ConfigHelper::getOutputVoltage() {
     return config->getValueAsFloat(OUTPUT_VOLTAGE);
 }
 
-WiFiMode_t ConfigHelper::getWiFiMode() {
-    return (WiFiMode_t)config->getValueAsByte(WIFI);
-}
-
-const char *ConfigHelper::getSSID() { return config->getValueAsString(SSID); }
-
-const char *ConfigHelper::getSSID_AP() {
-    return config->getValueAsString(AP_SSID);
-}
-
 const char *ConfigHelper::getPassword() {
     return config->getValueAsString(PASSWORD);
 }
@@ -206,40 +196,5 @@ const char *ConfigHelper::getPassword() {
 const char *ConfigHelper::getPassword_AP() {
     return config->getValueAsString(AP_PASSWORD);
 }
-
-IPAddress ConfigHelper::getIPAddr_AP() {
-    return config->getValueAsIPAddress(AP_IPADDR);
-}
-
-bool ConfigHelper::getDHCP() { return config->getValueAsBool(DHCP); }
-
-IPAddress ConfigHelper::getDns() { return config->getValueAsIPAddress(DNS); }
-
-IPAddress ConfigHelper::getNetmask() {
-    return config->getValueAsIPAddress(NETMASK);
-}
-
-IPAddress ConfigHelper::getGateway() {
-    return config->getValueAsIPAddress(NETMASK);
-}
-
-IPAddress ConfigHelper::getIPAddr() {
-    return config->getValueAsIPAddress(IPADDR);
-}
-
-const char *ConfigHelper::getIPAddrStr() {
-    return config->getValueAsString(IPADDR);
-}
-
-const char *ConfigHelper::getNetmaskStr() {
-    return config->getValueAsString(NETMASK);
-}
-
-const char *ConfigHelper::getGatewayStr() {
-    return config->getValueAsString(GATEWAY);
-}
-
-const char *ConfigHelper::getDnsStr() { return config->getValueAsString(DNS); }
-
 // maximum value of RF Tx Power, unit: 0.25 dBm, range [0, 82]
 uint8_t ConfigHelper::getTPW() { return config->getValueAsByte(TPW); }

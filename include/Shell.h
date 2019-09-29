@@ -7,25 +7,26 @@
 
 class Shell {
    public:
-    Shell(SimpleCLI *, Termul *);
+    Shell();
+    void setParser(SimpleCLI *);
     void setTerminal(Termul *);
-    Termul *getTerm();
-    void loop();    
-    void setClock(EpochTime& clock);
-    void enableWelcome(bool enabled = true);
+    Termul *getTerminal();
+    void loop();
+    void enableWelcome(bool = true);
     void clearHistory();
     void addHistory(const char *);
     bool getHistoryInput(String &);
     void setEditBuffer(String &);
-    bool isActive();    
+    bool isActive();
+
    private:
     void requestHistoryHandler();
     void onSessionOpen();
     void onSessionClose();
     void onSessionData(const char *);
     bool getLastInput(String &);
-    size_t print_prompt(Print*);
-    size_t print_welcome(Print*);
+    size_t print_prompt(Print *);
+    size_t print_welcome(Print *);
     SimpleCLI *cli;
     Termul *t;
     std::vector<String> history;
