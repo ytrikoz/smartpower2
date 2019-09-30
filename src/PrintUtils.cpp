@@ -10,9 +10,11 @@ size_t print_param_value(Print *p, const char *param, const char *value) {
     return p->println(buf);
 }
 
-size_t print_shell_start(Print *p) { return p->print(FPSTR(msg_shell_start)); }
+size_t print_shell_start(Print *p) {
+    return p->println(FPSTR(msg_shell_start));
+}
 
-size_t print_shell_quit(Print *p) { return p->print(FPSTR(msg_shell_quit)); }
+size_t print_shell_quit(Print *p) { return p->println(FPSTR(msg_shell_quit)); }
 
 size_t print_shell_interrupted(Print *p) {
     return p->print(FPSTR(msg_session_interrupted));

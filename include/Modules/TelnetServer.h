@@ -13,9 +13,10 @@ typedef std::function<bool(Stream *)> TelnetConnectEventHandler;
 typedef std::function<void()> TelnetDisconnectEventHandler;
 
 class TelnetServer : public AppModule {
-   public:
+  public:
     TelnetServer();
     bool begin();
+    void start();
     void stop();
     void loop();
     void write(const char *);
@@ -23,7 +24,7 @@ class TelnetServer : public AppModule {
     void setOnClientConnect(TelnetConnectEventHandler handler);
     void setOnCLientDisconnect(TelnetDisconnectEventHandler handler);
 
-   private:
+  private:
     void init();
     void onConnect();
     void onDisconnect();
@@ -35,6 +36,4 @@ class TelnetServer : public AppModule {
     WiFiServer *server;
     TelnetConnectEventHandler onConnectEvent;
     TelnetDisconnectEventHandler onDisconnectEvent;
-    WiFiEventHandler staDisconnected, staGotIP;
-    Print *output = &USE_SERIAL;
 };

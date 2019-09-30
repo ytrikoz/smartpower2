@@ -13,7 +13,7 @@ App app;
 SystemClock *App::getClock() { return rtc; }
 
 void App::printDiag(const AppModuleEnum module, Print *p) {
-    AppModule *mod = appModule[module];
+    AppModule *mod = appMod[module];
     if (mod) {
         mod->printDiag(p);
     } else {
@@ -70,7 +70,7 @@ void App::printLoopCapture(Print *p) {
     float system_time = cap->duration - total_modules_time;
 
     for (uint8_t i = 0; i < cap->modules_size; ++i) {
-        p->print(appModule[i]->getName());
+        p->print(appMod[i]->getName());
         p->print('\t');
         float load =
             (float)cap->module[i] / ONE_MILLISECOND_mi / total_modules_time;
@@ -122,7 +122,7 @@ void App::loop() {
 }
 
 App::App() {
-    memset(appModule, 0, sizeof(appModule[0]) * 13);
+    memset(appMod, 0, sizeof(appMod[0]) * 13);
     loopLogger = new LoopLogger();
 }
 
@@ -264,10 +264,10 @@ void App::init(Print *p) {
 }
 
 AppModule *App::getInstance(const AppModuleEnum module) {
-    if (!appModule[module]) {
+    if (!appMod[module]) {
         switch (module) {
         case MOD_BTN:
-            appModule[module] = btn = new Button();
+            appMod[module] = btn = new Button();
             btn->setOnClicked([this]() { psu->togglePower(); });
             btn->setOnHold([this](unsigned long time) {
                 if (time > ONE_SECOND_ms * 5) {
@@ -278,13 +278,13 @@ AppModule *App::getInstance(const AppModuleEnum module) {
                 [this](unsigned long time) { refresh_power_led(); });
             break;
         case MOD_CLOCK:
-            appModule[module] = rtc = new SystemClock();
+            appMod[module] = rtc = new SystemClock();
             break;
         case MOD_LED:
-            appModule[module] = leds = new Led::Leds();
+            appMod[module] = leds = new Led::Leds();
             break;
         case MOD_PSU:
-            appModule[module] = psu = new Psu();
+            appMod[module] = psu = new Psu();
             psuLogger = new PsuLogger();
             psu->setLogger(psuLogger);
             psu->setOnTogglePower([]() { sendPageState(PG_HOME); });
@@ -316,22 +316,22 @@ AppModule *App::getInstance(const AppModuleEnum module) {
             });
             break;
         case MOD_LCD:
-            appModule[module] = display = new Display();
+            appMod[module] = display = new Display();
             break;
         case MOD_HTTP:
-            appModule[module] = http = new WebService();
+            appMod[module] = http = new WebService();
             http->setOnClientConnection(onHttpClientConnect);
             http->setOnClientDisconnected(onHttpClientDisconnect);
             http->setOnClientData(onHttpClientData);
             break;
         case MOD_SHELL:
-            appModule[module] = shell = new ShellController();
+            appMod[module] = shell = new ShellMod();
             break;
         case MOD_NETSVC:
-            appModule[module] = discovery = new NetworkService();
+            appMod[module] = discovery = new NetworkService();
             break;
         case MOD_NTP: {
-            appModule[module] = ntp = new NtpClient();
+            appMod[module] = ntp = new NtpClient();
             ntp->setOnResponse([this](const EpochTime &epoch) {
                 if (rtc)
                     rtc->setEpoch(epoch, true);
@@ -339,7 +339,7 @@ AppModule *App::getInstance(const AppModuleEnum module) {
             break;
         }
         case MOD_TELNET:
-            appModule[module] = telnet = new TelnetServer();
+            appMod[module] = telnet = new TelnetServer();
             telnet->setOnClientConnect([this](Stream *stream) {
                 out->print(StrUtils::getIdentStrP(str_telnet));
                 out->println(StrUtils::getStrP(str_connected));
@@ -355,11 +355,11 @@ AppModule *App::getInstance(const AppModuleEnum module) {
             });
             break;
         case MOD_UPDATE:
-            appModule[module] = ota = new OTAUpdate();
+            appMod[module] = ota = new OTAUpdate();
             break;
         }
     }
-    return appModule[module];
+    return appMod[module];
 }
 
 Config *App::getConfig() { return env->get(); }

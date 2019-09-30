@@ -6,21 +6,19 @@
 #include "Cli.h"
 #include "Shell.h"
 
-class ShellController : public AppModule {
-  public:
-    void loop();
-    bool begin();
-
+class ShellMod : public AppModule {
   public:
     bool setLocal();
     bool setRemote(Stream *);
+    bool isActive();
 
   public:
-    ShellController();
-    bool isActive();
+    ShellMod();
+    bool begin();
+    void loop();
 
   private:
     bool active;
     Shell shell;
-    Termul term;
+    Termul local, remote;
 };

@@ -7,25 +7,21 @@ using StrUtils::setstr;
 using StrUtils::strfill;
 using StrUtils::strpadd;
 
-Shell::Shell() {
-    active = false;
-}
+Shell::Shell() { active = false; }
 
-void Shell::setParser(SimpleCLI* parser) {
-    cli = parser;
-}
+void Shell::setParser(SimpleCLI *parser) { cli = parser; }
 
-void Shell::setTerminal(Termul* term) {
+void Shell::setTerminal(Termul *term) {
     t = term;
     t->setOnOpen([this]() { this->onSessionOpen(); });
     t->setOnClose([this]() { this->onSessionClose(); });
-    t->setOnReadLine([this](const char* str) { this->onSessionData(str); });
+    t->setOnReadLine([this](const char *str) { this->onSessionData(str); });
     t->setOnTabKey([this]() { this->requestHistoryHandler(); });
 }
 
 bool Shell::isActive() { return this->active; }
 
-Termul* Shell::getTerminal() { return this->t; }
+Termul *Shell::getTerminal() { return this->t; }
 
 void Shell::enableWelcome(bool enabled) { welcomeEnabled = enabled; }
 
@@ -34,7 +30,8 @@ void Shell::onSessionOpen() {
     DEBUG.println("[shell] onSessionOpen");
 #endif
     Cli::setOutput(t);
-    if (welcomeEnabled) print_welcome(t);
+    if (welcomeEnabled)
+        print_welcome(t);
     print_prompt(t);
     active = true;
 }
@@ -48,15 +45,14 @@ void Shell::onSessionClose() {
 }
 
 void Shell::loop() {
-    if (t) t->loop();
+    if (t)
+        t->loop();
 }
 
-void Shell::clearHistory() {
-    history.clear();
-}
+void Shell::clearHistory() { history.clear(); }
 
-void Shell::setEditBuffer(String& str) {
-    t->setEditBuffer((const uint8_t*) str.c_str(), str.length());
+void Shell::setEditBuffer(String &str) {
+    t->setEditBuffer((const uint8_t *)str.c_str(), str.length());
     t->print(str);
 }
 
@@ -70,31 +66,33 @@ void Shell::requestHistoryHandler() {
             print_prompt(t);
         }
         String str;
-        if (getLastInput(str)) { 
-            setEditBuffer(str); 
-        };        
+        if (getLastInput(str)) {
+            setEditBuffer(str);
+        };
     }
 }
 
-bool Shell::getLastInput(String& str) {
+bool Shell::getLastInput(String &str) {
     if (history.size() > 0) {
         str = String(history.back());
         history.pop_back();
-        return true;        
+        return true;
     }
     return false;
 }
 
-void Shell::addHistory(const char* str) {
-    if (str == NULL) return;
+void Shell::addHistory(const char *str) {
+    if (str == NULL)
+        return;
     String buf(str);
     if (buf.length()) {
         history.push_back(buf);
-        if (history.size() > SHELL_HISTORY_SIZE) history.pop_back();
-    } 
+        if (history.size() > SHELL_HISTORY_SIZE)
+            history.pop_back();
+    }
 }
 
-void Shell::onSessionData(const char* str) {
+void Shell::onSessionData(const char *str) {
 #ifdef DEBUG_SHELL
     DEBUG.printf("[shell] onSessionData(%s)", str);
 #endif
@@ -107,30 +105,21 @@ void Shell::onSessionData(const char* str) {
     print_prompt(t);
 }
 
-size_t Shell::print_welcome(Print* p) {
+size_t Shell::print_welcome(Print *p) {
 #ifdef DEBUG_SHELL
     DEBUG.print("[shell] print_welcome");
 #endif
-    char title[SCREEN_WIDTH + 1];
-    strcpy(title, APP_NAME " v" APP_VERSION);
-    uint8_t width = SCREEN_WIDTH / 2;
-    strpadd(title, StrUtils::CENTER, width, ' ');
-    
-    char decor[width + 1];
-    strfill(decor, '#', width + 1);
-
-    size_t n = p->println(decor);
-    n += p->println(title);
-    n += p->println(decor);
-    return n;
+    return 0;
 }
 
-size_t Shell::print_prompt(Print* p) {
+size_t Shell::print_prompt(Print *p) {
 #ifdef DEBUG_SHELL
     DEBUG.print("[shell] print_prompt");
 #endif
     char buf[64] = {0};
-    if (app.getClock()) strcpy(buf, TimeUtils::getTimeFormated(buf, app.getClock()->getLocal()));        
+    if (app.getClock())
+        strcpy(buf,
+               TimeUtils::getTimeFormated(buf, app.getClock()->getLocal()));
     size_t n = strlen(buf);
     buf[n] = '>';
     buf[++n] = '\x20';

@@ -3,13 +3,19 @@
 #include <mcurses.h>
 
 #include "ArrayBuffer.h"
+#include "PrintUtils.h"
 #include "SysInfo.h"
 
 Termul::Termul() { this->editor = new EditBuffer(INPUT_MAX_LENGTH); }
 
 Termul::Termul(Stream *console) : Termul() { setConsole(console); }
 
-void Termul::setConsole(Stream *console) { this->s = console; }
+void Termul::setConsole(Stream *console) {
+    this->s = console;
+    if (s) {
+        PrintUtils::print_shell_start(s);
+    }
+}
 
 bool Termul::available() { return s->available(); }
 

@@ -60,4 +60,6 @@ size_t print_param_value(Print *p, const char *name, const char *value);
 
 size_t print_name_value(Print *p, String &name, String &value);
 
+size_t print_prompt(Print *p);
+
 } // namespace PrintUtils

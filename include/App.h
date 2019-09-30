@@ -9,7 +9,7 @@
 #include "Modules/NtpClient.h"
 #include "Modules/OTAUpdate.h"
 #include "Modules/Psu.h"
-#include "Modules/ShellController.h"
+#include "Modules/ShellMod.h"
 #include "Modules/SystemClock.h"
 #include "Modules/TelnetServer.h"
 #include "Modules/WebService.h"
@@ -64,7 +64,7 @@ class App {
     uint8_t boot_per;
     LoopLogger *loopLogger;
     ConfigHelper *env;
-    ShellController *shell;
+    ShellMod *shell;
     OTAUpdate *ota;
     Display *display;
     SystemClock *rtc;
@@ -73,7 +73,7 @@ class App {
     Button *btn;
     Led::Leds *leds;
     NetworkService *discovery;
-    AppModule *appModule[APP_MODULES];
+    AppModule *appMod[APP_MODULES];
     Print *out;
     Print *dbg;
     Print *err;
