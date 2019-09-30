@@ -31,9 +31,8 @@ class Talkative {
     size_t print(Print *, const char *, size_t);
 
   private:
-    char last;
-    char *name;
     AppModuleEnum module;
+    char *name;
 };
 
 class AppModule : public Talkative {

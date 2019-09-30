@@ -97,8 +97,6 @@ bool App::isNetworkDepended(AppModuleEnum module) {
 }
 
 void App::loop() {
-    handle_restart();
-
     for (uint8_t i = 0; i < APP_MODULES; ++i) {
         AppModule *mod = getInstance(AppModuleEnum(i));
         if (!mod)
@@ -115,6 +113,7 @@ void App::loop() {
 
     unsigned long now = millis();
     if (millis_passed(displayUpdated, now) > ONE_SECOND_ms) {
+        handle_restart();
         update_display();
         displayUpdated = now;
     }
@@ -160,8 +159,9 @@ void App::restart(uint8_t seconds) {
     reboot = seconds;
     if (reboot > 0) {
         leds->set(Led::POWER_LED, Led::BLINK_ERROR);
+        leds->set(Led::WIFI_LED, Led::BLINK_ERROR);
         char buf[16];
-        sprintf_P(buf, msg_system_restart, reboot);
+        sprintf_P(buf, msg_restart_in_d_seconds, reboot);
         out->println(buf);
     } else {
         refresh_power_led();

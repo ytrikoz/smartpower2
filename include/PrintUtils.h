@@ -33,15 +33,31 @@ size_t println(Print *p, T first, Args... args) {
     return n;
 }
 
+size_t print_shell_start(Print *p);
+
+size_t print_shell_quit(Print *p);
+
+size_t print_shell_interrupted(Print *p);
+
 void print_welcome(Print *p, const char *title, const char *message,
                    const char *footer);
 
 void delay_print(Print *p, const char *message, uint8_t wait_s);
 
-void print_unknown_item(Print *p, String &itemStr);
+size_t print_unknown_item(Print *p, String &name);
 
-void print_unknown_param(Print *p, String &paramStr);
+size_t print_unknown_param(Print *p, String &name);
 
-void print_unknown_action(Print *p, String &actionStr);
+size_t print_unknown_action(Print *p, String &name);
+
+size_t print_ln(Print *p);
+
+size_t print_done(Print *p);
+
+size_t print_file_not_found(Print *p, String &name);
+
+size_t print_param_value(Print *p, const char *name, const char *value);
+
+size_t print_name_value(Print *p, String &name, String &value);
 
 } // namespace PrintUtils

@@ -7,13 +7,14 @@
 typedef std::function<void(ConfigItem)> ConfigChangeEventHandler;
 
 class Config {
-   public:
+  public:
     Config();
     ~Config();
     bool load(const char *str, size_t size);
     void setOnConfigChaged(ConfigChangeEventHandler);
     void setDefaultValue(ConfigItem param);
     String toString(ConfigItem param);
+    bool setValueString(const ConfigItem param, String &str);
     bool setValueString(const ConfigItem param, const char *str);
     bool setValueStringByName(const char *name, const char *value);
     bool setValueChar(const ConfigItem param, char ch);
@@ -22,7 +23,6 @@ class Config {
     bool setValueByte(const ConfigItem param, const uint8_t value);
     bool setValueInt(const ConfigItem param, const uint16_t value);
     bool setValueFloat(const ConfigItem param, const float value);
-
     ConfigDefine getDefine(size_t index);
     const char *getName(ConfigItem param);
     const size_t getSize(ConfigItem param);
@@ -40,12 +40,12 @@ class Config {
     bool getConfig(String &name, ConfigItem &param, size_t &size);
     bool getConfig(const char *name, ConfigItem &param, size_t &size);
 
-   private:
+  private:
     void onChangedEvent(ConfigItem param);
     char *values[PARAM_COUNT];
     ConfigChangeEventHandler onChangeEventHandler;
 
-   private:
+  private:
     ConfigDefine define[PARAM_COUNT] = {
         {"wifi", CONFIG_CHAR, "2"},
         {"ssid", CONFIG_STR, "LocalNetwork"},

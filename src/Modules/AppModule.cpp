@@ -8,19 +8,15 @@ using namespace StrUtils;
 
 Talkative::Talkative(AppModuleEnum module) {
     this->module = module;
-    this->name = new char[16];
+    name = new char[16];
     name = moduleStr(name, module);
-    last = 0;
 }
 
 void Talkative::setOutput(Print *p) { this->out = this->dbg = this->err = p; }
 
 const char *Talkative::getName() { return name; }
 
-size_t Talkative::print(Print *p, char ch) {
-    last = ch;
-    return p->print(ch);
-};
+size_t Talkative::print(Print *p, char ch) { return p->print(ch); };
 
 size_t Talkative::print(Print *p, char *str) { return p->print(str); };
 
@@ -62,6 +58,7 @@ size_t Talkative::sayP_value(PGM_P strP, const char *value) {
     memset(buf, 0, 16);
     strcpy_P(buf, strP);
     n += print(out, buf);
+    n += print(out, ':');
     n += print(out, ' ');
     strcpy(buf, value);
     n += print(out, buf);

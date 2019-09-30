@@ -15,7 +15,8 @@ Config::Config() {
 }
 
 Config::~Config() {
-    for (int index = 0; index < PARAM_COUNT; ++index) delete[] values[index];
+    for (int index = 0; index < PARAM_COUNT; ++index)
+        delete[] values[index];
 }
 
 void Config::setDefaultValue(ConfigItem param) {
@@ -28,7 +29,8 @@ void Config::setOnConfigChaged(ConfigChangeEventHandler h) {
 }
 
 void Config::onChangedEvent(ConfigItem param) {
-    if (onChangeEventHandler) onChangeEventHandler(param);
+    if (onChangeEventHandler)
+        onChangeEventHandler(param);
 }
 
 ConfigDefine Config::getDefine(size_t index) { return define[index]; }
@@ -38,7 +40,8 @@ const char *Config::getValueAsString(ConfigItem param) { return values[param]; }
 bool Config::getConfig(const char *name, ConfigItem &param) {
     for (uint8_t i = 0; i < PARAM_COUNT; ++i) {
         param = ConfigItem(i);
-        if (strcmp(name, getName(param)) == 0) return true;
+        if (strcmp(name, getName(param)) == 0)
+            return true;
     }
     return false;
 }
@@ -104,18 +107,25 @@ bool Config::setValueStringByName(const char *name, const char *value) {
     return getConfig(name, param) && setValueString(param, value);
 }
 
+bool Config::setValueString(const ConfigItem param, String &str) {
+    return setValueString(param, str.c_str());
+}
+
 bool Config::setValueString(const ConfigItem param, const char *str) {
     bool result = StrUtils::setstr(values[param], str, getSize(param) + 1);
-    if (result) onChangedEvent(param);
+    if (result)
+        onChangedEvent(param);
     return result;
 }
 
 bool Config::load(const char *str, size_t len) {
     char buf[128];
-    size_t index;    
+    size_t index;
     for (index = 0; index < len; ++index)
-        if (str[index] == '=') break;
-    if (index == len) return false;
+        if (str[index] == '=')
+            break;
+    if (index == len)
+        return false;
     strncpy(buf, str, index);
     ConfigItem param;
     size_t size;

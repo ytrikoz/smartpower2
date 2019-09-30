@@ -5,15 +5,15 @@
 
 static const char str_build_date[] PROGMEM = BUILD_DATE;
 
-static const char msg_shell_start_hint[] PROGMEM = "press \"enter\" to start";
-static const char msg_system_restart[] PROGMEM = "restart in %d seconds...";
+static const char msg_shell_start[] PROGMEM = "press \"enter\" to start";
+static const char msg_shell_quit[] PROGMEM = "exit, bye!";
+static const char msg_restart_in_d_seconds[] PROGMEM =
+    "restart in %d seconds...";
 static const char msg_session_interrupted[] PROGMEM =
     "the session was interrupted!";
 static const char msg_connection_is_busy[] PROGMEM = "connection is busy!";
 
 static const char strf_ip[] PROGMEM = "ip %s";
-static const char strf_config_param_changed[] PROGMEM =
-    "new value '%s' for the '%s' has been set!";
 static const char strf_config_param_unchanged[] PROGMEM = "'%s' unchanged";
 static const char strf_progress[] PROGMEM = " %u%%\r";
 static const char strf_ip_params[] PROGMEM =
