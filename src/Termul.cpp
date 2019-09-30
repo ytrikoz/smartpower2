@@ -5,13 +5,9 @@
 #include "ArrayBuffer.h"
 #include "SysInfo.h"
 
-Termul::Termul() {
-    this->editor = new EditBuffer(INPUT_MAX_LENGTH);
-}
+Termul::Termul() { this->editor = new EditBuffer(INPUT_MAX_LENGTH); }
 
-Termul::Termul(Stream *console):Termul() {
-    setConsole(console);
-}
+Termul::Termul(Stream *console) : Termul() { setConsole(console); }
 
 void Termul::setConsole(Stream *console) { this->s = console; }
 
@@ -39,7 +35,8 @@ void Termul::enableControlCodes(bool enabled) {
 void Termul::quit() {}
 
 void Termul::loop() {
-    if ((!s) || (!s->available())) return; 
+    if ((!s) || (!s->available()))
+        return;
 
     uint8_t startY = curY;
     uint8_t startX = curX;
@@ -52,14 +49,16 @@ void Termul::loop() {
     if (state == ST_INACTIVE) {
         // wait for cr
         if (c == CHAR_CR) {
-            if (onStartHandler) onStartHandler();
+            if (onStartHandler)
+                onStartHandler();
             state = ST_NORMAL;
         }
         // or ignore all other
         return;
     }
 
-    if (c == CHAR_LF || c == CHAR_NULL || c == CHAR_BIN) return;
+    if (c == CHAR_LF || c == CHAR_NULL || c == CHAR_BIN)
+        return;
 
     // Esc
     if (c == CHAR_ESC || c == 195) {
@@ -103,7 +102,8 @@ void Termul::loop() {
             if (!editor->available()) {
                 // QUIT
                 state = ST_INACTIVE;
-                if (onQuitEvent) onQuitEvent();
+                if (onQuitEvent)
+                    onQuitEvent();
             } else {
                 // CLEAR
                 editor->clear();
@@ -117,40 +117,45 @@ void Termul::loop() {
         }
 
         switch (c) {
-            case CHAR_CR:
-                println();
-                if (onInputEvent) onInputEvent(editor->c_str());
-                editor->clear();
-                return;            
-            case CHAR_TAB:
-                if (onTabPressed) onTabPressed();
-                return;
-            case KEY_LEFT:
-                if (editor->prev()) moveX--;
-                break;
-            case KEY_RIGHT:
-                if (editor->next()) moveX++;
-                break;
-            case KEY_HOME:
-                moveX = -1 * editor->available();
-                editor->first();
-                break;
-            case KEY_END:
-                moveX = editor->available();
-                editor->last();
-                break;
-            case CHAR_BS:
-            case KEY_DEL:
-                if (editor->backspace()) {
-                    backsp();
-                }
-                break;
-            default:
-                // printable ascii 7bit or printable 8bit ISO8859
-                if ((c & '\x7F') >= 32 && (c & '\x7F') < 127)
-                    if (editor->write((uint8_t)c))
-                        if (echoEnabled) write(c);
-                break;
+        case CHAR_CR:
+            println();
+            if (onInputEvent)
+                onInputEvent(editor->c_str());
+            editor->clear();
+            return;
+        case CHAR_TAB:
+            if (onTabPressed)
+                onTabPressed();
+            return;
+        case KEY_LEFT:
+            if (editor->prev())
+                moveX--;
+            break;
+        case KEY_RIGHT:
+            if (editor->next())
+                moveX++;
+            break;
+        case KEY_HOME:
+            moveX = -1 * editor->available();
+            editor->first();
+            break;
+        case KEY_END:
+            moveX = editor->available();
+            editor->last();
+            break;
+        case CHAR_BS:
+        case KEY_DEL:
+            if (editor->backspace()) {
+                backsp();
+            }
+            break;
+        default:
+            // printable ascii 7bit or printable 8bit ISO8859
+            if ((c & '\x7F') >= 32 && (c & '\x7F') < 127)
+                if (editor->write((uint8_t)c))
+                    if (echoEnabled)
+                        write(c);
+            break;
         }
 
         // if (controlCodesEnabled) move(startY, startX + moveX);
@@ -160,15 +165,16 @@ void Termul::loop() {
 bool Termul::setEditBuffer(const uint8_t *bytes, size_t size) {
     editor->clear();
     size_t max_len = editor->free() - 1;
-    if (size > max_len) size = max_len;
+    if (size > max_len)
+        size = max_len;
     return editor->write(bytes, size);
 }
 
 EditBuffer *Termul::getEditBuffer() { return this->editor; }
 
 void Termul::start() {
-    if (controlCodesEnabled) initscr();
-    write_P(msg_shell_start_hint);
+    if (controlCodesEnabled)
+        initscr();
     println();
 }
 
@@ -199,11 +205,16 @@ void Termul::attrset(const uint16_t attr) {
             this->write(i - 1 + '0');
         }
 
-        if (attr & A_REVERSE) this->write_P(SEQ_ATTRSET_REVERSE);
-        if (attr & A_UNDERLINE) this->write_P(SEQ_ATTRSET_UNDERLINE);
-        if (attr & A_BLINK) this->write_P(SEQ_ATTRSET_BLINK);
-        if (attr & A_BOLD) this->write_P(SEQ_ATTRSET_BOLD);
-        if (attr & A_DIM) this->write_P(SEQ_ATTRSET_DIM);
+        if (attr & A_REVERSE)
+            this->write_P(SEQ_ATTRSET_REVERSE);
+        if (attr & A_UNDERLINE)
+            this->write_P(SEQ_ATTRSET_UNDERLINE);
+        if (attr & A_BLINK)
+            this->write_P(SEQ_ATTRSET_BLINK);
+        if (attr & A_BOLD)
+            this->write_P(SEQ_ATTRSET_BOLD);
+        if (attr & A_DIM)
+            this->write_P(SEQ_ATTRSET_DIM);
         this->write('m');
         this->attr = attr;
     }
@@ -253,20 +264,20 @@ size_t Termul::println(const char *str) {
 size_t Termul::println(void) {
     size_t n = 0;
     switch (eol) {
-        case CRLF:
-            n += write(CHAR_CR);
-            n += write(CHAR_LF);
-            break;
-        case LF:
-            n += write(CHAR_LF);
-            break;
-        case LFCR:
-            n += write(CHAR_LF);
-            n += write(CHAR_CR);
-            break;
-        case CR:
-            n += write(CHAR_CR);
-            break;
+    case CRLF:
+        n += write(CHAR_CR);
+        n += write(CHAR_LF);
+        break;
+    case LF:
+        n += write(CHAR_LF);
+        break;
+    case LFCR:
+        n += write(CHAR_LF);
+        n += write(CHAR_CR);
+        break;
+    case CR:
+        n += write(CHAR_CR);
+        break;
     }
     return n;
 }
