@@ -191,6 +191,11 @@ void Display::addScreenItem(uint8_t n, const char *label, const char *text) {
 #endif
 }
 
+void Display::setScreen(Screen screen, size_t size, unsigned long showTime) {
+    setScreen(screen, size);
+    lock(showTime);
+}
+
 void Display::setScreen(Screen screen, size_t size) {
     if (!connect())
         return;
@@ -208,6 +213,8 @@ void Display::setScreen(Screen screen, size_t size) {
         this->item_pos = 0;
         this->lastScroll = millis();
         this->active = items_size > 0;
+
+        redrawScreen(true);
     }
 }
 
@@ -261,11 +268,7 @@ void Display::loop() {
         return;
 
     if (millis_passed(lastUpdated, now) >= LCD_UPDATE_INTERVAL) {
-        for (uint8_t row = 0; row < LCD_ROWS; ++row) {
-            ScreenItem *item = getItemForRow(row);
-            if (item->needsRedraw())
-                drawScreenItem(row, item);
-        }
+        redrawScreen();
         lastUpdated = now;
     }
 
@@ -275,6 +278,14 @@ void Display::loop() {
             scrollDown();
             lastScroll = now;
         }
+    }
+}
+
+void Display::redrawScreen(bool force) {
+    for (uint8_t row = 0; row < LCD_ROWS; ++row) {
+        ScreenItem *item = getItemForRow(row);
+        if (force || item->needsRedraw())
+            drawScreenItem(row, item);
     }
 }
 

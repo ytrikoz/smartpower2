@@ -43,6 +43,7 @@ class App {
     Display *getDisplay();
     SystemClock *getClock();
     Psu *getPsu();
+    PsuState *getPsuState();
     bool setBootPowerState(BootPowerState state);
     bool setOutputVoltageAsDefault();
     uint8_t getTPW();

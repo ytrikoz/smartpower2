@@ -26,7 +26,8 @@ void update_display();
 
 uint8_t get_telnet_clients_count();
 
-void onTimeChangeEvent(const EpochTime);
+void load_screen_message(const char *type, const char *msg);
+void load_screen_psu_pvi();
 
 // main
 extern void sendPageState(uint8_t page);

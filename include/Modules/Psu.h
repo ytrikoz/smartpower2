@@ -7,39 +7,66 @@
 
 #define POWER_SWITCH_PIN D6
 
+enum PowerState { POWER_ON = 0, POWER_OFF = 1 };
 enum PsuStatus { PSU_OK, PSU_ERROR, PSU_ALERT };
 enum PsuError { PSU_ERROR_NONE, PSU_ERROR_DC_IN_LOW };
 enum PsuAlert { PSU_ALERT_NONE, PSU_ALERT_LOAD_LOW };
 
 typedef std::function<void()> PsuEventHandler;
+typedef std::function<void(String &str)> PsuEventMessageHandler;
 
 struct PsuState : Printable {
+    PowerState power;
     PsuStatus status;
     PsuError error;
     PsuAlert alert;
-    PsuEventHandler onPsuError, onPsuAlert;
+    PsuEventMessageHandler errorHandler, alertHandler;
     PsuState() { clear(); }
     void clear() {
         status = PSU_OK;
         alert = PSU_ALERT_NONE;
         error = PSU_ERROR_NONE;
     }
+
+    PowerState getPower(void) { return power; }
+
+    PsuStatus getStatus(void) { return status; }
+
+    String getPowerStateStr() { return getStateStr(power); }
+
+    bool getPower(PowerState state) { return this->power == state; }
+
+    bool getStatus(PsuStatus status) { return this->status == status; }
+
     bool isOK() {
         update();
-        return this->status == PSU_OK;
+        return this->status == status;
     }
+
+    void setOnError(PsuEventMessageHandler h) { errorHandler = h; };
+
+    void setOnAlert(PsuEventMessageHandler h) { alertHandler = h; };
+
+    void setPower(PowerState value) { this->power = value; }
+
     void setError(PsuError e) {
         this->status = PSU_ERROR;
         error = e;
-        if (onPsuError)
-            onPsuError();
+        if (errorHandler) {
+            String errorStr = getErrorStr(e);
+            errorHandler(errorStr);
+        };
     }
+
     void setAlert(PsuAlert a) {
         status = PSU_ALERT;
         alert = a;
-        if (onPsuAlert)
-            onPsuAlert();
+        if (alertHandler) {
+            String alertStr = getAlertStr(a);
+            alertHandler(alertStr);
+        }
     }
+
     size_t printTo(Print &p) const {
         size_t n = 0;
         switch (status) {
@@ -55,12 +82,21 @@ struct PsuState : Printable {
         return n;
     }
 
+    static String getStateStr(PowerState state) {
+        String str = "";
+        if (state == POWER_ON) {
+            str = StrUtils::getStrP(str_on);
+        } else if (state == POWER_OFF) {
+            str = StrUtils::getStrP(str_off);
+        }
+        return str;
+    };
+
     static String getAlertStr(PsuAlert alert) {
         String str = "";
-        if (alert == PSU_ALERT_NONE)
-            return str;
-        str = StrUtils::getStrP(str_alert);
         switch (alert) {
+        case PSU_ALERT_NONE:
+            break;
         case PSU_ALERT_LOAD_LOW:
             str += StrUtils::getStrP(str_load_low, false);
             break;
@@ -104,11 +140,13 @@ class Psu : public AppModule {
     PsuLogger *getLogger();
     void setLogger(PsuLogger *);
     void togglePower();
+    void powerOff();
+    void powerOn();
     void setOnTogglePower(PsuEventHandler);
     void setOnPowerOn(PsuEventHandler);
     void setOnPowerOff(PsuEventHandler);
-    void setOnError(PsuEventHandler);
-    void setOnAlert(PsuEventHandler);
+    void setOnError(PsuEventMessageHandler);
+    void setOnAlert(PsuEventMessageHandler);
 
   public:
     Psu();
@@ -119,9 +157,10 @@ class Psu : public AppModule {
 
   public:
     void init();
-    PowerState getState();
+    PsuState *getPsuState(void) { return &psuState; }
     void setOutputVoltage(float voltage);
     float getOutputVoltage();
+    String getPowerStateStr();
     PsuInfo getInfo();
     float getP();
     float getV();
@@ -133,8 +172,8 @@ class Psu : public AppModule {
     void setWh(double value);
 
   private:
-    void onStart();
-    void onStop();
+    void onPowerOff();
+    void onPowerOn();
     void setState(PowerState value, bool force = false);
     bool storeWh(double value);
     bool restoreWh(double &value);
@@ -143,27 +182,15 @@ class Psu : public AppModule {
 
   private:
     PsuLogger *logger;
-    PowerState state;
+    PsuState psuState;
     bool active;
     bool initialized;
-    PsuState psuState;
     unsigned long startTime, infoUpdated, powerInfoUpdated, loggerUpdated,
         lastCheck;
     double outputVoltage;
     bool wh_store;
     PsuInfo info;
-    PsuEventHandler onTogglePower, onPowerOn, onPowerOff, onPsuError,
-        onPsuAlert;
-
-    String getStateStr(PowerState state) {
-        String str = "";
-        if (state == POWER_ON) {
-            str = StrUtils::getStrP(str_on);
-        } else if (state == POWER_OFF) {
-            str = StrUtils::getStrP(str_off);
-        }
-        return str;
-    };
+    PsuEventHandler togglePowerHandler, powerOnHandler, powerOffHandler;
 
     static int quadratic_regression(double value) {
         double a = 0.0000006562;

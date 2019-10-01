@@ -32,7 +32,8 @@ enum Screen {
     SCREEN_WIFI_AP,
     SCREEN_WIFI_STA,
     SCREEN_AP_STA,
-    SCREEN_PVI
+    SCREEN_PVI,
+    SCREEN_MESSAGE
 };
 enum CharBank {
     BANK_NONE,
@@ -79,6 +80,7 @@ class Display : public AppModule {
     void clear();
     Screen getScreen();
     void setScreen(Screen screen, size_t items_count);
+    void setScreen(Screen screen, size_t size, unsigned long showTime);
     void addScreenItem(uint8_t n, const char *text);
     void addScreenItem(uint8_t n, const char *label, const char *text);
     void lock(unsigned long period);
@@ -90,6 +92,7 @@ class Display : public AppModule {
     void setConfig(Config *config);
 
   private:
+    void redrawScreen(bool force = false);
     bool connect();
     bool locked(unsigned long now);
     void loadBank(CharBank bank, bool force = false);

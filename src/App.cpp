@@ -21,6 +21,8 @@ void App::printDiag(const AppModuleEnum module, Print *p) {
     }
 }
 
+PsuState *App::getPsuState() { return psu->getPsuState(); }
+
 Psu *App::getPsu() { return psu; }
 
 Display *App::getDisplay() { return display; }
@@ -288,31 +290,41 @@ AppModule *App::getInstance(const AppModuleEnum module) {
             psuLogger = new PsuLogger();
             psu->setLogger(psuLogger);
             psu->setOnTogglePower([]() { sendPageState(PG_HOME); });
-            psu->setOnError([this]() {
+            psu->setOnError([this](String &str) {
                 leds->set(Led::POWER_LED, Led::BLINK_ERROR);
-                display->addScreenItem(0, StrUtils::getStrP(str_error).c_str());
-                display->addScreenItem(1, "");
+                load_screen_message(StrUtils::getStrP(str_error).c_str(),
+                                    str.c_str());
+                psu->powerOff();
+            });
+            psu->setOnAlert([this](String &str) {
+                leds->set(Led::POWER_LED, Led::BLINK_ERROR);
+                load_screen_message(StrUtils::getStrP(str_alert).c_str(),
+                                    str.c_str());
             });
             psu->setOnPowerOn([this]() {
                 leds->set(Led::POWER_LED, Led::BLINK);
+                load_screen_psu_pvi();
                 if (display)
                     display->unlock();
             });
             psu->setOnPowerOff([this]() {
-                leds->set(Led::POWER_LED, Led::STAY_ON);
-                size_t size = psuLogger->getLog(VOLTAGE_LOG)->size();
-                if (size > 1024)
-                    size = 1024;
+                if (app.getPsuState()->getStatus(PSU_OK)) {
+                    leds->set(Led::POWER_LED, Led::STAY_ON);
+                    size_t size = psuLogger->getLog(VOLTAGE_LOG)->size();
+                    if (size > 1024)
+                        size = 1024;
 
-                if (size > 0) {
-                    float val[size];
-                    psuLogger->getLogValues(VOLTAGE_LOG, val, size);
-                    if (display) {
-                        size_t cols = fill_data(display->getData(), val, size);
-                        display->drawPlot(8 - cols);
-                        display->lock(15000);
+                    if (size > 0) {
+                        float val[size];
+                        psuLogger->getLogValues(VOLTAGE_LOG, val, size);
+                        if (display) {
+                            size_t cols =
+                                fill_data(display->getData(), val, size);
+                            display->drawPlot(8 - cols);
+                            display->lock(15000);
+                        };
                     };
-                };
+                }
             });
             break;
         case MOD_LCD:
@@ -407,7 +419,7 @@ void App::boot_progress(uint8_t per, const char *payload) {
 }
 
 void App::send_psu_data_to_clients() {
-    if (psu->getState() == POWER_ON) {
+    if (getPsuState()->getPower(POWER_ON)) {
         PsuInfo pi = psu->getInfo();
         if (Wireless::hasNetwork()) {
 #ifndef DISABLE_TELNET
@@ -440,8 +452,9 @@ void App::refresh_wifi_led() {
 
 void App::refresh_power_led() {
     if (psu) {
-        leds->set(Led::POWER_LED,
-                  psu->getState() == POWER_ON ? Led::BLINK : Led::STAY_ON);
+        leds->set(Led::POWER_LED, psu->getPsuState()->getPower(POWER_ON)
+                                      ? Led::BLINK
+                                      : Led::STAY_ON);
     } else {
         leds->set(Led::POWER_LED, Led::BLINK_ERROR);
     }

@@ -8,7 +8,7 @@
 #include "Strings.h"
 #include "TimeUtils.h"
 
-typedef std::function<void(const EpochTime&)> EpochTimeEventHandler;
+typedef std::function<void(const EpochTime &)> EpochTimeEventHandler;
 
 enum AppModuleEnum {
     MOD_BTN,
@@ -19,7 +19,7 @@ enum AppModuleEnum {
     MOD_NETSVC,
     MOD_NTP,
     MOD_PSU,
-    MOD_SHELL,    
+    MOD_SHELL,
     MOD_TELNET,
     MOD_UPDATE
 };
@@ -42,7 +42,7 @@ struct PsuInfo : Printable {
     float P;
     double mWh;
 
-   public:
+  public:
     PsuInfo() { time = V = I = P = mWh = 0; }
 
     PsuInfo(unsigned long time_ms, float V, float I, float P, double mWh)
@@ -61,7 +61,7 @@ struct PsuInfo : Printable {
         return res;
     }
 
-    size_t printTo(Print& p) const {
+    size_t printTo(Print &p) const {
         size_t n = 0;
         n += p.print(V, 3);
         n += p.print("V, ");
@@ -76,7 +76,7 @@ struct PsuInfo : Printable {
 };
 
 class Logger {
-   public:
+  public:
     virtual PsuInfo getInfo() = 0;
 };
 
@@ -86,8 +86,6 @@ enum BootPowerState {
     BOOT_POWER_LAST_STATE = 2
 };
 
-enum PowerState { POWER_ON = 0, POWER_OFF = 1 };
-
 enum EOLType { CRLF, LFCR, LF, CR };
 
 enum MoveDirection { MD_LEFT, MD_RIGHT, MD_UP, MD_DOWN };
@@ -95,9 +93,9 @@ enum MoveDirection { MD_LEFT, MD_RIGHT, MD_UP, MD_DOWN };
 enum State { ST_INACTIVE, ST_NORMAL, ST_ESC_SEQ, ST_CTRL_SEQ };
 
 struct ConfigDefine {
-    const char* key_name;
+    const char *key_name;
     size_t value_size;
-    const char* defaults;
+    const char *defaults;
 };
 
 #define PARAM_COUNT 22

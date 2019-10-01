@@ -17,10 +17,17 @@ uint8_t get_telnet_clients_count() {
 #endif
 }
 
-void load_screen_psu_pvi() {
-    Psu* psu = app.getPsu();
+void load_screen_message(const char *type, const char *msg) {
+    Display *display = app.getDisplay();
+    display->addScreenItem(0, type);
+    display->addScreenItem(1, msg);
+    display->setScreen(SCREEN_MESSAGE, 2, 5000);
+}
 
-    Display* display  = app.getDisplay();
+void load_screen_psu_pvi() {
+    Psu *psu = app.getPsu();
+    Display *display = app.getDisplay();
+
     String str = String(psu->getV(), 3);
     str += " V ";
     str += String(psu->getI(), 3);
@@ -43,7 +50,7 @@ void load_screen_psu_pvi() {
 }
 
 void load_screen_sta_wifi() {
-    Display* display  = app.getDisplay();
+    Display *display = app.getDisplay();
     display->addScreenItem(0, "WIFI> ",
                            Wireless::getConnectionStatus().c_str());
     display->addScreenItem(1, "STA> ", Wireless::hostSTA_SSID().c_str());
@@ -54,14 +61,14 @@ void load_screen_sta_wifi() {
 };
 
 void load_screen_ap_wifi() {
-    Display* display  = app.getDisplay();
+    Display *display = app.getDisplay();
     display->addScreenItem(0, "AP> ", Wireless::hostAP_SSID().c_str());
     display->addScreenItem(1, "PWD> ", Wireless::hostAP_Password().c_str());
-    display->setScreen(SCREEN_WIFI_AP, 2);  
+    display->setScreen(SCREEN_WIFI_AP, 2);
 };
 
 void load_screen_ap_sta_wifi() {
-    Display* display  = app.getDisplay();
+    Display *display = app.getDisplay();
     display->addScreenItem(0, "AP> ", Wireless::hostAP_SSID().c_str());
     display->addScreenItem(1, "STA> ", Wireless::hostSTA_SSID().c_str());
     display->addScreenItem(2, "WIFI> ",
@@ -75,16 +82,18 @@ void load_screen_ap_sta_wifi() {
 };
 
 void load_screen_ready() {
-    Display* display  = app.getDisplay();
+    Display *display = app.getDisplay();
     display->addScreenItem(0, "READY> ");
     display->setScreen(SCREEN_WIFI_OFF, 1);
 }
 
 void update_display() {
-    Psu* psu = app.getPsu();
-
     Wireless::Mode mode = Wireless::getMode();
-    if (psu->getState() == POWER_OFF) {
+    if (app.getPsuState()->getStatus(PSU_ERROR) ||
+        app.getPsuState()->getStatus(PSU_ALERT)) {
+        return;
+    }
+    if (app.getPsuState()->getPower(POWER_OFF)) {
         if (mode == Wireless::WLAN_STA) {
             load_screen_sta_wifi();
         } else if (mode == Wireless::WLAN_AP) {
@@ -94,7 +103,7 @@ void update_display() {
         } else if (mode == Wireless::WLAN_OFF) {
             load_screen_ready();
         }
-    } else if (psu->getState() == POWER_ON) {
+    } else if (app.getPsuState()->getPower(POWER_ON)) {
         load_screen_psu_pvi();
     }
 }

@@ -31,49 +31,65 @@ PsuLogger *Psu::getLogger() { return this->logger; }
 PsuInfo Psu::getInfo() { return info; }
 
 void Psu::togglePower() {
-    setState(state == POWER_OFF ? POWER_ON : POWER_OFF);
-
-    if (onTogglePower)
-        onTogglePower();
+    if (getPsuState()->getPower(POWER_ON)) {
+        powerOff();
+    } else {
+        powerOn();
+    }
+    if (togglePowerHandler)
+        togglePowerHandler();
 }
 
-void Psu::setOnTogglePower(PsuEventHandler h) { onTogglePower = h; }
+void Psu::setOnTogglePower(PsuEventHandler h) { togglePowerHandler = h; }
 
-void Psu::setOnPowerOn(PsuEventHandler h) { onPowerOn = h; }
+void Psu::setOnPowerOn(PsuEventHandler h) { powerOnHandler = h; }
 
-void Psu::setOnPowerOff(PsuEventHandler h) { onPowerOff = h; }
+void Psu::setOnPowerOff(PsuEventHandler h) { powerOffHandler = h; }
 
-void Psu::setOnError(PsuEventHandler h) { onPsuError = h; }
+void Psu::setOnError(PsuEventMessageHandler h) { psuState.setOnError(h); }
 
-void Psu::setOnAlert(PsuEventHandler h) { onPsuAlert = h; }
+void Psu::setOnAlert(PsuEventMessageHandler h) { psuState.setOnAlert(h); }
+
+void Psu::powerOn() {
+    if (wh_store)
+        restoreWh(info.mWh);
+    logger->begin();
+    startTime = infoUpdated = powerInfoUpdated = lastCheck = millis();
+    psuState.clear();
+    setState(POWER_ON, true);
+    onPowerOn();
+}
+
+void Psu::onPowerOn() {
+    if (powerOnHandler)
+        powerOnHandler();
+    active = true;
+}
+
+void Psu::powerOff() {
+    if (wh_store)
+        storeWh(info.mWh);
+    logger->end();
+    setState(POWER_OFF, true);
+    onPowerOff();
+}
+
+void Psu::onPowerOff() {
+    if (powerOffHandler)
+        powerOffHandler();
+    active = false;
+}
 
 void Psu::setState(PowerState value, bool force) {
-    if (!force && state == value)
+    if (!force && !psuState.getPower(value))
         return;
-    if (force) {
-        String str = getStateStr(value);
-        say(str);
-    }
-    state = value;
-    digitalWrite(POWER_SWITCH_PIN, state);
-    if (state == POWER_ON) {
-        if (wh_store)
-            restoreWh(info.mWh);
-        logger->begin();
-        onStart();
-    } else if (state == POWER_OFF) {
-        if (wh_store)
-            storeWh(info.mWh);
-        logger->end();
-        onStop();
-    }
-
-    storeState(state);
+    psuState.setPower(value);
+    String str = psuState.getPowerStateStr();
+    say(str);
+    digitalWrite(POWER_SWITCH_PIN, value);
 }
 
 bool Psu::isWhStoreEnabled() { return wh_store; }
-
-PowerState Psu::getState() { return state; }
 
 float Psu::getOutputVoltage() { return outputVoltage; }
 
@@ -118,29 +134,10 @@ bool Psu::begin() {
 
     setState(ps, true);
 
-    onStart();
-
     return true;
 }
 
-void Psu::end() { onStop(); }
-
-void Psu::onStart() {
-    startTime = infoUpdated = powerInfoUpdated = lastCheck = millis();
-
-    psuState.clear();
-
-    if (onPowerOn)
-        onPowerOn();
-
-    active = true;
-}
-
-void Psu::onStop() {
-    if (onPowerOff)
-        onPowerOff();
-    active = false;
-}
+void Psu::end() { powerOff(); }
 
 void Psu::loop() {
     if (!active)
@@ -229,13 +226,17 @@ bool Psu::restoreState(PowerState &value) {
     return res;
 }
 
-size_t Psu::printDiag(Print *p) {
+String Psu::getPowerStateStr() {
+    String str = getPsuState()->getPowerStateStr();
+    return str;
+}
 
+size_t Psu::printDiag(Print *p) {
     size_t n = sayP_value(StrUtils::getStrP(str_power).c_str(),
-                          getStateStr(state).c_str());
+                          getPowerStateStr().c_str());
     String str = String(getOutputVoltage());
     n += sayP_value(str_output, str.c_str());
-    if (state == POWER_ON) {
+    if (psuState.getPower(POWER_ON)) {
         n += out->print(getUptime());
         n += out->println(StrUtils::getStrP(str_sec, false));
     }
