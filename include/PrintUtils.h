@@ -6,12 +6,12 @@
 
 namespace PrintUtils {
 
-template <typename T> size_t print_strP_var(Print *p, PGM_P strP, T var) {
+template <typename T> size_t print_paramP_value(Print *p, PGM_P strP, T var) {
     size_t n = p->print(StrUtils::getStrP(strP));
-    n += p->print(' ');
-    n += p->print(':');
+    n += p->print('=');
+    n += p->print('\"');
     n += p->print(var);
-    return n += p->print(' ');
+    return n += p->println('\"');
 }
 
 template <typename T> size_t print(Print *p, T v) {
@@ -54,7 +54,13 @@ size_t print_ln(Print *p);
 
 size_t print_done(Print *p);
 
+size_t print_quoted(Print *p, const char *str);
+
+size_t print_ident(Print *p, const char *str);
+
 size_t print_file_not_found(Print *p, String &name);
+
+size_t print_s_not_found(Print *p, String &str);
 
 size_t print_param_value(Print *p, const char *name, const char *value);
 

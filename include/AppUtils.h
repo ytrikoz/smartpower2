@@ -18,7 +18,7 @@ inline char *moduleStr(char *buf, uint8_t index) {
 
 inline String getModuleName(uint8_t index) {
     PGM_P strP = (char *)pgm_read_ptr(&(strP_module[index]));
-    char buf[64];
+    char buf[16];
     strcpy_P(buf, strP);
     return String(buf);
 }

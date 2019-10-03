@@ -4,9 +4,9 @@
 #include "StoreUtils.h"
 #include "Wireless.h"
 
-using StoreUtils::storeString;
-using StrUtils::isip;
-using StrUtils::setstr;
+using namespace StoreUtils;
+using namespace StrUtils;
+using namespace PrintUtils;
 
 WebService::WebService() : AppModule(MOD_HTTP) {
     this->port_http = HTTP_PORT;
@@ -74,8 +74,8 @@ WebService::WebService() : AppModule(MOD_HTTP) {
 
 size_t WebService::printDiag(Print *p) {
     char buf[8];
-    size_t n = PrintUtils::print_strP_var(p, str_active, boolStr(buf, active));
-    return n += PrintUtils::println(p, "");
+    size_t n = print_paramP_value(p, str_active, boolStr(buf, active));
+    return n;
 }
 
 bool WebService::begin() {

@@ -14,13 +14,12 @@ Leds::Leds() : AppModule(MOD_LED) {
 
 size_t Leds::printDiag(Print *p) {
     size_t n = p->print(StrUtils::getStrP(str_power));
-    n += p->print(StrUtils::getStrP(str_led));
     n += p->print(':');
+    n += p->print(' ');
     n += power->printDiag(p);
-
     n += p->print(StrUtils::getStrP(str_wifi));
-    n += p->print(StrUtils::getStrP(str_led));
     n += p->print(':');
+    n += p->print(' ');
     n += wifi->printDiag(p);
 
     return n;

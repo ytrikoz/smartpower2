@@ -5,7 +5,8 @@
 
 #include "CommonTypes.h"
 
-typedef std::function<void(bool hasNetwork, unsigned long time)> NetworkStatusChangeEventHandler;
+typedef std::function<void(bool hasNetwork, unsigned long time)>
+    NetworkStatusChangeEventHandler;
 
 namespace Wireless {
 
@@ -31,7 +32,7 @@ String hostAP_SSID();
 IPAddress hostAP_IP();
 IPAddress hostSTA_IP();
 
-void printDiag(Print* p);
+size_t printDiag(Print *p);
 
 void start_wifi();
 void setOnNetworkStatusChange(NetworkStatusChangeEventHandler);
@@ -40,18 +41,18 @@ void setNetworkStatus(NetworkStatus);
 void onNetworkUp();
 void onNetworkDown();
 void setBroadcastTo(uint8_t);
-bool scanNetworks(const char* ssid);
+bool scanNetworks(const char *ssid);
 bool disconnectWiFi();
 
 void changeMode(Mode mode);
 void setupAP(IPAddress);
-bool startAP(const char* ssid, const char* password);
+bool startAP(const char *ssid, const char *password);
 
 void setupSTA();
 void setupSTA(IPAddress ipaddr, IPAddress subnet, IPAddress gateway,
               IPAddress dns);
-bool startSTA(const char* ssid, const char* password);
+bool startSTA(const char *ssid, const char *password);
 
 void useStaticStationIP(bool enabled);
 
-}  // namespace Wireless
+} // namespace Wireless

@@ -7,14 +7,6 @@
 #include "Actions/PowerAvg.h"
 #include "Actions/PowerOff.h"
 #include "Actions/PowerOn.h"
-#include "Actions/ShowClients.h"
-#include "Actions/ShowClock.h"
-#include "Actions/ShowDiag.h"
-#include "Actions/ShowLoop.h"
-#include "Actions/ShowNtp.h"
-#include "Actions/ShowPsu.h"
-#include "Actions/ShowStatus.h"
-#include "Actions/ShowWifi.h"
 #include "Actions/SwitchBacklight.h"
 
 #include "PrintUtils.h"
@@ -93,7 +85,11 @@ String getActionStr(Command &command) {
     return command.getArgument("action").getValue();
 }
 String getParamStr(Command &command) {
-    return command.getArgument("paramStr").getValue();
+    return command.getArgument("param").getValue();
+}
+
+String getModStr(Command &command) {
+    return command.getArgument("mod").getValue();
 }
 String getFileStr(Command &command) {
     return command.getArgument("file").getValue();
@@ -102,7 +98,7 @@ String getItemStr(Command &command) {
     return command.getArgument("item").getValue();
 }
 String getValueStr(Command &command) {
-    return command.getArgument("valueStr").getValue();
+    return command.getArgument("value").getValue();
 }
 
 CommandAction getAction(Command &cmd) {
@@ -160,12 +156,12 @@ void init() {
 
     cmdPower = cli->addCommand("power");
     cmdPower.addPositionalArgument("action", "status");
-    cmdPower.addPositionalArgument("paramStr", "0");
+    cmdPower.addPositionalArgument("param", "0");
     cmdPower.setCallback(Cli::onPower);
 
     cmdConfig = cli->addCommand("config");
     cmdConfig.addPositionalArgument("action", "print");
-    cmdConfig.addPositionalArgument("paramStr", "");
+    cmdConfig.addPositionalArgument("param", "");
     cmdConfig.setCallback(Cli::onConfig);
 
     cmdHelp = cli->addCommand("help");
@@ -177,20 +173,20 @@ void init() {
 
     cmdSystem = cli->addCommand("system");
     cmdSystem.addPositionalArgument("action", "uptime");
-    cmdSystem.addPositionalArgument("paramStr", "");
+    cmdSystem.addPositionalArgument("value", "");
     cmdSystem.setCallback(Cli::onSystem);
 
     cmdShow = cli->addCommand("show");
-    cmdShow.addPositionalArgument("item", "status");
+    cmdShow.addPositionalArgument("mod", "");
     cmdShow.setCallback(Cli::onShow);
 
     cmdSet = cli->addCommand("set");
-    cmdSet.addPositionalArgument("paramStr");
-    cmdSet.addPositionalArgument("valueStr");
+    cmdSet.addPositionalArgument("param");
+    cmdSet.addPositionalArgument("value");
     cmdSet.setCallback(Cli::onSet);
 
     cmdGet = cli->addCommand("get");
-    cmdGet.addPositionalArgument("paramStr");
+    cmdGet.addPositionalArgument("param");
     cmdGet.setCallback(Cli::onGet);
 
     cmdRm = cli->addCommand("rm");
@@ -199,17 +195,17 @@ void init() {
 
     cmdClock = cli->addCommand("clock");
     cmdClock.addPositionalArgument("action");
-    cmdClock.addPositionalArgument("paramStr", "");
+    cmdClock.addPositionalArgument("param", "");
     cmdClock.setCallback(Cli::onClock);
 
     cmdPlot = cli->addCommand("plot");
     cmdPlot.addPositionalArgument("action", "print");
-    cmdPlot.addPositionalArgument("paramStr", "");
+    cmdPlot.addPositionalArgument("param", "");
     cmdPlot.setCallback(Cli::onPlot);
 
     cmdLog = cli->addCommand("log");
     cmdLog.addPositionalArgument("action", "print");
-    cmdLog.addPositionalArgument("paramStr", "");
+    cmdLog.addPositionalArgument("param", "");
     cmdLog.setCallback(Cli::onLog);
 }
 
@@ -399,29 +395,38 @@ void onGet(cmd *c) {
 
 void onShow(cmd *c) {
     Command cmd(c);
-    String item = getItemStr(cmd);
-    if (item.equals("clients")) {
-        Actions::ShowClients().exec(out);
-    } else if (item.equals("clock")) {
-        Actions::ShowClock().exec(out);
-    } else if (item.equals("power")) {
-        Actions::ShowPsu().exec(out);
-    } else if (item.equals("log")) {
-        psuLogger->printDiag(out);
-    } else if (item.equals("network")) {
-        out->println(getNetworkInfoJson().c_str());
-    } else if (item.equals("system")) {
-        out->println(getSystemInfoJson().c_str());
-    } else if (item.equals("status")) {
-        Actions::ShowStatus().exec(out);
-    } else if (item.equals("loop")) {
-        Actions::ShowLoop().exec(out);
-    } else if (item.equals("ntp")) {
-        Actions::ShowNtp().exec(out);
-    } else if (item.equals("wifi")) {
-        Actions::ShowWifi().exec(out);
+    String modStr = getModStr(cmd);
+    if (modStr.equals("loop")) {
+        LoopLogger *logger = app.getLoopLogger();
+        LoopLoggerState state = logger->getState();
+        switch (state) {
+        case CAPTURE_IDLE:
+            out->print(StrUtils::getStrP(str_start));
+            out->print(StrUtils::getStrP(str_capture));
+            out->printf_P(strf_lu_ms, logger->getDuration());
+            out->println();
+            app.getLoopLogger()->start();
+            return;
+        case CAPTURE_IN_PROGRESS:
+            out->print(StrUtils::getStrP(str_capturing));
+            out->printf_P(strf_lu_ms, logger->getDuration());
+            out->println();
+            return;
+        case CAPTURE_DONE:
+            app.printLoopCapture(out);
+            logger->setIdle();
+            return;
+        };
+        return;
+    } else if (modStr.equals("app")) {
+        app.printDiag(out);
+        return;
+    }
+    AppModuleEnum mod;
+    if (app.getModule(modStr.c_str(), mod)) {
+        app.printDiag(out, mod);
     } else {
-        PrintUtils::print_unknown_item(out, item);
+        print_s_not_found(out, modStr);
     }
 }
 

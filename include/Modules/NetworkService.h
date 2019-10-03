@@ -10,22 +10,24 @@
 #include "Wireless.h"
 
 class NetworkService : public AppModule {
-   public:
+  public:
     NetworkService();
     bool begin();
     void stop();
     void loop();
-   private:
-    bool begin_dns(String& hostname);
-    bool begin_mdns(String& hostname);
-    bool begin_netbios(String& hostname);
+    size_t printDiag(Print *p);
+
+  private:
+    bool begin_dns(String &hostname);
+    bool begin_mdns(String &hostname);
+    bool begin_netbios(String &hostname);
 
     bool active;
-    
+
     bool has_dns;
     bool has_mdns;
     bool has_netbios;
-    
+
     DNSServer *dns;
     esp8266::MDNSImplementation::MDNSResponder *mdns;
     ESP8266NetBIOS *netbios;

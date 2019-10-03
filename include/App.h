@@ -26,6 +26,8 @@ class App {
     void start();
     bool start(const AppModuleEnum);
     void stop(const AppModuleEnum);
+    bool getModule(String &str, AppModuleEnum &mod);
+    bool getModule(const char *str, AppModuleEnum &mod);
     AppModule *getInstance(const AppModuleEnum);
     void loop();
     void restart(uint8_t delay_s);
@@ -33,7 +35,8 @@ class App {
     void printDiag(const AppModuleEnum module, Print *p);
     void printLoopCapture(Print *p);
     LoopLogger *getLoopLogger();
-    void printDiag(const AppModuleEnum);
+    size_t printDiag(Print *p);
+    size_t printDiag(Print *p, const AppModuleEnum);
     void printCapture(Print *);
     void resetConfig();
     void loadConfig();

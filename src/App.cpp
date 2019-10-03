@@ -29,6 +29,37 @@ Display *App::getDisplay() { return display; }
 
 LoopLogger *App::getLoopLogger() { return loopLogger; }
 
+size_t App::printDiag(Print *p, AppModuleEnum mod) {
+    return getInstance(mod)->printDiag(p);
+}
+
+size_t App::printDiag(Print *p) {
+    size_t n = p->println(getHeapStat());
+    if ((Wireless::getMode() != Wireless::WLAN_STA) &&
+        !getConnectedStationInfo().equals("")) {
+        n += p->print(StrUtils::getIdentStrP(str_wifi));
+        n += p->print(getConnectedStationInfo().c_str());
+    }
+    n += p->print(StrUtils::getStrP(str_http));
+    n += p->println(get_http_clients_count());
+
+    n += p->print(StrUtils::getStrP(str_telnet));
+    n += p->println(get_telnet_clients_count());
+
+    n += p->print(StrUtils::getStrP(str_http));
+    if ((Wireless::getMode() != Wireless::WLAN_STA) &&
+        !getConnectedStationInfo().equals("")) {
+        n += p->print(StrUtils::getIdentStrP(str_wifi));
+        n += p->print(getConnectedStationInfo().c_str());
+    }
+    n += p->print(StrUtils::getStrP(str_http));
+    n += p->println(get_http_clients_count());
+
+    n += p->print(StrUtils::getStrP(str_telnet));
+    n += p->println(get_telnet_clients_count());
+    return n;
+}
+
 void App::printLoopCapture(Print *p) {
     LoopCapture *cap = loopLogger->getCapture();
 
@@ -265,6 +296,22 @@ void App::init(Print *p) {
 #endif
 }
 
+bool App::getModule(String &str, AppModuleEnum &mod) {
+    return getModule(str.c_str(), mod);
+}
+
+bool App::getModule(const char *str, AppModuleEnum &mod) {
+    for (uint8_t i = 0; i < APP_MODULES; ++i) {
+        char *strP = (char *)pgm_read_ptr(&(strP_module[i]));
+        if (strcmp_P(str, strP) == 0) {
+            mod = AppModuleEnum(i);
+            return true;
+        }
+    }
+    return false;
+    ;
+}
+
 AppModule *App::getInstance(const AppModuleEnum module) {
     if (!appMod[module]) {
         switch (module) {
@@ -379,7 +426,7 @@ Config *App::getConfig() { return env->get(); }
 bool App::start(AppModuleEnum module) {
 #ifdef DEBUG_APP_MOD
     String str = getModuleName(module);
-    dbg->printf("[app] start %s", str.c_str());
+    dbg->printf("[app] > %s", str.c_str());
     dbg->println();
 #endif
     AppModule *obj = getInstance(module);
@@ -395,7 +442,7 @@ bool App::start(AppModuleEnum module) {
 void App::stop(AppModuleEnum module) {
 #ifdef DEBUG_APP_MOD
     String str = getModuleName(module);
-    dbg->printf("[app] stop %s", str.c_str());
+    dbg->printf("[app] X %s", str.c_str());
     dbg->println();
 #endif
     AppModule *obj = getInstance(module);

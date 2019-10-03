@@ -7,9 +7,9 @@
 #include "Config.h"
 #include "PrintUtils.h"
 
-class Talkative {
+class Named {
   public:
-    Talkative(AppModuleEnum module);
+    Named(AppModuleEnum module);
     void setOutput(Print *p);
     const char *getName();
     size_t sayP_value(const char *strP, const char *value);
@@ -35,7 +35,7 @@ class Talkative {
     char *name;
 };
 
-class AppModule : public Talkative {
+class AppModule : public Named {
   public:
     AppModule(AppModuleEnum module);
     virtual void init(Config *config) final;
@@ -44,7 +44,7 @@ class AppModule : public Talkative {
     virtual void start(){};
     virtual void stop(){};
     virtual void loop(){};
-    virtual size_t printDiag(Print *p) { return p->println(); };
+    virtual size_t printDiag(Print *p);
     size_t printDiag() { return printDiag(out); };
 
   protected:

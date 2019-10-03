@@ -9,7 +9,7 @@ static const char msg_shell_start[] PROGMEM = "press \"enter\" to start";
 static const char msg_shell_quit[] PROGMEM = "exit, bye!";
 static const char msg_restart_in_d_seconds[] PROGMEM =
     "restart in %d seconds...";
-static const char msg_session_interrupted[] PROGMEM =
+static const char str_shell_interrupted[] PROGMEM =
     "the session was interrupted!";
 static const char msg_connection_is_busy[] PROGMEM = "connection is busy!";
 
@@ -23,7 +23,6 @@ static const char strf_ssid[] PROGMEM = "ssid %s";
 static const char strf_heap[] PROGMEM = "heap %s";
 static const char strf_passwd[] PROGMEM = "passwd %s";
 static const char strf_ipaddr[] PROGMEM = "ipaddr %s";
-static const char strf_ntp[] PROGMEM = "[ntp] %s";
 static const char strf_interval[] PROGMEM = "interval %d";
 static const char strf_power[] PROGMEM = "power %s";
 static const char strf_f_sec[] PROGMEM = "%.2f sec";

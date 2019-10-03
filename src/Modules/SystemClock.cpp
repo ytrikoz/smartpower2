@@ -22,13 +22,13 @@ bool SystemClock::begin() {
 }
 
 size_t SystemClock::printDiag(Print *p) {
-    size_t n = print_strP_var(p, str_timezone, timeOffset / ONE_HOUR_s);
-    n += print_strP_var(p, str_backup, storeInterval / ONE_SECOND_ms);
-    n += print_strP_var(p, str_updated, lastUpdated / ONE_SECOND_ms);
-    n += print_strP_var(p, str_stored, lastStored / ONE_SECOND_ms);
-    n += print_strP_var(p, str_rollover, rollover);
-    n += print_strP_var(p, str_epoch, epoch);
-    n += print_strP_var(p, str_trusted, trusted);
+    size_t n = print_paramP_value(p, str_timezone, timeOffset / ONE_HOUR_s);
+    n += print_paramP_value(p, str_backup, storeInterval / ONE_SECOND_ms);
+    n += print_paramP_value(p, str_updated, lastUpdated / ONE_SECOND_ms);
+    n += print_paramP_value(p, str_stored, lastStored / ONE_SECOND_ms);
+    n += print_paramP_value(p, str_rollover, rollover);
+    n += print_paramP_value(p, str_epoch, epoch);
+    n += print_paramP_value(p, str_trusted, trusted);
     return n;
 }
 

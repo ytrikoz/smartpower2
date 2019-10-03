@@ -2,7 +2,6 @@
 
 namespace Led {
 #define LED_PWM_DUTY_OFF 80
-#define LED_PWM_UPDATE_INTERVAL_ms 25
 
 /* LED  off            on on              off
  * per  0      0.5      1 0       0.5     1
@@ -10,22 +9,28 @@ namespace Led {
  * duty DUTY_MAX          DUTY_MIN        DUTY_MAX
  */
 uint16_t per_to_pwm_duty(float per, bool phase = false) {
-    uint16_t duty = per * LED_PWM_DUTY_OFF;
+    uint16_t range = LED_PWM_DUTY_OFF;
     if (!phase)
-        duty = LED_PWM_DUTY_OFF - duty;
+        per = 1 - per;
+    uint16_t duty = floor(per * range);
     return duty;
 }
 
-LedBlinker::LedBlinker(uint8_t pin, bool lightOn, bool smooth) {
+LedBlinker::LedBlinker(uint8_t pin, bool on, bool smooth) {
     this->pin = pin;
     this->smooth = smooth;
     pinMode(pin, OUTPUT);
-    set(lightOn ? STAY_OFF : STAY_ON, true);
+    set(on ? STAY_ON : STAY_OFF, true);
 }
 
 size_t LedBlinker::printDiag(Print *p) {
-    size_t n = p->printf("pin %d mode %d state %d", pin, mode, state);
-    return n += p->println();
+    size_t n = p->print(state);
+    n += p->print(' ');
+    n += p->print(mode);
+    n += p->print('/');
+    n += p->print(step + 1);
+    n += p->print('-');
+    return n += p->println(size);
 }
 
 void LedBlinker::set(LedMode mode, bool forced) {
@@ -80,42 +85,31 @@ void LedBlinker::next() {
 }
 
 void LedBlinker::loop() {
+    unsigned long now = millis();
     LedState req = getPattern()->state;
     if (state != req) {
         updateState(req);
+        stateUpdated = now;
+    }
+    if (getPattern()->time == 0)
         return;
-    }
-    unsigned long passed = millis_since(pwmUpdated);
-    if (getPattern()->time > 0) {
-        if (smooth && (passed > LED_PWM_UPDATE_INTERVAL_ms)) {
-            this->updateDuty(passed);
-        }
-    }
-    passed = millis_since(stateUpdated);
-    if (passed >= getPattern()->time)
+    unsigned long passed = millis_passed(stateUpdated, now);
+    if (passed < getPattern()->time) {
+        this->updateDuty(passed);
+    } else if (passed >= getPattern()->time) {
         next();
+    }
 }
 
 void LedBlinker::updateDuty(unsigned long passed) {
     float f = (float)passed / getPattern()->time;
     uint16_t duty = per_to_pwm_duty(f, !getPattern()->state);
     analogWrite(pin, duty);
-    pwmUpdated = millis();
-#ifdef DEBUG_LEDS
-    DEBUG.printf("[led#%d] analogWrite(%d)", pin, duty);
-    DEBUG.println();
-#endif
 }
 
 void LedBlinker::updateState(LedState req) {
-    if (smooth) {
-        uint8_t duty = per_to_pwm_duty(!req);
-        analogWrite(pin, duty);
-    } else {
-        digitalWrite(pin, req);
-    }
-    this->state = req;
-    stateUpdated = pwmUpdated = millis();
+    digitalWrite(pin, req);
+    state = req;
 }
 
 } // namespace Led

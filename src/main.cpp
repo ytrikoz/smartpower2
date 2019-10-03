@@ -173,7 +173,8 @@ void setup() {
     USE_SERIAL.println();
 
     // Try pushing frequency to 160MHz.
-    system_update_cpu_freq(SYS_CPU_160MHZ);
+    // system_update_cpu_freq(SYS_CPU_160MHZ);
+    system_update_cpu_freq(SYS_CPU_80MHZ);
 
 #ifdef SERIAL_DEBUG
     USE_SERIAL.setDebugOutput(true);

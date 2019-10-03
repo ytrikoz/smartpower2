@@ -17,25 +17,35 @@ size_t print_shell_start(Print *p) {
 size_t print_shell_quit(Print *p) { return p->println(FPSTR(msg_shell_quit)); }
 
 size_t print_shell_interrupted(Print *p) {
-    return p->print(FPSTR(msg_session_interrupted));
+    return p->println(FPSTR(str_shell_interrupted));
+}
+size_t print_s_not_found(Print *p, String &str) {
+    size_t n = print_quoted(p, str.c_str());
+    n += p->print(' ');
+    n += p->print(getStrP(str_not));
+    n += p->print(' ');
+    n += p->println(getStrP(str_found));
+    return n;
 }
 
 size_t print_file_not_found(Print *p, String &name) {
     size_t n = 0;
     n += p->print(getStrP(str_file));
     n += p->print(' ');
-    n += p->print(getQuotedStr(name));
-    n += p->print(' ');
-    n += p->print(getStrP(str_not));
-    n += p->print(' ');
-    n += p->print(getStrP(str_found));
-    return n;
+    return n += print_s_not_found(p, name);
 }
 
 size_t print_ln(Print *p) { return p->println(); }
 
 size_t print_done(Print *p) {
     size_t n = p->print(getStrP(str_done));
+    return n;
+}
+
+size_t print_quoted(Print *p, const char *str) {
+    size_t n = p->print('\'');
+    n += p->print(str);
+    n += p->print('\'');
     return n;
 }
 
