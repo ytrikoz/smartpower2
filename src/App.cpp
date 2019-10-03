@@ -7,7 +7,7 @@
 #include "PsuLogger.h"
 
 using namespace PrintUtils;
-
+using namespace StrUtils;
 App app;
 
 SystemClock *App::getClock() { return rtc; }
@@ -35,28 +35,10 @@ size_t App::printDiag(Print *p, AppModuleEnum mod) {
 
 size_t App::printDiag(Print *p) {
     size_t n = p->println(getHeapStat());
-    if ((Wireless::getMode() != Wireless::WLAN_STA) &&
-        !getConnectedStationInfo().equals("")) {
-        n += p->print(StrUtils::getIdentStrP(str_wifi));
-        n += p->print(getConnectedStationInfo().c_str());
-    }
-    n += p->print(StrUtils::getStrP(str_http));
-    n += p->println(get_http_clients_count());
-
-    n += p->print(StrUtils::getStrP(str_telnet));
-    n += p->println(get_telnet_clients_count());
-
-    n += p->print(StrUtils::getStrP(str_http));
-    if ((Wireless::getMode() != Wireless::WLAN_STA) &&
-        !getConnectedStationInfo().equals("")) {
-        n += p->print(StrUtils::getIdentStrP(str_wifi));
-        n += p->print(getConnectedStationInfo().c_str());
-    }
-    n += p->print(StrUtils::getStrP(str_http));
-    n += p->println(get_http_clients_count());
-
-    n += p->print(StrUtils::getStrP(str_telnet));
-    n += p->println(get_telnet_clients_count());
+    if (Wireless::getMode() != Wireless::WLAN_STA)
+        n += print_nameP_value(p, str_wifi, getConnectedStationInfo().c_str());
+    n += print_nameP_value(p, str_http, get_http_clients_count());
+    n += print_nameP_value(p, str_telnet, get_telnet_clients_count());
     return n;
 }
 
@@ -208,7 +190,7 @@ void App::handle_restart() {
 
 void App::start() {
 #ifdef DEBUG_APP_MOD
-    dbg->println("[app] start()");
+    dbg->println("[app] >>>");
 #endif
 
     env = new ConfigHelper();
@@ -309,23 +291,22 @@ bool App::getModule(const char *str, AppModuleEnum &mod) {
         }
     }
     return false;
-    ;
 }
 
 AppModule *App::getInstance(const AppModuleEnum module) {
     if (!appMod[module]) {
         switch (module) {
-        case MOD_BTN:
+        case MOD_BTN: {
             appMod[module] = btn = new Button();
             btn->setOnClicked([this]() { psu->togglePower(); });
             btn->setOnHold([this](unsigned long time) {
-                if (time > ONE_SECOND_ms * 5) {
+                if (time > ONE_SECOND_ms * 5)
                     leds->set(Led::POWER_LED, Led::BLINK_ERROR);
-                }
             });
             btn->setOnHoldRelease(
                 [this](unsigned long time) { refresh_power_led(); });
             break;
+        }
         case MOD_CLOCK:
             appMod[module] = rtc = new SystemClock();
             break;
@@ -425,8 +406,7 @@ Config *App::getConfig() { return env->get(); }
 
 bool App::start(AppModuleEnum module) {
 #ifdef DEBUG_APP_MOD
-    String str = getModuleName(module);
-    dbg->printf("[app] > %s", str.c_str());
+    dbg->printf("[app] > %d", module);
     dbg->println();
 #endif
     AppModule *obj = getInstance(module);
@@ -441,8 +421,7 @@ bool App::start(AppModuleEnum module) {
 
 void App::stop(AppModuleEnum module) {
 #ifdef DEBUG_APP_MOD
-    String str = getModuleName(module);
-    dbg->printf("[app] X %s", str.c_str());
+    dbg->printf("[app] X %d", module);
     dbg->println();
 #endif
     AppModule *obj = getInstance(module);

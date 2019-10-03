@@ -47,7 +47,11 @@ struct PsuState : Printable {
 
     void setOnAlert(PsuEventMessageHandler h) { alertHandler = h; };
 
-    void setPower(PowerState value) { this->power = value; }
+    void setPower(PowerState value) {
+        this->power = value;
+        if (value)
+            clear();
+    }
 
     void setError(PsuError e) {
         this->status = PSU_ERROR;

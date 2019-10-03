@@ -5,18 +5,15 @@
 #include "Actions/LogPrint.h"
 #include "Actions/PlotPrint.h"
 #include "Actions/PowerAvg.h"
-#include "Actions/PowerOff.h"
-#include "Actions/PowerOn.h"
-#include "Actions/SwitchBacklight.h"
 
 #include "PrintUtils.h"
 #include "StrUtils.h"
 #include "TimeUtils.h"
 
-namespace Cli {
-
 using namespace StrUtils;
 using namespace PrintUtils;
+
+namespace Cli {
 
 void onCommandError(cmd_error *e);
 void onConfig(cmd *c);
@@ -241,7 +238,7 @@ void onLog(cmd *c) {
             handled = true;
         }
         if (!handled)
-            PrintUtils::print_unknown_action(out, paramStr);
+            print_unknown_action(out, paramStr);
     }
     out->println();
 }
@@ -283,7 +280,6 @@ void onConfig(cmd *c) {
 void onPower(cmd *c) {
     Command cmd(c);
     CommandAction action = getAction(cmd);
-    String actionStr = getActionStr(cmd);
     switch (action) {
     case ACTION_AVG: {
         String paramStr = getParamStr(cmd);
@@ -291,16 +287,18 @@ void onPower(cmd *c) {
         break;
     }
     case ACTION_ON: {
-        Actions::PowerOn().exec(out);
+        if (app.getPsuState()->getPower(POWER_OFF))
+            app.getPsu()->togglePower();
         break;
     }
     case ACTION_OFF: {
-        Actions::PowerOff().exec(out);
+        if (app.getPsuState()->getPower(POWER_ON))
+            app.getPsu()->togglePower();
         break;
     }
     default: {
-        PrintUtils::print_unknown_action(out, actionStr);
-        out->println();
+        String actionStr = getActionStr(cmd);
+        print_unknown_action(out, actionStr);
         return;
     }
     }
@@ -310,7 +308,6 @@ void onSystem(cmd *c) {
     Command cmd(c);
     CommandAction action = getAction(cmd);
     String paramStr = getParamStr(cmd);
-    String actionStr = getActionStr(cmd);
 
     switch (action) {
     case ACTION_RESTART: {
@@ -320,7 +317,11 @@ void onSystem(cmd *c) {
     }
     case ACTION_BACKLIGHT: {
         bool enabled = paramStr.length() == 0 ? true : paramStr.toInt();
-        Actions::SwitchBacklight(enabled).exec(out);
+        print_nameP_value(out, str_backlight, getEnabledStr(enabled));
+        if (enabled)
+            app.getDisplay()->backlightOn();
+        else
+            app.getDisplay()->backlightOff();
         break;
     }
     case ACTION_UPTIME: {
@@ -330,7 +331,8 @@ void onSystem(cmd *c) {
         break;
     }
     default:
-        PrintUtils::print_unknown_action(out, actionStr);
+        String actionStr = getActionStr(cmd);
+        print_unknown_action(out, actionStr);
         out->println();
         return;
     }

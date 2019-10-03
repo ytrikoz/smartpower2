@@ -193,6 +193,11 @@ char *getUpDownStr(char *buf, bool value, bool space) {
     return buf;
 }
 
+String getUpDownStr(bool value) {
+    PGM_P strP = value ? str_up : str_down;
+    return String(FPSTR(strP));
+}
+
 String getIdentStrP(PGM_P strP, bool with_space) {
     String str = getStrP(strP, false);
     return getIdentStr(str, with_space);

@@ -53,6 +53,7 @@ WebService::WebService() : AppModule(MOD_HTTP) {
     if ((Wireless::getMode() == Wireless::WLAN_STA ||
          Wireless::getMode() == Wireless::WLAN_AP_STA)) {
         ssdp = new SSDPClass();
+        ssdp->setDeviceType(F("upnp:rootdevice"));
         ssdp->setSchemaURL(F("description.xml"));
         ssdp->setHTTPPort(port_http);
         ssdp->setName(Wireless::hostName());
@@ -98,8 +99,7 @@ bool WebService::begin() {
 }
 
 void WebService::end() {
-    String str = StrUtils::getStrP(str_stopped);
-    say(str);
+    say_strP(str_stopped);
     active = false;
 }
 

@@ -22,16 +22,13 @@ void TelnetServer::start() {
 
     active = server->status() != CLOSED;
 
-    if (!active) {
-        out->print(StrUtils::getIdentStrP(str_telnet));
-        out->println(StrUtils::getStrP(str_failed));
-    }
+    if (!active)
+        say_strP(str_failed);
 }
 
 void TelnetServer::stop() {
     if (active) {
-        out->print(StrUtils::getIdentStrP(str_telnet));
-        out->println(StrUtils::getStrP(str_stopped));
+        say_strP(str_stopped);
         if (hasClientConnected())
             client.stop();
         server->stop();

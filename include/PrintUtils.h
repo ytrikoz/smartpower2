@@ -14,6 +14,13 @@ template <typename T> size_t print_paramP_value(Print *p, PGM_P strP, T var) {
     return n += p->println('\"');
 }
 
+template <typename T> size_t print_nameP_value(Print *p, PGM_P strP, T var) {
+    size_t n = p->print(StrUtils::getStrP(strP));
+    n += p->print(':');
+    n += p->print(' ');
+    return n += p->println(var);
+}
+
 template <typename T> size_t print(Print *p, T v) {
     size_t n = print(p, v);
     return n += p->print(' ');

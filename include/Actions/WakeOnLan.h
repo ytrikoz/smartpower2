@@ -11,9 +11,10 @@
 namespace Actions {
 
 class WakeOnLanCommand : Action {
-   public:
+  public:
     void exec(Print *p);
-   private:
+
+  private:
     WiFiUDP *udp;
     const char wol_preamble[6] = {'\xFF', '\xFF', '\xFF',
                                   '\xFF', '\xFF', '\xFF'};
@@ -31,7 +32,8 @@ void WakeOnLanCommand::exec(Print *p) {
         size_t preamble_size = 12;
         udp->beginPacket(ipaddr, WOL_PORT);
         udp->write(wol_preamble, preamble_size);
-        for (uint8_t i = 0; i < 16; i++) udp->write(mac, mac_size);
+        for (uint8_t i = 0; i < 16; i++)
+            udp->write(mac, mac_size);
         udp->endPacket();
         p->print(FPSTR(str_complete));
         free(mac);
@@ -39,4 +41,4 @@ void WakeOnLanCommand::exec(Print *p) {
     p->println();
 }
 
-}  // namespace Actions
+} // namespace Actions

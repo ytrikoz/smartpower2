@@ -7,15 +7,15 @@
 namespace Actions {
 
 class PowerAvg : public NumericAction {
-   public:
+  public:
     PowerAvg(size_t param);
-    void exec(Print* p);
-    void print_config_reg(Print* p);
+    void exec(Print *p);
+    void print_config_reg(Print *p);
 };
 
 PowerAvg::PowerAvg(size_t param) : NumericAction(param) {}
 
-void PowerAvg::print_config_reg(Print* p) {
+void PowerAvg::print_config_reg(Print *p) {
     uint16_t config = ina231_read_config();
     uint8_t byte[2];
     byte[0] = (uint8_t)((config >> 8) & 0x00ff);
@@ -25,7 +25,7 @@ void PowerAvg::print_config_reg(Print* p) {
     p->println(byte[1], BIN);
 }
 
-void PowerAvg::exec(Print* p) {
+void PowerAvg::exec(Print *p) {
     INA231_AVERAGES avg;
     size_t nearest;
     if (param >= 1024) {
@@ -62,4 +62,4 @@ void PowerAvg::exec(Print* p) {
     print_config_reg(p);
 }
 
-}  // namespace Actions
+} // namespace Actions

@@ -54,8 +54,8 @@ void LedBlinker::set(LedMode mode, bool forced) {
         break;
     case BLINK:
         size = 2;
-        pattern[0] = {LED_OFF, 500};
-        pattern[1] = {LED_ON, 250};
+        pattern[0] = {LED_OFF, 250};
+        pattern[1] = {LED_ON, 500};
         break;
     case BLINK_ALERT:
         size = 4;

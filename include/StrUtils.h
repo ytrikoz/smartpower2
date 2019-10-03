@@ -53,6 +53,7 @@ String getStrP(PGM_P strP, bool space = true);
 String getBoolStr(bool value, bool space = true);
 String getOnOffStr(bool value, bool space = true);
 String getEnabledStr(bool value, bool space = true);
+String getUpDownStr(bool value);
 char *getUpDownStr(char *buf, bool value, bool space = true);
 
 String getIdentStr(String &str, bool with_space = true);

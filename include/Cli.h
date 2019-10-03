@@ -10,4 +10,4 @@ void setOutput(Print *);
 void close();
 bool active();
 
-}  // namespace Cli
+} // namespace Cli

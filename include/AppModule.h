@@ -11,13 +11,14 @@ class Named {
   public:
     Named(AppModuleEnum module);
     void setOutput(Print *p);
+
     const char *getName();
-    size_t sayP_value(const char *strP, const char *value);
 
   protected:
-    size_t say(String &str);
     size_t say(char *str);
-    size_t sayP(PGM_P strP);
+    size_t say_strP(PGM_P strP);
+    size_t say_strP(PGM_P strP, char *value);
+    size_t say_strP(PGM_P strP, int value);
 
   protected:
     Print *out = &USE_SERIAL;
@@ -27,8 +28,8 @@ class Named {
   private:
     size_t print_name(Print *);
     size_t print(Print *, char);
-    size_t print(Print *, char *);
-    size_t print(Print *, const char *, size_t);
+    size_t print(Print *, const char *);
+    size_t print(Print *, char *, size_t);
 
   private:
     AppModuleEnum module;

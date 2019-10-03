@@ -15,19 +15,17 @@ bool NtpClient::begin() {
 }
 
 void NtpClient::start() {
-    sayP_value(str_server, timeServerPool);
-    sayP_value(str_port, String(NTP_REMOTE_PORT).c_str());
+    say_strP(str_server, timeServerPool);
+    say_strP(str_port, NTP_REMOTE_PORT);
     active = udp->begin(NTP_LOCAL_PORT);
     if (!active) {
-        String str = StrUtils::getStrP(str_failed);
-        say(str);
+        say_strP(str_failed);
     }
 }
 
 void NtpClient::stop() {
     if (active) {
-        String str = StrUtils::getStrP(str_stopped);
-        say(str);
+        say_strP(str_stopped);
         udp->stop();
         active = false;
     }
@@ -86,8 +84,7 @@ void NtpClient::sync() {
         delay(10);
         cb = udp->parsePacket();
         if (timeout > 10) {
-            String str = StrUtils::getStrP(str_timeout);
-            say(str);
+            say_strP(str_timeout);
             return;
         }
         timeout++;

@@ -3,6 +3,9 @@
 #include "Consts.h"
 #include "Wireless.h"
 
+using namespace PrintUtils;
+using namespace StrUtils;
+
 NetworkService::NetworkService() : AppModule(MOD_NETSVC) {
     dns = new DNSServer();
     mdns = new esp8266::MDNSImplementation::MDNSResponder();
@@ -75,7 +78,14 @@ bool NetworkService::begin_netbios(String &host_name) {
     return result;
 }
 
-size_t NetworkService::printDiag(Print *p) { return Wireless::printDiag(p); }
+size_t NetworkService::printDiag(Print *p) {
+    size_t n = Wireless::printDiag(p);
+    n = PrintUtils::print_nameP_value(p, str_active, getBoolStr(active));
+    n = PrintUtils::print_nameP_value(p, str_dns, getBoolStr(has_dns));
+    n = PrintUtils::print_nameP_value(p, str_mdns, getBoolStr(has_mdns));
+    n = PrintUtils::print_nameP_value(p, str_netbios, getBoolStr(has_netbios));
+    return n;
+}
 
 void NetworkService::loop() {
     if (!active)

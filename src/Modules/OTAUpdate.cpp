@@ -27,9 +27,8 @@ bool OTAUpdate::begin() {
     // MD5(admin)
     ota->begin(false);
 
-    char buf[32];
-    sprintf(buf, "%s:%d", host.c_str(), OTA_PORT);
-    say(buf);
+    say_strP(str_host, (char *)host.c_str());
+    say_strP(str_port, OTA_PORT);
 
     return true;
 }

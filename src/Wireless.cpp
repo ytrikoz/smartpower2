@@ -10,6 +10,8 @@
 #include "Global.h"
 #include "SysInfo.h"
 
+using namespace PrintUtils;
+
 namespace Wireless {
 
 static const char str_bssid[] PROGMEM = "bssid %02x:%02x:%02x:%02x:%02x:%02x";
@@ -438,8 +440,12 @@ String getConnectionStatus() {
 }
 
 size_t printDiag(Print *p) {
-    size_t n = p->println(networkStateInfo());
-    n += p->println(wifiModeInfo());
+    size_t n =
+        print_nameP_value(p, str_network, StrUtils::getUpDownStr(hasNetwork()));
+    n += print_nameP_value(
+        p, str_for,
+        millis_since(hasNetwork() ? lastNetworkDown : lastNetworkUp));
+    n += print_nameP_value(p, str_mode, getMode());
     WiFi.printDiag(*p);
     return n;
 }

@@ -9,6 +9,8 @@
 #include "ina231.h"
 #include "mcp4652.h"
 
+using namespace PrintUtils;
+
 Psu::Psu() : AppModule(MOD_PSU) {
     info = PsuInfo();
     psuState = PsuState();
@@ -84,8 +86,6 @@ void Psu::setState(PowerState value, bool force) {
     if (!force && !psuState.getPower(value))
         return;
     psuState.setPower(value);
-    String str = psuState.getPowerStateStr();
-    say(str);
     digitalWrite(POWER_SWITCH_PIN, value);
 }
 
@@ -94,16 +94,12 @@ bool Psu::isWhStoreEnabled() { return wh_store; }
 float Psu::getOutputVoltage() { return outputVoltage; }
 
 void Psu::setOutputVoltage(float value) {
-    char buf[8];
-    sprintf(buf, "%.2f", value);
-    sayP_value(str_voltage, buf);
-
     outputVoltage = constrain(value, 4, 6);
     mcp4652_write(WRITE_WIPER0_ADDR, quadratic_regression(outputVoltage));
 }
 
 bool Psu::begin() {
-    double v = config->getValueAsFloat(OUTPUT_VOLTAGE);
+    float v = config->getValueAsFloat(OUTPUT_VOLTAGE);
     this->setOutputVoltage(v);
     wh_store = false;
     if (config->getValueAsBool(WH_STORE_ENABLED)) {
@@ -226,19 +222,12 @@ bool Psu::restoreState(PowerState &value) {
     return res;
 }
 
-String Psu::getPowerStateStr() {
-    String str = getPsuState()->getPowerStateStr();
-    return str;
-}
-
 size_t Psu::printDiag(Print *p) {
-    size_t n = sayP_value(StrUtils::getStrP(str_power).c_str(),
-                          getPowerStateStr().c_str());
-    String str = String(getOutputVoltage());
-    n += sayP_value(str_output, str.c_str());
-    if (psuState.getPower(POWER_ON)) {
-        n += out->print(getUptime());
-        n += out->println(StrUtils::getStrP(str_sec, false));
+    size_t n = PrintUtils::print_nameP_value(p, str_power,
+                                             getPsuState()->getPowerStateStr());
+    n += PrintUtils::print_nameP_value(p, str_output, outputVoltage);
+    if (getPsuState()->getPower(POWER_ON)) {
+        n += PrintUtils::print_nameP_value(p, str_uptime, getUptime());
     }
     return n;
 }

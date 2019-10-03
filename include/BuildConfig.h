@@ -23,7 +23,7 @@
 
 //#define SERIAL_DEBUG
 
-#define DEBUG_APP_MOD
+//#define DEBUG_APP_MOD
 //#define DEBUG_LEDS
 //#define DEBUG_LOOP
 //#define DEBUG_PLOT

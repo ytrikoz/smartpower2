@@ -4,12 +4,6 @@ using namespace StrUtils;
 
 namespace PrintUtils {
 
-size_t print_param_value(Print *p, const char *param, const char *value) {
-    char buf[OUTPUT_MAX_LENGTH];
-    sprintf(buf, "%s=\"%s\"", param, value);
-    return p->println(buf);
-}
-
 size_t print_shell_start(Print *p) {
     return p->println(FPSTR(msg_shell_start));
 }
@@ -111,6 +105,12 @@ size_t print_unknown_action(Print *p, String &name) {
     n += p->print(' ');
     n += p->println(getQuotedStr(name));
     return n;
+}
+
+size_t print_param_value(Print *p, const char *param, const char *value) {
+    char buf[OUTPUT_MAX_LENGTH];
+    sprintf(buf, "%s=\"%s\"", param, value);
+    return p->println(buf);
 }
 
 size_t print_name_value(Print *p, String &name, String &value) {

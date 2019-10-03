@@ -22,13 +22,17 @@ bool SystemClock::begin() {
 }
 
 size_t SystemClock::printDiag(Print *p) {
-    size_t n = print_paramP_value(p, str_timezone, timeOffset / ONE_HOUR_s);
-    n += print_paramP_value(p, str_backup, storeInterval / ONE_SECOND_ms);
-    n += print_paramP_value(p, str_updated, lastUpdated / ONE_SECOND_ms);
-    n += print_paramP_value(p, str_stored, lastStored / ONE_SECOND_ms);
-    n += print_paramP_value(p, str_rollover, rollover);
-    n += print_paramP_value(p, str_epoch, epoch);
-    n += print_paramP_value(p, str_trusted, trusted);
+    size_t n =
+        PrintUtils::print_nameP_value(p, str_timezone, timeOffset / ONE_HOUR_s);
+    n += PrintUtils::print_nameP_value(p, str_backup,
+                                       storeInterval / ONE_SECOND_ms);
+    n += PrintUtils::print_nameP_value(p, str_updated,
+                                       lastUpdated / ONE_SECOND_ms);
+    n += PrintUtils::print_nameP_value(p, str_stored,
+                                       lastStored / ONE_SECOND_ms);
+    n += PrintUtils::print_nameP_value(p, str_rollover, rollover);
+    n += PrintUtils::print_nameP_value(p, str_epoch, epoch);
+    n += PrintUtils::print_nameP_value(p, str_trusted, trusted);
     return n;
 }
 
@@ -77,7 +81,7 @@ void SystemClock::setEpoch(const EpochTime &epoch, bool trusted) {
 void SystemClock::onTimeChange() {
     String time = epoch.toString();
     if (trusted) {
-        sayP_value(str_time, time.c_str());
+        say_strP(str_time, (char *)time.c_str());
     }
 }
 
