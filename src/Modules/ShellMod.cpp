@@ -43,3 +43,5 @@ bool ShellMod::setRemote(Stream *stream) {
 
     return active;
 }
+
+bool ShellMod::isActive() { return shell.isActive(); }

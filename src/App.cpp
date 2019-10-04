@@ -130,6 +130,7 @@ void App::loop() {
     if (millis_passed(displayUpdated, now) > ONE_SECOND_ms) {
         handle_restart();
         update_display();
+        send_psu_data_to_clients();
         displayUpdated = now;
     }
 

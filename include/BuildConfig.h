@@ -2,6 +2,10 @@
 
 #include <HardwareSerial.h>
 
+#define APP_NAME "SmartPower2"
+#define APP_VERSION "0.6.8"
+#define APP_MODULES 11
+
 #define I2C_DELAY 10
 #define I2C_SDA D2
 #define I2C_SCL D5
@@ -36,7 +40,6 @@
 //#define DEBUG_TELNET
 //#define DEBUG_WEB_SERVICE
 //#define DEBUG_SHELL
-#define DEBUG_TERMUL
 
 //#define DEBUG_TIME_BACKUP
 //#define DEBUG_TIME_UTILS

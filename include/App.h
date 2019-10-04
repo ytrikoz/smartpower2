@@ -55,7 +55,6 @@ class App {
 
   private:
     bool isNetworkDepended(AppModuleEnum module);
-    void refresh_network_modules(void);
     void refresh_network_modules(bool hasNetwork);
     void handle_restart();
     void boot_progress(uint8_t per, const char *payload = NULL);
