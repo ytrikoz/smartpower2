@@ -3,41 +3,64 @@
 
 ## 0.6.7 (2019-10-04)
 
-### print diagnostic logs/data to console
+## Serial / Telnet console connection
 
-shell command `show` with parameter `btn, clock, http, lcd, led, netsvc, ntp, psu, shell, telnet, update`
+To start you should send `Line Feed`, usually to do this press `ENTER` key. The command prompt should appear on the screen , when done to exit from shell press `ESC` twice (and/or close telnet connection).
 
-example:
-> 02:32:12> show psu
-> power: off
-> output: 5.00
-> 02:32:14> show netsvc
-> network up for 1726128ms
-> active: true
-> dns: true
-> mdns: true
-> netbios: true
+### available commands
 
-### blue wifi led
+`help`
+
+### control lcd backlight
+
+to operate
+
+`system backlight` *value*
+
+value '0' - to switch off (with any other will switch it back).
+or disable backlight at config with:
+
+`set backlight 0`
+
+`config apply`
+
+### diagnostic logs/data
+
+`show` [`btn, clock, http, lcd, led, netsvc, ntp, psu, shell, telnet, update`]
+
+### print file content
+
+`print` *file name*
+
+### delete file
+
+`rm` *file name*
+
+### configuration
+
+`set` *param* *value*
+
+not persisten without `config save` or `config apply`
+
+`get` *param*
+
+prints runtime value of parameter with name *param*
+
+### control output power switch
+
+`power` *action*
+
+available actions are `on` and `off`
+
+## blue wifi led
 
 - **off** wifi switched off / network down
 - **on** network up
 - **blink** web/telnet client connected
 
-### red power led
+## red power led
 
 - **off** no input power/boot error
 - **on** ready/output power off
 - **blink** output power on
 - **blink fast** alert/error
-
-## 0.6.7 (2019-09-17)
-
-### Feature: added
-
-- **clock** initial state of the device clock is firmware build time
-- **shell**  `system backlight` [0,1]
-- **config**  `backlight`
-- **shell**  `show clock`
-- **shell**  `show ntp`
-- **lcd** visual improvment
