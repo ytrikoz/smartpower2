@@ -1,9 +1,5 @@
 #include "PsuLogger.h"
 
-#include <string.h>
-
-#include "CommonTypes.h"
-
 using StrUtils::formatSize;
 
 PsuLogger::PsuLogger() {
@@ -13,42 +9,41 @@ PsuLogger::PsuLogger() {
     this->psuLog[WATTSHOURS_LOG] = new PsuLog("Wh", PSU_LOG_WATTHOURS_SIZE);
 }
 
-PsuLog* PsuLogger::getLog(PsuLogEnum item) { 
-    return psuLog[item];
-}
+PsuLog *PsuLogger::getLog(PsuLogEnum item) { return psuLog[item]; }
 
-bool PsuLogger::getLogValues(PsuLogEnum logItem, float* values, size_t& size) {
-    PsuLog* log = getLog(logItem);
+size_t PsuLogger::getSize(PsuLogEnum item) { return getLog(item)->size(); }
+
+bool PsuLogger::getValues(PsuLogEnum item, float *dest, size_t &size) {
+    PsuLog *log = getLog(item);
     size = log->count();
-    if (size) log->values(values, size);
+    if (size)
+        log->values(dest, size);
     return size;
 }
 
-bool PsuLogger::begin() {
-    for (uint8_t i = 0; i < 4; ++i) getLog(PsuLogEnum(i))->clear();
+void PsuLogger::clear() {
+    for (uint8_t i = 0; i < 4; ++i)
+        getLog(PsuLogEnum(i))->clear();
     lastUpdated = 0;
     startTime = millis();
     v_enabled = i_enabled = p_enabled = wh_enabled = true;
-    active = true;
-    return active;
 }
 
-void PsuLogger::end() { active = false; }
-
-void PsuLogger::log(PsuInfo& item) {
-    if (!active) return;
-    if (v_enabled) this->psuLog[VOLTAGE_LOG]->push(item.time, item.V);
-    if (i_enabled) this->psuLog[CURRENT_LOG]->push(item.time, item.I);
-    if (p_enabled) this->psuLog[POWER_LOG]->push(item.time, item.P);
+void PsuLogger::log(PsuInfo &item) {
+    if (v_enabled)
+        this->psuLog[VOLTAGE_LOG]->push(item.time, item.V);
+    if (i_enabled)
+        this->psuLog[CURRENT_LOG]->push(item.time, item.I);
+    if (p_enabled)
+        this->psuLog[POWER_LOG]->push(item.time, item.P);
     if (wh_enabled)
         this->psuLog[WATTSHOURS_LOG]->push(item.time, item.mWh / ONE_WATT_mW);
+    lastUpdated = millis();
 }
 
-void PsuLogger::print(Print* p, PsuLogEnum item) {
-    psuLog[item]->printTo(p); 
-}
+void PsuLogger::print(PsuLogEnum item, Print *p) { psuLog[item]->printTo(p); }
 
-void PsuLogger::printDiag(Print* p) {
+void PsuLogger::printDiag(Print *p) {
     if (!lastUpdated) {
         p->println(StrUtils::getStrP(str_empty, false));
         return;
@@ -64,5 +59,6 @@ void PsuLogger::printDiag(Print* p) {
     p->print(StrUtils::getStrP(str_max));
     p->print('\t');
     p->println(StrUtils::getStrP(str_avg));
-    for (uint8_t i = 0; i < 4; ++i) getLog(PsuLogEnum(i))->printDiag(p);
+    for (uint8_t i = 0; i < 4; ++i)
+        getLog(PsuLogEnum(i))->printDiag(p);
 }
