@@ -81,7 +81,7 @@ void SystemClock::setEpoch(const EpochTime &epoch, bool trusted) {
 void SystemClock::onTimeChange() {
     String time = epoch.toString();
     if (trusted) {
-        say_strP(str_time, (char *)time.c_str());
+        say_strP(str_time, time.c_str());
     }
 }
 

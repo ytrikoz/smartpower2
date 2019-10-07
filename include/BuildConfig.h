@@ -6,6 +6,17 @@
 #define APP_VERSION "0.6.8"
 #define APP_MODULES 11
 
+// address are 0x27 or 0x3f
+#define NONE_ADDRESS 0x00
+#define LCD_SLAVE_ADDRESS 0x3f
+#define LCD_SLAVE_ADDRESS_ALT 0x27
+#define LCD_SCROLL_INTERVAL 5000
+#define LCD_UPDATE_INTERVAL 250
+#define LCD_COLS 16
+#define LCD_ROWS 2
+#define LCD_ROW_1 0
+#define LCD_ROW_2 1
+
 #define I2C_DELAY 10
 #define I2C_SDA D2
 #define I2C_SCL D5
@@ -27,7 +38,7 @@
 
 //#define SERIAL_DEBUG
 
-//#define DEBUG_APP_MOD
+#define DEBUG_APP
 //#define DEBUG_LEDS
 //#define DEBUG_LOOP
 //#define DEBUG_PLOT
@@ -53,3 +64,5 @@
 //#define DISABLE_OTA_UPDATE
 //#define DISABLE_NTP
 //#define DISABLE_NETWORK_DISCOVERY
+
+#define NO_GLOBAL_SSDP

@@ -22,7 +22,7 @@ template <typename T> size_t print_nameP_value(Print *p, PGM_P strP, T var) {
 }
 
 template <typename T> size_t print(Print *p, T v) {
-    size_t n = print(p, v);
+    size_t n = p->print(v);
     return n += p->print(' ');
 }
 

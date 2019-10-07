@@ -2,6 +2,12 @@
 
 #include <Arduino.h>
 
+#include "ConfigHelper.h"
+#include "LoopLogger.h"
+#include "Plot.h"
+#include "PsuLogger.h"
+#include "Strings.h"
+
 #include "Modules/Button.h"
 #include "Modules/Display.h"
 #include "Modules/Leds.h"
@@ -14,11 +20,6 @@
 #include "Modules/TelnetServer.h"
 #include "Modules/WebService.h"
 
-#include "ConfigHelper.h"
-#include "LoopLogger.h"
-
-#include "Strings.h"
-
 class App {
   public:
     App();
@@ -30,34 +31,37 @@ class App {
     bool getModule(const char *str, AppModuleEnum &mod);
     AppModule *getInstance(const AppModuleEnum);
     void loop();
-    void restart(uint8_t delay_s);
+    void restart(uint8_t time);
     void printConfig(Print *p);
-    void printDiag(const AppModuleEnum module, Print *p);
-    void printLoopCapture(Print *p);
-    LoopLogger *getLoopLogger();
     size_t printDiag(Print *p);
-    size_t printDiag(Print *p, const AppModuleEnum);
+    size_t printDiag(Print *p, const AppModuleEnum module);
+    void printLoopCapture(Print *p);
+    void printPlot(PlotData *data, Print *p);
+
     void printCapture(Print *);
     void resetConfig();
     void loadConfig();
     bool saveConfig();
     Config *getConfig();
+    LoopLogger *getLoopLogger();
+
     String getNetworkConfig();
-    Display *getDisplay();
     SystemClock *getClock();
     Psu *getPsu();
-    PsuState *getPsuState();
+    WebService *getHttp();
     bool setBootPowerState(BootPowerState state);
     bool setOutputVoltageAsDefault();
     uint8_t getTPW();
     void refresh_power_led();
     void refresh_wifi_led();
+    Display *getDisplay();
 
   private:
+    uint8_t get_telnet_clients_count();
+    uint8_t get_http_clients_count();
     bool isNetworkDepended(AppModuleEnum module);
     void refresh_network_modules(bool hasNetwork);
     void handle_restart();
-    void boot_progress(uint8_t per, const char *payload = NULL);
     void send_psu_data_to_clients();
 
   private:
@@ -70,16 +74,17 @@ class App {
     ShellMod *shell;
     OTAUpdate *ota;
     Display *display;
+    WebService *http;
+    TelnetServer *telnet;
     SystemClock *rtc;
     NtpClient *ntp;
+    PsuLogger *logger;
     Psu *psu;
     Button *btn;
     Led::Leds *leds;
     NetworkService *discovery;
     AppModule *appMod[APP_MODULES];
-    Print *out;
-    Print *dbg;
-    Print *err;
+    Print *out, *dbg, *err;
 };
 
 extern App app;

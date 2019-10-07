@@ -8,13 +8,13 @@
 #include "Strings.h"
 #include "TimeUtils.h"
 
-typedef std::function<void(const EpochTime &)> EpochTimeEventHandler;
+typedef std::function<void(unsigned long epoch_s)> TimeEventHandler;
 
 enum AppModuleEnum {
     MOD_BTN,
     MOD_CLOCK,
     MOD_HTTP,
-    MOD_LCD,
+    MOD_DISPLAY,
     MOD_LED,
     MOD_NETSVC,
     MOD_NTP,

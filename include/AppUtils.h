@@ -3,8 +3,8 @@
 #include "Strings.h"
 
 static const char *strP_module[APP_MODULES] PROGMEM = {
-    str_btn, str_clock, str_http,  str_lcd,    str_led,   str_netsvc,
-    str_ntp, str_psu,   str_shell, str_telnet, str_update};
+    str_btn, str_clock, str_http,  str_display, str_led,   str_netsvc,
+    str_ntp, str_psu,   str_shell, str_telnet,  str_update};
 
 inline char *boolStr(char *buf, bool value) {
     return strcpy_P(buf, value ? str_true : str_false);
@@ -33,8 +33,8 @@ inline char *getModuleName(uint8_t index, char *buf, size_t &size) {
 inline char *paramStrP(char *buf, PGM_P strP) {
     buf = strcpy_P(buf, strP);
     size_t len = strlen(buf);
-    buf[len] = ':';
-    buf[++len] = ' ';
-    buf[++len] = '\x00';
+    buf[len++] = ':';
+    buf[len++] = ' ';
+    buf[len++] = '\x00';
     return buf;
 }

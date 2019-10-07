@@ -1,10 +1,8 @@
 #include "Cli.h"
 #include "Global.h"
 
-#include "Actions/ClockSetTime.h"
-#include "Actions/LogPrint.h"
-#include "Actions/PlotPrint.h"
 #include "Actions/PowerAvg.h"
+#include "Actions/WakeOnLan.h"
 
 #include "PrintUtils.h"
 #include "StrUtils.h"
@@ -30,10 +28,7 @@ void onWifiScan(cmd *c);
 void onWifiDiag(cmd *c);
 void onClock(cmd *c);
 void onLog(cmd *c);
-
-void onGetConfigParameter(const char *, const char *);
-
-void onIOResult(const char *, const char *);
+void onWol(cmd *c);
 
 enum CommandAction {
     ACTION_UNKNOWN,
@@ -49,7 +44,8 @@ enum CommandAction {
     ACTION_OFF,
     ACTION_RESTART,
     ACTION_BACKLIGHT,
-    ACTION_UPTIME
+    ACTION_UPTIME,
+    ACTION_WOL
 };
 
 enum CommandItems {
@@ -67,7 +63,7 @@ enum CommandItems {
 };
 
 Command cmdConfig, cmdPower, cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet,
-    cmdGet, cmdRm, cmdClock, cmdPlot, cmdLog;
+    cmdGet, cmdRm, cmdClock, cmdPlot, cmdLog, cmdWol;
 
 Print *out = NULL;
 
@@ -83,6 +79,14 @@ String getActionStr(Command &command) {
 }
 String getParamStr(Command &command) {
     return command.getArgument("param").getValue();
+}
+
+String getIpStr(Command &command) {
+    return command.getArgument("ip").getValue();
+}
+
+String getMacStr(Command &command) {
+    return command.getArgument("mac").getValue();
 }
 
 String getModStr(Command &command) {
@@ -126,6 +130,8 @@ CommandAction getAction(Command &cmd) {
         return ACTION_BACKLIGHT;
     } else if (strcasecmp_P(str.c_str(), str_uptime) == 0) {
         return ACTION_UPTIME;
+    } else if (strcasecmp_P(str.c_str(), str_wol) == 0) {
+        return ACTION_WOL;
     }
     return ACTION_UNKNOWN;
 }
@@ -170,7 +176,7 @@ void init() {
 
     cmdSystem = cli->addCommand("system");
     cmdSystem.addPositionalArgument("action", "uptime");
-    cmdSystem.addPositionalArgument("value", "");
+    cmdSystem.addPositionalArgument("value", "0");
     cmdSystem.setCallback(Cli::onSystem);
 
     cmdShow = cli->addCommand("show");
@@ -204,37 +210,39 @@ void init() {
     cmdLog.addPositionalArgument("action", "print");
     cmdLog.addPositionalArgument("param", "");
     cmdLog.setCallback(Cli::onLog);
-}
 
-void onCommandError(cmd_error *e) {
-    CommandError cmdError(e);
-    out->println(cmdError.toString().c_str());
+    cmdWol = cli->addCommand("wol");
+    cmdWol.addArgument("ip", "");
+    cmdWol.addArgument("mac", "");
+    cmdWol.setCallback(Cli::onWol);
 }
 
 void onLog(cmd *c) {
     Command cmd(c);
     CommandAction action = getAction(cmd);
+    String paramStr = getParamStr(cmd);
+    PsuLogger *logger = app.getPsu()->getLogger();
     bool handled = false;
     if (action == ACTION_PRINT) {
         String paramStr = getParamStr(cmd);
         if (!paramStr.length()) {
-            psuLogger->printDiag(out);
+            logger->printDiag(out);
             return;
         }
         if (paramStr.indexOf("p") != -1) {
-            psuLogger->print(out, POWER_LOG);
+            logger->print(POWER_LOG, out);
             handled = true;
         }
         if (paramStr.indexOf("v") != -1) {
-            psuLogger->print(out, VOLTAGE_LOG);
+            logger->print(VOLTAGE_LOG, out);
             handled = true;
         }
         if (paramStr.indexOf("i") != -1) {
-            psuLogger->print(out, CURRENT_LOG);
+            logger->print(CURRENT_LOG, out);
             handled = true;
         }
-        if (paramStr.indexOf("wh") != -1) {
-            psuLogger->print(out, WATTSHOURS_LOG);
+        if (paramStr.indexOf("w") != -1) {
+            logger->print(WATTSHOURS_LOG, out);
             handled = true;
         }
         if (!handled)
@@ -251,8 +259,6 @@ void onHelp(cmd *c) {
 void onConfig(cmd *c) {
     Command cmd(c);
     CommandAction action = getAction(cmd);
-    String actionStr = getActionStr(cmd);
-
     switch (action) {
     case ACTION_PRINT:
         app.printConfig(out);
@@ -267,10 +273,12 @@ void onConfig(cmd *c) {
         app.loadConfig();
         break;
     case ACTION_APPLY:
-        if (app.saveConfig())
+        if (app.saveConfig()) {
             app.restart(3);
-        break;
+        }
+        return;
     default:
+        String actionStr = getActionStr(cmd);
         PrintUtils::print_unknown_action(out, actionStr);
         return;
     }
@@ -287,13 +295,11 @@ void onPower(cmd *c) {
         break;
     }
     case ACTION_ON: {
-        if (app.getPsuState()->getPower(POWER_OFF))
-            app.getPsu()->togglePower();
+        app.getPsu()->powerOn();
         break;
     }
     case ACTION_OFF: {
-        if (app.getPsuState()->getPower(POWER_ON))
-            app.getPsu()->togglePower();
+        app.getPsu()->powerOff();
         break;
     }
     default: {
@@ -304,24 +310,26 @@ void onPower(cmd *c) {
     }
 }
 
+void onWol(cmd *c) {
+    Command cmd(c);
+    String ipStr = getIpStr(cmd);
+    String macStr = getMacStr(cmd);
+    Actions::WakeOnLan(out).exec(ipStr, macStr);
+}
+
 void onSystem(cmd *c) {
     Command cmd(c);
     CommandAction action = getAction(cmd);
-    String paramStr = getParamStr(cmd);
-
+    String value = getValueStr(cmd);
     switch (action) {
     case ACTION_RESTART: {
-        uint8_t delay = paramStr.toInt();
-        app.restart(delay);
+        app.restart(value.toInt());
         break;
     }
     case ACTION_BACKLIGHT: {
-        bool enabled = paramStr.length() == 0 ? true : paramStr.toInt();
-        print_nameP_value(out, str_backlight, getEnabledStr(enabled));
-        if (enabled)
-            app.getDisplay()->backlightOn();
-        else
-            app.getDisplay()->backlightOff();
+        bool enabled = value.toInt();
+        print_nameP_value(out, str_backlight, getOnOffStr(enabled));
+        app.getDisplay()->enableBacklight(enabled);
         break;
     }
     case ACTION_UPTIME: {
@@ -333,7 +341,6 @@ void onSystem(cmd *c) {
     default:
         String actionStr = getActionStr(cmd);
         print_unknown_action(out, actionStr);
-        out->println();
         return;
     }
 }
@@ -342,10 +349,20 @@ void onClock(cmd *c) {
     Command cmd(c);
     String action = getActionStr(cmd);
     String paramStr = getParamStr(cmd);
-    if (action.equals("set"))
-        Actions::ClockSetTime(paramStr).exec(out);
+    if (action.equals("set")) {
+        tm tm;
+        if (TimeUtils::encodeTime(paramStr.c_str(), tm)) {
+            DateTime dt = DateTime(tm);
+            out->println(dt);
+        } else {
+            out->print(StrUtils::getStrP(str_invalid));
+            out->print(' ');
+            out->print(StrUtils::getStrP(str_time));
+            out->print(' ');
+            out->println(paramStr);
+        }
+    }
 }
-
 void onWifiScan(cmd *c) {
     Command cmd(c);
     out->print(StrUtils::getIdentStrP(str_wifi));
@@ -420,7 +437,7 @@ void onShow(cmd *c) {
             return;
         };
         return;
-    } else if (modStr.equals("app")) {
+    } else if (modStr.equals("app") || modStr.equals("")) {
         app.printDiag(out);
         return;
     }
@@ -432,18 +449,7 @@ void onShow(cmd *c) {
     }
 }
 
-void onPlot(cmd *c) {
-    Command cmd(c);
-    PlotData *data = app.getDisplay()->getData();
-    for (uint8_t x = 0; x < app.getDisplay()->getData()->size; ++x) {
-        uint8_t y = map_to_plot_min_max(data, x);
-        char tmp[PLOT_ROWS * 8 + 1];
-        StrUtils::strfill(tmp, '*', y);
-        out->printf("#%d %2.4f ", x + 1, data->cols[x]);
-        out->print(tmp);
-        out->println();
-    }
-}
+void onPlot(cmd *c) { Command cmd(c); }
 
 void onPrint(cmd *c) {
     Command cmd(c);
@@ -473,6 +479,11 @@ void onRemove(cmd *c) {
         out->print(StrUtils::getStrP(str_not));
         out->print(StrUtils::getStrP(str_found));
     }
+}
+
+void onCommandError(cmd_error *e) {
+    CommandError cmdError(e);
+    out->println(cmdError.toString().c_str());
 }
 
 } // namespace Cli

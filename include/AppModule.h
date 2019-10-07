@@ -17,7 +17,7 @@ class Named {
   protected:
     size_t say(char *str);
     size_t say_strP(PGM_P strP);
-    size_t say_strP(PGM_P strP, char *value);
+    size_t say_strP(PGM_P strP, const char *value);
     size_t say_strP(PGM_P strP, int value);
 
   protected:
@@ -33,13 +33,13 @@ class Named {
 
   private:
     AppModuleEnum module;
-    char *name;
+    char name[16];
 };
 
 class AppModule : public Named {
   public:
     AppModule(AppModuleEnum module);
-    virtual void init(Config *config) final;
+    virtual void init(Config *) final;
     virtual bool begin() { return false; };
     virtual void end(){};
     virtual void start(){};

@@ -18,9 +18,6 @@ void Button::onClicked() {
 void Button::onHold(unsigned long time) {
     if (holdHandler)
         holdHandler(time);
-    // app.resetConfig();
-    // app.saveConfig();
-    // app.restart(5);
 }
 
 void Button::onHoldRelease(unsigned long time) {

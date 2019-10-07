@@ -1,36 +1,37 @@
 #pragma once
 
 #include "AppModule.h"
-#include "TimeUtils.h"
 #include "Config.h"
 #include "FileStore.h"
+#include "TimeUtils.h"
 
 class SystemClock : public AppModule {
-   public:
+  public:
     SystemClock();
-    void setConfig(Config* config);
+    void setConfig(Config *config);
     bool begin();
     void loop();
-    size_t printDiag(Print* p);
-   public:
-    void setOnChange(EpochTimeEventHandler);
-    void setEpoch(const EpochTime& epochTime, bool trusted = false);
+    size_t printDiag(Print *p);
+
+  public:
+    void setOnChange(TimeEventHandler);
+    void setEpoch(const EpochTime &epochTime, bool trusted = false);
     unsigned long getUptime();
     unsigned long getUtc();
     unsigned long getLocal();
 
-   private:
+  private:
     void setTimeZone(sint8_t timeZone_h);
     void setBackupInterval(unsigned long time_s);
 
     bool isStoreNeedsUpdate(unsigned long);
-    bool restoreState(EpochTime& value);
-    bool storeState(EpochTime& value);
+    bool restoreState(EpochTime &value);
+    bool storeState(EpochTime &value);
 
     void onTimeChange();
 
-   private:
-    EpochTimeEventHandler timeChangeHandler;
+  private:
+    TimeEventHandler timeHandler;
 
     bool trusted;
     EpochTime epoch;
@@ -43,4 +44,3 @@ class SystemClock : public AppModule {
     unsigned long leftStore;
     unsigned long lastUpdated;
 };
-

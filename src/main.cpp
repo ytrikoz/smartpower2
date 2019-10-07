@@ -10,16 +10,6 @@
 #include "SysInfo.h"
 #include "Wireless.h"
 
-uint8_t get_http_clients_count() {
-    uint8_t result = 0;
-#ifndef DISABLE_HTTP
-    for (uint8_t i = 0; i < WEBSOCKETS_SERVER_CLIENT_MAX; i++)
-        if (clients[i].connected)
-            result++;
-#endif
-    return result;
-}
-
 void onHttpClientConnect(uint8_t n) {
     clients[n].connected = true;
     app.refresh_wifi_led();
@@ -39,18 +29,18 @@ void onHttpClientData(uint8_t n, String data) {
         break;
     }
     case SET_POWER_ON_OFF: {
-        PowerState new_state = PowerState(data.substring(1).toInt());
-        if (!app.getPsuState()->getPower(new_state)) {
-            app.getPsu()->togglePower();
-            String payload = String(SET_POWER_ON_OFF);
-            payload += app.getPsuState()->getPower();
-            sendToClients(payload, PG_HOME, n);
-        }
-        break;
-    }
+        PsuState state = PsuState(data.substring(1).toInt());
+        Psu *psu = app.getPsu();
+        if (!psu->checkState(state))
+            psu->togglePower();
+        String payload = String(SET_POWER_ON_OFF);
+        payload += psu->getState();
+        sendToClients(payload, PG_HOME, n);
+    } break;
+
     case SET_VOLTAGE: {
-        float _voltage = data.substring(1).toFloat();
-        app.getPsu()->setOutputVoltage(_voltage);
+        float value = data.substring(1).toFloat();
+        app.getPsu()->setVoltage(value);
         sendToClients(String(SET_VOLTAGE) + data.substring(1), PG_HOME, n);
         break;
     }
@@ -102,13 +92,13 @@ void sendToClients(String payload, uint8_t page, uint8_t except_n) {
     for (uint8_t i = 0; i < WEBSOCKETS_SERVER_CLIENT_MAX; i++)
         if (clients[i].connected && (clients[i].page == page) &&
             (except_n != i))
-            http->sendTxt(i, payload);
+            app.getHttp()->sendTxt(i, payload);
 }
 
 void sendToClients(String payload, uint8_t page) {
     for (uint8_t i = 0; i < WEBSOCKETS_SERVER_CLIENT_MAX; i++)
         if (clients[i].connected && clients[i].page == page)
-            http->sendTxt(i, payload);
+            app.getHttp()->sendTxt(i, payload);
 }
 
 void sendPageState(uint8_t page) {
@@ -122,12 +112,12 @@ void sendPageState(uint8_t n, uint8_t page) {
     case PG_HOME: {
         // State
         String stateStr = String(SET_POWER_ON_OFF);
-        stateStr += String(app.getPsuState()->getPower());
-        http->sendTxt(n, stateStr);
+        stateStr += String(app.getPsu()->getState());
+        app.getHttp()->sendTxt(n, stateStr);
         // WattHour
         String whStoreEnabledStr = String(SET_LOG_WATTHOURS);
         whStoreEnabledStr += String(app.getPsu()->isWhStoreEnabled());
-        http->sendTxt(n, whStoreEnabledStr);
+        app.getHttp()->sendTxt(n, whStoreEnabledStr);
         break;
     }
     case PG_SETTINGS: {
@@ -135,16 +125,16 @@ void sendPageState(uint8_t n, uint8_t page) {
         // Power mod
         payload = String(SET_BOOT_POWER_MODE);
         payload += app.getConfig()->getValueAsByte(POWER);
-        http->sendTxt(n, payload);
+        app.getHttp()->sendTxt(n, payload);
         // Output voltage
         payload = String(SET_VOLTAGE);
-        payload += String(app.getPsu()->getOutputVoltage(), 2);
-        http->sendTxt(n, payload);
+        payload += String(app.getPsu()->getVoltage(), 2);
+        app.getHttp()->sendTxt(n, payload);
         // Network config
         {
             String payload = app.getNetworkConfig();
 
-            http->sendTxt(n, payload);
+            app.getHttp()->sendTxt(n, payload);
             break;
         }
     }
@@ -153,15 +143,15 @@ void sendPageState(uint8_t n, uint8_t page) {
         // Version info
         payload = String(TAG_FIRMWARE_INFO);
         payload += getVersionInfoJson();
-        http->sendTxt(n, payload);
+        app.getHttp()->sendTxt(n, payload);
         // System info
         payload = String(TAG_SYSTEM_INFO);
         payload += getSystemInfoJson();
-        http->sendTxt(n, payload);
+        app.getHttp()->sendTxt(n, payload);
         // Network info
         payload = String(TAG_NETWORK_INFO);
         payload += getNetworkInfoJson();
-        http->sendTxt(n, payload);
+        app.getHttp()->sendTxt(n, payload);
         break;
     }
     }
@@ -187,8 +177,4 @@ void setup() {
     app.start();
 }
 
-void loop() {
-    app.loop();
-
-    timer.run();
-}
+void loop() { app.loop(); }

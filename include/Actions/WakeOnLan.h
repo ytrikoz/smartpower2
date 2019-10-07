@@ -6,39 +6,52 @@
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 
+#include "PrintUtils.h"
 #include "Strings.h"
 
 namespace Actions {
 
-class WakeOnLanCommand : Action {
+class WakeOnLan {
   public:
-    void exec(Print *p);
+    WakeOnLan(Print *p);
+    void exec(String ipaddr, String mac);
 
   private:
-    WiFiUDP *udp;
     const char wol_preamble[6] = {'\xFF', '\xFF', '\xFF',
                                   '\xFF', '\xFF', '\xFF'};
+    Print *out;
 };
 
-void WakeOnLanCommand::exec(Print *p) {
+WakeOnLan::WakeOnLan(Print *p) { out = p; }
+
+void WakeOnLan::exec(String ipStr, String macStr) {
     IPAddress ipaddr;
-    udp = new WiFiUDP();
+    if (!ipaddr.fromString(ipStr)) {
+        PrintUtils::println(out, FPSTR(str_wrong), FPSTR(str_ip),
+                            ipStr.c_str());
+        return;
+    }
+    uint8_t mac[6];
+    if (!Wireless::atomac(macStr.c_str(), mac)) {
+        PrintUtils::println(out, FPSTR(str_wrong), FPSTR(str_mac),
+                            macStr.c_str());
+        return;
+    }
+    WiFiUDP *udp = new WiFiUDP();
     bool result = udp->begin(WOL_PORT);
     if (result) {
-        char *mac;
-        memset(&mac, 0, 4);
-        strcpy(mac, "123");
-        size_t mac_size = 4;
         size_t preamble_size = 12;
-        udp->beginPacket(ipaddr, WOL_PORT);
-        udp->write(wol_preamble, preamble_size);
-        for (uint8_t i = 0; i < 16; i++)
-            udp->write(mac, mac_size);
-        udp->endPacket();
-        p->print(FPSTR(str_complete));
-        free(mac);
+        if (udp->beginPacket(ipaddr, WOL_PORT)) {
+            udp->write(wol_preamble, preamble_size);
+            for (uint8_t i = 0; i < 16; i++)
+                udp->write(mac, 6);
+            udp->endPacket();
+        } else {
+            PrintUtils::println(out, FPSTR(str_error));
+        }
     }
-    p->println();
-}
+    udp->stop();
+    free(udp);
+} // namespace Actions
 
 } // namespace Actions

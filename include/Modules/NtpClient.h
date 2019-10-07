@@ -9,30 +9,34 @@
 #define NTP_PACKET_SIZE 48
 
 class NtpClient : public AppModule {
-   public:
+  public:
     NtpClient();
-    void loop();
     bool begin();
-    size_t printDiag(Print*);
-   protected:
-    void setConfig(Config* config);
-
-   public:
-    void setOnResponse(EpochTimeEventHandler);
-    void setInterval(uint16_t time_s);
-    void setPoolServer(const char* server);
-
-   private:
-    void sync();
-
-   private:
     void start();
     void stop();
+    void loop();
+    size_t printDiag(Print *);
+
+  protected:
+    void setConfig(Config *config);
+
+  public:
+    void setOnResponse(TimeEventHandler);
+    void setInterval(uint16_t time_s);
+    void setPoolServer(const char *server);
+    void setTimeout(uint16_t time_ms);
+
+  private:
+    void sendRequest();
+    void waitResponse();
+
+  private:
+    unsigned long epoch_s;
+    unsigned requestTime, responseTime;
+    WiFiUDP *udp;
     bool active;
-    char* timeServerPool;
+    unsigned long timeout;
+    char *timeServerPool;
     unsigned long syncInterval;
-    unsigned long lastUpdated;
-    EpochTime epochTime;
-    WiFiUDP* udp;
-    EpochTimeEventHandler onResponse;
+    TimeEventHandler responseHandler;
 };

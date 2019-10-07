@@ -1,119 +1,46 @@
 #pragma once
 
-#include <Arduino.h>
-#include <HardwareSerial.h>
-#include <LCD.h>
-#include <LiquidCrystal_I2C.h>
-#include <Wire.h>
-
 #include "AppModule.h"
-#include "BuildConfig.h"
-#include "Plot.h"
-#include "StrUtils.h"
-#include "Strings.h"
-#include "TimeUtils.h"
-
-// address are 0x27 or 0x3f
-#define NONE_ADDRESS 0x00
-#define LCD_SLAVE_ADDRESS 0x3f
-#define LCD_SLAVE_ADDRESS_ALT 0x27
-#define LCD_SCROLL_INTERVAL 5000
-#define LCD_UPDATE_INTERVAL 250
-#define LCD_COLS 16
-#define LCD_ROWS 2
-#define LCD_ROW_1 0
-#define LCD_ROW_2 1
-
-enum Screen {
-    SCREEN_CLEAR,
-    SCREEN_BOOT,
-    SCREEN_WIFI_OFF,
-    SCREEN_WIFI_STATUS,
-    SCREEN_WIFI_AP,
-    SCREEN_WIFI_STA,
-    SCREEN_AP_STA,
-    SCREEN_PVI,
-    SCREEN_MESSAGE
-};
-enum CharBank {
-    BANK_NONE,
-    BANK_PROGRESS,
-    BANK_PROGRESS_START,
-    BANK_PROGRESS_1_TO_4,
-    BANK_PROGRESS_4_TO_7,
-    BANK_PROGRESS_END,
-    BANK_PLOT
-};
-
-struct ScreenItem {
-    bool redrawLabel = false;
-    char label[LCD_COLS + 1] = {0};
-    bool redrawText = false;
-    char text[DISPLAY_VIRTUAL_COLS + 1] = {0};
-    uint8_t text_pos = 0;
-    bool needsRedraw() { return redrawLabel || redrawText; }
-    void forceRedraw() {
-        redrawLabel = true;
-        redrawText = true;
-    }
-};
+#include "LcdDisplay.h"
+#include "Screen.h"
 
 class Display : public AppModule {
   public:
     Display();
     bool begin();
     void loop();
-
-  public:
-    bool ready();
-    void backlightOn();
-    void backlightOff();
-    void drawTextLeft(uint8_t row, const char *str);
-    void drawTextRight(uint8_t row, const char *str);
-    void drawTextCenter(uint8_t row, const char *str);
-    void drawProgressBar(uint8_t row, uint8_t per);
-    void drawPlot(uint8_t col_start);
-    void drawFloat(uint8_t col, uint8_t row, float value);
-    void drawText(uint8_t col, uint8_t row, const char *str);
-    void turnOn();
-    void turnOff();
-    void clear();
-    Screen getScreen();
-    void setScreen(Screen screen, size_t items_count);
-    void setScreen(Screen screen, size_t size, unsigned long showTime);
-    void addScreenItem(uint8_t n, const char *text);
-    void addScreenItem(uint8_t n, const char *label, const char *text);
-    void lock(unsigned long period);
-    void unlock();
-    bool locked();
-    PlotData *getData();
-
-  protected:
     void setConfig(Config *config);
 
-  private:
-    void redrawScreen(bool force = false);
-    bool connect();
-    bool locked(unsigned long now);
-    void loadBank(CharBank bank, bool force = false);
-    void drawScreenItem(uint8_t row, ScreenItem *l);
-    uint8_t getRowForUpdate();
+  public:
     ScreenItem *getItemForRow(uint8_t row);
-    void scrollDown();
+    void showProgress(uint8_t per, const char *str);
+    void showPlot(PlotData *data, size_t cols);
+    void showMessage(const char *header, const char *message);
+    void clear(void);
+    void refresh(void);
+    void enableBacklight(bool value = true);
 
-    uint8_t addr;
-    bool active;
-    CharBank bank;
+    void load_message(Screen *obj, const char *header, const char *message);
+    void load_wifi_sta(Screen *obj);
+    void load_wifi_ap(Screen *obj);
+    void load_wifi_ap_sta(Screen *obj);
+    void load_ready(Screen *obj);
+    void load_psu_info(Screen *obj);
+
+  private:
+    void set_screen(ScreenEnum screen, unsigned long time = 0);
+    void lock(unsigned long time);
+    void unlock(void);
+    bool locked(unsigned long now);
+    bool locked(void);
+
+  private:
+    LcdDisplay *lcd;
     bool backlight;
-    unsigned long lockTimeout;
-    unsigned long lockUpdated;
+    unsigned long lockUpdated, lockTimeout;
+    unsigned long screenUpdated;
     unsigned long lastUpdated;
     unsigned long lastScroll;
-    LiquidCrystal_I2C *lcd;
-    PlotData data;
-
     Screen screen;
-    ScreenItem items[DISPLAY_VIRTUAL_ROWS];
-    uint8_t item_pos = 0;
-    uint8_t items_size = 0;
+    ScreenEnum activeScreen;
 };

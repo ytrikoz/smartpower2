@@ -55,4 +55,5 @@ bool startSTA(const char *ssid, const char *password);
 
 void useStaticStationIP(bool enabled);
 
+bool atomac(const char *txt, uint8_t *addr);
 } // namespace Wireless
