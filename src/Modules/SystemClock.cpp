@@ -10,7 +10,7 @@ using namespace PrintUtils;
 SystemClock::SystemClock() : AppModule(MOD_CLOCK) {
     trusted = false;
     timeOffset = storeInterval = lastStored = rollover = 0;
-    epoch = EpochTime(getAppBuildUtc());
+    epoch = EpochTime(TimeUtils::getAppBuildUtc());
     lastUpdated = millis();
 }
 
@@ -22,8 +22,8 @@ bool SystemClock::begin() {
 }
 
 size_t SystemClock::printDiag(Print *p) {
-    size_t n =
-        PrintUtils::print_nameP_value(p, str_timezone, timeOffset / ONE_HOUR_s);
+    size_t n = PrintUtils::print_nameP_value(p, str_timezone,
+                                             (float)timeOffset / ONE_HOUR_s);
     n += PrintUtils::print_nameP_value(p, str_backup,
                                        storeInterval / ONE_SECOND_ms);
     n += PrintUtils::print_nameP_value(p, str_updated,
@@ -37,12 +37,12 @@ size_t SystemClock::printDiag(Print *p) {
 }
 
 void SystemClock::setConfig(Config *config) {
-    setTimeZone(config->getValueAsSignedByte(TIME_ZONE));
+    setTimeZone(config->getValueAsByte(TIME_ZONE));
     setBackupInterval(config->getValueAsInt(TIME_BACKUP_INTERVAL));
 }
 
-void SystemClock::setTimeZone(const sint8_t timeZone_h) {
-    timeOffset = constrain(timeZone_h, -12, +12) * ONE_HOUR_s;
+void SystemClock::setTimeZone(uint8_t timeZone) {
+    timeOffset = TimeUtils::getTimeOffset(timeZone);
 }
 
 void SystemClock::setBackupInterval(unsigned long time) {
@@ -80,9 +80,8 @@ void SystemClock::setEpoch(const EpochTime &epoch, bool trusted) {
 
 void SystemClock::onTimeChange() {
     String time = epoch.toString();
-    if (trusted) {
+    if (trusted)
         say_strP(str_time, time.c_str());
-    }
 }
 
 unsigned long SystemClock::getUptime() {

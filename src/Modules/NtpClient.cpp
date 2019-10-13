@@ -18,9 +18,8 @@ void NtpClient::start() {
     say_strP(str_server, timeServerPool);
     say_strP(str_port, NTP_REMOTE_PORT);
     active = udp->begin(NTP_LOCAL_PORT);
-    if (!active) {
+    if (!active)
         say_strP(str_failed);
-    }
 }
 
 void NtpClient::stop() {
@@ -113,9 +112,8 @@ void NtpClient::sendRequest() {
 
 void NtpClient::setOnResponse(TimeEventHandler h) {
     responseHandler = h;
-    if (responseHandler && responseTime > 0) {
+    if (responseHandler && responseTime > 0)
         responseHandler(epoch_s + millis_since(responseTime) / ONE_SECOND_ms);
-    }
 }
 
 size_t NtpClient::printDiag(Print *p) {

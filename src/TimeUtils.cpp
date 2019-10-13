@@ -87,13 +87,15 @@ uint16_t getDaysInTheYear(uint16_t year) {
 }
 
 uint16_t encodeYear(uint16_t &year) {
-    if (year <= 99) year += 1970;
+    if (year <= 99)
+        year += 1970;
     return year;
 }
 
 bool encodeMonth(String str, int &month) {
     for (month = 0; month < 11; ++month)
-        if (str.equalsIgnoreCase(calendar[month].name) == 1) return true;
+        if (str.equalsIgnoreCase(calendar[month].name) == 1)
+            return true;
     return false;
 }
 
@@ -155,7 +157,8 @@ void epochToDateTime(unsigned long epoch_s, struct tm &tm) {
 
     uint16_t year = 0;
     unsigned long days = 0;
-    while ((days += getDaysInTheYear(year)) <= passed) year++;
+    while ((days += getDaysInTheYear(year)) <= passed)
+        year++;
     tm.tm_year = encodeYear(year);
     passed = passed - (days - getDaysInTheYear(tm.tm_year));
     uint8_t month;
@@ -195,7 +198,8 @@ char *getDateTimeFormated(char *buf, const unsigned long epoch_s) {
 
     uint16_t year = 0;
     unsigned long days = 0;
-    while ((days += getDaysInTheYear(year)) <= passed) year++;
+    while ((days += getDaysInTheYear(year)) <= passed)
+        year++;
     year = encodeYear(year);
 
     passed -= days - getDaysInTheYear(year);
@@ -212,6 +216,15 @@ char *getDateTimeFormated(char *buf, const unsigned long epoch_s) {
     return buf;
 }
 
+String getTimeFormated(unsigned long time_s) {
+    uint8_t hours = (time_s % 86400L) / 3600;
+    uint8_t minutes = (time_s % 3600) / 60;
+    uint8_t seconds = time_s % 60;
+    char buf[16];
+    sprintf_P(buf, TIME_FORMAT, hours, minutes, seconds);
+    return String(buf);
+}
+
 char *getTimeFormated(char *buf, unsigned long time_s) {
     uint8_t hours = (time_s % 86400L) / 3600;
     uint8_t minutes = (time_s % 3600) / 60;
@@ -219,8 +232,6 @@ char *getTimeFormated(char *buf, unsigned long time_s) {
     sprintf_P(buf, TIME_FORMAT, hours, minutes, seconds);
     return buf;
 }
-
-}  // namespace TimeUtils
 
 unsigned long getAppBuildUtc() {
     tm tm;
@@ -231,3 +242,127 @@ unsigned long getAppBuildUtc() {
     TimeUtils::encodeTime(buf, tm);
     return DateTime(tm).asEpoch() - (BUILD_TIMEZONE_h * ONE_HOUR_s);
 }
+
+sint32_t getTimeOffset(uint8_t timeZone) {
+    timeZone = constrain(timeZone, 1, 38);
+    sint32_t result;
+    switch (timeZone) {
+    case 1:
+        result = -12 * ONE_HOUR_s;
+        break;
+    case 2:
+        result = -11 * ONE_HOUR_s;
+        break;
+    case 3:
+        result = -10 * ONE_HOUR_s;
+        break;
+    case 4:
+        result = -(9 * ONE_HOUR_s + 30 * ONE_MINUTE_s);
+        break;
+    case 5:
+        result = -9 * ONE_HOUR_s;
+        break;
+    case 6:
+        result = -8 * ONE_HOUR_s;
+        break;
+    case 7:
+        result = -7 * ONE_HOUR_s;
+        break;
+    case 8:
+        result = -6 * ONE_HOUR_s;
+        break;
+    case 9:
+        result = -5 * ONE_HOUR_s;
+        break;
+    case 10:
+        result = -4 * ONE_HOUR_s;
+        break;
+    case 11:
+        result = -(3 * ONE_HOUR_s + 30 * ONE_MINUTE_s);
+        break;
+    case 12:
+        result = -3 * ONE_HOUR_s;
+        break;
+    case 13:
+        result = -2 * ONE_HOUR_s;
+        break;
+    case 14:
+        result = -1 * ONE_HOUR_s;
+        break;
+    case 15:
+        result = 0;
+        break;
+    case 16:
+        result = 1 * ONE_HOUR_s;
+        break;
+    case 17:
+        result = 2 * ONE_HOUR_s;
+        break;
+    case 18:
+        result = 3 * ONE_HOUR_s;
+        break;
+    case 19:
+        result = 3 * ONE_HOUR_s + 30 * ONE_MINUTE_s;
+        break;
+    case 20:
+        result = 4 * ONE_HOUR_s;
+        break;
+    case 21:
+        result = 4 * ONE_HOUR_s + 30 * ONE_MINUTE_s;
+        break;
+    case 22:
+        result = 5 * ONE_HOUR_s;
+        break;
+    case 23:
+        result = 5 * ONE_HOUR_s + 30 * ONE_MINUTE_s;
+        break;
+    case 24:
+        result = 5 * ONE_HOUR_s + 45 * ONE_MINUTE_s;
+        break;
+    case 25:
+        result = 6 * ONE_HOUR_s;
+        break;
+    case 26:
+        result = 6 * ONE_HOUR_s + 30 * ONE_MINUTE_s;
+        break;
+    case 27:
+        result = 7 * ONE_HOUR_s;
+        break;
+    case 28:
+        result = 8 * ONE_HOUR_s;
+        break;
+    case 29:
+        result = 8 * ONE_HOUR_s + 45 * ONE_MINUTE_s;
+        break;
+    case 30:
+        result = 9 * ONE_HOUR_s;
+        break;
+    case 31:
+        result = 9 * ONE_HOUR_s + 30 * ONE_MINUTE_s;
+        break;
+    case 32:
+        result = 10 * ONE_HOUR_s;
+        break;
+    case 33:
+        result = 10 * ONE_HOUR_s + 30 * ONE_MINUTE_s;
+        break;
+    case 34:
+        result = 11 * ONE_HOUR_s;
+        break;
+    case 35:
+        result = 12 * ONE_HOUR_s;
+        break;
+    case 36:
+        result = 12 * ONE_HOUR_s + 45 * ONE_MINUTE_s;
+        break;
+    case 37:
+        result = 13 * ONE_HOUR_s;
+        break;
+    case 38:
+        result = 14 * ONE_HOUR_s;
+        break;
+    }
+    return result;
+}
+
+} // namespace TimeUtils

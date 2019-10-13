@@ -26,7 +26,8 @@ void ConfigHelper::loadConfig() {
             err->println(store->getErrorInfo());
         }
     } else {
-        if (data->available()) this->loadStrings(config, data);
+        if (data->available())
+            this->loadStrings(config, data);
     }
 }
 
@@ -53,7 +54,7 @@ bool ConfigHelper::loadStrings(Config *config, StringQueue *data) {
         data->get(buf);
         String paramStr = extractName(buf);
         String valueStr = extractValue(buf);
-        if (paramStr.length() && valueStr.length()) {            
+        if (paramStr.length() && valueStr.length()) {
             config->setValueStringByName(paramStr.c_str(), valueStr.c_str());
         } else {
             err->print(StrUtils::getIdentStrP(str_config));
@@ -61,8 +62,9 @@ bool ConfigHelper::loadStrings(Config *config, StringQueue *data) {
             err->print(StrUtils::getStrP(str_error));
             err->println(buf);
         }
-        if (millis_since(started) > 10) break;    
-    }    
+        if (millis_since(started) > 10)
+            break;
+    }
     return data->available();
 }
 

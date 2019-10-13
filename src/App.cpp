@@ -304,12 +304,12 @@ AppModule *App::getInstance(const AppModuleEnum module) {
                 refresh_power_led();
                 sendPageState(PG_HOME);
                 if (state == POWER_OFF) {
-                    size_t size =
-                        constrain(logger->getSize(VOLTAGE_LOG), 0, 1024);
+                    size_t size = constrain(
+                        logger->getSize(PsuLogEnum::VOLTAGE), 0, 1024);
                     if (size > 0) {
                         PlotData data;
                         float tmp[size];
-                        logger->getValues(VOLTAGE_LOG, tmp, size);
+                        logger->getValues(PsuLogEnum::VOLTAGE, tmp, size);
                         size_t cols = group(&data, tmp, size);
                         display->showPlot(&data, cols);
                     };

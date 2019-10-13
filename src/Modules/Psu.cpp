@@ -64,7 +64,7 @@ bool Psu::isWhStoreEnabled() { return wh_store; }
 float Psu::getVoltage() { return outputVoltage; }
 
 void Psu::setVoltage(float value) {
-    outputVoltage = constrain(value, 4, 6);
+    outputVoltage = constrain(value, 4, 5.3);
     mcp4652_write(WRITE_WIPER0_ADDR, quadratic_regression(outputVoltage));
 }
 

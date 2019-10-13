@@ -32,7 +32,7 @@ size_t print_file_not_found(Print *p, String &name) {
 size_t print_ln(Print *p) { return p->println(); }
 
 size_t print_done(Print *p) {
-    size_t n = p->print(getStrP(str_done));
+    size_t n = p->println(getStrP(str_done));
     return n;
 }
 
@@ -74,7 +74,6 @@ void delay_print(Print *p, const char *message, uint8_t wait_s) {
     for (uint8_t t = wait_s; t > 0; --t) {
         p->print(t);
         p->print(' ');
-        p->flush();
         delay(ONE_SECOND_ms);
     }
     p->println();
@@ -107,18 +106,18 @@ size_t print_unknown_action(Print *p, String &name) {
     return n;
 }
 
-size_t print_param_value(Print *p, const char *param, const char *value) {
-    char buf[OUTPUT_MAX_LENGTH];
-    sprintf(buf, "%s=\"%s\"", param, value);
-    return p->println(buf);
-}
-
 size_t print_name_value(Print *p, String &name, String &value) {
     size_t n = p->print(name.c_str());
     n += p->print(' ');
     n += p->print(": ");
     n += p->print(value.c_str());
     return n;
+}
+
+size_t print_param_value(Print *p, const char *param, const char *value) {
+    char buf[OUTPUT_MAX_LENGTH];
+    sprintf(buf, "%s=\"%s\"", param, value);
+    return p->println(buf);
 }
 
 } // namespace PrintUtils

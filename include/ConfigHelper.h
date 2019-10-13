@@ -8,11 +8,11 @@
 #include "StringQueue.h"
 
 class ConfigHelper : public Printable {
-   public:
+  public:
     virtual size_t printTo(Print &p) const;
     ConfigHelper();
 
-   public:
+  public:
     void setDefault();
     void loadConfig();
     bool saveConfig();
@@ -26,7 +26,6 @@ class ConfigHelper : public Printable {
     float getOutputVoltage();
     uint8_t getTPW();
     bool getWhStoreEnabled();
-
     bool setWiFiMode(uint8_t);
     bool setWiFiMode(WiFiMode_t);
     bool setSSID(const char *);
@@ -41,7 +40,6 @@ class ConfigHelper : public Printable {
     bool setDns(IPAddress);
     bool setDns(const char *);
     bool setOutputVoltage(float value);
-
     bool setNetworkSTAConfig(uint8_t, const char *, const char *, bool,
                              const char *, const char *, const char *,
                              const char *);
@@ -52,7 +50,7 @@ class ConfigHelper : public Printable {
     String getConfigJson();
     Config *get();
 
-   private:
+  private:
     String extractName(String &str);
     String extractValue(String &str);
     void loadConfig(Config *config);
@@ -66,4 +64,5 @@ class ConfigHelper : public Printable {
     Print *dbg = &DEBUG;
 #endif
     Print *err = &USE_SERIAL;
+    Print *out = &USE_SERIAL;
 };

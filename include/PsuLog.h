@@ -2,57 +2,70 @@
 
 #include "Arduino.h"
 
+enum class PsuLogEnum : uint8_t {
+    VOLTAGE = 0x0,
+    CURRENT = 0x1,
+    POWER = 0x2,
+    WATTSHOURS = 0x3
+};
+
 struct LogItem {
     size_t n;
-    uint16_t value;
-    LogItem() : n(0), value(0){};
-    LogItem(size_t n, uint16_t value) : n(n), value(value){};
+    uint16_t v;
+    LogItem() {
+        n = 0;
+        v = 0;
+    }
+    LogItem(size_t n, uint16_t v) {
+        this->n = n;
+        this->v = v;
+    }
+    float revert(uint16_t value) { return (float)value / 1000; }
+
+    uint16_t convert(float value) { return floor(value * 1000); }
 };
 
 class PsuLog {
-   public:
-    virtual void push(unsigned long time, float value);
-    virtual void values(float array[], size_t& array_size);   
-   public:
-    PsuLog(const char* label, size_t size);
-    ~PsuLog();
+  public:
+    void log(unsigned long time, float value);
+    void values(float array[], size_t &size);
+
+  public:
+    PsuLog(const char *label, size_t size);
+
+    void printTo(Print *p);
+    void printFirst(Print *p, size_t n);
+    void printLast(Print *p, size_t n);
+    void printDiag(Print *p);
     void clear();
-    bool available();
-    size_t free();
-    size_t size();
-    size_t first();
-    size_t last();
     size_t count();
 
-    LogItem* getFirst();
-    LogItem* getLast();    
-    LogItem* getPrev();
-    LogItem* getItem(size_t pos);
-    LogItem* getPrev(size_t pos);
-    LogItem* getNext(size_t pos);
-    void printTo(Print* p);
-    void printFirst(Print* p, size_t n);
-    void printLast(Print* p, size_t n);
-    void printDiag(Print* p);
-   protected:
-    virtual uint16_t convert(float value);
-    virtual float revert(uint16_t value);
-    virtual void pushItem(const size_t n, const float val);
-    LogItem* getItem();
-    size_t getItemIndex(size_t pos);
-    virtual size_t write(const size_t n, const float val);
-    void calcMinMaxAvg(const float value, const size_t cnt);
-    void print(Print* p, size_t n, float value);
-    size_t next(size_t pos);
-    size_t prev(size_t pos);
-    private:
-    float value_min, value_max, value_avg;
-    unsigned long lastTime;
-    size_t counter;
-    size_t capacity;
-    size_t writePos;
-    LogItem* items;
-    private:
-    char* name;
+  private:
+    LogItem *getEntry();
+    LogItem *getPrevEntry();
+    LogItem *getFirstEntry();
+    LogItem *getLastEntry();
 
+  private:
+    LogItem *getEntry(size_t pos);
+    LogItem *getPrevEntry(size_t pos);
+    LogItem *getNextEntry(size_t pos);
+
+  private:
+    size_t getEntryIndex(size_t pos);
+    size_t getPrevEntryIndex(size_t pos);
+    size_t getNextEntryIndex(size_t pos);
+    size_t getFirstEntryIndex();
+    size_t getLastEntryIndex();
+
+  private:
+    void updateStats(const float value, const size_t cnt);
+    void print(Print *p, size_t n, float value);
+
+  private:
+    char name[8];
+    float min, max, avg;
+    unsigned long lastTime;
+    size_t counter, capacity, writePos;
+    LogItem *items;
 };

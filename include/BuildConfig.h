@@ -35,10 +35,11 @@
 #define NO_GLOBAL_NBNS
 #define NO_GLOBAL_NETBIOS
 #define NO_GLOBAL_ARDUINOOTA
+#define NO_GLOBAL_SSDP
 
 //#define SERIAL_DEBUG
 
-#define DEBUG_APP
+//#define DEBUG_APP
 //#define DEBUG_LEDS
 //#define DEBUG_LOOP
 //#define DEBUG_PLOT
@@ -64,5 +65,3 @@
 //#define DISABLE_OTA_UPDATE
 //#define DISABLE_NTP
 //#define DISABLE_NETWORK_DISCOVERY
-
-#define NO_GLOBAL_SSDP

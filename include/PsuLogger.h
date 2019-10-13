@@ -3,8 +3,6 @@
 #include "CommonTypes.h"
 #include "PsuLog.h"
 
-enum PsuLogEnum { VOLTAGE_LOG, CURRENT_LOG, POWER_LOG, WATTSHOURS_LOG };
-
 class PsuLogger {
   public:
     PsuLogger();
@@ -24,6 +22,6 @@ class PsuLogger {
   private:
     PsuLog *psuLog[4];
     unsigned long startTime;
-    unsigned long lastUpdated;
+    unsigned long lastLogged;
     bool v_enabled, i_enabled, p_enabled, wh_enabled;
 };

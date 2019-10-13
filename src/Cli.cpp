@@ -230,19 +230,19 @@ void onLog(cmd *c) {
             return;
         }
         if (paramStr.indexOf("p") != -1) {
-            logger->print(POWER_LOG, out);
+            logger->print(PsuLogEnum::POWER, out);
             handled = true;
         }
         if (paramStr.indexOf("v") != -1) {
-            logger->print(VOLTAGE_LOG, out);
+            logger->print(PsuLogEnum::VOLTAGE, out);
             handled = true;
         }
         if (paramStr.indexOf("i") != -1) {
-            logger->print(CURRENT_LOG, out);
+            logger->print(PsuLogEnum::CURRENT, out);
             handled = true;
         }
         if (paramStr.indexOf("w") != -1) {
-            logger->print(WATTSHOURS_LOG, out);
+            logger->print(PsuLogEnum::WATTSHOURS, out);
             handled = true;
         }
         if (!handled)
@@ -363,6 +363,7 @@ void onClock(cmd *c) {
         }
     }
 }
+
 void onWifiScan(cmd *c) {
     Command cmd(c);
     out->print(StrUtils::getIdentStrP(str_wifi));

@@ -21,25 +21,20 @@ class SystemClock : public AppModule {
     unsigned long getLocal();
 
   private:
-    void setTimeZone(sint8_t timeZone_h);
+    void setTimeZone(uint8_t timeZone);
     void setBackupInterval(unsigned long time_s);
-
     bool isStoreNeedsUpdate(unsigned long);
     bool restoreState(EpochTime &value);
     bool storeState(EpochTime &value);
-
     void onTimeChange();
 
   private:
     TimeEventHandler timeHandler;
-
     bool trusted;
     EpochTime epoch;
     uint8_t rollover;
-
-    sint16_t timeOffset;
+    sint32_t timeOffset;
     unsigned long storeInterval;
-
     unsigned long lastStored;
     unsigned long leftStore;
     unsigned long lastUpdated;

@@ -6,19 +6,18 @@
 #include "Consts.h"
 
 static const char TIME_FORMAT[] PROGMEM = "%02d:%02d:%02d";
-static const char DATETIME_FORMAT[] PROGMEM = "%02d/%02d/%04d %02d:%02d:%02d";
 
-unsigned long getAppBuildUtc();
+static const char DATETIME_FORMAT[] PROGMEM = "%02d/%02d/%04d %02d:%02d:%02d";
 
 unsigned long millis_since(unsigned long since);
 
 unsigned long millis_passed(unsigned long start, unsigned long finish);
 
 struct EpochTime : public Printable {
-   public:
-    size_t printTo(Print& p) const { return p.print(epoch_s); }
+  public:
+    size_t printTo(Print &p) const { return p.print(epoch_s); }
 
-   public:
+  public:
     EpochTime() : EpochTime(0) {}
 
     EpochTime(unsigned long epoch_s) { this->epoch_s = epoch_s; }
@@ -33,19 +32,19 @@ struct EpochTime : public Printable {
 
     uint8_t asMinutes(unsigned long s) { return s / ONE_MINUTE_s; }
 
-   private:
+  private:
     unsigned long epoch_s;
 };
 
 struct Date {
-   public:
+  public:
     Date(uint16_t year, uint8_t month, uint8_t day) {
         this->year = year;
         this->month = month;
         this->day = day;
     }
 
-    Date(struct tm& tm) : Date(tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday) {}
+    Date(struct tm &tm) : Date(tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday) {}
 
     String dateFormated() {
         char buf[16];
@@ -68,28 +67,28 @@ struct Date {
         return mktime(&t);
     }
 
-   protected:
+  protected:
     uint16_t year;
     uint8_t day;
     uint8_t month;
 };
 
 struct DateTime : public Date, public Printable {
-   public:
-    size_t printTo(Print& p) const {
+  public:
+    size_t printTo(Print &p) const {
         char buf[32];
         sprintf_P(buf, DATETIME_FORMAT, day, month, year, hour, minute,
                   seconds);
         return p.print(buf);
     }
 
-   protected:
+  protected:
     uint8_t hour;
     uint8_t minute;
     uint8_t seconds;
 
-   public:
-    DateTime(struct tm& tm) : Date(tm) {
+  public:
+    DateTime(struct tm &tm) : Date(tm) {
         this->hour = tm.tm_hour;
         this->minute = tm.tm_min;
         this->seconds = tm.tm_sec;
@@ -134,20 +133,21 @@ struct DateTime : public Date, public Printable {
 
     String dateTimeFormated() {
         char buf[64];
-        sprintf_P(buf, DATETIME_FORMAT, day, month, year, hour, minute, seconds);
+        sprintf_P(buf, DATETIME_FORMAT, day, month, year, hour, minute,
+                  seconds);
         return String(buf);
     }
 };
 
 namespace TimeUtils {
-
+unsigned long getAppBuildUtc();
 bool isLeapYear(uint16_t year);
 uint8_t getDaysInMonth(uint8_t month, uint16_t year);
-uint16_t encodeYear(uint16_t& year);
-bool encodeMonth(String str, uint8_t& month);
-bool encodeDate(const char* str, struct tm& tm);
-bool encodeTime(const char* str, struct tm& tm);
-void epochToDateTime(unsigned long epoch_s, struct tm& tm);
+uint16_t encodeYear(uint16_t &year);
+bool encodeMonth(String str, uint8_t &month);
+bool encodeDate(const char *str, struct tm &tm);
+bool encodeTime(const char *str, struct tm &tm);
+void epochToDateTime(unsigned long epoch_s, struct tm &tm);
 bool isValidMonth(uint8_t month);
 bool isValidHour(uint8_t hour);
 bool isValidMinute(uint8_t minute);
@@ -155,9 +155,11 @@ bool isValidSecond(uint8_t second);
 unsigned long encodeEpoch(tm tm);
 unsigned long encodeEpochTime(uint8_t hour, uint8_t minute, uint8_t second);
 unsigned long encodeEpochDate(uint16_t year, uint8_t month, uint16_t day);
-size_t tmtodtf(struct tm& tm, char* str);
+size_t tmtodtf(struct tm &tm, char *str);
 
-char* getTimeFormated(char* buf, const unsigned long time_s);
-char* getDateTimeFormated(char* buf, const unsigned long epoch_s);
+String getTimeFormated(unsigned long time_s);
+char *getTimeFormated(char *buf, const unsigned long time_s);
+char *getDateTimeFormated(char *buf, const unsigned long epoch_s);
+sint32_t getTimeOffset(uint8_t timeZone);
 
-}  // namespace TimeUtils
+} // namespace TimeUtils
