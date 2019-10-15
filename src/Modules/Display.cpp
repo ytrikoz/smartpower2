@@ -1,6 +1,7 @@
 #include "Modules/Display.h"
 
 #include "App.h"
+#include "PsuUtils.h"
 
 using namespace StrUtils;
 
@@ -38,6 +39,10 @@ void Display::showProgress(uint8_t per, const char *str) {
     if (str != NULL)
         lcd->drawTextCenter(LCD_ROW_1, str);
     last = per;
+    if (per == 100) {
+        set_screen(SCREEN_TEXT);
+        refresh();
+    }
 }
 
 void Display::enableBacklight(bool value) {
@@ -91,12 +96,14 @@ void Display::refresh() {
             set_screen(SCREEN_TEXT);
             return;
         case PSU_ALERT:
-            load_message(&screen, StrUtils::getStrP(str_alert).c_str(),
-                         psu->getMessage().c_str());
+            load_message(
+                &screen, StrUtils::getStrP(str_alert).c_str(),
+                StrUtils::getStrP(getAlertStrP(psu->getAlert())).c_str());
             return;
         case PSU_ERROR:
-            load_message(&screen, StrUtils::getStrP(str_error).c_str(),
-                         psu->getMessage().c_str());
+            load_message(
+                &screen, StrUtils::getStrP(str_error).c_str(),
+                StrUtils::getStrP(getErrorStrP(psu->getError())).c_str());
             return;
         }
     }
@@ -108,6 +115,7 @@ void Display::refresh() {
         return;
     case Wireless::WLAN_AP:
         load_wifi_ap(&screen);
+        return;
     case Wireless::WLAN_AP_STA:
         load_wifi_ap_sta(&screen);
         return;
@@ -120,10 +128,9 @@ void Display::refresh() {
 void Display::load_wifi_sta(Screen *obj) {
     obj->set(0, "WIFI> ", Wireless::getConnectionStatus().c_str());
     obj->set(1, "STA> ", Wireless::hostSTA_SSID().c_str());
-    obj->set(2, "STA> ", Wireless::hostSTA_SSID().c_str());
-    obj->set(3, "IP> ", Wireless::hostIP().toString().c_str());
-    obj->set(4, "RSSI> ", Wireless::RSSIInfo().c_str());
-    obj->setSize(5);
+    obj->set(2, "IP> ", Wireless::hostIP().toString().c_str());
+    obj->set(3, "RSSI> ", Wireless::RSSIInfo().c_str());
+    obj->setSize(4);
 };
 
 void Display::load_wifi_ap(Screen *obj) {
@@ -133,9 +140,9 @@ void Display::load_wifi_ap(Screen *obj) {
 };
 
 void Display::load_wifi_ap_sta(Screen *obj) {
-    obj->set(0, "AP> ", Wireless::hostAP_SSID().c_str());
-    obj->set(1, "STA> ", Wireless::hostSTA_SSID().c_str());
-    obj->set(2, "WIFI> ", Wireless::getConnectionStatus().c_str());
+    obj->set(0, "WIFI> ", Wireless::getConnectionStatus().c_str());
+    obj->set(1, "AP> ", Wireless::hostAP_SSID().c_str());
+    obj->set(2, "STA> ", Wireless::hostSTA_SSID().c_str());
     obj->set(3, "IP AP> ", Wireless::hostAP_IP().toString().c_str());
     obj->set(4, "IP STA> ", Wireless::hostSTA_IP().toString().c_str());
     obj->set(5, "RSSI> ", Wireless::RSSIInfo().c_str());

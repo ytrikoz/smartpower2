@@ -288,6 +288,9 @@ AppModule *App::getInstance(const AppModuleEnum module) {
             psu->setOnStatusChange([this](PsuStatus status, String &str) {
                 switch (status) {
                 case PSU_OK:
+                    leds->set(Led::POWER_LED, psu->checkState(POWER_ON)
+                                                  ? Led::BLINK
+                                                  : Led::STAY_ON);
                     break;
                 case PSU_ALERT:
                     leds->set(Led::POWER_LED, Led::BLINK_ALERT);
@@ -297,12 +300,14 @@ AppModule *App::getInstance(const AppModuleEnum module) {
                 default:
                     break;
                 }
-                refresh_power_led();
             });
 
             psu->setOnStateChange([this](PsuState state) {
-                refresh_power_led();
                 sendPageState(PG_HOME);
+
+                leds->set(Led::POWER_LED,
+                          state == POWER_ON ? Led::BLINK : Led::STAY_ON);
+
                 if (state == POWER_OFF) {
                     size_t size = constrain(
                         logger->getSize(PsuLogEnum::VOLTAGE), 0, 1024);

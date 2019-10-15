@@ -7,14 +7,6 @@
 
 #define POWER_SWITCH_PIN D6
 
-enum PsuState { POWER_ON = 0, POWER_OFF = 1 };
-
-enum PsuStatus { PSU_OK, PSU_ERROR, PSU_ALERT };
-
-enum PsuError { PSU_ERROR_NONE, PSU_ERROR_LOW_VOLTAGE };
-
-enum PsuAlert { PSU_ALERT_NONE, PSU_ALERT_LOAD_LOW };
-
 typedef std::function<void()> PsuEventHandler;
 
 typedef std::function<void(PsuStatus, String &)> PsuStatusHandler;
@@ -26,33 +18,27 @@ class Psu : public AppModule {
     Psu();
     void setConfig(Config *config);
     bool begin();
-    void end();
     void loop();
     size_t printDiag(Print *p);
 
   public:
+    void setLogger(PsuLogger *);
+    PsuLogger *getLogger();
     void togglePower();
     void powerOff();
     void powerOn();
-    void setLogger(PsuLogger *);
-    PsuLogger *getLogger();
     void setOnStateChange(PsuStateHandler);
     void setOnStatusChange(PsuStatusHandler);
-
-    void setState(PsuState);
     PsuState getState(void);
-    bool checkState(PsuState);
-    String getStateStr();
     PsuStatus getStatus(void);
+    PsuAlert getAlert(void);
+    PsuError getError(void);
+    bool checkState(PsuState);
     bool checkStatus(PsuStatus);
-    String getMessage();
 
   public:
-    void init();
-
     void setVoltage(float voltage);
     float getVoltage();
-    String getPsuStateStr();
     PsuInfo getInfo();
     float getP();
     float getV();
@@ -64,20 +50,15 @@ class Psu : public AppModule {
     void setWh(double value);
 
   private:
-    void onPowerOff();
-    void onPowerOn();
+    void setStatus(PsuStatus value);
     void setError(PsuError value);
     void setAlert(PsuAlert value);
-    void setState(PsuState value, bool force = false);
+    void setState(PsuState value);
     bool storeWh(double value);
     bool restoreWh(double &value);
     bool storeState(PsuState);
     bool restoreState(PsuState &);
-    void reset();
-    void updateStatus();
-    void updateVoltage();
-    PGM_P getAlertStrP(PsuAlert);
-    PGM_P getErrorStrP(PsuError value);
+    void resetStatus();
 
   private:
     PsuState state;

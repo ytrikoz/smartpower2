@@ -24,6 +24,14 @@ enum AppModuleEnum {
     MOD_UPDATE
 };
 
+enum PsuState { POWER_ON = 0, POWER_OFF = 1 };
+
+enum PsuStatus { PSU_OK, PSU_ERROR, PSU_ALERT };
+
+enum PsuError { PSU_ERROR_NONE, PSU_ERROR_LOW_VOLTAGE };
+
+enum PsuAlert { PSU_ALERT_NONE, PSU_ALERT_LOAD_LOW };
+
 enum StoreState { SS_UNSET, SS_CLOSED, SS_READING, SS_WRITING, SS_EOF };
 
 enum StoreError {
@@ -47,6 +55,8 @@ struct PsuInfo : Printable {
 
     PsuInfo(unsigned long time_ms, float V, float I, float P, double mWh)
         : time(time_ms), V(V), I(I), P(P), mWh(mWh){};
+
+    void reset(void) { time = V = I = P = mWh = 0; }
 
     String toString() const {
         String res = "";
