@@ -118,7 +118,6 @@ void App::loop() {
     unsigned long now = millis();
     if (millis_passed(displayUpdated, now) > ONE_SECOND_ms) {
         handle_restart();
-        display->refresh();
         send_psu_data_to_clients();
         displayUpdated = now;
     }
@@ -225,9 +224,8 @@ bool App::setOutputVoltageAsDefault() {
 
 bool App::setBootPowerState(BootPowerState value) {
     bool res = false;
-    if (env->setBootPowerState(value)) {
+    if (env->setBootPowerState(value))
         res = env->saveConfig();
-    }
     return res;
 }
 
@@ -249,10 +247,10 @@ bool App::getModule(String &str, AppModuleEnum &mod) {
     return getModule(str.c_str(), mod);
 }
 
-bool App::getModule(const char *str, AppModuleEnum &mod) {
+bool App::getModule(const char *name, AppModuleEnum &mod) {
     for (uint8_t i = 0; i < APP_MODULES; ++i) {
         char *strP = (char *)pgm_read_ptr(&(strP_module[i]));
-        if (strcmp_P(str, strP) == 0) {
+        if (strcmp_P(name, strP) == 0) {
             mod = AppModuleEnum(i);
             return true;
         }
@@ -284,8 +282,13 @@ AppModule *App::getInstance(const AppModuleEnum module) {
             appMod[module] = psu = new Psu();
             logger = new PsuLogger();
             psu->setLogger(logger);
-
+            psu->setOnPsuInfoUpdated(
+                [this](PsuInfo info) { display->refresh(); });
             psu->setOnStatusChange([this](PsuStatus status, String &str) {
+#ifdef DEBUG_DISPLAY
+                DEBUG.printf("statusChange %d - %s", status, str.c_str());
+                DEBUG.println();
+#endif
                 switch (status) {
                 case PSU_OK:
                     leds->set(Led::POWER_LED, psu->checkState(POWER_ON)
@@ -300,25 +303,31 @@ AppModule *App::getInstance(const AppModuleEnum module) {
                 default:
                     break;
                 }
+                display->refresh();
             });
 
             psu->setOnStateChange([this](PsuState state) {
+#ifdef DEBUG_DISPLAY
+                DEBUG.printf("stateChange %d", state);
+                DEBUG.println();
+#endif
                 sendPageState(PG_HOME);
 
                 leds->set(Led::POWER_LED,
                           state == POWER_ON ? Led::BLINK : Led::STAY_ON);
 
-                if (state == POWER_OFF) {
-                    size_t size = constrain(
-                        logger->getSize(PsuLogEnum::VOLTAGE), 0, 1024);
-                    if (size > 0) {
-                        PlotData data;
-                        float tmp[size];
-                        logger->getValues(PsuLogEnum::VOLTAGE, tmp, size);
-                        size_t cols = group(&data, tmp, size);
-                        display->showPlot(&data, cols);
-                    };
-                }
+                display->refresh();
+                // if (state == POWER_OFF) {
+                //     size_t size = constrain(
+                //         logger->getSize(PsuLogEnum::VOLTAGE), 0, 1024);
+                //     if (size > 0) {
+                //         PlotData data;
+                //         float tmp[size];
+                //         logger->getValues(PsuLogEnum::VOLTAGE, tmp, size);
+                //         size_t cols = group(&data, tmp, size);
+                //         display->showPlot(&data, cols);
+                //     };
+                // }
             });
             break;
         case MOD_DISPLAY:
@@ -378,7 +387,7 @@ bool App::start(AppModuleEnum module) {
     AppModule *obj = getInstance(module);
     if (obj) {
         obj->setOutput(out);
-        obj->init(getConfig());
+        obj->init(env->get());
         return obj->begin();
     } else {
         return false;
@@ -391,9 +400,8 @@ void App::stop(AppModuleEnum module) {
     dbg->println();
 #endif
     AppModule *obj = getInstance(module);
-    if (obj) {
+    if (obj)
         obj->stop();
-    }
 }
 
 uint8_t App::get_telnet_clients_count() {

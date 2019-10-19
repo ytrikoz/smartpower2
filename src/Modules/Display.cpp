@@ -10,6 +10,38 @@ Display::Display() : AppModule(MOD_DISPLAY) {
     lockTimeout = lockUpdated = 0;
 }
 
+void Display::setScreen(ScreenEnum value) {
+    if (activeScreen == value)
+        return;
+
+    if (!lcd->connect())
+        return;
+
+    if (locked())
+        return;
+
+    switch (value) {
+    case SCREEN_CLEAR:
+        lcd->loadBank(BANK_NONE);
+    case SCREEN_BOOT:
+        lcd->loadBank(BANK_PROGRESS);
+        break;
+    case SCREEN_PSU:
+        lcd->loadBank(BANK_NONE);
+    case SCREEN_PLOT:
+        break;
+    case SCREEN_TEXT:
+        lcd->loadBank(BANK_NONE);
+        break;
+    case SCREEN_MESSAGE:
+        break;
+    }
+
+    lcd->clear();
+    screenUpdated = lastScroll = 0;
+    activeScreen = value;
+}
+
 bool Display::begin() {
     bool res = lcd->connect();
     if (res) {
@@ -23,7 +55,7 @@ bool Display::begin() {
 }
 
 void Display::showProgress(uint8_t per, const char *str) {
-    set_screen(SCREEN_PROGRESS);
+    setScreen(SCREEN_BOOT);
     static uint8_t last = 0;
     if (per == 0) {
         last = 0;
@@ -40,7 +72,7 @@ void Display::showProgress(uint8_t per, const char *str) {
         lcd->drawTextCenter(LCD_ROW_1, str);
     last = per;
     if (per == 100) {
-        set_screen(SCREEN_TEXT);
+        setScreen(SCREEN_TEXT);
         refresh();
     }
 }
@@ -61,39 +93,17 @@ void Display::setConfig(Config *config) {
 
 void Display::clear() { activeScreen = SCREEN_CLEAR; }
 
-void Display::set_screen(ScreenEnum value, unsigned long time) {
-    if (activeScreen == value)
-        return;
-    if (!lcd->connect())
-        return;
-    if (locked())
-        return;
-    switch (value) {
-    case SCREEN_CLEAR:
-        break;
-    case SCREEN_PROGRESS:
-        lcd->loadBank(BANK_PROGRESS);
-        break;
-    case SCREEN_PLOT:
-        break;
-    case SCREEN_TEXT:
-        lcd->loadBank(BANK_NONE);
-        lcd->clear();
-        break;
-    case SCREEN_MESSAGE:
-        break;
-    }
-    activeScreen = value;
-}
-
 void Display::refresh() {
+#ifdef DEBUG_DISPLAY
+    DEBUG.println("refresh()");
+#endif
+
     Psu *psu = app.getPsu();
     if (psu->checkState(POWER_ON)) {
         PsuStatus status = psu->getStatus();
         switch (status) {
         case PSU_OK:
             load_psu_info(&screen);
-            set_screen(SCREEN_TEXT);
             return;
         case PSU_ALERT:
             load_message(
@@ -130,13 +140,13 @@ void Display::load_wifi_sta(Screen *obj) {
     obj->set(1, "STA> ", Wireless::hostSTA_SSID().c_str());
     obj->set(2, "IP> ", Wireless::hostIP().toString().c_str());
     obj->set(3, "RSSI> ", Wireless::RSSIInfo().c_str());
-    obj->setSize(4);
+    obj->setCount(4);
 };
 
 void Display::load_wifi_ap(Screen *obj) {
     obj->set(0, "AP> ", Wireless::hostAP_SSID().c_str());
     obj->set(1, "PWD> ", Wireless::hostAP_Password().c_str());
-    obj->setSize(2);
+    obj->setCount(2);
 };
 
 void Display::load_wifi_ap_sta(Screen *obj) {
@@ -146,13 +156,15 @@ void Display::load_wifi_ap_sta(Screen *obj) {
     obj->set(3, "IP AP> ", Wireless::hostAP_IP().toString().c_str());
     obj->set(4, "IP STA> ", Wireless::hostSTA_IP().toString().c_str());
     obj->set(5, "RSSI> ", Wireless::RSSIInfo().c_str());
-    obj->setSize(6);
+    obj->setCount(6);
 };
 
 void Display::load_psu_info(Screen *obj) {
     Psu *psu = app.getPsu();
     String str = String(psu->getV(), 3);
-    str += " V ";
+    if (str.length() == 5)
+        str += " ";
+    str += "V ";
     str += String(psu->getI(), 3);
     str += " A ";
     obj->set(0, str.c_str());
@@ -169,16 +181,22 @@ void Display::load_psu_info(Screen *obj) {
         str += "KWh";
     }
     obj->set(1, str.c_str());
-    obj->setSize(2);
+    obj->setCount(2);
+    obj->moveFirst();
 }
 
-void Display::load_ready(Screen *obj) { obj->set(0, "READY> "); }
+void Display::load_ready(Screen *obj) {
+    obj->set(0, "READY> ");
+    obj->setCount(1);
+    obj->moveFirst();
+}
 
 void Display::load_message(Screen *obj, const char *header,
                            const char *message) {
     obj->set(0, header);
     obj->set(1, message);
-    obj->setSize(2);
+    obj->setCount(2);
+    obj->moveFirst();
 }
 
 void Display::showMessage(const char *header, const char *message) {
@@ -191,7 +209,7 @@ void Display::showPlot(PlotData *data, size_t cols) {
 }
 
 void Display::loop() {
-    if (activeScreen == SCREEN_CLEAR || activeScreen == SCREEN_PROGRESS)
+    if (activeScreen == SCREEN_CLEAR || activeScreen == SCREEN_BOOT)
         return;
 
     unsigned long now = millis();
@@ -201,12 +219,11 @@ void Display::loop() {
 
     if (millis_passed(screenUpdated, now) >= LCD_UPDATE_INTERVAL) {
         lcd->drawScreen(&screen);
-        lastUpdated = now;
+        screenUpdated = now;
     }
 
-    if (screen.size() > LCD_ROWS) {
-        if (millis_passed(lastScroll, now) >= LCD_SCROLL_INTERVAL &&
-            (lastScroll > 0)) {
+    if (screen.count() > LCD_ROWS) {
+        if (millis_passed(lastScroll, now) >= LCD_SCROLL_INTERVAL) {
             screen.next();
             lastScroll = now;
         }

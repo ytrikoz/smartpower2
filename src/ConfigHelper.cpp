@@ -7,7 +7,6 @@ void ConfigHelper::onConfigChanged(ConfigItem param) { stored = false; }
 ConfigHelper::ConfigHelper() {
     this->filename = new char[sizeof(FILE_CONFIG)];
     strcpy(this->filename, FILE_CONFIG);
-
     this->config = new Config();
     loadConfig();
     this->config->setOnConfigChaged(

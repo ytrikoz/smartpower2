@@ -102,18 +102,18 @@ using StrUtils::strpadd;
 LcdDisplay::LcdDisplay() { addr = NONE_ADDRESS; }
 
 bool LcdDisplay::connect() {
-    if (addr != NONE_ADDRESS) {
+    if (addr != NONE_ADDRESS)
         return true;
+
+    Wire.beginTransmission(LCD_SLAVE_ADDRESS);
+    if (!Wire.endTransmission()) {
+        addr = LCD_SLAVE_ADDRESS;
     } else {
-        Wire.beginTransmission(LCD_SLAVE_ADDRESS);
-        if (!Wire.endTransmission()) {
-            addr = LCD_SLAVE_ADDRESS;
-        } else {
-            Wire.beginTransmission(LCD_SLAVE_ADDRESS_ALT);
-            if (!Wire.endTransmission())
-                addr = LCD_SLAVE_ADDRESS_ALT;
-        }
+        Wire.beginTransmission(LCD_SLAVE_ADDRESS_ALT);
+        if (!Wire.endTransmission())
+            addr = LCD_SLAVE_ADDRESS_ALT;
     }
+
     if (addr != NONE_ADDRESS) {
         lcd = new LiquidCrystal_I2C(addr, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
         lcd->begin(LCD_COLS, LCD_ROWS);
@@ -145,7 +145,7 @@ void LcdDisplay::drawScreen(Screen *screen, bool force) {
     if (!connect())
         return;
     for (uint8_t row = 0; row < LCD_ROWS; ++row) {
-        if (row >= screen->size())
+        if (row >= screen->count())
             break;
         ScreenItem *item = screen->get(row);
         if (force || item->needsRedraw()) {
@@ -158,7 +158,7 @@ void LcdDisplay::drawScreenItem(uint8_t row, ScreenItem *item) {
     if (!connect())
         return;
 #ifdef DEBUG_DISPLAY
-    DEBUG.printf("#%d drawScreenItem(%s) ", n, item->fixed_str);
+    DEBUG.printf("#%d drawScreenItem(%s)", row, item->label);
     DEBUG.println();
 #endif
     uint8_t label_size = strlen(item->label);

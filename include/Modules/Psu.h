@@ -13,6 +13,8 @@ typedef std::function<void(PsuStatus, String &)> PsuStatusHandler;
 
 typedef std::function<void(PsuState)> PsuStateHandler;
 
+typedef std::function<void(PsuInfo)> PsuInfoHandler;
+
 class Psu : public AppModule {
   public:
     Psu();
@@ -29,6 +31,7 @@ class Psu : public AppModule {
     void powerOn();
     void setOnStateChange(PsuStateHandler);
     void setOnStatusChange(PsuStatusHandler);
+    void setOnPsuInfoUpdated(PsuInfoHandler);
     PsuState getState(void);
     PsuStatus getStatus(void);
     PsuAlert getAlert(void);
@@ -50,6 +53,7 @@ class Psu : public AppModule {
     void setWh(double value);
 
   private:
+    void setOk(void);
     void setStatus(PsuStatus value);
     void setError(PsuError value);
     void setAlert(PsuAlert value);
@@ -58,7 +62,6 @@ class Psu : public AppModule {
     bool restoreWh(double &value);
     bool storeState(PsuState);
     bool restoreState(PsuState &);
-    void resetStatus();
 
   private:
     PsuState state;
@@ -68,6 +71,7 @@ class Psu : public AppModule {
     PsuLogger *logger;
     PsuStatusHandler statusHandler;
     PsuStateHandler stateHandler;
+    PsuInfoHandler psuInfoHandler;
 
     unsigned long startTime, infoUpdated, powerInfoUpdated, loggerUpdated,
         lastCheck;

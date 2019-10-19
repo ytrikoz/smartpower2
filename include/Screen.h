@@ -11,7 +11,8 @@ using namespace StrUtils;
 
 enum ScreenEnum {
     SCREEN_CLEAR,
-    SCREEN_PROGRESS,
+    SCREEN_BOOT,
+    SCREEN_PSU,
     SCREEN_TEXT,
     SCREEN_PLOT,
     SCREEN_MESSAGE
@@ -32,32 +33,36 @@ struct ScreenItem {
 class Screen {
   private:
     ScreenItem items[DISPLAY_VIRTUAL_ROWS];
-    size_t items_pos;
-    size_t items_size;
+    size_t cur_line;
+    size_t lines_count;
 
   public:
     Screen() { clear(); }
     void clear() {
         memset(items, 0, sizeof(ScreenItem) * DISPLAY_VIRTUAL_ROWS);
-        items_pos = 0;
-        items_size = 0;
+        cur_line = 0;
+        lines_count = 0;
     }
-    size_t size() { return items_size; }
+    size_t count() { return lines_count; }
 
-    void setSize(uint8_t size) { items_size = size; }
+    void setCount(uint8_t value) {
+        lines_count = value;
+        if (cur_line > lines_count - 1)
+            cur_line = 0;
+    }
+    void moveFirst() { cur_line = 0; }
 
     void next() {
-        if (++items_pos + LCD_ROWS > items_size) {
-            items_pos = 0;
-        }
+        if (++cur_line + LCD_ROWS > lines_count)
+            cur_line = 0;
 #ifdef DEBUG_DISPLAY
-        DEBUG.printf("[screen] next() = %d\r\n", item_pos);
+        DEBUG.printf("[screen] next() = %d\r\n", cur_line);
 #endif
-        size_t pos = items_pos;
+        size_t y = cur_line;
         for (size_t n = 0; n < LCD_ROWS; ++n) {
-            if (pos + n > items_size)
-                pos = 0;
-            items[pos + n].forceRedraw();
+            if (y + n > lines_count)
+                y = 0;
+            items[y + n].forceRedraw();
         }
     }
 
@@ -74,9 +79,8 @@ class Screen {
     void set(size_t n, const char *text) { set(n, NULL, text); }
 
     void add(const char *label, const char *text) {
-        size_t n = items_size++;
-        set(n, label, text);
+        set(lines_count++, label, text);
     }
 
-    ScreenItem *get(uint8_t row) { return &items[items_pos + row]; }
+    ScreenItem *get(uint8_t row) { return &items[cur_line + row]; }
 };

@@ -28,7 +28,8 @@ class Display : public AppModule {
     void load_psu_info(Screen *obj);
 
   private:
-    void set_screen(ScreenEnum screen, unsigned long time = 0);
+    void setFirst();
+    void setScreen(ScreenEnum value);
     void lock(unsigned long time);
     void unlock(void);
     bool locked(unsigned long now);
