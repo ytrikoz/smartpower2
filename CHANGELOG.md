@@ -1,6 +1,12 @@
 
 # Change Log
 
+## 0.6.8 (2019-10-20)
+
+### send magic packet
+
+`wol -ip` x.x.x.x `-mac` xx:xx:xx:xx:xx:xx
+
 ## 0.6.7 (2019-10-04)
 
 ## Serial / Telnet console connection

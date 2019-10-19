@@ -45,7 +45,6 @@ void Display::setScreen(ScreenEnum value) {
 bool Display::begin() {
     bool res = lcd->connect();
     if (res) {
-        lcd->loadBank(BANK_NONE, true);
         lcd->turnOn();
         say_strP(str_ready);
     } else {
@@ -57,24 +56,19 @@ bool Display::begin() {
 void Display::showProgress(uint8_t per, const char *str) {
     setScreen(SCREEN_BOOT);
     static uint8_t last = 0;
-    if (per == 0) {
-        last = 0;
-    }
-    if (last == 0 && str != NULL) {
+    if (per == 0)
         lcd->drawTextCenter(LCD_ROW_1, str);
-    }
+    lcd->drawProgressBar(LCD_ROW_2, per);
     while (per > last) {
         last += 5;
-        lcd->drawProgressBar(LCD_ROW_2, per);
         delay(250);
+        lcd->drawProgressBar(LCD_ROW_2, per);
     }
-    if (str != NULL)
+    if (last > 0)
         lcd->drawTextCenter(LCD_ROW_1, str);
     last = per;
-    if (per == 100) {
-        setScreen(SCREEN_TEXT);
+    if (per == 100)
         refresh();
-    }
 }
 
 void Display::enableBacklight(bool value) {
@@ -97,7 +91,7 @@ void Display::refresh() {
 #ifdef DEBUG_DISPLAY
     DEBUG.println("refresh()");
 #endif
-
+    setScreen(SCREEN_TEXT);
     Psu *psu = app.getPsu();
     if (psu->checkState(POWER_ON)) {
         PsuStatus status = psu->getStatus();

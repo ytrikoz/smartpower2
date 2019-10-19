@@ -198,6 +198,52 @@ void App::start() {
     start(MOD_SHELL);
 
     display->showProgress(100, "<COMPLETE>");
+
+    psu->setOnPsuInfoUpdated([this](PsuInfo info) { display->refresh(); });
+    psu->setOnStatusChange([this](PsuStatus status, String &str) {
+#ifdef DEBUG_DISPLAY
+        DEBUG.printf("statusChange %d - %s", status, str.c_str());
+        DEBUG.println();
+#endif
+        switch (status) {
+        case PSU_OK:
+            leds->set(Led::POWER_LED,
+                      psu->checkState(POWER_ON) ? Led::BLINK : Led::STAY_ON);
+            break;
+        case PSU_ALERT:
+            leds->set(Led::POWER_LED, Led::BLINK_ALERT);
+            break;
+        case PSU_ERROR:
+            leds->set(Led::POWER_LED, Led::BLINK_ERROR);
+        default:
+            break;
+        }
+        display->refresh();
+    });
+
+    psu->setOnStateChange([this](PsuState state) {
+#ifdef DEBUG_DISPLAY
+        DEBUG.printf("stateChange %d", state);
+        DEBUG.println();
+#endif
+        sendPageState(PG_HOME);
+
+        leds->set(Led::POWER_LED,
+                  state == POWER_ON ? Led::BLINK : Led::STAY_ON);
+
+        display->refresh();
+        // if (state == POWER_OFF) {
+        //     size_t size = constrain(
+        //         logger->getSize(PsuLogEnum::VOLTAGE), 0, 1024);
+        //     if (size > 0) {
+        //         PlotData data;
+        //         float tmp[size];
+        //         logger->getValues(PsuLogEnum::VOLTAGE, tmp, size);
+        //         size_t cols = group(&data, tmp, size);
+        //         display->showPlot(&data, cols);
+        //     };
+        // }
+    });
 }
 
 void App::refresh_network_modules(bool hasNetwork) {
@@ -282,53 +328,6 @@ AppModule *App::getInstance(const AppModuleEnum module) {
             appMod[module] = psu = new Psu();
             logger = new PsuLogger();
             psu->setLogger(logger);
-            psu->setOnPsuInfoUpdated(
-                [this](PsuInfo info) { display->refresh(); });
-            psu->setOnStatusChange([this](PsuStatus status, String &str) {
-#ifdef DEBUG_DISPLAY
-                DEBUG.printf("statusChange %d - %s", status, str.c_str());
-                DEBUG.println();
-#endif
-                switch (status) {
-                case PSU_OK:
-                    leds->set(Led::POWER_LED, psu->checkState(POWER_ON)
-                                                  ? Led::BLINK
-                                                  : Led::STAY_ON);
-                    break;
-                case PSU_ALERT:
-                    leds->set(Led::POWER_LED, Led::BLINK_ALERT);
-                    break;
-                case PSU_ERROR:
-                    leds->set(Led::POWER_LED, Led::BLINK_ERROR);
-                default:
-                    break;
-                }
-                display->refresh();
-            });
-
-            psu->setOnStateChange([this](PsuState state) {
-#ifdef DEBUG_DISPLAY
-                DEBUG.printf("stateChange %d", state);
-                DEBUG.println();
-#endif
-                sendPageState(PG_HOME);
-
-                leds->set(Led::POWER_LED,
-                          state == POWER_ON ? Led::BLINK : Led::STAY_ON);
-
-                display->refresh();
-                // if (state == POWER_OFF) {
-                //     size_t size = constrain(
-                //         logger->getSize(PsuLogEnum::VOLTAGE), 0, 1024);
-                //     if (size > 0) {
-                //         PlotData data;
-                //         float tmp[size];
-                //         logger->getValues(PsuLogEnum::VOLTAGE, tmp, size);
-                //         size_t cols = group(&data, tmp, size);
-                //         display->showPlot(&data, cols);
-                //     };
-                // }
-            });
             break;
         case MOD_DISPLAY:
             appMod[module] = display = new Display();
