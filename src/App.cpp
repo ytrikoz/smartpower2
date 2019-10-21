@@ -199,12 +199,15 @@ void App::start() {
 
     display->showProgress(100, "<COMPLETE>");
 
-    psu->setOnPsuInfoUpdated([this](PsuInfo info) { display->refresh(); });
-    psu->setOnStatusChange([this](PsuStatus status, String &str) {
+    psu->setOnPsuInfo([this](PsuInfo info) { display->refresh(); });
+
+    psu->setOnStateChange([this](PsuState state, PsuStatus status) {
 #ifdef DEBUG_DISPLAY
-        DEBUG.printf("statusChange %d - %s", status, str.c_str());
+        DEBUG.printf("onStateChange(%d, %d)", state, status);
         DEBUG.println();
 #endif
+        sendPageState(PG_HOME);
+
         switch (status) {
         case PSU_OK:
             leds->set(Led::POWER_LED,
@@ -219,19 +222,6 @@ void App::start() {
             break;
         }
         display->refresh();
-    });
-
-    psu->setOnStateChange([this](PsuState state) {
-#ifdef DEBUG_DISPLAY
-        DEBUG.printf("stateChange %d", state);
-        DEBUG.println();
-#endif
-        sendPageState(PG_HOME);
-
-        leds->set(Led::POWER_LED,
-                  state == POWER_ON ? Led::BLINK : Led::STAY_ON);
-
-        display->refresh();
         // if (state == POWER_OFF) {
         //     size_t size = constrain(
         //         logger->getSize(PsuLogEnum::VOLTAGE), 0, 1024);
@@ -244,6 +234,8 @@ void App::start() {
         //     };
         // }
     });
+
+    display->refresh();
 }
 
 void App::refresh_network_modules(bool hasNetwork) {
@@ -251,11 +243,10 @@ void App::refresh_network_modules(bool hasNetwork) {
         auto mod = AppModuleEnum(i);
         if (!isNetworkDepended(mod))
             continue;
-        if (hasNetwork) {
+        if (hasNetwork)
             start(mod);
-        } else {
+        else
             stop(mod);
-        }
         delay(0);
     }
 }

@@ -29,6 +29,7 @@ void onWifiDiag(cmd *c);
 void onClock(cmd *c);
 void onLog(cmd *c);
 void onWol(cmd *c);
+void onRestart(cmd *c);
 
 enum CommandAction {
     ACTION_UNKNOWN,
@@ -63,7 +64,7 @@ enum CommandItems {
 };
 
 Command cmdConfig, cmdPower, cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet,
-    cmdGet, cmdRm, cmdClock, cmdPlot, cmdLog, cmdWol;
+    cmdGet, cmdRm, cmdClock, cmdPlot, cmdLog, cmdWol, cmdRestart;
 
 Print *out = NULL;
 
@@ -215,6 +216,10 @@ void init() {
     cmdWol.addArgument("ip", "");
     cmdWol.addArgument("mac", "");
     cmdWol.setCallback(Cli::onWol);
+
+    cmdRestart = cli->addCommand("restart");
+    cmdRestart.addArgument("value", "");
+    cmdRestart.setCallback(Cli::onRestart);
 }
 
 void onLog(cmd *c) {
@@ -317,15 +322,18 @@ void onWol(cmd *c) {
     Actions::WakeOnLan(out).exec(ipStr, macStr);
 }
 
+void onRestart(cmd *c) {
+    Command cmd(c);
+    String value = getValueStr(cmd);
+    int delay = !value.length() ? 3 : value.toInt();
+    app.restart(delay);
+}
+
 void onSystem(cmd *c) {
     Command cmd(c);
     CommandAction action = getAction(cmd);
     String value = getValueStr(cmd);
     switch (action) {
-    case ACTION_RESTART: {
-        app.restart(value.toInt());
-        break;
-    }
     case ACTION_BACKLIGHT: {
         bool enabled = value.toInt();
         print_nameP_value(out, str_backlight, getOnOffStr(enabled));

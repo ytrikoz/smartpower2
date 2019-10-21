@@ -58,8 +58,8 @@ void Psu::setState(PsuState value) {
 
     setOk();
 
-    if (stateHandler)
-        stateHandler(state);
+    if (stateChangeHandler)
+        stateChangeHandler(state, status);
 }
 
 void Psu::setVoltage(float value) {
@@ -217,11 +217,9 @@ bool Psu::checkState(PsuState value) { return state == value; }
 
 bool Psu::checkStatus(PsuStatus value) { return status == value; }
 
-void Psu::setOnStatusChange(PsuStatusHandler h) { statusHandler = h; };
+void Psu::setOnStateChange(PsuStateChangeHandler h) { stateChangeHandler = h; };
 
-void Psu::setOnStateChange(PsuStateHandler h) { stateHandler = h; };
-
-void Psu::setOnPsuInfoUpdated(PsuInfoHandler h) { psuInfoHandler = h; };
+void Psu::setOnPsuInfo(PsuInfoHandler h) { psuInfoHandler = h; };
 
 void Psu::setError(PsuError value) {
     error = value;
@@ -241,10 +239,8 @@ void Psu::setStatus(PsuStatus value) {
 
     status = value;
 
-    String str = getStatusStr(status);
-
-    if (statusHandler)
-        statusHandler(status, str);
+    if (stateChangeHandler)
+        stateChangeHandler(state, status);
 }
 
 void Psu::setLogger(PsuLogger *logger) { this->logger = logger; }

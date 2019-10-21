@@ -50,6 +50,7 @@ class Screen {
         if (cur_line > lines_count - 1)
             cur_line = 0;
     }
+
     void moveFirst() { cur_line = 0; }
 
     void next() {

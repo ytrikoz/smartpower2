@@ -5,7 +5,7 @@
 
 ### send magic packet
 
-`wol -ip` x.x.x.x `-mac` xx:xx:xx:xx:xx:xx
+`wol -ip` *x.x.x.x* `-mac` *xx:xx:xx:xx:xx:xx*
 
 ## 0.6.7 (2019-10-04)
 

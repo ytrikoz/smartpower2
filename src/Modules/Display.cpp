@@ -67,8 +67,6 @@ void Display::showProgress(uint8_t per, const char *str) {
     if (last > 0)
         lcd->drawTextCenter(LCD_ROW_1, str);
     last = per;
-    if (per == 100)
-        refresh();
 }
 
 void Display::enableBacklight(bool value) {

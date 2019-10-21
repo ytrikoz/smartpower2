@@ -7,11 +7,7 @@
 
 #define POWER_SWITCH_PIN D6
 
-typedef std::function<void()> PsuEventHandler;
-
-typedef std::function<void(PsuStatus, String &)> PsuStatusHandler;
-
-typedef std::function<void(PsuState)> PsuStateHandler;
+typedef std::function<void(PsuState, PsuStatus)> PsuStateChangeHandler;
 
 typedef std::function<void(PsuInfo)> PsuInfoHandler;
 
@@ -29,9 +25,8 @@ class Psu : public AppModule {
     void togglePower();
     void powerOff();
     void powerOn();
-    void setOnStateChange(PsuStateHandler);
-    void setOnStatusChange(PsuStatusHandler);
-    void setOnPsuInfoUpdated(PsuInfoHandler);
+    void setOnStateChange(PsuStateChangeHandler);
+    void setOnPsuInfo(PsuInfoHandler);
     PsuState getState(void);
     PsuStatus getStatus(void);
     PsuAlert getAlert(void);
@@ -69,8 +64,7 @@ class Psu : public AppModule {
     PsuError error;
     PsuAlert alert;
     PsuLogger *logger;
-    PsuStatusHandler statusHandler;
-    PsuStateHandler stateHandler;
+    PsuStateChangeHandler stateChangeHandler;
     PsuInfoHandler psuInfoHandler;
 
     unsigned long startTime, infoUpdated, powerInfoUpdated, loggerUpdated,
@@ -78,7 +72,6 @@ class Psu : public AppModule {
     double outputVoltage;
     bool wh_store;
     PsuInfo info;
-    PsuEventHandler togglePowerHandler, powerOnHandler, powerOffHandler;
 
     static int quadratic_regression(double value) {
         double a = 0.0000006562;
