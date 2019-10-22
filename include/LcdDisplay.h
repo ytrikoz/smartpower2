@@ -33,7 +33,6 @@ class LcdDisplay {
   public:
     void loadBank(CharBank bank, bool force = false);
     bool connect();
-    bool ready();
     void turnOn();
     void turnOff();
     void clear();

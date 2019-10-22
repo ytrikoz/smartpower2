@@ -80,10 +80,11 @@ bool NetworkService::begin_netbios(String &host_name) {
 
 size_t NetworkService::printDiag(Print *p) {
     size_t n = Wireless::printDiag(p);
-    n = PrintUtils::print_nameP_value(p, str_active, getBoolStr(active));
-    n = PrintUtils::print_nameP_value(p, str_dns, getBoolStr(has_dns));
-    n = PrintUtils::print_nameP_value(p, str_mdns, getBoolStr(has_mdns));
-    n = PrintUtils::print_nameP_value(p, str_netbios, getBoolStr(has_netbios));
+    n = PrintUtils::println_nameP_value(p, str_active, getBoolStr(active));
+    n = PrintUtils::println_nameP_value(p, str_dns, getBoolStr(has_dns));
+    n = PrintUtils::println_nameP_value(p, str_mdns, getBoolStr(has_mdns));
+    n = PrintUtils::println_nameP_value(p, str_netbios,
+                                        getBoolStr(has_netbios));
     return n;
 }
 

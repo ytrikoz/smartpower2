@@ -38,7 +38,6 @@ size_t Named::say(char *str) {
 
 size_t Named::say_strP(PGM_P strP) {
     size_t n = print_ident(out, name);
-    n += print(out, ' ');
     char buf[64];
     strcpy_P(buf, strP);
     n += print(out, buf);
@@ -53,7 +52,7 @@ size_t Named::say_strP(PGM_P strP, int value) {
 size_t Named::say_strP(PGM_P strP, const char *value) {
     size_t n = print_ident(out, name);
     n += print(out, ' ');
-    n += print_nameP_value(out, strP, value);
+    n += println_nameP_value(out, strP, value);
     return n;
 }
 

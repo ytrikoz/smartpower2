@@ -14,16 +14,31 @@ template <typename T> size_t print_paramP_value(Print *p, PGM_P strP, T var) {
     return n += p->println('\"');
 }
 
-template <typename T> size_t print_nameP_value(Print *p, PGM_P strP, T var) {
-    size_t n = p->print(StrUtils::getStrP(strP));
+template <typename T> size_t println_nameP_value(Print *p, PGM_P strP, T var) {
+    size_t n = p->print(FPSTR(strP));
     n += p->print(':');
     n += p->print(' ');
     return n += p->println(var);
 }
 
+template <typename T>
+size_t printlm_moduleP_nameP_value(Print *p, PGM_P moduleStrP, PGM_P nameStrP,
+                                   T value) {
+    size_t n = p->print(StrUtils::getIdentStrP(moduleStrP));
+    return n += println_nameP_value(p, nameStrP, value);
+}
+
 template <typename T> size_t print(Print *p, T v) {
     size_t n = p->print(v);
     return n += p->print(' ');
+}
+
+template <typename T> size_t print_ident(Print *p, T value) {
+    size_t n = p->print('[');
+    n += p->print(value);
+    n += p->print(']');
+    n += p->print(' ');
+    return n;
 }
 
 template <typename T, typename... Args>

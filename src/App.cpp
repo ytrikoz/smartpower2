@@ -8,12 +8,46 @@
 
 using namespace PrintUtils;
 using namespace StrUtils;
+
 App app;
 
-Psu *App::getPsu() { return psu; }
-WebService *App::getHttp() { return http; }
-LoopLogger *App::getLoopLogger() { return loopLogger; }
-SystemClock *App::getClock() { return rtc; }
+App::App() {
+    memset(appMod, 0, sizeof(&appMod[0]) * APP_MODULES);
+    loopLogger = new LoopLogger();
+}
+
+void App::loop() {
+    for (uint8_t i = 0; i < APP_MODULES; ++i) {
+        AppModule *mod = getInstance(AppModuleEnum(i));
+        if (mod) {
+            if (Wireless::hasNetwork() ||
+                !isNetworkDepended(AppModuleEnum(i))) {
+                LiveTimer timer = loopLogger->onExecute(AppModuleEnum(i));
+                mod->loop();
+            }
+        }
+        delay(0);
+    }
+
+    unsigned long now = millis();
+    if (millis_passed(displayUpdated, now) > ONE_SECOND_ms) {
+        handle_restart();
+        send_psu_data_to_clients();
+        displayUpdated = now;
+    }
+
+    loopLogger->loop();
+}
+
+size_t App::printDiag(Print *p) {
+    size_t n = p->println(getHeapStat());
+    if (Wireless::getMode() != Wireless::WLAN_STA)
+        n +=
+            println_nameP_value(p, str_wifi, getConnectedStationInfo().c_str());
+    n += println_nameP_value(p, str_http, get_http_clients_count());
+    n += println_nameP_value(p, str_telnet, get_telnet_clients_count());
+    return n;
+}
 
 size_t App::printDiag(Print *p, const AppModuleEnum module) {
     AppModule *mod = appMod[module];
@@ -22,15 +56,6 @@ size_t App::printDiag(Print *p, const AppModuleEnum module) {
     } else {
         return print(p, FPSTR(str_disabled));
     }
-}
-
-size_t App::printDiag(Print *p) {
-    size_t n = p->println(getHeapStat());
-    if (Wireless::getMode() != Wireless::WLAN_STA)
-        n += print_nameP_value(p, str_wifi, getConnectedStationInfo().c_str());
-    n += print_nameP_value(p, str_http, get_http_clients_count());
-    n += print_nameP_value(p, str_telnet, get_telnet_clients_count());
-    return n;
 }
 
 void App::printLoopCapture(Print *p) {
@@ -100,34 +125,6 @@ bool App::isNetworkDepended(AppModuleEnum module) {
     default:
         return false;
     }
-}
-
-void App::loop() {
-    for (uint8_t i = 0; i < APP_MODULES; ++i) {
-        AppModule *mod = getInstance(AppModuleEnum(i));
-        if (mod) {
-            if (Wireless::hasNetwork() ||
-                !isNetworkDepended(AppModuleEnum(i))) {
-                LiveTimer timer = loopLogger->onExecute(AppModuleEnum(i));
-                mod->loop();
-            }
-        }
-        delay(0);
-    }
-
-    unsigned long now = millis();
-    if (millis_passed(displayUpdated, now) > ONE_SECOND_ms) {
-        handle_restart();
-        send_psu_data_to_clients();
-        displayUpdated = now;
-    }
-
-    loopLogger->loop();
-}
-
-App::App() {
-    memset(appMod, 0, sizeof(&appMod[0]) * APP_MODULES);
-    loopLogger = new LoopLogger();
 }
 
 void App::printConfig(Print *p) { env->printTo(*p); }
@@ -367,8 +364,6 @@ AppModule *App::getInstance(const AppModuleEnum module) {
     return appMod[module];
 }
 
-Config *App::getConfig() { return env->get(); }
-
 bool App::start(AppModuleEnum module) {
 #ifdef DEBUG_APP
     dbg->printf("[app] > %d", module);
@@ -435,8 +430,6 @@ void App::refresh_power_led() {
     leds->set(Led::POWER_LED, mode);
 }
 
-Display *App::getDisplay() { return display; }
-
 void App::printPlot(PlotData *data, Print *p) {
     char tmp[PLOT_ROWS * 8 + 1];
     for (uint8_t x = 0; x < data->size; ++x) {
@@ -475,3 +468,15 @@ String App::getNetworkConfig() {
     res += getConfig()->getValueAsString(DNS);
     return res;
 }
+
+Config *App::getConfig() { return env->get(); }
+
+Display *App::getDisplay() { return display; }
+
+Psu *App::getPsu() { return psu; }
+
+WebService *App::getHttp() { return http; }
+
+LoopLogger *App::getLoopLogger() { return loopLogger; }
+
+SystemClock *App::getClock() { return rtc; }

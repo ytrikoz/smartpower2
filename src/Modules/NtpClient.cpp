@@ -5,8 +5,8 @@
 
 NtpClient::NtpClient() : AppModule(MOD_NTP) {
     udp = new WiFiUDP();
-    active = false;
     requestTime = responseTime = 0;
+    active = false;
 }
 
 bool NtpClient::begin() {

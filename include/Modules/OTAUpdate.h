@@ -1,23 +1,25 @@
 #pragma once
 
 #include <ArduinoOTA.h>
-#include <Updater.h>
 #include <FS.h>
+#include <Updater.h>
 
 #include "AppModule.h"
 #include "Strings.h"
 
 class OTAUpdate : public AppModule {
-   public:
+  public:
     OTAUpdate();
-    bool begin();    
+    bool begin();
     void loop();
-   private:
-    void handleStart(void);
+
+  private:
+    void handleArduinoOTAClassOnStart(void);
     void handleProgress(unsigned int progress, unsigned int total);
     void handleEnd();
     void handleError(ota_error_t error);
-    private:
+
+  private:
     ArduinoOTAClass *ota;
     bool active;
     unsigned int update_progress;

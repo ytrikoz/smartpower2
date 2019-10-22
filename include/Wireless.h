@@ -20,7 +20,7 @@ Mode getMode();
 bool hasNetwork();
 String hostSSID();
 IPAddress hostIP();
-String wifiModeInfo();
+void print_wifi_mode(Print *p);
 String networkStateInfo();
 String hostIPInfo();
 String hostName();

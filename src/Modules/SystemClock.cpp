@@ -22,17 +22,17 @@ bool SystemClock::begin() {
 }
 
 size_t SystemClock::printDiag(Print *p) {
-    size_t n = PrintUtils::print_nameP_value(p, str_timezone,
-                                             (float)timeOffset / ONE_HOUR_s);
-    n += PrintUtils::print_nameP_value(p, str_backup,
-                                       storeInterval / ONE_SECOND_ms);
-    n += PrintUtils::print_nameP_value(p, str_updated,
-                                       lastUpdated / ONE_SECOND_ms);
-    n += PrintUtils::print_nameP_value(p, str_stored,
-                                       lastStored / ONE_SECOND_ms);
-    n += PrintUtils::print_nameP_value(p, str_rollover, rollover);
-    n += PrintUtils::print_nameP_value(p, str_epoch, epoch);
-    n += PrintUtils::print_nameP_value(p, str_trusted, trusted);
+    size_t n = PrintUtils::println_nameP_value(p, str_timezone,
+                                               (float)timeOffset / ONE_HOUR_s);
+    n += PrintUtils::println_nameP_value(p, str_backup,
+                                         storeInterval / ONE_SECOND_ms);
+    n += PrintUtils::println_nameP_value(p, str_updated,
+                                         lastUpdated / ONE_SECOND_ms);
+    n += PrintUtils::println_nameP_value(p, str_stored,
+                                         lastStored / ONE_SECOND_ms);
+    n += PrintUtils::println_nameP_value(p, str_rollover, rollover);
+    n += PrintUtils::println_nameP_value(p, str_epoch, epoch);
+    n += PrintUtils::println_nameP_value(p, str_trusted, trusted);
     return n;
 }
 

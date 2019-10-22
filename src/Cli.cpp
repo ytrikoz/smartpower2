@@ -336,7 +336,7 @@ void onSystem(cmd *c) {
     switch (action) {
     case ACTION_BACKLIGHT: {
         bool enabled = value.toInt();
-        print_nameP_value(out, str_backlight, getOnOffStr(enabled));
+        println_nameP_value(out, str_backlight, getOnOffStr(enabled));
         app.getDisplay()->enableBacklight(enabled);
         break;
     }

@@ -1,5 +1,6 @@
 #include "Modules/OTAUpdate.h"
 
+#include "PrintUtils.h"
 #include "StrUtils.h"
 #include "Wireless.h"
 
@@ -16,7 +17,7 @@ bool OTAUpdate::begin() {
     ota->setRebootOnSuccess(false);
     ota->setHostname(host.c_str());
     ota->setPort(OTA_PORT);
-    ota->onStart([this]() { this->handleStart(); });
+    ota->onStart([this]() { this->handleArduinoOTAClassOnStart(); });
     ota->onProgress([this](unsigned int progress, unsigned int total) {
         this->handleProgress(progress, total);
     });
@@ -33,7 +34,7 @@ bool OTAUpdate::begin() {
     return true;
 }
 
-void OTAUpdate::handleStart(void) {
+void OTAUpdate::handleArduinoOTAClassOnStart(void) {
     out->print(StrUtils::getStrP(str_start));
 
     update_progress = 0;
@@ -54,7 +55,7 @@ void OTAUpdate::handleStart(void) {
 }
 
 void OTAUpdate::handleEnd() {
-    out->print(StrUtils::getIdentStrP(str_update));
+    PrintUtils::print_ident(out, FPSTR(str_update));
     out->print(StrUtils::getStrP(str_update));
     out->println(StrUtils::getStrP(str_complete));
 }

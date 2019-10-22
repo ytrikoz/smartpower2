@@ -35,7 +35,7 @@ void Psu::powerOn() {
 
     logger->clear();
 
-    if (wh_store)
+    if (isWhStoreEnabled())
         restoreWh(info.mWh);
 
     setState(POWER_ON);
@@ -57,6 +57,8 @@ void Psu::setState(PsuState value) {
     digitalWrite(POWER_SWITCH_PIN, value);
 
     setOk();
+
+    storeState(state);
 
     if (stateChangeHandler)
         stateChangeHandler(state, status);
@@ -150,19 +152,20 @@ void Psu::setWh(double value) {
         storeWh(info.mWh);
 }
 
+bool Psu::enableWhStore(bool new_value) {
+    if (wh_store == new_value)
+        return true;
+    wh_store = new_value ? storeWh(info.mWh) : false;
+    printlm_moduleP_nameP_value(dbg, str_psu, str_total, wh_store);
+    return wh_store == new_value;
+}
+
 bool Psu::storeWh(double value) {
     return StoreUtils::storeDouble(FILE_VAR_WH, value);
 }
 
 bool Psu::restoreWh(double &value) {
     return ::restoreDouble(FILE_VAR_WH, value);
-}
-
-bool Psu::enableWhStore(bool new_value) {
-    if (wh_store == new_value)
-        return true;
-    wh_store = new_value == true ? storeWh(info.mWh) : false;
-    return wh_store == new_value;
 }
 
 float Psu::getP() { return info.P; }
@@ -190,11 +193,11 @@ bool Psu::restoreState(PsuState &value) {
 }
 
 size_t Psu::printDiag(Print *p) {
-    size_t n = print_nameP_value(p, str_power, getStateStr(state));
-    n += print_nameP_value(p, str_status, getStatusStr(status));
-    n += print_nameP_value(p, str_output, outputVoltage);
+    size_t n = println_nameP_value(p, str_power, getStateStr(state));
+    n += println_nameP_value(p, str_status, getStatusStr(status));
+    n += println_nameP_value(p, str_output, outputVoltage);
     if (checkState(POWER_ON))
-        n += PrintUtils::print_nameP_value(p, str_uptime, getUptime());
+        n += PrintUtils::println_nameP_value(p, str_uptime, getUptime());
     return n;
 }
 
@@ -249,7 +252,13 @@ PsuLogger *Psu::getLogger() { return this->logger; }
 
 PsuInfo Psu::getInfo() { return info; }
 
-bool Psu::isWhStoreEnabled() { return wh_store; }
+bool Psu::isWhStoreEnabled(void) {
+    wh_store = false;
+    if (config->getValueAsBool(WH_STORE_ENABLED))
+        if (!restoreWh(info.mWh))
+            wh_store = storeWh(info.mWh);
+    return wh_store;
+}
 
 float Psu::getVoltage() { return outputVoltage; }
 

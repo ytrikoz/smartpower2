@@ -44,7 +44,7 @@ class Psu : public AppModule {
     double getWh();
     unsigned long getUptime();
     bool enableWhStore(bool enabled = true);
-    bool isWhStoreEnabled();
+    bool isWhStoreEnabled(void);
     void setWh(double value);
 
   private:
