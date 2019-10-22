@@ -1,9 +1,29 @@
 
 # Change Log
 
-## 0.6.8 (2019-10-20)
+## 0.6.8 (2019-10-23)
 
-### send magic packet
+### Boot Up power state
+
+(/etc/main) parameter 'bootpwr' (needs `config apply`)
+
+To change, use the admin web interface or command `set bootpwr` *value*
+
+Where *value*:
+
+**0** - Off
+
+**1** - On
+
+**2** - Last state (uninterruptible power during reboots and restoration of last state after switching on)
+
+### Restart(reboot) device
+
+`restart` *delay*
+
+Where the *delay* time before the device reboots (in seconds)
+
+### Send magic packet
 
 `wol -ip` *x.x.x.x* `-mac` *xx:xx:xx:xx:xx:xx*
 
@@ -17,14 +37,19 @@ To start you should send `Line Feed`, usually to do this press `ENTER` key. The 
 
 `help`
 
-### control lcd backlight
+### Backlight control
 
-to operate
+To operate the device lcd backlight use command `system backlight` *value*
 
-`system backlight` *value*
+Where *value*:
 
-value '0' - to switch off (with any other will switch it back).
-or disable backlight at config with:
+**0** - Off
+
+**1** - On
+
+(/etc/main) parameter 'backlight' (needs `config apply`)
+
+to disable backlight:
 
 `set backlight 0`
 
@@ -34,13 +59,15 @@ or disable backlight at config with:
 
 `show` [`btn, clock, http, lcd, led, netsvc, ntp, psu, shell, telnet, update`]
 
-### print file content
+### print file
 
-`print` *file name*
+`print` *file*
+
+Path and file name to print, ex: /etc/main.
 
 ### delete file
 
-`rm` *file name*
+`rm` *file*
 
 ### configuration
 
