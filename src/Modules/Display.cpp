@@ -47,6 +47,7 @@ bool Display::begin() {
     if (res) {
         lcd->turnOn();
         say_strP(str_ready);
+        enableBacklight(backlight);
     } else {
         say_strP(str_failed);
     }
