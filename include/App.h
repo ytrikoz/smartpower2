@@ -48,6 +48,7 @@ class App {
     String getNetworkConfig();
     SystemClock *getClock();
     Psu *getPsu();
+    ShellMod *getShell();
     WebService *getHttp();
     bool setBootPowerState(BootPowerState state);
     bool setOutputVoltageAsDefault();

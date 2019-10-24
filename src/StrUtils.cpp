@@ -225,7 +225,8 @@ size_t getStrP(PGM_P strP, char *buf) {
 String getStrP(PGM_P strP, bool spaced) {
     char buf[64];
     strcpy_P(buf, strP);
-    return String(buf);
+    String str(buf);
+    return str;
 }
 
 String getIdentStr(const char *str, bool with_space, char ch) {

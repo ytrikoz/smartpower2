@@ -6,7 +6,7 @@
 #include "Termul.h"
 
 class Shell {
-   public:
+  public:
     Shell();
     void setParser(SimpleCLI *);
     void setTerminal(Termul *);
@@ -18,8 +18,9 @@ class Shell {
     bool getHistoryInput(String &);
     void setEditBuffer(String &);
     bool isActive();
+    bool run(const char *cmdStr);
 
-   private:
+  private:
     void requestHistoryHandler();
     void onSessionOpen();
     void onSessionClose();

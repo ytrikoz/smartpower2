@@ -192,6 +192,7 @@ void App::start() {
             refresh_wifi_led();
             refresh_network_modules(hasNetwork);
         });
+
     start(MOD_SHELL);
 
     display->showProgress(100, "<COMPLETE>");
@@ -468,6 +469,8 @@ String App::getNetworkConfig() {
     res += getConfig()->getValueAsString(DNS);
     return res;
 }
+
+ShellMod *App::getShell() { return shell; }
 
 Config *App::getConfig() { return env->get(); }
 

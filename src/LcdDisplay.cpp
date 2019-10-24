@@ -144,13 +144,16 @@ void LcdDisplay::turnOff() {
 void LcdDisplay::drawScreen(Screen *screen, bool force) {
     if (!connect())
         return;
+#ifdef DEBUG_DISPLAY
+    DEBUG.printf("drawScreen(%d, %d)", screen, force);
+    DEBUG.println();
+#endif
     for (uint8_t row = 0; row < LCD_ROWS; ++row) {
         if (row >= screen->count())
             break;
         ScreenItem *item = screen->get(row);
-        if (force || item->needsRedraw()) {
+        if (force || item->needsRedraw())
             drawScreenItem(row, item);
-        }
     }
 }
 
@@ -233,6 +236,7 @@ void LcdDisplay::loadBank(CharBank bank, bool force) {
     DEBUG.printf("loadBank(%d, %d)", bank, force);
     DEBUG.println();
 #endif
+    this->bank = bank;
     switch (bank) {
     case BANK_PLOT:
         lcd->createChar(0, char_solid);
@@ -279,7 +283,6 @@ void LcdDisplay::loadBank(CharBank bank, bool force) {
     default:
         break;
     }
-    this->bank = bank;
 }
 
 void LcdDisplay::drawProgressBar(uint8_t row, uint8_t per) {

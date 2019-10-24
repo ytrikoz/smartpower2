@@ -44,4 +44,6 @@ bool ShellMod::setRemote(Stream *stream) {
     return active;
 }
 
+bool ShellMod::run(const char *cmdStr) { return shell.run(cmdStr); }
+
 bool ShellMod::isActive() { return shell.isActive(); }

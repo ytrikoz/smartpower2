@@ -11,6 +11,7 @@ class ShellMod : public AppModule {
     bool setLocal();
     bool setRemote(Stream *);
     bool isActive();
+    bool run(const char *strCmd);
 
   public:
     ShellMod();

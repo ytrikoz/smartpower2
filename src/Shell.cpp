@@ -19,6 +19,22 @@ void Shell::setTerminal(Termul *term) {
     t->setOnTabKey([this]() { this->requestHistoryHandler(); });
 }
 
+bool Shell::run(const char *cmdStr) {
+#ifdef DEBUG_SHELL
+    DEBUG.printf("run(%s)", cmdStr);
+#endif
+    bool res = true;
+    cli->parse(cmdStr);
+    while (cli->available()) {
+        cli->getCmd().run();
+        if (cli->getError()) {
+            res = false;
+            break;
+        }
+    }
+    return res;
+}
+
 bool Shell::isActive() { return this->active; }
 
 Termul *Shell::getTerminal() { return this->t; }

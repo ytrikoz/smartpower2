@@ -30,6 +30,7 @@ void onClock(cmd *c);
 void onLog(cmd *c);
 void onWol(cmd *c);
 void onRestart(cmd *c);
+void onRun(cmd *c);
 
 enum CommandAction {
     ACTION_UNKNOWN,
@@ -64,7 +65,7 @@ enum CommandItems {
 };
 
 Command cmdConfig, cmdPower, cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet,
-    cmdGet, cmdRm, cmdClock, cmdPlot, cmdLog, cmdWol, cmdRestart;
+    cmdGet, cmdRm, cmdClock, cmdPlot, cmdLog, cmdWol, cmdRestart, cmdRun;
 
 Print *out = NULL;
 
@@ -181,7 +182,7 @@ void init() {
     cmdSystem.setCallback(Cli::onSystem);
 
     cmdShow = cli->addCommand("show");
-    cmdShow.addPositionalArgument("mod", "");
+    cmdShow.addPositionalArgument("mod", "app");
     cmdShow.setCallback(Cli::onShow);
 
     cmdSet = cli->addCommand("set");
@@ -220,6 +221,10 @@ void init() {
     cmdRestart = cli->addCommand("restart");
     cmdRestart.addArgument("value", "");
     cmdRestart.setCallback(Cli::onRestart);
+
+    cmdRun = cli->addCommand("run");
+    cmdRun.addPositionalArgument("file");
+    cmdRun.setCallback(Cli::onRun);
 }
 
 void onLog(cmd *c) {
@@ -487,6 +492,25 @@ void onRemove(cmd *c) {
     } else {
         out->print(StrUtils::getStrP(str_not));
         out->print(StrUtils::getStrP(str_found));
+    }
+}
+
+void onRun(cmd *c) {
+    Command cmd(c);
+    String file = getFileStr(cmd);
+    if (SPIFFS.exists(file)) {
+        StringQueue *data = new StringQueue();
+        FileStore *store = new FileStore(file.c_str());
+        bool res = store->read(data);
+        if (res) {
+            while (data->available()) {
+                String strCmd;
+                data->get(strCmd);
+                app.getShell()->run(strCmd.c_str());
+            }
+        } else {
+            print(out, FPSTR(str_failed));
+        }
     }
 }
 
