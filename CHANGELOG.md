@@ -1,6 +1,20 @@
 
 # Change Log
 
+## 0.6.9 (2019-10-26)
+
+### Total consumption
+
+(/etc/main) parameter 'store_wh' (needs `config apply`)
+
+To change, use the admin web interface or command  `set store_wh` *value*
+
+Where *value*:
+
+**0** - Off; Will reset counter every power on.
+
+**1** - On; To save the counter between turning the device on and off (stored once a minute in / var / wh)
+
 ## 0.6.8 (2019-10-23)
 
 ### Boot Up power state
