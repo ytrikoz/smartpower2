@@ -32,34 +32,28 @@ class App {
     AppModule *getInstance(const AppModuleEnum);
     void loop();
     void restart(uint8_t time);
-    void printConfig(Print *p);
     size_t printDiag(Print *p);
     size_t printDiag(Print *p, const AppModuleEnum module);
     void printLoopCapture(Print *p);
     void printPlot(PlotData *data, Print *p);
-
     void printCapture(Print *);
-    void resetConfig();
-    void loadConfig();
-    bool saveConfig();
-    Config *getConfig();
-    LoopLogger *getLoopLogger();
 
-    String getNetworkConfig();
+    Config *getConfig();
     SystemClock *getClock();
+    Display *getDisplay();
+    LoopLogger *getLoopLogger();
+    ConfigHelper *getEnv();
+    WebService *getHttp();
     Psu *getPsu();
     ShellMod *getShell();
-    WebService *getHttp();
     bool setBootPowerState(BootPowerState state);
     bool setOutputVoltageAsDefault();
     uint8_t getTPW();
     void refresh_power_led();
     void refresh_wifi_led();
-    Display *getDisplay();
 
   private:
     uint8_t get_telnet_clients_count();
-    uint8_t get_http_clients_count();
     bool isNetworkDepended(AppModuleEnum module);
     void refresh_network_modules(bool hasNetwork);
     void handle_restart();

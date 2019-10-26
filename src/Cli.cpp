@@ -263,7 +263,7 @@ void onLog(cmd *c) {
 
 void onHelp(cmd *c) {
     Command cmd(c);
-    out->println(cli->toString().c_str());
+    println(out, cli->toString().c_str());
 }
 
 void onConfig(cmd *c) {
@@ -271,28 +271,27 @@ void onConfig(cmd *c) {
     CommandAction action = getAction(cmd);
     switch (action) {
     case ACTION_PRINT:
-        app.printConfig(out);
+        app.getEnv()->printTo(*out);
         return;
     case ACTION_RESET:
-        app.resetConfig();
+        app.getEnv()->setDefault();
         break;
     case ACTION_SAVE:
-        app.saveConfig();
+        app.getEnv()->saveConfig();
         break;
     case ACTION_LOAD:
-        app.loadConfig();
+        app.getEnv()->loadConfig();
         break;
     case ACTION_APPLY:
-        if (app.saveConfig()) {
+        if (app.getEnv()->saveConfig())
             app.restart(3);
-        }
         return;
     default:
         String actionStr = getActionStr(cmd);
         PrintUtils::print_unknown_action(out, actionStr);
         return;
     }
-    PrintUtils::print_done(out);
+    print_done(out);
 }
 
 void onPower(cmd *c) {
@@ -451,16 +450,16 @@ void onShow(cmd *c) {
             return;
         };
         return;
-    } else if (modStr.equals("app") || modStr.equals("")) {
+    } else if (modStr.equals("app")) {
         app.printDiag(out);
         return;
     }
+
     AppModuleEnum mod;
-    if (app.getModule(modStr.c_str(), mod)) {
+    if (app.getModule(modStr.c_str(), mod))
         app.printDiag(out, mod);
-    } else {
+    else
         print_s_not_found(out, modStr);
-    }
 }
 
 void onPlot(cmd *c) { Command cmd(c); }

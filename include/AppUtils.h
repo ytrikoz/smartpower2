@@ -1,13 +1,16 @@
 #pragma once
 
+#include "Config.h"
 #include "Strings.h"
+
+namespace AppUtils {
 
 static const char *strP_module[APP_MODULES] PROGMEM = {
     str_btn, str_clock, str_http,  str_display, str_led,   str_netsvc,
     str_ntp, str_psu,   str_shell, str_telnet,  str_update};
 
-inline char *boolStr(char *buf, bool value) {
-    return strcpy_P(buf, value ? str_true : str_false);
+inline String boolStr(bool value) {
+    return String(value ? FPSTR(str_true) : FPSTR(str_false));
 }
 
 inline char *moduleStr(char *buf, uint8_t index) {
@@ -37,4 +40,25 @@ inline char *paramStrP(char *buf, PGM_P strP) {
     buf[len++] = ' ';
     buf[len++] = '\x00';
     return buf;
+}
+
+inline String getNetworkConfig(Config *cfg) {
+    String res = String(SET_NETWORK);
+    res += cfg->getValueAsByte(WIFI);
+    res += ',';
+    res += cfg->getValueAsString(SSID);
+    res += ',';
+    res += cfg->getValueAsString(PASSWORD);
+    res += ',';
+    res += cfg->getValueAsBool(DHCP);
+    res += ',';
+    res += cfg->getValueAsString(IPADDR);
+    res += ',';
+    res += cfg->getValueAsString(NETMASK);
+    res += ',';
+    res += cfg->getValueAsString(GATEWAY);
+    res += ',';
+    res += cfg->getValueAsString(DNS);
+    return res;
+}
 }

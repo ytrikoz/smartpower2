@@ -4,6 +4,7 @@
 #include "StoreUtils.h"
 #include "Wireless.h"
 
+using namespace AppUtils;
 using namespace StoreUtils;
 using namespace StrUtils;
 using namespace PrintUtils;
@@ -74,8 +75,7 @@ WebService::WebService() : AppModule(MOD_HTTP) {
 }
 
 size_t WebService::printDiag(Print *p) {
-    char buf[8];
-    size_t n = print_paramP_value(p, str_active, boolStr(buf, active));
+    size_t n = print_paramP_value(p, str_active, boolStr(active).c_str());
     return n;
 }
 
@@ -144,7 +144,6 @@ void WebService::handleNotFound(String &uri) {
     server->sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     server->sendHeader("Pragma", "no-cache");
     server->sendHeader("Expires", "-1");
-
     server->send(404, "text/plain", str);
 }
 

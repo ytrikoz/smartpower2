@@ -15,7 +15,9 @@ using namespace StrUtils;
 
 namespace Wireless {
 
-static const char str_bssid[] PROGMEM = "bssid %02x:%02x:%02x:%02x:%02x:%02x";
+static const char strf_bssid[] PROGMEM = "%02x:%02x:%02x:%02x:%02x:%02x";
+static const char strf_ip_params[] PROGMEM =
+    "ip: %s subnet: %s gateway: %s dns: %s";
 
 bool ap_enabled = false;
 Mode mode = WLAN_OFF;
@@ -99,27 +101,17 @@ void changeMode(Mode wlan_mode) {
 void setupAP(IPAddress ipaddr) {
     IPAddress gateway = ipaddr;
     IPAddress subnet = IPAddress(255, 255, 255, 0);
+
     WiFi.softAPConfig(ipaddr, gateway, subnet);
 
-    char buf[64];
-    sprintf(buf, "ip %s subnet %s gateway %s", ipaddr.toString().c_str(),
-            subnet.toString().c_str(), gateway.toString().c_str());
-    print(&DEBUG, getIdentStr(str_wifi, false));
-    println(&DEBUG, buf);
-}
+    IPAddress dns = WiFi.dnsIP();
 
-void setupSTA(IPAddress ip, IPAddress gateway, IPAddress subnet,
-              IPAddress dns) {
-    print(&DEBUG, getIdentStr(str_wifi, false));
-    if (ip.operator== IP4_ADDR_ANY) {
-        println_nameP_value(&DEBUG, str_dhcp, FPSTR(str_on));
-    } else {
-        DEBUG.printf_P(strf_ip_params, ip.toString().c_str(),
-                       subnet.toString().c_str(), gateway.toString().c_str(),
-                       dns.toString().c_str());
-    }
-    DEBUG.println();
-    WiFi.config(ip, gateway, subnet, dns);
+    char buf[64];
+    sprintf_P(buf, strf_ip_params, ipaddr.toString().c_str(),
+              subnet.toString().c_str(), gateway.toString().c_str(),
+              dns.toString().c_str());
+    print_ident(&DEBUG, FPSTR(str_wifi));
+    println(&DEBUG, buf);
 }
 
 void setupSTA() {
@@ -127,21 +119,32 @@ void setupSTA() {
     setupSTA(any, any, any, any);
 }
 
+void setupSTA(IPAddress ipaddr, IPAddress gateway, IPAddress subnet,
+              IPAddress dns) {
+    print_ident(&DEBUG, FPSTR(str_wifi));
+    if (ipaddr == IPAddress(IP4_ADDR_ANY)) {
+        println_nameP_value(&DEBUG, str_dhcp, FPSTR(str_on));
+    } else {
+        char buf[64];
+        sprintf_P(buf, strf_ip_params, ipaddr.toString().c_str(),
+                  subnet.toString().c_str(), gateway.toString().c_str(),
+                  dns.toString().c_str());
+        print_ident(&DEBUG, FPSTR(str_wifi));
+        println(&DEBUG, buf);
+    }
+    WiFi.config(ipaddr, gateway, subnet, dns);
+}
+
 bool startSTA(const char *ssid, const char *password) {
-    DEBUG.print(StrUtils::getIdentStrP(str_wifi));
-    DEBUG.print(StrUtils::getStrP(str_sta));
-    DEBUG.print(StrUtils::getStrP(str_arrow_dest));
-    DEBUG.print(StrUtils::getStrP(str_ssid));
-    DEBUG.println(ssid);
+    print_ident(&DEBUG, FPSTR(str_wifi));
+    println_nameP_value(&DEBUG, str_ssid, ssid);
 
     WiFi.begin(ssid, password);
 
     uint8_t result = WiFi.waitForConnectResult();
     if (result != WL_CONNECTED) {
-        DEBUG.print(StrUtils::getIdentStrP(str_wifi));
-        DEBUG.print(StrUtils::getStrP(str_sta));
-        DEBUG.print(StrUtils::getStrP(str_arrow_src));
-        DEBUG.println(getConnectionStatus());
+        print_ident(&DEBUG, FPSTR(str_wifi));
+        println_nameP_value(&DEBUG, str_status, getConnectionStatus().c_str());
     }
     return result;
 }
@@ -153,23 +156,21 @@ bool startAP(const char *ssid, const char *passwd) {
 boolean disconnectWiFi() { return WiFi.disconnect(); }
 
 void start_safe_wifi_ap() {
-    DEBUG.print(StrUtils::getIdentStrP(str_wifi));
-    DEBUG.print(StrUtils::getStrP(str_safe));
-    DEBUG.print(StrUtils::getStrP(str_mode, false));
+    print_ident(&DEBUG, FPSTR(str_wifi));
+    print(&DEBUG, FPSTR(str_safe));
+    print(&DEBUG, FPSTR(str_mode));
 
     char ap_ssid[32];
     strcpy(ap_ssid, APP_NAME);
     strcat(ap_ssid, getChipId().c_str());
     char ap_passwd[] = "12345678";
     IPAddress ap_ipaddr = IPAddress(192, 168, 4, 1);
-#ifdef DEBUG_WIRELESS
-    PRINT_WIFI_AP
-    PRINT_WIFI_AP_CONFIG
-#endif
+
     changeMode(WLAN_AP);
     setupAP(ap_ipaddr);
     if (!startAP(ap_ssid, ap_passwd))
-        DEBUG.print(StrUtils::getStrP(str_failed));
+        print(&DEBUG, FPSTR(str_failed));
+    print_ln(&DEBUG);
 }
 
 void init() {
@@ -194,17 +195,15 @@ void start_wifi() {
 
     staConnectedEventHandler =
         WiFi.onStationModeConnected([](const WiFiEventStationModeConnected &e) {
-            DEBUG.print(StrUtils::getIdentStrP(str_wifi));
-            DEBUG.print(StrUtils::getStrP(str_sta));
-            DEBUG.print(StrUtils::getStrP(str_arrow_src));
-            DEBUG.print(StrUtils::getStrP(str_ssid));
-            String ssid = e.ssid;
-            DEBUG.print(StrUtils::getStr(ssid));
-            DEBUG.printf_P(str_bssid, e.bssid[0], e.bssid[1], e.bssid[2],
-                           e.bssid[3], e.bssid[4], e.bssid[5]);
-            DEBUG.print("ch ");
-            DEBUG.print(e.channel);
-            DEBUG.println();
+            char buf[32];
+            sprintf_P(buf, strf_bssid, e.bssid[0], e.bssid[1], e.bssid[2],
+                      e.bssid[3], e.bssid[4], e.bssid[5]);
+
+            print_ident(&DEBUG, FPSTR(str_wifi));
+            println_nameP_value(&DEBUG, str_bssid, buf);
+
+            print_ident(&DEBUG, FPSTR(str_wifi));
+            println_nameP_value(&DEBUG, str_ch, e.channel);
         });
 
     staGotIpEventHandler =
@@ -215,25 +214,21 @@ void start_wifi() {
             gateway = e.gw;
             dns = WiFi.dnsIP();
 
-            DEBUG.print(StrUtils::getIdentStrP(str_wifi));
-            DEBUG.print(StrUtils::getStrP(str_sta));
-            DEBUG.print(StrUtils::getStrP(str_arrow_src));
-            DEBUG.print(StrUtils::getStrP(str_got));
-            DEBUG.printf_P(strf_ip_params, ip.toString().c_str(),
-
-                           subnet.toString().c_str(),
-                           gateway.toString().c_str(), dns.toString().c_str());
-            DEBUG.println();
+            print_ident(&DEBUG, FPSTR(str_wifi));
+            print(&DEBUG, FPSTR(str_got));
+            char buf[128];
+            sprintf_P(buf, strf_ip_params, ip.toString().c_str(),
+                      subnet.toString().c_str(), gateway.toString().c_str(),
+                      dns.toString().c_str());
+            println(&DEBUG, buf);
             updateState();
         });
 
     staDisconnectedEventHandler = WiFi.onStationModeDisconnected(
         [](const WiFiEventStationModeDisconnected &e) {
             if (networkStatus == NETWORK_UP) {
-                DEBUG.print(StrUtils::getIdentStrP(str_wifi));
-                DEBUG.print(StrUtils::getStrP(str_sta));
-                DEBUG.print(StrUtils::getStrP(str_arrow_src));
-                DEBUG.println(StrUtils::getStrP(str_disconnected));
+                print_ident(&DEBUG, FPSTR(str_wifi));
+                println(&DEBUG, FPSTR(str_disconnected));
             }
             updateState();
         });

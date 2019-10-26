@@ -55,8 +55,8 @@ function onWatthChange(item) {
 }
 
 voltMeasurement = new Measurement('Volt', onVoltChange);
-ampMeasurement = new Measurement('Amps', onAmpChange);
-wattMeasurement = new Measurement('Watt', onWattChange);
+currentMeasurement = new Measurement('Amps', onAmpChange);
+powerMeasurement = new Measurement('Watt', onWattChange);
 watthMeasurement = new Measurement('Watth', onWatthChange);
 
 // eslint-disable-next-line no-template-curly-in-string
@@ -101,7 +101,7 @@ function enableLivePVI(enabled = true) {
 		$containers.removeClass('ui-state-disabled');
 	} else {
 		$containers.addClass('ui-state-disabled');
-		$containers.sevenSeg().sevenSeg({ digits: 5, decimalPlaces: 3, value: 0.0 });
+		$containers.sevenSeg().sevenSeg({ digits: 5, decimalPlaces: 3, value: null });
 	}
 }
 
@@ -165,7 +165,7 @@ function send(message) {
 }
 
 function getWebSocketUri() {
-	return (typeof ipaddr === 'undefined') ? 'ws://192.168.1.204:81' : `${'ws://'}${ipaddr}${':81'}`;
+	return (typeof ipaddr === 'undefined') ? 'ws://192.168.1.203:81' : `${'ws://'}${ipaddr}${':81'}`;
 }
 
 function showWiFi(value) {
@@ -222,14 +222,6 @@ function enableIpAddrFields(enabled = true) {
 	}
 }
 
-function enableWatthSS(enabled = true) {
-	if (enabled) {
-		$('#watth').removeClass('ui-state-disabled');
-	} else {
-		$('#watth').addClass('ui-state-disabled');
-	}
-}
-
 function enableUI(value = true) {
 	if (value) {
 		$('.ui-pagecontainer').removeClass('ui-disabled');
@@ -265,16 +257,16 @@ function sendNetwork(wifi, ssid, passwd, dhcp, ipaddr, netmask, gateway, dns) {
 function updateUI(param, value) {
 	switch (param) {
 		case SET_ONOFF:
-			showOnOff(!parseInt(value, 2));
+			showOnOff(!parseInt(value));
 			break;
 		case SET_MEASUREWATTHOUR:
-			showEnableLog(parseInt(value, 2));
+			showEnableLog(parseInt(value));
 			break;
 		case SET_VOLTAGE:
 			showOutputVoltage(parseFloat(value));
 			break;
 		case SET_POWER_MODE:
-			showPowerMode(parseInt(value, 10));
+			showPowerMode(parseInt(value));
 			break;
 		case SET_NETWORK: {
 			const str = value.split(',');
@@ -302,12 +294,10 @@ function updateUI(param, value) {
 			const amps = parseFloat(strArray[1]);
 			const watt = parseFloat(strArray[2]);
 			const watth = parseFloat(strArray[3]);
-
 			voltMeasurement.setValue(volts);
-			ampMeasurement.setValue(amps);
-			wattMeasurement.setValue(watt);
+			currentMeasurement.setValue(amps);
+			powerMeasurement.setValue(watt);
 			watthMeasurement.setValue(watth);
-
 			break;
 		}
 		case SYS_INFO: {
@@ -408,7 +398,6 @@ $(document).ready(() => {
 
 	$('#chk_enable_log').change(() => {
 		const value = $('#chk_enable_log').val() === 'on';
-		enableWatthSS(value);
 		sendLogEnabled(value);
 	});
 

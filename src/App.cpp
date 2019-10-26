@@ -5,11 +5,11 @@
 #include "Global.h"
 #include "PrintUtils.h"
 #include "PsuLogger.h"
+#include "WebPanel.h"
 
+using namespace AppUtils;
 using namespace PrintUtils;
 using namespace StrUtils;
-
-App app;
 
 App::App() {
     memset(appMod, 0, sizeof(&appMod[0]) * APP_MODULES);
@@ -44,7 +44,7 @@ size_t App::printDiag(Print *p) {
     if (Wireless::getMode() != Wireless::WLAN_STA)
         n +=
             println_nameP_value(p, str_wifi, getConnectedStationInfo().c_str());
-    n += println_nameP_value(p, str_http, get_http_clients_count());
+    n += println_nameP_value(p, str_http, WebPanel::get_http_clients_count());
     n += println_nameP_value(p, str_telnet, get_telnet_clients_count());
     return n;
 }
@@ -127,13 +127,7 @@ bool App::isNetworkDepended(AppModuleEnum module) {
     }
 }
 
-void App::printConfig(Print *p) { env->printTo(*p); }
-
-void App::resetConfig() { env->setDefault(); }
-
-void App::loadConfig() { env->loadConfig(); }
-
-bool App::saveConfig() { return env->saveConfig(); }
+ConfigHelper *App::getEnv() { return env; }
 
 void App::restart(uint8_t time_s) {
     reboot = time_s;
@@ -167,7 +161,7 @@ void App::start() {
 
     start(MOD_DISPLAY);
 
-    delay_print(&USE_SERIAL, getIdentStr(str_wait, false).c_str(), 5);
+    delay_print(&USE_SERIAL, getIdentStr(str_wait, false).c_str(), 3);
 
     display->showProgress(0, BUILD_DATE);
 
@@ -204,7 +198,7 @@ void App::start() {
         DEBUG.printf("onStateChange(%d, %d)", state, status);
         DEBUG.println();
 #endif
-        sendPageState(PG_HOME);
+        WebPanel::sendPageState(PG_HOME);
 
         switch (status) {
         case PSU_OK:
@@ -323,9 +317,10 @@ AppModule *App::getInstance(const AppModuleEnum module) {
             break;
         case MOD_HTTP:
             appMod[module] = http = new WebService();
-            http->setOnClientConnection(onHttpClientConnect);
-            http->setOnClientDisconnected(onHttpClientDisconnect);
-            http->setOnClientData(onHttpClientData);
+            WebPanel::init();
+            http->setOnClientConnection(WebPanel::onHttpClientConnect);
+            http->setOnClientDisconnected(WebPanel::onHttpClientDisconnect);
+            http->setOnClientData(WebPanel::onHttpClientData);
             break;
         case MOD_SHELL:
             appMod[module] = shell = new ShellMod();
@@ -395,6 +390,8 @@ uint8_t App::get_telnet_clients_count() {
 }
 
 void App::send_psu_data_to_clients() {
+    if (!psu->checkState(POWER_ON))
+        return;
     PsuInfo pi = psu->getInfo();
     if (Wireless::hasNetwork()) {
         if (get_telnet_clients_count() && !shell->isActive()) {
@@ -402,10 +399,10 @@ void App::send_psu_data_to_clients() {
             data += '\r';
             telnet->write(data.c_str());
         }
-        if (get_http_clients_count()) {
+        if (WebPanel::get_http_clients_count()) {
             String data = String(TAG_PVI);
             data += pi.toString();
-            sendToClients(data, PG_HOME);
+            WebPanel::sendToClients(data, PG_HOME);
         }
     }
 }
@@ -413,7 +410,7 @@ void App::send_psu_data_to_clients() {
 void App::refresh_wifi_led() {
     Led::LedMode mode = Led::STAY_OFF;
     if (Wireless::hasNetwork()) {
-        mode = get_http_clients_count() || get_telnet_clients_count()
+        mode = WebPanel::get_http_clients_count() || get_telnet_clients_count()
                    ? Led::BLINK
                    : Led::STAY_ON;
     }
@@ -440,34 +437,6 @@ void App::printPlot(PlotData *data, Print *p) {
         p->print(tmp);
         p->println();
     }
-}
-
-uint8_t App::get_http_clients_count() {
-    uint8_t result = 0;
-    for (uint8_t i = 0; i < WEBSOCKETS_SERVER_CLIENT_MAX; i++)
-        if (clients[i].connected)
-            result++;
-    return result;
-}
-
-String App::getNetworkConfig() {
-    String res = String(SET_NETWORK);
-    res += getConfig()->getValueAsByte(WIFI);
-    res += ',';
-    res += getConfig()->getValueAsString(SSID);
-    res += ',';
-    res += getConfig()->getValueAsString(PASSWORD);
-    res += ',';
-    res += getConfig()->getValueAsBool(DHCP);
-    res += ',';
-    res += getConfig()->getValueAsString(IPADDR);
-    res += ',';
-    res += getConfig()->getValueAsString(NETMASK);
-    res += ',';
-    res += getConfig()->getValueAsString(GATEWAY);
-    res += ',';
-    res += getConfig()->getValueAsString(DNS);
-    return res;
 }
 
 ShellMod *App::getShell() { return shell; }

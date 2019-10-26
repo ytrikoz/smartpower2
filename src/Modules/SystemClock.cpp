@@ -22,18 +22,14 @@ bool SystemClock::begin() {
 }
 
 size_t SystemClock::printDiag(Print *p) {
-    size_t n = PrintUtils::println_nameP_value(p, str_timezone,
-                                               (float)timeOffset / ONE_HOUR_s);
-    n += PrintUtils::println_nameP_value(p, str_backup,
-                                         storeInterval / ONE_SECOND_ms);
-    n += PrintUtils::println_nameP_value(p, str_updated,
-                                         lastUpdated / ONE_SECOND_ms);
-    n += PrintUtils::println_nameP_value(p, str_stored,
-                                         lastStored / ONE_SECOND_ms);
-    n += PrintUtils::println_nameP_value(p, str_rollover, rollover);
-    n += PrintUtils::println_nameP_value(p, str_epoch, epoch);
-    n += PrintUtils::println_nameP_value(p, str_trusted, trusted);
-    return n;
+    size_t n =
+        println_nameP_value(p, str_timezone, (float)timeOffset / ONE_HOUR_s);
+    n += println_nameP_value(p, str_backup, storeInterval / ONE_SECOND_ms);
+    n += println_nameP_value(p, str_updated, lastUpdated / ONE_SECOND_ms);
+    n += println_nameP_value(p, str_stored, lastStored / ONE_SECOND_ms);
+    n += println_nameP_value(p, str_rollover, rollover);
+    n += println_nameP_value(p, str_epoch, epoch);
+    return n += println_nameP_value(p, str_trusted, trusted);
 }
 
 void SystemClock::setConfig(Config *config) {

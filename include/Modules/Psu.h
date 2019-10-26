@@ -68,7 +68,7 @@ class Psu : public AppModule {
     PsuInfoHandler psuInfoHandler;
 
     unsigned long startTime, infoUpdated, powerInfoUpdated, loggerUpdated,
-        lastCheck;
+        lastCheck, lastStore;
     double outputVoltage;
     bool wh_store;
     PsuInfo info;
