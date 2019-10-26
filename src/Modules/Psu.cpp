@@ -54,6 +54,8 @@ void Psu::setState(PsuState value) {
         stateChangeHandler(state, status);
 }
 
+bool Psu::isVoltModed() { return outputVoltage > 6; }
+
 void Psu::setVoltage(float value) {
     outputVoltage = value;
     mcp4652_write(WRITE_WIPER0_ADDR, quadratic_regression(value));

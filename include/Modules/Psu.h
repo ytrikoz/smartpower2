@@ -20,6 +20,7 @@ class Psu : public AppModule {
     size_t printDiag(Print *p);
 
   public:
+    bool isVoltModed();
     void setLogger(PsuLogger *);
     PsuLogger *getLogger();
     void togglePower();
