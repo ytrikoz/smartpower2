@@ -30,7 +30,10 @@ void Display::setScreen(ScreenEnum value) {
         lcd->loadBank(BANK_NONE);
     case SCREEN_PLOT:
         break;
-    case SCREEN_TEXT:
+    case SCREEN_AP:
+    case SCREEN_AP_STA:
+    case SCREEN_STA:
+    case SCREEN_READY:
         lcd->loadBank(BANK_NONE);
         break;
     case SCREEN_MESSAGE:
@@ -38,7 +41,7 @@ void Display::setScreen(ScreenEnum value) {
     }
 
     lcd->clear();
-    screenUpdated = lastScroll = 0;
+    screenUpdated = lastScroll = screenRedraw = millis();
     activeScreen = value;
 }
 
@@ -84,15 +87,15 @@ void Display::setConfig(Config *config) {
     backlight = config->getValueAsBool(BACKLIGHT);
 }
 
-void Display::clear() { activeScreen = SCREEN_CLEAR; }
+void Display::clear(void) { activeScreen = SCREEN_CLEAR; }
 
-void Display::refresh() {
+void Display::refresh(void) {
 #ifdef DEBUG_DISPLAY
     DEBUG.println("refresh()");
 #endif
-    setScreen(SCREEN_TEXT);
     Psu *psu = app.getPsu();
     if (psu->checkState(POWER_ON)) {
+        setScreen(SCREEN_PSU);
         PsuStatus status = psu->getStatus();
         switch (status) {
         case PSU_OK:
@@ -114,15 +117,19 @@ void Display::refresh() {
     Wireless::Mode mode = Wireless::getMode();
     switch (mode) {
     case Wireless::WLAN_STA:
+        setScreen(SCREEN_STA);
         load_wifi_sta(&screen);
         return;
     case Wireless::WLAN_AP:
+        setScreen(SCREEN_AP);
         load_wifi_ap(&screen);
         return;
     case Wireless::WLAN_AP_STA:
+        setScreen(SCREEN_AP_STA);
         load_wifi_ap_sta(&screen);
         return;
     case Wireless::WLAN_OFF:
+        setScreen(SCREEN_READY);
         load_ready(&screen);
         return;
     }
@@ -133,13 +140,17 @@ void Display::load_wifi_sta(Screen *obj) {
     obj->set(1, "STA> ", Wireless::hostSTA_SSID().c_str());
     obj->set(2, "IP> ", Wireless::hostIP().toString().c_str());
     obj->set(3, "RSSI> ", Wireless::RSSIInfo().c_str());
-    obj->setCount(4);
+    obj->set(4, "CLOCK> ",
+             TimeUtils::getTimeFormated(app.getClock()->getLocal()).c_str());
+    obj->setCount(5);
 };
 
 void Display::load_wifi_ap(Screen *obj) {
     obj->set(0, "AP> ", Wireless::hostAP_SSID().c_str());
     obj->set(1, "PWD> ", Wireless::hostAP_Password().c_str());
-    obj->setCount(2);
+    obj->set(2, "CLOCK> ",
+             TimeUtils::getTimeFormated(app.getClock()->getLocal()).c_str());
+    obj->setCount(3);
 };
 
 void Display::load_wifi_ap_sta(Screen *obj) {
@@ -149,7 +160,9 @@ void Display::load_wifi_ap_sta(Screen *obj) {
     obj->set(3, "IP AP> ", Wireless::hostAP_IP().toString().c_str());
     obj->set(4, "IP STA> ", Wireless::hostSTA_IP().toString().c_str());
     obj->set(5, "RSSI> ", Wireless::RSSIInfo().c_str());
-    obj->setCount(6);
+    obj->set(6, "CLOCK> ",
+             TimeUtils::getTimeFormated(app.getClock()->getLocal()).c_str());
+    obj->setCount(7);
 };
 
 void Display::load_psu_info(Screen *obj) {
@@ -201,7 +214,30 @@ void Display::showPlot(PlotData *data, size_t cols) {
     lock(15000);
 }
 
-void Display::loop() {
+void Display::updateScreen(void) {
+    switch (activeScreen) {
+    case SCREEN_CLEAR:
+    case SCREEN_BOOT:
+    case SCREEN_PLOT:
+    case SCREEN_MESSAGE:
+    case SCREEN_PSU:
+        return;
+    case SCREEN_STA:
+        load_wifi_sta(&screen);
+        return;
+    case SCREEN_AP:
+        load_wifi_ap(&screen);
+        return;
+    case SCREEN_AP_STA:
+        load_wifi_ap_sta(&screen);
+        return;
+    case SCREEN_READY:
+        load_ready(&screen);
+        return;
+    }
+}
+
+void Display::loop(void) {
     if (activeScreen == SCREEN_CLEAR || activeScreen == SCREEN_BOOT)
         return;
 
@@ -217,13 +253,14 @@ void Display::loop() {
 
     if (screen.count() > LCD_ROWS) {
         if (millis_passed(lastScroll, now) >= LCD_SCROLL_INTERVAL) {
+            updateScreen();
             screen.next();
             lastScroll = now;
         }
     }
 }
 
-void Display::unlock() { lockTimeout = 0; }
+void Display::unlock(void) { lockTimeout = 0; }
 
 void Display::lock(unsigned long time) {
 #ifdef DEBUG_DISPLAY

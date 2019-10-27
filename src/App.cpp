@@ -30,10 +30,10 @@ void App::loop() {
     }
 
     unsigned long now = millis();
-    if (millis_passed(displayUpdated, now) > ONE_SECOND_ms) {
+    if (millis_passed(lastUpdated, now) > ONE_SECOND_ms) {
         handle_restart();
         send_psu_data_to_clients();
-        displayUpdated = now;
+        lastUpdated = now;
     }
 
     loopLogger->loop();
@@ -191,6 +191,8 @@ void App::start() {
 
     display->showProgress(100, "<COMPLETE>");
 
+    display->refresh();
+
     psu->setOnPsuInfo([this](PsuInfo info) { display->refresh(); });
 
     psu->setOnStateChange([this](PsuState state, PsuStatus status) {
@@ -226,8 +228,6 @@ void App::start() {
         //     };
         // }
     });
-
-    display->refresh();
 }
 
 void App::refresh_network_modules(bool hasNetwork) {
@@ -261,7 +261,7 @@ bool App::setBootPowerState(BootPowerState value) {
 void App::init(Print *p) {
     out = dbg = err = p;
     reboot = 0;
-    displayUpdated = 0;
+    lastUpdated = 0;
 
     Wire.begin(I2C_SDA, I2C_SCL);
     SPIFFS.begin();

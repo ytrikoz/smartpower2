@@ -61,7 +61,7 @@ class App {
 
   private:
     WiFiEventHandler onDisconnected, onGotIp;
-    unsigned long displayUpdated;
+    unsigned long lastUpdated;
     uint8_t reboot;
     uint8_t boot_per;
     LoopLogger *loopLogger;

@@ -5,7 +5,7 @@
 #include "StrUtils.h"
 
 #define DISPLAY_VIRTUAL_COLS 63
-#define DISPLAY_VIRTUAL_ROWS 6
+#define DISPLAY_VIRTUAL_ROWS 7
 
 using namespace StrUtils;
 
@@ -13,7 +13,10 @@ enum ScreenEnum {
     SCREEN_CLEAR,
     SCREEN_BOOT,
     SCREEN_PSU,
-    SCREEN_TEXT,
+    SCREEN_AP,
+    SCREEN_AP_STA,
+    SCREEN_STA,
+    SCREEN_READY,
     SCREEN_PLOT,
     SCREEN_MESSAGE
 };

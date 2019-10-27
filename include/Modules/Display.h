@@ -12,12 +12,12 @@ class Display : public AppModule {
     void setConfig(Config *config);
 
   public:
-    ScreenItem *getItemForRow(uint8_t row);
     void showProgress(uint8_t per, const char *str);
     void showPlot(PlotData *data, size_t cols);
     void showMessage(const char *header, const char *message);
     void clear(void);
     void refresh(void);
+    void updateScreen(void);
     void enableBacklight(bool value = true);
 
     void load_message(Screen *obj, const char *header, const char *message);
@@ -29,6 +29,7 @@ class Display : public AppModule {
 
   private:
     void setFirst();
+    void refreshScreen();
     void setScreen(ScreenEnum value);
     void lock(unsigned long time);
     void unlock(void);
@@ -40,6 +41,7 @@ class Display : public AppModule {
     bool backlight;
     unsigned long lockUpdated, lockTimeout;
     unsigned long screenUpdated;
+    unsigned long screenRedraw;
     unsigned long lastUpdated;
     unsigned long lastScroll;
     Screen screen;
