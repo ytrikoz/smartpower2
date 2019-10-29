@@ -66,6 +66,7 @@ void SystemClock::loop() {
 
 void SystemClock::setEpoch(const EpochTime &epoch, bool trusted) {
     if (this->trusted && !trusted)
+
         return;
 
     this->epoch = epoch;

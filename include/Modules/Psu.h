@@ -60,6 +60,8 @@ class Psu : public AppModule {
     bool restoreState(PsuState &);
 
   private:
+    int quadratic_regression(double value);
+
     PsuState state;
     PsuStatus status;
     PsuError error;
@@ -74,17 +76,4 @@ class Psu : public AppModule {
     bool wh_store;
     PsuInfo info;
     bool alterRange;
-
-    static int quadratic_regression(double value) {
-        double a = 0.0000006562;
-        double b = 0.0022084236;
-        float c = 4.08;
-        double d = b * b - a * (c - value);
-        double root = (-b + sqrt(d)) / a;
-        if (root < 0)
-            root = 0;
-        else if (root > 255)
-            root = 255;
-        return root;
-    }
 };

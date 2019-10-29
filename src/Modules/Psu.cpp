@@ -15,6 +15,19 @@ using namespace PrintUtils;
 using namespace StrUtils;
 using namespace StoreUtils;
 
+int Psu::quadratic_regression(double value) {
+    double a = 0.0000006562;
+    double b = 0.0022084236;
+    float c = alterRange ? 11.83 : 4.08;
+    double d = b * b - a * (c - value);
+    double root = (-b + sqrt(d)) / a;
+    if (root < 0)
+        root = 0;
+    else if (root > 255)
+        root = 255;
+    return root;
+}
+
 Psu::Psu() : AppModule(MOD_PSU) {
     pinMode(POWER_SWITCH_PIN, OUTPUT);
     ina231_configure();
@@ -58,8 +71,10 @@ bool Psu::checkVoltageRange(float value) { return alterRange = value > 7; }
 
 void Psu::setVoltage(float value) {
     if (checkVoltageRange(value))
-        outputVoltage = value / 2.54;
-    outputVoltage = constrain(value, 4.1, 5.3);
+        outputVoltage = constrain(value, 11.8, 12.9);
+    else
+        outputVoltage = constrain(value, 4.1, 5.3);
+
     mcp4652_write(WRITE_WIPER0_ADDR, quadratic_regression(value));
 }
 
