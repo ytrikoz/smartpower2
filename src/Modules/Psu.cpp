@@ -270,9 +270,7 @@ PsuLogger *Psu::getLogger() { return this->logger; }
 
 PsuInfo Psu::getInfo() { return info; }
 
-float Psu::getVoltage() {
-    return !alterRange ? outputVoltage : outputVoltage * 2.54;
-}
+float Psu::getVoltage() { return outputVoltage; }
 
 void Psu::setOk(void) {
     alert = PSU_ALERT_NONE;
