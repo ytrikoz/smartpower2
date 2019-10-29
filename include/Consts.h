@@ -21,7 +21,7 @@
 #define TAG_NETWORK_INFO 'N'
 
 #define BOOT_WAIT_s 5
-#define BUILD_TIMEZONE_h 3
+#define BUILD_TIMEOFFSET_h 3
 #define BUILD_DATE __DATE__
 #define BUILD_TIME __TIME__
 
@@ -96,3 +96,9 @@
 #define OUTPUT_MAX_LENGTH 128
 
 #define SHELL_HISTORY_SIZE 4
+
+#define ONE_MHz_hz 1000000UL
+
+static const char TIME_FORMAT[] PROGMEM = "%02d:%02d:%02d";
+static const char TIME_LONG_FORMAT[] PROGMEM = "%s %02d:%02d:%02d";
+static const char DATETIME_FORMAT[] PROGMEM = "%02d/%02d/%04d %02d:%02d:%02d";

@@ -21,19 +21,17 @@ void Display::setScreen(ScreenEnum value) {
         return;
 
     switch (value) {
-    case SCREEN_CLEAR:
-        lcd->loadBank(BANK_NONE);
     case SCREEN_BOOT:
         lcd->loadBank(BANK_PROGRESS);
         break;
+    case SCREEN_CLEAR:
     case SCREEN_PSU:
-        lcd->loadBank(BANK_NONE);
+    case SCREEN_PSU_STAT:
+    case SCREEN_READY:
     case SCREEN_PLOT:
-        break;
     case SCREEN_AP:
     case SCREEN_AP_STA:
     case SCREEN_STA:
-    case SCREEN_READY:
         lcd->loadBank(BANK_NONE);
         break;
     case SCREEN_MESSAGE:
@@ -102,14 +100,12 @@ void Display::refresh(void) {
             load_psu_info(&screen);
             return;
         case PSU_ALERT:
-            load_message(
-                &screen, StrUtils::getStrP(str_alert).c_str(),
-                StrUtils::getStrP(getAlertStrP(psu->getAlert())).c_str());
+            load_message(&screen, getStrP(str_alert).c_str(),
+                         getStrP(getAlertStrP(psu->getAlert())).c_str());
             return;
         case PSU_ERROR:
-            load_message(
-                &screen, StrUtils::getStrP(str_error).c_str(),
-                StrUtils::getStrP(getErrorStrP(psu->getError())).c_str());
+            load_message(&screen, getStrP(str_error).c_str(),
+                         getStrP(getErrorStrP(psu->getError())).c_str());
             return;
         }
     }
@@ -140,16 +136,14 @@ void Display::load_wifi_sta(Screen *obj) {
     obj->set(1, "STA> ", Wireless::hostSTA_SSID().c_str());
     obj->set(2, "IP> ", Wireless::hostIP().toString().c_str());
     obj->set(3, "RSSI> ", Wireless::RSSIInfo().c_str());
-    obj->set(4, "CLOCK> ",
-             TimeUtils::getTimeFormated(app.getClock()->getLocal()).c_str());
+    obj->set(4, "CLK> ", getTimeStr(app.getClock()->getLocal(), true).c_str());
     obj->setCount(5);
 };
 
 void Display::load_wifi_ap(Screen *obj) {
     obj->set(0, "AP> ", Wireless::hostAP_SSID().c_str());
     obj->set(1, "PWD> ", Wireless::hostAP_Password().c_str());
-    obj->set(2, "CLOCK> ",
-             TimeUtils::getTimeFormated(app.getClock()->getLocal()).c_str());
+    obj->set(2, "CLK> ", getTimeStr(app.getClock()->getLocal(), true).c_str());
     obj->setCount(3);
 };
 
@@ -160,8 +154,7 @@ void Display::load_wifi_ap_sta(Screen *obj) {
     obj->set(3, "IP AP> ", Wireless::hostAP_IP().toString().c_str());
     obj->set(4, "IP STA> ", Wireless::hostSTA_IP().toString().c_str());
     obj->set(5, "RSSI> ", Wireless::RSSIInfo().c_str());
-    obj->set(6, "CLOCK> ",
-             TimeUtils::getTimeFormated(app.getClock()->getLocal()).c_str());
+    obj->set(6, "CLK> ", getTimeStr(app.getClock()->getLocal(), true).c_str());
     obj->setCount(7);
 };
 
@@ -193,7 +186,15 @@ void Display::load_psu_info(Screen *obj) {
 
 void Display::load_ready(Screen *obj) {
     obj->set(0, "READY> ");
-    obj->setCount(1);
+    obj->set(1, "CLK> ", getTimeStr(app.getClock()->getLocal(), true).c_str());
+    obj->setCount(2);
+    obj->moveFirst();
+}
+
+void Display::load_psu_stat(Screen *obj) {
+    obj->set(0, "MAX> ");
+    obj->set(1, "MIN> ");
+    obj->setCount(2);
     obj->moveFirst();
 }
 
@@ -234,6 +235,8 @@ void Display::updateScreen(void) {
     case SCREEN_READY:
         load_ready(&screen);
         return;
+    case SCREEN_PSU_STAT:
+        load_psu_stat(&screen);
     }
 }
 
@@ -260,8 +263,6 @@ void Display::loop(void) {
     }
 }
 
-void Display::unlock(void) { lockTimeout = 0; }
-
 void Display::lock(unsigned long time) {
 #ifdef DEBUG_DISPLAY
     DEBUG.printf("lock %lu", time);
@@ -285,3 +286,5 @@ bool Display::locked(unsigned long now) {
     }
     return lockTimeout;
 }
+
+void Display::unlock(void) { lockTimeout = 0; }

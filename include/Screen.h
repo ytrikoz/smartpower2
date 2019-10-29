@@ -18,7 +18,8 @@ enum ScreenEnum {
     SCREEN_STA,
     SCREEN_READY,
     SCREEN_PLOT,
-    SCREEN_MESSAGE
+    SCREEN_MESSAGE,
+    SCREEN_PSU_STAT
 };
 
 struct ScreenItem {

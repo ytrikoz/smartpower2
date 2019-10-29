@@ -38,7 +38,7 @@ void SystemClock::setConfig(Config *config) {
 }
 
 void SystemClock::setTimeZone(uint8_t timeZone) {
-    timeOffset = TimeUtils::getTimeOffset(timeZone);
+    timeOffset = TimeUtils::timeZoneToOffset(timeZone);
 }
 
 void SystemClock::setBackupInterval(unsigned long time) {

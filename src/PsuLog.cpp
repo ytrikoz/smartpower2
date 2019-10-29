@@ -6,6 +6,8 @@
 #define UNSET_MAX -16364
 #define UNSET_MIN 16364
 
+using namespace StrUtils;
+
 PsuLog::PsuLog(const char *label, size_t size) {
     strcpy(this->name, label);
     items = new LogItem[size]();
@@ -139,5 +141,5 @@ void PsuLog::printDiag(Print *p) {
     p->print('\t');
     unsigned long period_s =
         floor(count() * PSU_LOG_INTERVAL_ms / ONE_SECOND_ms);
-    p->println(TimeUtils::getTimeFormated(period_s));
+    p->println(getTimeStr(period_s));
 }

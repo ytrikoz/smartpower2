@@ -59,7 +59,7 @@ bool isLeapYear(uint16_t year) {
 bool isValidMonth(uint8_t month) { return (month >= 1) && (month <= 12); }
 
 bool isValidDay(uint8_t mday, uint8_t month, uint16_t year) {
-    return (mday >= 1) && (mday <= getDaysInMonth(month, year));
+    return (mday >= 1) && (mday <= daysInMonth(month, year));
 }
 
 bool isValidHour(uint8_t n) { return n >= 0 && n < 24; }
@@ -76,15 +76,13 @@ bool isValidTime(uint8_t hour, uint8_t minute, uint8_t second) {
     return isValidHour(hour) && isValidMinute(minute) && isValidSecond(second);
 }
 
-uint8_t getDaysInMonth(uint8_t month, uint16_t year) {
+uint8_t daysInMonth(uint8_t month, uint16_t year) {
     return isValidMonth(month) ? (month == 1 ? (isLeapYear(year) ? 29 : 28)
                                              : calendar[month].mdays)
                                : 0;
 }
 
-uint16_t getDaysInTheYear(uint16_t year) {
-    return isLeapYear(year) ? 366 : 365;
-}
+uint16_t daysInYear(uint16_t year) { return isLeapYear(year) ? 366 : 365; }
 
 uint16_t encodeYear(uint16_t &year) {
     if (year <= 99)
@@ -157,15 +155,15 @@ void epochToDateTime(unsigned long epoch_s, struct tm &tm) {
 
     uint16_t year = 0;
     unsigned long days = 0;
-    while ((days += getDaysInTheYear(year)) <= passed)
+    while ((days += daysInYear(year)) <= passed)
         year++;
     tm.tm_year = encodeYear(year);
-    passed = passed - (days - getDaysInTheYear(tm.tm_year));
+    passed = passed - (days - daysInYear(tm.tm_year));
     uint8_t month;
     for (month = 1; month <= 12; month++) {
-        uint8_t daysInMonth = getDaysInMonth(month, tm.tm_year);
-        if (passed >= daysInMonth)
-            passed -= daysInMonth;
+        uint8_t daym = daysInMonth(month, tm.tm_year);
+        if (passed >= daym)
+            passed -= daym;
         else
             break;
     }
@@ -184,69 +182,19 @@ size_t tmtodtf(struct tm &tm, char *str) {
     return strlen(str);
 }
 
-char *getDateTimeFormated(char *buf, const unsigned long epoch_s) {
-    // seconds since 1970-01-01 00:00:00
-    unsigned long passed = epoch_s;
-    uint8_t second = passed % ONE_MINUTE_s;
-    passed = passed / ONE_MINUTE_s;
-
-    uint8_t minute = passed % ONE_HOUR_m;
-    passed = passed / ONE_HOUR_m;
-
-    uint8_t hour = passed % ONE_DAY_h;
-    passed = passed / ONE_DAY_h;
-
-    uint16_t year = 0;
-    unsigned long days = 0;
-    while ((days += getDaysInTheYear(year)) <= passed)
-        year++;
-    year = encodeYear(year);
-
-    passed -= days - getDaysInTheYear(year);
-    uint8_t month;
-    for (month = 1; month <= 12; ++month) {
-        uint8_t daysInMonth = getDaysInMonth(month, year);
-        if (passed >= daysInMonth)
-            passed -= daysInMonth;
-        else
-            break;
-    }
-    uint8_t day = passed + 1;
-    sprintf_P(buf, DATETIME_FORMAT, day, month, year, hour, minute, second);
-    return buf;
-}
-
-String getTimeFormated(unsigned long time_s) {
-    uint8_t hours = (time_s % 86400L) / 3600;
-    uint8_t minutes = (time_s % 3600) / 60;
-    uint8_t seconds = time_s % 60;
-    char buf[16];
-    sprintf_P(buf, TIME_FORMAT, hours, minutes, seconds);
-    return String(buf);
-}
-
-char *getTimeFormated(char *buf, unsigned long time_s) {
-    uint8_t hours = (time_s % 86400L) / 3600;
-    uint8_t minutes = (time_s % 3600) / 60;
-    uint8_t seconds = time_s % 60;
-    sprintf_P(buf, TIME_FORMAT, hours, minutes, seconds);
-    return buf;
-}
-
 unsigned long getAppBuildUtc() {
     tm tm;
     char buf[16];
     strcpy(buf, BUILD_DATE);
-    TimeUtils::encodeDate(buf, tm);
+    encodeDate(buf, tm);
     strcpy(buf, BUILD_TIME);
-    TimeUtils::encodeTime(buf, tm);
-    return DateTime(tm).asEpoch() - (BUILD_TIMEZONE_h * ONE_HOUR_s);
+    encodeTime(buf, tm);
+    return DateTime(tm).asEpoch() - BUILD_TIMEOFFSET_h * ONE_HOUR_s;
 }
 
-sint32_t getTimeOffset(uint8_t timeZone) {
-    timeZone = constrain(timeZone, 1, 38);
-    sint32_t result;
-    switch (timeZone) {
+sint32_t timeZoneToOffset(const uint8_t timeZone) {
+    sint32_t result = 0;
+    switch (constrain(timeZone, 1, 38)) {
     case 1:
         result = -12 * ONE_HOUR_s;
         break;
@@ -257,7 +205,7 @@ sint32_t getTimeOffset(uint8_t timeZone) {
         result = -10 * ONE_HOUR_s;
         break;
     case 4:
-        result = -(9 * ONE_HOUR_s + 30 * ONE_MINUTE_s);
+        result = -9 * ONE_HOUR_s + 30 * ONE_MINUTE_s;
         break;
     case 5:
         result = -9 * ONE_HOUR_s;
@@ -278,7 +226,7 @@ sint32_t getTimeOffset(uint8_t timeZone) {
         result = -4 * ONE_HOUR_s;
         break;
     case 11:
-        result = -(3 * ONE_HOUR_s + 30 * ONE_MINUTE_s);
+        result = -3 * ONE_HOUR_s + 30 * ONE_MINUTE_s;
         break;
     case 12:
         result = -3 * ONE_HOUR_s;

@@ -26,6 +26,7 @@ class Display : public AppModule {
     void load_wifi_ap_sta(Screen *obj);
     void load_ready(Screen *obj);
     void load_psu_info(Screen *obj);
+    void load_psu_stat(Screen *obj);
 
   private:
     void setFirst();

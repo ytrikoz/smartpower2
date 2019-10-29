@@ -3,9 +3,8 @@
 #include "App.h"
 #include "Cli.h"
 
-using StrUtils::setstr;
-using StrUtils::strfill;
-using StrUtils::strpadd;
+using namespace StrUtils;
+using namespace TimeUtils;
 
 Shell::Shell() { active = false; }
 
@@ -132,10 +131,9 @@ size_t Shell::print_prompt(Print *p) {
 #ifdef DEBUG_SHELL
     DEBUG.print("[shell] print_prompt");
 #endif
-    char buf[64] = {0};
+    char buf[64];
     if (app.getClock())
-        strcpy(buf,
-               TimeUtils::getTimeFormated(buf, app.getClock()->getLocal()));
+        strcpy(buf, getTimeStr(app.getClock()->getLocal(), true).c_str());
     size_t n = strlen(buf);
     buf[n] = '>';
     buf[++n] = '\x20';

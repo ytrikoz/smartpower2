@@ -5,10 +5,6 @@
 
 #include "Consts.h"
 
-static const char TIME_FORMAT[] PROGMEM = "%02d:%02d:%02d";
-
-static const char DATETIME_FORMAT[] PROGMEM = "%02d/%02d/%04d %02d:%02d:%02d";
-
 unsigned long millis_since(unsigned long since);
 
 unsigned long millis_passed(unsigned long start, unsigned long finish);
@@ -140,26 +136,39 @@ struct DateTime : public Date, public Printable {
 };
 
 namespace TimeUtils {
+
+uint16_t daysInYear(uint16_t year);
+uint8_t daysInMonth(uint8_t month, uint16_t year);
+
 unsigned long getAppBuildUtc();
+
 bool isLeapYear(uint16_t year);
-uint8_t getDaysInMonth(uint8_t month, uint16_t year);
+
 uint16_t encodeYear(uint16_t &year);
+
 bool encodeMonth(String str, uint8_t &month);
+
 bool encodeDate(const char *str, struct tm &tm);
+
 bool encodeTime(const char *str, struct tm &tm);
+
 void epochToDateTime(unsigned long epoch_s, struct tm &tm);
+
 bool isValidMonth(uint8_t month);
+
 bool isValidHour(uint8_t hour);
+
 bool isValidMinute(uint8_t minute);
+
 bool isValidSecond(uint8_t second);
+
 unsigned long encodeEpoch(tm tm);
+
 unsigned long encodeEpochTime(uint8_t hour, uint8_t minute, uint8_t second);
+
 unsigned long encodeEpochDate(uint16_t year, uint8_t month, uint16_t day);
+
 size_t tmtodtf(struct tm &tm, char *str);
 
-String getTimeFormated(unsigned long time_s);
-char *getTimeFormated(char *buf, const unsigned long time_s);
-char *getDateTimeFormated(char *buf, const unsigned long epoch_s);
-sint32_t getTimeOffset(uint8_t timeZone);
-
+sint32_t timeZoneToOffset(const uint8_t timeZone);
 } // namespace TimeUtils

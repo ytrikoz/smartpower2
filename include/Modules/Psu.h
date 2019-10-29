@@ -20,7 +20,6 @@ class Psu : public AppModule {
     size_t printDiag(Print *p);
 
   public:
-    bool isVoltModed();
     void setLogger(PsuLogger *);
     PsuLogger *getLogger();
     void togglePower();
@@ -37,6 +36,7 @@ class Psu : public AppModule {
 
   public:
     void setVoltage(float voltage);
+    bool checkVoltageRange(float value);
     float getVoltage();
     PsuInfo getInfo();
     float getP();
@@ -73,6 +73,7 @@ class Psu : public AppModule {
     double outputVoltage;
     bool wh_store;
     PsuInfo info;
+    bool alterRange;
 
     static int quadratic_regression(double value) {
         double a = 0.0000006562;

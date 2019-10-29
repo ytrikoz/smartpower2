@@ -54,10 +54,12 @@ void Psu::setState(PsuState value) {
         stateChangeHandler(state, status);
 }
 
-bool Psu::isVoltModed() { return outputVoltage > 6; }
+bool Psu::checkVoltageRange(float value) { return alterRange = value > 7; }
 
 void Psu::setVoltage(float value) {
-    outputVoltage = value;
+    if (checkVoltageRange(value))
+        outputVoltage = value / 2.54;
+    outputVoltage = constrain(value, 4.1, 5.3);
     mcp4652_write(WRITE_WIPER0_ADDR, quadratic_regression(value));
 }
 
@@ -202,6 +204,7 @@ size_t Psu::printDiag(Print *p) {
     if (checkState(POWER_ON))
         n += println_nameP_value(p, str_uptime, getUptime());
     n += println_nameP_value(p, str_store, getBoolStr(wh_store).c_str());
+    n += println_nameP_value(p, str_mod, getBoolStr(alterRange));
     return n;
 }
 
@@ -252,7 +255,9 @@ PsuLogger *Psu::getLogger() { return this->logger; }
 
 PsuInfo Psu::getInfo() { return info; }
 
-float Psu::getVoltage() { return outputVoltage; }
+float Psu::getVoltage() {
+    return !alterRange ? outputVoltage : outputVoltage * 2.54;
+}
 
 void Psu::setOk(void) {
     alert = PSU_ALERT_NONE;

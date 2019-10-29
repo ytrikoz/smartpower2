@@ -1,12 +1,67 @@
 #include "StrUtils.h"
 
-namespace StrUtils {
+#include "TimeUtils.h"
 
-#define ONE_MHz_hz 1000000UL
+namespace StrUtils {
 
 static const char strf_mac[] PROGMEM = "mac %02x:%02x:%02x:%02x:%02x:%02x";
 static const char str_down[] PROGMEM = "down";
 static const char str_up[] PROGMEM = "up";
+static const char *weekdays[] = {"sun", "mon", "tue", "wed",
+                                 "thu", "fri", "sat"};
+
+String getTimeStr(const unsigned long epoch_s, bool longFormat) {
+    // seconds since 1970-01-01 00:00:00
+    unsigned long passed = epoch_s;
+    uint8_t seconds = passed % ONE_MINUTE_s;
+    passed /= ONE_MINUTE_s;
+    uint8_t minutes = passed % ONE_HOUR_m;
+    passed /= ONE_HOUR_m;
+    uint8_t hours = passed % ONE_DAY_h;
+    passed /= ONE_DAY_h;
+    char buf[32];
+    if (longFormat) {
+        int8_t weekday = ((passed + 4) % 7) + 1;
+        sprintf_P(buf, TIME_LONG_FORMAT, weekdays[weekday], hours, minutes,
+                  seconds);
+    } else {
+        sprintf_P(buf, TIME_FORMAT, hours, minutes, seconds);
+    }
+    return String(buf);
+}
+
+char *getDateTimeFormated(const unsigned long epoch_s) {
+    // seconds since 1970-01-01 00:00:00
+    unsigned long passed = epoch_s;
+    uint8_t second = passed % ONE_MINUTE_s;
+    passed = passed / ONE_MINUTE_s;
+
+    uint8_t minute = passed % ONE_HOUR_m;
+    passed = passed / ONE_HOUR_m;
+
+    uint8_t hour = passed % ONE_DAY_h;
+    passed = passed / ONE_DAY_h;
+
+    uint16_t year = 0;
+    unsigned long days = 0;
+    while ((days += TimeUtils::daysInYear(year)) <= passed)
+        year++;
+    year = TimeUtils::encodeYear(year);
+
+    passed -= days - TimeUtils::daysInYear(year);
+    uint8_t month;
+    for (month = 1; month <= 12; ++month) {
+        uint8_t daysInMonth = TimeUtils::daysInMonth(month, year);
+        if (passed >= daysInMonth)
+            passed -= daysInMonth;
+        else
+            break;
+    }
+    uint8_t day = passed + 1;
+    char buf[32];
+    sprintf_P(buf, DATETIME_FORMAT, day, month, year, hour, minute, second);
+    return buf;
+}
 
 void strfill(char *str, char chr, size_t len) {
     memset(&str[0], chr, sizeof(char) * len);

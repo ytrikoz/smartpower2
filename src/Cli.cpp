@@ -4,12 +4,9 @@
 #include "Actions/PowerAvg.h"
 #include "Actions/WakeOnLan.h"
 
-#include "PrintUtils.h"
-#include "StrUtils.h"
-#include "TimeUtils.h"
-
-using namespace StrUtils;
 using namespace PrintUtils;
+using namespace StrUtils;
+using namespace TimeUtils;
 
 namespace Cli {
 
@@ -345,9 +342,7 @@ void onSystem(cmd *c) {
         break;
     }
     case ACTION_UPTIME: {
-        char buf[16];
-        out->println(
-            TimeUtils::getTimeFormated(buf, app.getClock()->getUptime()));
+        println(out, getTimeStr(app.getClock()->getUptime(), true));
         break;
     }
     default:

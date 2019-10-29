@@ -151,28 +151,17 @@ void App::handle_restart() {
 
 void App::start() {
     env = new ConfigHelper();
-
     print_welcome(out, " Welcome ", APP_NAME " v" APP_VERSION,
                   " " BUILD_DATE " ");
-
     start(MOD_BTN);
-
     start(MOD_LED);
-
     start(MOD_DISPLAY);
-
-    delay_print(&USE_SERIAL, getIdentStr(str_wait, false).c_str(), 3);
-
+    delay_print(&USE_SERIAL, getIdentStr(str_wait, false).c_str(), 5);
     display->showProgress(0, BUILD_DATE);
-
     start(MOD_CLOCK);
-
     start(MOD_PSU);
-
     display->showProgress(40, "<WIFI>");
-
     Wireless::start_wifi();
-
     display->showProgress(80, "<INIT>");
 
     Wireless::setOnNetworkStatusChange(
@@ -186,8 +175,6 @@ void App::start() {
             refresh_wifi_led();
             refresh_network_modules(hasNetwork);
         });
-
-    start(MOD_SHELL);
 
     display->showProgress(100, "<COMPLETE>");
 
@@ -228,6 +215,8 @@ void App::start() {
         //     };
         // }
     });
+
+    start(MOD_SHELL);
 }
 
 void App::refresh_network_modules(bool hasNetwork) {

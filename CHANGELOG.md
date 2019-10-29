@@ -1,7 +1,9 @@
 
 # Change Log
 
-## 0.6.9 (2019-10-26)
+## 0.6.9 (2019-10-27)
+
+### Time on lcd display
 
 ### Total consumption
 
