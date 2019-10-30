@@ -43,25 +43,25 @@
 #define ESC_CURSOR_FORWARD "\x1b[1C"
 #define ESC_CURSOR_BACKWARD "\x1b[1D"
 
-#define SEQ_CSI PSTR("\033[")       // code introducer
-#define SEQ_LOAD_G1 PSTR("\033)0")  // load G1 character set
-#define SEQ_CLEAR PSTR("\033[2J")   // clear screen
-#define SEQ_ATTRSET PSTR("\033[0")  // set attributes, e.g. "\033[0;7;1m"
+#define SEQ_CSI PSTR("\033[")      // code introducer
+#define SEQ_LOAD_G1 PSTR("\033)0") // load G1 character set
+#define SEQ_CLEAR PSTR("\033[2J")  // clear screen
+#define SEQ_ATTRSET PSTR("\033[0") // set attributes, e.g. "\033[0;7;1m"
 
-#define SEQ_ATTRSET_BOLD PSTR(";1")       // bold
-#define SEQ_ATTRSET_DIM PSTR(";2")        // dim
-#define SEQ_ATTRSET_FCOLOR PSTR(";3")     // forground color
-#define SEQ_ATTRSET_UNDERLINE PSTR(";4")  // underline
-#define SEQ_ATTRSET_BCOLOR PSTR(";4")     // background color
-#define SEQ_ATTRSET_BLINK PSTR(";5")      // blink
-#define SEQ_ATTRSET_REVERSE PSTR(";7")    // reverse
+#define SEQ_ATTRSET_BOLD PSTR(";1")      // bold
+#define SEQ_ATTRSET_DIM PSTR(";2")       // dim
+#define SEQ_ATTRSET_FCOLOR PSTR(";3")    // forground color
+#define SEQ_ATTRSET_UNDERLINE PSTR(";4") // underline
+#define SEQ_ATTRSET_BCOLOR PSTR(";4")    // background color
+#define SEQ_ATTRSET_BLINK PSTR(";5")     // blink
+#define SEQ_ATTRSET_REVERSE PSTR(";7")   // reverse
 
 typedef std::function<void()> TermulEventHandler;
 
 typedef std::function<void(const char *)> TermulInputEventHandler;
 
 class Termul : public Print {
-   public:
+  public:
     Termul();
     Termul(Stream *console);
     ~Termul();
@@ -71,10 +71,10 @@ class Termul : public Print {
     void enableEcho(bool enabled = true);
     void enableColors(bool enabled = true);
 
-    void setOnOpen(TermulEventHandler handler);
-    void setOnClose(TermulEventHandler handler);
-    void setOnReadLine(TermulInputEventHandler handler);
-    void setOnTabKey(TermulEventHandler handler);
+    void setOnOpen(TermulEventHandler);
+    void setOnClose(TermulEventHandler);
+    void setOnReadLine(TermulInputEventHandler);
+    void setOnTabKey(TermulEventHandler);
 
     bool setEditBuffer(const uint8_t *bytes, size_t size);
     EditBuffer *getEditBuffer();
@@ -94,10 +94,10 @@ class Termul : public Print {
     void initscr();
     void attrset(uint16_t attr);
 
-   private:
+  private:
     void move(uint8_t y, uint8_t x);
     TermulEventHandler onTabPressed;
-    TermulInputEventHandler onInputEvent;
+    TermulInputEventHandler inputHandler;
     TermulEventHandler onStartHandler;
     TermulEventHandler onQuitEvent;
 
@@ -123,15 +123,15 @@ class Termul : public Print {
     };
 
     ControlCode codeMap[10] = {
-        {"G", KEY_HOME},       // 71 Home key
-        {"H", KEY_UP},         // 72 Up arrow
-        {"I", KEY_PAGE_UP},    // 73 PageUp
-        {"K", KEY_LEFT},       // 75 Left arrow
-        {"M", KEY_RIGHT},      // 77 Right arrow
-        {"O", KEY_END},        // 79 End key
-        {"P", KEY_DOWN},       // 80 Down arrow
-        {"Q", KEY_PAGE_DOWN},  // 81 PageDown
-        {"R", KEY_INS},        // 82 Insert
-        {"S", KEY_DEL},        // 83 Delete
+        {"G", KEY_HOME},      // 71 Home key
+        {"H", KEY_UP},        // 72 Up arrow
+        {"I", KEY_PAGE_UP},   // 73 PageUp
+        {"K", KEY_LEFT},      // 75 Left arrow
+        {"M", KEY_RIGHT},     // 77 Right arrow
+        {"O", KEY_END},       // 79 End key
+        {"P", KEY_DOWN},      // 80 Down arrow
+        {"Q", KEY_PAGE_DOWN}, // 81 PageDown
+        {"R", KEY_INS},       // 82 Insert
+        {"S", KEY_DEL},       // 83 Delete
     };
 };

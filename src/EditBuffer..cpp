@@ -16,7 +16,8 @@ bool EditBuffer::backspace() {
 }
 
 void EditBuffer::del() {
-    for (size_t pos = writePos; pos < capacity; ++pos) buf[pos] = buf[pos + 1];
+    for (size_t pos = writePos; pos < capacity; ++pos)
+        buf[pos] = buf[pos + 1];
     buf[writePos] = '\x00';
 }
 

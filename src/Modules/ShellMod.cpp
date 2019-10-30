@@ -14,11 +14,11 @@ void ShellMod::loop() {
 
 bool ShellMod::begin() {
     shell.setParser(cli);
-    active = setLocal();
+    active = setSerial();
     return active;
 }
 
-bool ShellMod::setLocal() {
+bool ShellMod::setSerial() {
     local.enableControlCodes(false);
     local.enableEcho();
     local.setConsole(&USE_SERIAL);
@@ -26,9 +26,7 @@ bool ShellMod::setLocal() {
     shell.enableWelcome();
     shell.setTerminal(&local);
 
-    active = true;
-
-    return active;
+    return active = true;
 }
 
 bool ShellMod::setRemote(Stream *stream) {

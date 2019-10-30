@@ -52,6 +52,7 @@ static const char str_capture[] PROGMEM = "capture";
 static const char str_capturing[] PROGMEM = "capturing";
 static const char str_ch[] PROGMEM = "ch";
 static const char str_change[] PROGMEM = "change";
+static const char str_client[] = "client";
 static const char str_clients[] = "clients";
 static const char str_config[] PROGMEM = "config";
 static const char str_count[] PROGMEM = "count";

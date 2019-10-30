@@ -11,7 +11,6 @@ class Named {
   public:
     Named(AppModuleEnum module);
     void setOutput(Print *p);
-
     const char *getName();
 
   protected:

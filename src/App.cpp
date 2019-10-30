@@ -41,11 +41,12 @@ void App::loop() {
 
 size_t App::printDiag(Print *p) {
     size_t n = p->println(getHeapStat());
+    n += println_nameP_value(p, str_http, WebPanel::get_http_clients_count());
+    n += println_nameP_value(p, str_telnet, telnet && telnet->hasClient());
     if (Wireless::getMode() != Wireless::WLAN_STA)
         n +=
             println_nameP_value(p, str_wifi, getConnectedStationInfo().c_str());
-    n += println_nameP_value(p, str_http, WebPanel::get_http_clients_count());
-    n += println_nameP_value(p, str_telnet, get_telnet_clients_count());
+
     return n;
 }
 
@@ -156,7 +157,7 @@ void App::start() {
     start(MOD_BTN);
     start(MOD_LED);
     start(MOD_DISPLAY);
-    delay_print(&USE_SERIAL, getIdentStr(str_wait, false).c_str(), 5);
+    print_delay(&USE_SERIAL, getIdentStr(str_wait, false).c_str(), 5);
     display->showProgress(0, BUILD_DATE);
     start(MOD_CLOCK);
     start(MOD_PSU);
@@ -234,9 +235,8 @@ void App::refresh_network_modules(bool hasNetwork) {
 
 bool App::setOutputVoltageAsDefault() {
     float v = psu->getVoltage();
-    if (env->setOutputVoltage(v)) {
+    if (env->setOutputVoltage(v))
         return env->saveConfig();
-    }
     return false;
 }
 
@@ -327,18 +327,23 @@ AppModule *App::getInstance(const AppModuleEnum module) {
         }
         case MOD_TELNET:
             appMod[module] = telnet = new TelnetServer();
-            telnet->setOnClientConnect([this](Stream *stream) {
-                out->print(StrUtils::getIdentStrP(str_telnet));
-                out->println(StrUtils::getStrP(str_connected));
-                shell->setRemote(stream);
+            telnet->setEventHandler([this](TelnetEventType et, Stream *client) {
+                switch (et) {
+                case CLIENT_DATA:
+                    println(out, FPSTR(str_unhandled));
+                    return true;
+                case CLIENT_CONNECTED:
+                    shell->setRemote(client);
+                    break;
+                case CLIENT_DISCONNECTED:
+                    shell->setSerial();
+                    break;
+                default:
+                    println(out, FPSTR(str_unhandled));
+                    break;
+                }
                 refresh_wifi_led();
                 return true;
-            });
-            telnet->setOnCLientDisconnect([this]() {
-                out->print(StrUtils::getIdentStrP(str_telnet));
-                out->println(StrUtils::getStrP(str_disconnected));
-                shell->setLocal();
-                refresh_wifi_led();
             });
             break;
         case MOD_UPDATE:
@@ -369,13 +374,8 @@ void App::stop(AppModuleEnum module) {
     dbg->printf("[app] X %d", module);
     dbg->println();
 #endif
-    AppModule *obj = getInstance(module);
-    if (obj)
+    if (AppModule *obj = getInstance(module))
         obj->stop();
-}
-
-uint8_t App::get_telnet_clients_count() {
-    return telnet ? telnet->hasClientConnected() : 0;
 }
 
 void App::send_psu_data_to_clients() {
@@ -383,7 +383,7 @@ void App::send_psu_data_to_clients() {
         return;
     PsuInfo pi = psu->getInfo();
     if (Wireless::hasNetwork()) {
-        if (get_telnet_clients_count() && !shell->isActive()) {
+        if ((telnet && telnet->hasClient()) && !shell->isActive()) {
             String data = pi.toString();
             data += '\r';
             telnet->write(data.c_str());
@@ -399,9 +399,10 @@ void App::send_psu_data_to_clients() {
 void App::refresh_wifi_led() {
     Led::LedMode mode = Led::STAY_OFF;
     if (Wireless::hasNetwork()) {
-        mode = WebPanel::get_http_clients_count() || get_telnet_clients_count()
-                   ? Led::BLINK
-                   : Led::STAY_ON;
+        mode = Led::STAY_ON;
+        if (WebPanel::get_http_clients_count() ||
+            (telnet && telnet->hasClient()))
+            mode = Led::BLINK;
     }
     leds->set(Led::WIFI_LED, mode);
 }

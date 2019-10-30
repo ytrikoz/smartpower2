@@ -8,7 +8,7 @@
 
 class ShellMod : public AppModule {
   public:
-    bool setLocal();
+    bool setSerial();
     bool setRemote(Stream *);
     bool isActive();
     bool run(const char *strCmd);

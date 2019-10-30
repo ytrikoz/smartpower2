@@ -115,8 +115,8 @@ void Shell::onSessionData(const char *str) {
     while (cli->available()) {
         t->println();
         cli->getCmd().run();
+        addHistory(str);
     }
-    addHistory(str);
     print_prompt(t);
 }
 

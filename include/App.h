@@ -53,7 +53,6 @@ class App {
     void refresh_wifi_led();
 
   private:
-    uint8_t get_telnet_clients_count();
     bool isNetworkDepended(AppModuleEnum module);
     void refresh_network_modules(bool hasNetwork);
     void handle_restart();

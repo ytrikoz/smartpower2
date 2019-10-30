@@ -21,6 +21,13 @@ template <typename T> size_t println_nameP_value(Print *p, PGM_P strP, T var) {
     return n += p->println(var);
 }
 
+template <typename T> size_t print_strP_var(Print *p, PGM_P strP, T var) {
+    size_t n = p->print(FPSTR(strP));
+    n += p->print(' ');
+    p->print(var);
+    return n += p->print(' ');
+}
+
 template <typename T>
 size_t printlm_moduleP_nameP_value(Print *p, PGM_P moduleStrP, PGM_P nameStrP,
                                    T value) {
@@ -64,7 +71,7 @@ size_t print_shell_interrupted(Print *p);
 void print_welcome(Print *p, const char *title, const char *message,
                    const char *footer);
 
-void delay_print(Print *p, const char *message, uint8_t wait_s);
+void print_delay(Print *p, const char *message, uint8_t wait_s);
 
 size_t print_unknown_item(Print *p, String &name);
 
@@ -82,7 +89,7 @@ size_t print_ident(Print *p, const char *str);
 
 size_t print_file_not_found(Print *p, String &name);
 
-size_t print_s_not_found(Print *p, String &str);
+size_t print_not_found(Print *p, String &str);
 
 size_t print_param_value(Print *p, const char *name, const char *value);
 

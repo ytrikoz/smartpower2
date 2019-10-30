@@ -3,13 +3,13 @@
 #include <Print.h>
 #include <string.h>
 
-#include "Buffer.h"
+#include "CharBuffer.h"
 
-class ArrayBuffer : public Buffer {
-   public:
+class ArrayBuffer : public CharBuffer {
+  public:
     ArrayBuffer(size_t size);
-    ArrayBuffer(const Buffer& b);
-    ArrayBuffer& operator=(const ArrayBuffer& b);
-    char& operator[](unsigned int i);
+    ArrayBuffer(const CharBuffer &b);
+    ArrayBuffer &operator=(const ArrayBuffer &b);
+    char &operator[](unsigned int i);
     char operator[](unsigned int i) const;
 };

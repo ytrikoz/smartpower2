@@ -13,26 +13,25 @@ size_t print_shell_quit(Print *p) { return p->println(FPSTR(msg_shell_quit)); }
 size_t print_shell_interrupted(Print *p) {
     return p->println(FPSTR(str_shell_interrupted));
 }
-size_t print_s_not_found(Print *p, String &str) {
+
+size_t print_not_found(Print *p, String &str) {
     size_t n = print_quoted(p, str.c_str());
     n += p->print(' ');
-    n += p->print(getStrP(str_not));
+    n += p->print(FPSTR(str_not));
     n += p->print(' ');
-    n += p->println(getStrP(str_found));
-    return n;
+    return n = p->println(FPSTR(str_found));
 }
 
-size_t print_file_not_found(Print *p, String &name) {
-    size_t n = 0;
-    n += p->print(getStrP(str_file));
+size_t print_file_not_found(Print *p, String &file) {
+    size_t n = p->print(FPSTR(str_file));
     n += p->print(' ');
-    return n += print_s_not_found(p, name);
+    return n += print_not_found(p, file);
 }
 
 size_t print_ln(Print *p) { return p->println(); }
 
 size_t print_done(Print *p) {
-    size_t n = p->println(getStrP(str_done));
+    size_t n = p->println(FPSTR(str_done));
     return n;
 }
 
@@ -68,7 +67,7 @@ void print_welcome(Print *p, const char *title, const char *message,
     p->println(tmp);
 }
 
-void delay_print(Print *p, const char *message, uint8_t wait_s) {
+void print_delay(Print *p, const char *message, uint8_t wait_s) {
     p->print(message);
     p->print(' ');
     for (uint8_t t = wait_s; t > 0; --t) {

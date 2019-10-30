@@ -49,7 +49,7 @@ class Psu : public AppModule {
     void setWh(double value);
 
   private:
-    void setOk(void);
+    void clearErrorsAndAlerts(void);
     void setStatus(PsuStatus value);
     void setError(PsuError value);
     void setAlert(PsuAlert value);

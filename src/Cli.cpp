@@ -67,9 +67,8 @@ Command cmdConfig, cmdPower, cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet,
 Print *out = NULL;
 
 Print *getOutput() {
-    if (!out) {
+    if (!out)
         out = &Serial;
-    }
     return out;
 }
 
@@ -454,7 +453,7 @@ void onShow(cmd *c) {
     if (app.getModule(modStr.c_str(), mod))
         app.printDiag(out, mod);
     else
-        print_s_not_found(out, modStr);
+        print_not_found(out, modStr);
 }
 
 void onPlot(cmd *c) { Command cmd(c); }

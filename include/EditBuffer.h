@@ -5,15 +5,15 @@
 #include "ArrayBuffer.h"
 
 class EditBuffer : public ArrayBuffer {
-   public:
+  public:
     EditBuffer(size_t size);
     EditBuffer(const char *str);
 
-   public:
+  public:
     bool next();
     bool prev();
     bool backspace();
 
-   protected:
+  protected:
     void del();
 };

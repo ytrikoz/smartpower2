@@ -12,21 +12,19 @@ Termul::Termul(Stream *console) : Termul() { setConsole(console); }
 
 void Termul::setConsole(Stream *console) {
     this->s = console;
-    if (s) {
+    if (s)
         PrintUtils::print_shell_start(s);
-    }
 }
 
 bool Termul::available() { return s->available(); }
 
-void Termul::setOnTabKey(TermulEventHandler handler) { onTabPressed = handler; }
+void Termul::setOnTabKey(TermulEventHandler h) { onTabPressed = h; }
 
-void Termul::setOnReadLine(TermulInputEventHandler handler) {
-    onInputEvent = handler;
-}
-void Termul::setOnOpen(TermulEventHandler handler) { onStartHandler = handler; }
+void Termul::setOnReadLine(TermulInputEventHandler h) { inputHandler = h; }
 
-void Termul::setOnClose(TermulEventHandler handler) { onQuitEvent = handler; }
+void Termul::setOnOpen(TermulEventHandler h) { onStartHandler = h; }
+
+void Termul::setOnClose(TermulEventHandler h) { onQuitEvent = h; }
 
 void Termul::setEOL(EOLType eol) { this->eol = eol; }
 
@@ -41,19 +39,19 @@ void Termul::enableControlCodes(bool enabled) {
 void Termul::quit() {}
 
 void Termul::loop() {
-    if ((!s) || (!s->available()))
+    if (!s || !s->available())
         return;
 
-    uint8_t startY = curY;
-    uint8_t startX = curX;
+    // uint8_t startY = curY;
+    // uint8_t startX = curX;
     sint8_t moveX = 0;
+    sint8_t moveY = 0;
 
     char c = s->read();
     lastReceived = millis();
 
-    // when inactive
     if (state == ST_INACTIVE) {
-        // wait for cr
+        // wait for CR
         if (c == CHAR_CR) {
             if (onStartHandler)
                 onStartHandler();
@@ -125,10 +123,11 @@ void Termul::loop() {
         switch (c) {
         case CHAR_CR:
             println();
-            if (onInputEvent)
-                onInputEvent(editor->c_str());
+            if (inputHandler)
+                inputHandler(editor->c_str());
             editor->clear();
-            return;
+            moveY++;
+            break;
         case CHAR_TAB:
             if (onTabPressed)
                 onTabPressed();
@@ -153,18 +152,22 @@ void Termul::loop() {
         case KEY_DEL:
             if (editor->backspace()) {
                 backsp();
+                moveX--;
             }
             break;
         default:
             // printable ascii 7bit or printable 8bit ISO8859
             if ((c & '\x7F') >= 32 && (c & '\x7F') < 127)
-                if (editor->write((uint8_t)c))
+                if (editor->write((uint8_t)c)) {
                     if (echoEnabled)
                         write(c);
+                    moveX++;
+                }
             break;
         }
 
-        // if (controlCodesEnabled) move(startY, startX + moveX);
+        // if (controlCodesEnabled)
+        // move(startY + moveY, startX + moveX);
     }
 }
 
@@ -187,8 +190,8 @@ void Termul::start() {
 void Termul::initscr() {
     write_P(SEQ_LOAD_G1);
     attrset(A_NORMAL);
-    clear();
     move(0, 0);
+    clear();
 }
 
 void Termul::attrset(const uint16_t attr) {
@@ -239,6 +242,8 @@ void Termul::move(uint8_t y, uint8_t x) {
     write(';');
     writeByDigit(x + 1);
     write('H');
+    curY = y;
+    curX = x;
 }
 
 void Termul::writeByDigit(uint8_t i) {
@@ -289,9 +294,8 @@ size_t Termul::println(void) {
 }
 
 size_t Termul::write(uint8_t ch) {
-    if (s) {
+    if (s)
         return s->write(ch);
-    }
     return 0;
 }
 

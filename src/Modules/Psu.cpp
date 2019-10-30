@@ -29,11 +29,11 @@ int Psu::quadratic_regression(double value) {
 }
 
 Psu::Psu() : AppModule(MOD_PSU) {
+    startTime = infoUpdated = powerInfoUpdated = loggerUpdated = lastStore = 0;
     pinMode(POWER_SWITCH_PIN, OUTPUT);
     ina231_configure();
     mcp4652_init();
-    setOk();
-    startTime = infoUpdated = powerInfoUpdated = loggerUpdated = lastStore = 0;
+    clearErrorsAndAlerts();
 }
 
 void Psu::setConfig(Config *config) {
@@ -61,7 +61,7 @@ void Psu::setState(PsuState value) {
         return;
     state = value;
     digitalWrite(POWER_SWITCH_PIN, value);
-    setOk();
+    clearErrorsAndAlerts();
     storeState(state);
     if (stateChangeHandler)
         stateChangeHandler(state, status);
@@ -141,7 +141,7 @@ void Psu::loop() {
         } else if (info.I <= PSU_LOAD_LOW_a) {
             setAlert(PSU_ALERT_LOAD_LOW);
         } else {
-            setOk();
+            clearErrorsAndAlerts();
         }
         lastCheck = now;
     }
@@ -216,10 +216,10 @@ size_t Psu::printDiag(Print *p) {
     size_t n = println_nameP_value(p, str_power, getStateStr(state));
     n += println_nameP_value(p, str_status, getStatusStr(status));
     n += println_nameP_value(p, str_output, outputVoltage);
+    n += println_nameP_value(p, str_store, getBoolStr(wh_store));
+    n += println_nameP_value(p, str_mod, getBoolStr(alterRange));
     if (checkState(POWER_ON))
         n += println_nameP_value(p, str_uptime, getUptime());
-    n += println_nameP_value(p, str_store, getBoolStr(wh_store).c_str());
-    n += println_nameP_value(p, str_mod, getBoolStr(alterRange));
     return n;
 }
 
@@ -272,7 +272,7 @@ PsuInfo Psu::getInfo() { return info; }
 
 float Psu::getVoltage() { return outputVoltage; }
 
-void Psu::setOk(void) {
+void Psu::clearErrorsAndAlerts() {
     alert = PSU_ALERT_NONE;
     error = PSU_ERROR_NONE;
     setStatus(PSU_OK);

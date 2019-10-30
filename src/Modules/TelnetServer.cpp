@@ -1,47 +1,43 @@
 #include "Modules/TelnetServer.h"
 
-TelnetServer::TelnetServer() : AppModule(MOD_TELNET) {
-    port = TELNET_PORT;
-    out->print(StrUtils::getIdentStrP(str_telnet));
-    out->print(StrUtils::getStrP(str_port));
-    out->print(": ");
-    out->println(port);
+using namespace PrintUtils;
 
-    server = new WiFiServer(port);
-    active = initialized = connected = false;
+TelnetServer::TelnetServer() : AppModule(MOD_TELNET) {
+    active = connected = false;
 };
 
+void TelnetServer::setConfig(Config *cfg) { port = TELNET_PORT; }
+
 bool TelnetServer::begin() {
-    start();
+    print_ident(out, FPSTR(str_telnet));
+    if (!server)
+        server = new WiFiServer(port);
+    server->begin();
+    server->setNoDelay(true);
+    active = (server->status() != CLOSED);
+    if (active)
+        println_nameP_value(out, str_port, port);
+    else
+        println(out, FPSTR(str_failed));
     return active;
 }
 
-void TelnetServer::start() {
-    server->begin();
-    server->setNoDelay(true);
-
-    active = server->status() != CLOSED;
-
-    if (!active)
-        say_strP(str_failed);
-}
-
-void TelnetServer::stop() {
+void TelnetServer::end() {
     if (active) {
-        say_strP(str_stopped);
-        if (hasClientConnected())
+        if (hasClient())
             client.stop();
         server->stop();
         active = false;
+        say_strP(str_stopped);
     }
 }
 
-bool TelnetServer::hasClientConnected() {
+bool TelnetServer::hasClient() {
     return active && client && client.connected();
 }
 
 void TelnetServer::write(const char *payload) {
-    if (hasClientConnected()) {
+    if (hasClient()) {
 #ifdef DEBUG_TELNET
         DEBUG.printf_P(str_telnet);
         DEBUG.printf_P(str_arrow_dest);
@@ -50,6 +46,8 @@ void TelnetServer::write(const char *payload) {
         client.write(payload);
     }
 }
+
+void TelnetServer::setEventHandler(TelnetEventHandler h) { eventHandler = h; }
 
 void TelnetServer::loop() {
     if (!active)
@@ -71,8 +69,8 @@ void TelnetServer::loop() {
         }
     }
 
-    if (connected != hasClientConnected()) {
-        connected = hasClientConnected();
+    if (connected != hasClient()) {
+        connected = hasClient();
         if (connected) {
             onConnect();
         } else {
@@ -82,20 +80,17 @@ void TelnetServer::loop() {
 }
 
 void TelnetServer::onConnect() {
-    if (onConnectEvent)
-        onConnectEvent(&client);
+    print_ident(out, FPSTR(str_telnet));
+    print_strP_var(out, str_client, FPSTR(str_connected));
+
+    if (eventHandler)
+        eventHandler(CLIENT_CONNECTED, &client);
 }
 
 void TelnetServer::onDisconnect() {
-    if (onDisconnectEvent)
-        onDisconnectEvent();
-}
+    print_ident(out, FPSTR(str_telnet));
+    print_strP_var(out, str_client, FPSTR(str_disconnected));
 
-void TelnetServer::setOnClientConnect(TelnetConnectEventHandler eventHandler) {
-    onConnectEvent = eventHandler;
-}
-
-void TelnetServer::setOnCLientDisconnect(
-    TelnetDisconnectEventHandler eventHandler) {
-    onDisconnectEvent = eventHandler;
+    if (eventHandler)
+        eventHandler(CLIENT_DISCONNECTED, &client);
 }
