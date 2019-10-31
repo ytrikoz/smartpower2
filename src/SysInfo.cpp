@@ -7,13 +7,26 @@
 #include "StrUtils.h"
 #include "Strings.h"
 
+using namespace StrUtils;
+
 const char *flashChipMode[] = {"QIO", "QOUT", "DIO", "DOUT"};
-const char *wifiPhyMode[] = {"b", "g", "n"};
 
 String getWiFiPhyMode() {
-    String str = F("801.11");
-    str += wifiPhyMode[WiFi.getPhyMode() - 1];
-    return str;
+    char buf[8];
+    strcpy(buf, "801.11");
+    switch (WiFi.getPhyMode()) {
+    case WIFI_PHY_MODE_11B:
+        buf[6] = 'b';
+        break;
+    case WIFI_PHY_MODE_11G:
+        buf[6] = 'g';
+        break;
+    case WIFI_PHY_MODE_11N:
+        buf[6] = 'n';
+        break;
+    }
+    buf[7] = '\x00';
+    return String(buf);
 }
 
 String getWiFiRSSI() {
@@ -137,62 +150,20 @@ String getFSFileList() {
 }
 
 String getVersionInfoJson() {
-    size_t size = JSON_ARRAY_SIZE(2) + 2 * JSON_OBJECT_SIZE(1) + 64;
+    const int items_count = 3;
+    const int size =
+        JSON_ARRAY_SIZE(items_count) + items_count * JSON_OBJECT_SIZE(2);
     DynamicJsonDocument doc(size);
 
     JsonObject item = doc.createNestedObject();
     item["fw"] = APP_VERSION;
-
     item = doc.createNestedObject();
     item["sdk"] = system_get_sdk_version();
-
     item = doc.createNestedObject();
     item["core"] = ESP.getCoreVersion();
 
     String str;
-
     serializeJson(doc, str);
-
-    return str;
-}
-
-String getSystemInfoJson() {
-    size_t size = JSON_ARRAY_SIZE(11) + 11 * JSON_OBJECT_SIZE(1) + 193;
-    DynamicJsonDocument doc(size);
-    JsonObject item = doc.createNestedObject();
-    item["cpuFreq"] = getCpuFreq();
-
-    item = doc.createNestedObject();
-    item["flashSize"] = getFlashSize();
-
-    item = doc.createNestedObject();
-    item["flashMap"] = getFlashMap();
-
-    item = doc.createNestedObject();
-    item["sketchSize"] = getSketchSize();
-
-    item = doc.createNestedObject();
-    item["freeSketch"] = getFreeSketch();
-
-    item = doc.createNestedObject();
-    item["fsUsed"] = getFSUsedSpace();
-
-    item = doc.createNestedObject();
-    item["fsTotal"] = getFSTotalSpace();
-
-    item = doc.createNestedObject();
-    item["flashMode"] = String(flashChipMode[ESP.getFlashChipMode()]);
-
-    item = doc.createNestedObject();
-    item["ChipSpeed"] = StrUtils::formatInMHz(ESP.getFlashChipSpeed());
-
-    item = doc.createNestedObject();
-    item["ChipSize"] = String(StrUtils::formatSize(ESP.getFlashChipSize()));
-
-    String str;
-
-    serializeJson(doc, str);
-
     return str;
 }
 
@@ -230,48 +201,51 @@ String getVcc() {
 
 String getChipId() { return String(ESP.getChipId(), HEX); }
 
+String getJsonObj(PGM_P strP, String str) {
+    char key[64];
+    strcpy_P(key, strP);
+    char buf[64];
+    sprintf(buf, "{\"%s\":\"%s\"}", key, str.c_str());
+    return String(buf);
+}
+
 String getNetworkInfoJson() {
-    size_t size = JSON_ARRAY_SIZE(11) + 11 * JSON_OBJECT_SIZE(1) + 193;
-
-    DynamicJsonDocument doc(size);
-
-    JsonObject item = doc.createNestedObject();
-    item["ssid"] = WiFi.SSID();
-
-    item = doc.createNestedObject();
-    item["bssid"] = WiFi.BSSIDstr();
-
-    item = doc.createNestedObject();
-    item["phy"] = getWiFiPhyMode();
-
-    item = doc.createNestedObject();
-    item["channel"] = getWifiChannel();
-
-    item = doc.createNestedObject();
-    item["rssi"] = getWiFiRSSI();
-
-    item = doc.createNestedObject();
-    item["mac"] = WiFi.macAddress();
-
-    item = doc.createNestedObject();
-    item["hostname"] = WiFi.hostname();
-
-    item = doc.createNestedObject();
-    item["ip"] = WiFi.localIP().toString();
-
-    item = doc.createNestedObject();
-    item["subnet"] = WiFi.subnetMask().toString();
-
-    item = doc.createNestedObject();
-    item["gateway"] = WiFi.gatewayIP().toString();
-
-    item = doc.createNestedObject();
-    item["dns"] = WiFi.dnsIP().toString();
-
     String str;
+    if (!str.reserve(512))
+        return str;
+    str = "[";
+    str += getJsonObj(str_ssid, WiFi.SSID());
+    str += ",";
+    str += getJsonObj(str_phy, getWiFiPhyMode());
+    str += ",";
+    str += getJsonObj(str_ch, getWifiChannel());
+    str += ",";
+    str += getJsonObj(str_mac, WiFi.macAddress());
+    str += ",";
+    str += getJsonObj(str_host, WiFi.hostname());
+    str += ",";
+    str += getJsonObj(str_ip, WiFi.localIP().toString());
+    str += ",";
+    str += getJsonObj(str_subnet, WiFi.subnetMask().toString());
+    str += ",";
+    str += getJsonObj(str_gateway, WiFi.gatewayIP().toString());
+    str += ",";
+    str += getJsonObj(str_dns, WiFi.dnsIP().toString());
+    str += "]";
+    return str;
+}
 
-    serializeJson(doc, str);
-
+String getSystemInfoJson() {
+    String str;
+    if (!str.reserve(128))
+        return str;
+    str = "[";
+    str += getJsonObj(str_freq, getCpuFreq());
+    str += ",";
+    str += getJsonObj(str_used, getFSUsedSpace());
+    str += ",";
+    str += getJsonObj(str_total, getFSTotalSpace());
+    str += "]";
     return str;
 }
 
