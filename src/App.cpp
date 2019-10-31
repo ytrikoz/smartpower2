@@ -12,6 +12,8 @@ using namespace PrintUtils;
 using namespace StrUtils;
 
 App::App() {
+    reboot = 0;
+
     memset(appMod, 0, sizeof(&appMod[0]) * APP_MODULES);
     loopLogger = new LoopLogger();
 }
@@ -276,11 +278,14 @@ bool App::getModule(const char *name, AppModuleEnum &mod) {
     return false;
 }
 
-AppModule *App::getInstance(const AppModuleEnum module) {
-    if (!appMod[module]) {
-        switch (module) {
+AppModule *App::getInstance(const AppModuleEnum mod) {
+    if (!appMod[mod]) {
+        switch (mod) {
+        case MOD_SYSLOG: {
+            appMod[mod] = syslog = new SyslogClient();
+        }
         case MOD_BTN: {
-            appMod[module] = btn = new Button();
+            appMod[mod] = btn = new Button();
             btn->setOnClicked([this]() { psu->togglePower(); });
             btn->setOnHold([this](unsigned long time) {
                 if (time > ONE_SECOND_ms * 5)
@@ -291,34 +296,34 @@ AppModule *App::getInstance(const AppModuleEnum module) {
             break;
         }
         case MOD_CLOCK:
-            appMod[module] = rtc = new SystemClock();
+            appMod[mod] = rtc = new SystemClock();
             break;
         case MOD_LED:
-            appMod[module] = leds = new Led::Leds();
+            appMod[mod] = leds = new Led::Leds();
             break;
         case MOD_PSU:
-            appMod[module] = psu = new Psu();
+            appMod[mod] = psu = new Psu();
             logger = new PsuLogger();
             psu->setLogger(logger);
             break;
         case MOD_DISPLAY:
-            appMod[module] = display = new Display();
+            appMod[mod] = display = new Display();
             break;
         case MOD_HTTP:
-            appMod[module] = http = new WebService();
+            appMod[mod] = http = new WebService();
             WebPanel::init();
             http->setOnClientConnection(WebPanel::onHttpClientConnect);
             http->setOnClientDisconnected(WebPanel::onHttpClientDisconnect);
             http->setOnClientData(WebPanel::onHttpClientData);
             break;
         case MOD_SHELL:
-            appMod[module] = shell = new ShellMod();
+            appMod[mod] = shell = new ShellMod();
             break;
         case MOD_NETSVC:
-            appMod[module] = discovery = new NetworkService();
+            appMod[mod] = discovery = new NetworkService();
             break;
         case MOD_NTP: {
-            appMod[module] = ntp = new NtpClient();
+            appMod[mod] = ntp = new NtpClient();
             ntp->setOnResponse([this](const EpochTime &epoch) {
                 if (rtc)
                     rtc->setEpoch(epoch, true);
@@ -326,7 +331,7 @@ AppModule *App::getInstance(const AppModuleEnum module) {
             break;
         }
         case MOD_TELNET:
-            appMod[module] = telnet = new TelnetServer();
+            appMod[mod] = telnet = new TelnetServer();
             telnet->setEventHandler([this](TelnetEventType et, Stream *client) {
                 switch (et) {
                 case CLIENT_DATA:
@@ -347,11 +352,11 @@ AppModule *App::getInstance(const AppModuleEnum module) {
             });
             break;
         case MOD_UPDATE:
-            appMod[module] = ota = new OTAUpdate();
+            appMod[mod] = ota = new OTAUpdate();
             break;
         }
     }
-    return appMod[module];
+    return appMod[mod];
 }
 
 bool App::start(AppModuleEnum module) {

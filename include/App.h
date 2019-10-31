@@ -16,6 +16,7 @@
 #include "Modules/OTAUpdate.h"
 #include "Modules/Psu.h"
 #include "Modules/ShellMod.h"
+#include "Modules/SyslogClient.h"
 #include "Modules/SystemClock.h"
 #include "Modules/TelnetServer.h"
 #include "Modules/WebService.h"
@@ -63,22 +64,23 @@ class App {
     unsigned long lastUpdated;
     uint8_t reboot;
     uint8_t boot_per;
-    LoopLogger *loopLogger;
-    ConfigHelper *env;
-    ShellMod *shell;
-    OTAUpdate *ota;
-    Display *display;
-    WebService *http;
-    TelnetServer *telnet;
-    SystemClock *rtc;
-    NtpClient *ntp;
-    PsuLogger *logger;
-    Psu *psu;
-    Button *btn;
-    Led::Leds *leds;
-    NetworkService *discovery;
+    LoopLogger *loopLogger = NULL;
+    ConfigHelper *env = NULL;
+    ShellMod *shell = NULL;
+    OTAUpdate *ota = NULL;
+    Display *display = NULL;
+    WebService *http = NULL;
+    TelnetServer *telnet = NULL;
+    SystemClock *rtc = NULL;
+    NtpClient *ntp = NULL;
+    PsuLogger *logger = NULL;
+    Psu *psu = NULL;
+    Button *btn = NULL;
+    Led::Leds *leds = NULL;
+    NetworkService *discovery = NULL;
+    SyslogClient *syslog = NULL;
     AppModule *appMod[APP_MODULES];
-    Print *out, *dbg, *err;
+    Print *out, *dbg, *err = NULL;
 };
 
 extern App app;

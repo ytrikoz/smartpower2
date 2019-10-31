@@ -2,28 +2,32 @@
 
 #include "TimeUtils.h"
 
-LoopLogger::LoopLogger() { state = CAPTURE_IDLE; }
+LoopLogger::LoopLogger() {
+    state = CAPTURE_IDLE;
+    captureStarted = 0;
+}
 
 void LoopLogger::setIdle() { state = CAPTURE_IDLE; }
 
 LoopLoggerState LoopLogger::getState() { return state; }
 
 void LoopLogger::logTime(AppModuleEnum module, unsigned long duration) {
-    if (state == CAPTURE_IN_PROGRESS) cap.module[module] += duration;
+    if (state == CAPTURE_IN_PROGRESS)
+        cap.module[module] += duration;
 }
 
-LoopCapture* LoopLogger::getCapture() { return &cap; }
+LoopCapture *LoopLogger::getCapture() { return &cap; }
 
 unsigned long LoopLogger::getDuration() {
     switch (state) {
-        case CAPTURE_IN_PROGRESS:
-            return captureTimeleft;
-        case CAPTURE_IDLE:
-            return LOOP_CAPTURE_INTERVAL;
-        case CAPTURE_DONE:
-            return cap.duration;
-        default:
-            return 0;
+    case CAPTURE_IN_PROGRESS:
+        return captureTimeleft;
+    case CAPTURE_IDLE:
+        return LOOP_CAPTURE_INTERVAL;
+    case CAPTURE_DONE:
+        return cap.duration;
+    default:
+        return 0;
     }
 }
 
@@ -35,7 +39,8 @@ void LoopLogger::start() {
 }
 
 void LoopLogger::loop() {
-    if (state != CAPTURE_IN_PROGRESS) return;
+    if (state != CAPTURE_IN_PROGRESS)
+        return;
 
     if (loopStarted == 0) {
         loopStarted = millis();
@@ -54,8 +59,10 @@ void LoopLogger::loop() {
         }
         time_range *= 2;
     }
-    if (cap.longest < passed) cap.longest = passed;
-    if (i == LOOP_COUNTERS) cap.overrange++;
+    if (cap.longest < passed)
+        cap.longest = passed;
+    if (i == LOOP_COUNTERS)
+        cap.overrange++;
 
     cap.duration += passed;
     if (captureTimeleft <= passed) {
@@ -71,7 +78,7 @@ LiveTimer LoopLogger::onExecute(AppModuleEnum module) {
     return LiveTimer(this, module);
 }
 
-LiveTimer::LiveTimer(LiveTimerLogger* logger, AppModuleEnum module) {
+LiveTimer::LiveTimer(LiveTimerLogger *logger, AppModuleEnum module) {
     this->logger = logger;
     this->module = module;
     createTime = micros();

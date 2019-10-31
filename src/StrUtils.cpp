@@ -30,7 +30,7 @@ String getTimeStr(const unsigned long epoch_s, bool longFormat) {
     return String(buf);
 }
 
-char *getDateTimeFormated(const unsigned long epoch_s) {
+String getDateTimeFormated(const unsigned long epoch_s) {
     // seconds since 1970-01-01 00:00:00
     unsigned long passed = epoch_s;
     uint8_t second = passed % ONE_MINUTE_s;
@@ -60,7 +60,7 @@ char *getDateTimeFormated(const unsigned long epoch_s) {
     uint8_t day = passed + 1;
     char buf[32];
     sprintf_P(buf, DATETIME_FORMAT, day, month, year, hour, minute, second);
-    return buf;
+    return String(buf);
 }
 
 void strfill(char *str, char chr, size_t len) {

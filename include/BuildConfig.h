@@ -6,7 +6,7 @@
 
 #define APP_NAME "SmartPower2"
 #define APP_VERSION "0.6.9"
-#define APP_MODULES 11
+#define APP_MODULES 12
 
 // address are 0x27 or 0x3f
 #define NONE_ADDRESS 0x00

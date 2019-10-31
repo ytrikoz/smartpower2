@@ -119,7 +119,7 @@ void setupSTA() {
     setupSTA(any, any, any, any);
 }
 
-void setupSTA(IPAddress ipaddr, IPAddress gateway, IPAddress subnet,
+void setupSTA(IPAddress ipaddr, IPAddress subnet, IPAddress gateway,
               IPAddress dns) {
     print_ident(&DEBUG, FPSTR(str_wifi));
     if (ipaddr == IPAddress(IP4_ADDR_ANY)) {

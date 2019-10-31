@@ -21,7 +21,8 @@ enum AppModuleEnum {
     MOD_PSU,
     MOD_SHELL,
     MOD_TELNET,
-    MOD_UPDATE
+    MOD_UPDATE,
+    MOD_SYSLOG
 };
 
 enum PsuState { POWER_ON = 0, POWER_OFF = 1 };
