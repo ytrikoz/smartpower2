@@ -33,11 +33,11 @@ void SyslogClient::send(SysLogSeverity level, String message) {
     String payload = getPayload(level, time, host, message.c_str());
 }
 
-// <%prio%>[%time% ] %host TaskName: %message%
+//<%prio%>[%time% ] %host %message%
 String SyslogClient::getPayload(const SysLogSeverity level, unsigned long time,
                                 const char *host, const char *message) {
     int prio = SYSLOG_FACILITY * 8 + (int)level;
     char buf[128];
-    sprintf_P(buf, "<%d>[%s ]%s TaskName: %s", level, time, host, message);
+    sprintf_P(buf, "<%d>[%lu ]%s %s", prio, time, host, message);
     return String(buf);
 }

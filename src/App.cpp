@@ -12,8 +12,6 @@ using namespace PrintUtils;
 using namespace StrUtils;
 
 App::App() {
-    reboot = 0;
-
     memset(appMod, 0, sizeof(&appMod[0]) * APP_MODULES);
     loopLogger = new LoopLogger();
 }

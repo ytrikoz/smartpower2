@@ -7,7 +7,7 @@ using namespace StrUtils;
 
 Display::Display() : AppModule(MOD_DISPLAY) {
     lcd = new LcdDisplay();
-    lockTimeout = lockUpdated = 0;
+    lastUpdated = lockTimeout = lockUpdated = 0;
 }
 
 void Display::setScreen(ScreenEnum value) {
