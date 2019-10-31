@@ -33,7 +33,7 @@ class Button : public AppModule {
     ButtonHoldHandler holdHandler;
     ButtonHoldReleaseHandler holdReleaseHandler;
 
-    bool btnClicked = false;
+    bool clickFlag = false;
     unsigned long holdTime = 0;
     unsigned long lastEvent = 0;
     unsigned long pressTime = 0;

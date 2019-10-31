@@ -122,6 +122,7 @@ bool App::isNetworkDepended(AppModuleEnum module) {
     case MOD_UPDATE:
     case MOD_NTP:
     case MOD_TELNET:
+    case MOD_SYSLOG:
         return true;
     default:
         return false;
@@ -281,6 +282,7 @@ AppModule *App::getInstance(const AppModuleEnum mod) {
         switch (mod) {
         case MOD_SYSLOG: {
             appMod[mod] = syslog = new SyslogClient();
+            break;
         }
         case MOD_BTN: {
             appMod[mod] = btn = new Button();
@@ -318,7 +320,7 @@ AppModule *App::getInstance(const AppModuleEnum mod) {
             appMod[mod] = shell = new ShellMod();
             break;
         case MOD_NETSVC:
-            appMod[mod] = discovery = new NetworkService();
+            appMod[mod] = netsvc = new NetworkService();
             break;
         case MOD_NTP: {
             appMod[mod] = ntp = new NtpClient();

@@ -28,10 +28,10 @@ void Button::onHoldRelease(unsigned long time) {
 void Button::loop() {
     unsigned long now = millis();
     handleButton(now);
-    if (btnClicked) {
+    if (clickFlag) {
         onClicked();
         pressTime = 0;
-        btnClicked = false;
+        clickFlag = false;
         return;
     }
     unsigned long passed = millis_passed(lastUpdated, now);
@@ -61,7 +61,7 @@ void Button::handleButton(unsigned long now) {
 
     if (isReleased() && state != BTN_RELEASED) {
         if (millis_passed(pressTime, now) < ONE_SECOND_ms)
-            btnClicked = true;
+            clickFlag = true;
         state = BTN_RELEASED;
     }
 }

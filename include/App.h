@@ -77,7 +77,7 @@ class App {
     Psu *psu = NULL;
     Button *btn = NULL;
     Led::Leds *leds = NULL;
-    NetworkService *discovery = NULL;
+    NetworkService *netsvc = NULL;
     SyslogClient *syslog = NULL;
     AppModule *appMod[APP_MODULES];
     Print *out, *dbg, *err = NULL;
