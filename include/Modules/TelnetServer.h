@@ -34,6 +34,6 @@ class TelnetServer : public AppModule {
     bool active;
     bool connected;
     WiFiClient client;
-    WiFiServer *server = 0;
+    WiFiServer *server = nullptr;
     TelnetEventHandler eventHandler;
 };

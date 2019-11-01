@@ -9,6 +9,10 @@ namespace StrUtils {
 
 typedef enum { LEFT, CENTER, RIGHT } Align;
 
+String asJsonObj(const char *key, const char *value);
+String asJsonObj(const char *key, String value);
+
+
 String getTimeStr(unsigned long time_s, bool longFormat = false);
 
 String getDateTimeStr(const unsigned long epoch_s);
@@ -40,6 +44,9 @@ String getSocketStr(IPAddress ip, int port);
 
 String getMacStr(uint8 hwaddr[6]);
 
+String formatNetwork(const IPAddress ipddr, const IPAddress subnet,
+                     const IPAddress gateway);
+
 String formatSize(size_t bytes);
 
 String formatInMHz(uint32_t);
@@ -50,11 +57,7 @@ String getStr(String &str);
 
 String getStr(IPAddress &value);
 
-String getStr(long unsigned int value);
-
 String getStr(int num);
-
-String getStrsP(PGM_P...);
 
 String getStrP(PGM_P strP, bool space = true);
 
@@ -83,6 +86,12 @@ String getQuotedStrP(PGM_P str, bool with_space, char ch = '\'');
 String getQuotedStr(const char *str, bool with_space = true, char ch = '\'');
 
 String getQuotedStr(String &str, bool with_space = true);
+
+bool atomac(const char *txt, uint8_t *addr);
+
+int hex2num(char c);
+
+int hex2byte(const char *hex);
 
 template <typename T> T concat(T v) { return v; }
 

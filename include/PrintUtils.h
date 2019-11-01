@@ -21,10 +21,18 @@ template <typename T> size_t println_nameP_value(Print *p, PGM_P strP, T var) {
     return n += p->println(var);
 }
 
+template <typename T> size_t print_nameP_value(Print *p, PGM_P strP, T var) {
+    size_t n = p->print(FPSTR(strP));
+    n += p->print(':');
+    n += p->print(' ');
+    n += p->print(var);
+    return n += p->print(' ');
+}
+
 template <typename T> size_t print_strP_var(Print *p, PGM_P strP, T var) {
     size_t n = p->print(FPSTR(strP));
     n += p->print(' ');
-    p->print(var);
+    n += p->print(var);
     return n += p->print(' ');
 }
 
@@ -40,9 +48,9 @@ template <typename T> size_t print(Print *p, T v) {
     return n += p->print(' ');
 }
 
-template <typename T> size_t print_ident(Print *p, T value) {
+template <typename T> size_t print_ident(Print *p, T v) {
     size_t n = p->print('[');
-    n += p->print(value);
+    n += p->print(v);
     n += p->print(']');
     n += p->print(' ');
     return n;
@@ -62,9 +70,7 @@ size_t println(Print *p, T first, Args... args) {
     return n;
 }
 
-size_t print_shell_start(Print *p);
-
-size_t print_shell_quit(Print *p);
+size_t print_shell_exit(Print *p);
 
 size_t print_shell_interrupted(Print *p);
 

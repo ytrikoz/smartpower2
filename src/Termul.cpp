@@ -6,15 +6,13 @@
 #include "PrintUtils.h"
 #include "SysInfo.h"
 
+using namespace PrintUtils;
+
 Termul::Termul() { this->editor = new EditBuffer(INPUT_MAX_LENGTH); }
 
 Termul::Termul(Stream *console) : Termul() { setConsole(console); }
 
-void Termul::setConsole(Stream *console) {
-    this->s = console;
-    if (s)
-        PrintUtils::print_shell_start(s);
-}
+void Termul::setConsole(Stream *console) { this->s = console; }
 
 bool Termul::available() { return s->available(); }
 

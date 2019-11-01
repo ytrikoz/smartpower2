@@ -13,7 +13,7 @@ OTAUpdate::OTAUpdate() : AppModule(MOD_UPDATE) {
 }
 
 bool OTAUpdate::begin() {
-    String host = Wireless::getConfigHostname();
+    String host = Wireless::hostName();
     ota->setRebootOnSuccess(false);
     ota->setHostname(host.c_str());
     ota->setPort(OTA_PORT);

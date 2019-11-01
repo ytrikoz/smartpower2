@@ -71,6 +71,10 @@ class Screen {
         }
     }
 
+    void set(size_t n, const char *label, String str) {
+        return set(n, label, str.c_str());
+    }
+
     void set(size_t n, const char *label, const char *text) {
         ScreenItem *item = &items[n];
         item->redrawLabel = setstr(item->label, label, LCD_COLS + 1);

@@ -119,50 +119,45 @@ void sendPageState(uint8_t page) {
 void sendPageState(uint8_t n, uint8_t page) {
     switch (page) {
     case PG_HOME: {
-        // State
-        String stateStr = String(SET_POWER_ON_OFF);
-        stateStr += String(app.getPsu()->getState());
-        app.getHttp()->sendTxt(n, stateStr);
-        // WattHour
-        String whStoreEnabledStr = String(SET_LOG_WATTHOURS);
-        whStoreEnabledStr += String(app.getPsu()->isWhStoreEnabled());
-        app.getHttp()->sendTxt(n, whStoreEnabledStr);
+        String power(SET_POWER_ON_OFF);
+        power += String(app.getPsu()->getState());
+        app.getHttp()->sendTxt(n, power);
+
+        String wh_store(SET_LOG_WATTHOURS);
+        wh_store += String(app.getPsu()->isWhStoreEnabled());
+        app.getHttp()->sendTxt(n, wh_store);
         break;
     }
     case PG_SETTINGS: {
-        String payload;
-        // Power mod
-        payload = String(SET_BOOT_POWER_MODE);
-        payload += app.getConfig()->getValueAsByte(POWER);
-        app.getHttp()->sendTxt(n, payload);
-        // Output voltage
-        payload = String(SET_VOLTAGE);
-        payload += String(app.getPsu()->getVoltage(), 2);
-        app.getHttp()->sendTxt(n, payload);
-        // Network config
-        {
-            String payload = AppUtils::getNetworkConfig(app.getConfig());
+        String bootpower;
+        bootpower = String(SET_BOOT_POWER_MODE);
+        bootpower += app.getConfig()->getValueAsByte(POWER);
+        app.getHttp()->sendTxt(n, bootpower);
 
-            app.getHttp()->sendTxt(n, payload);
-            break;
-        }
+        String voltage = String(SET_VOLTAGE);
+        voltage += String(app.getPsu()->getVoltage(), 2);
+        app.getHttp()->sendTxt(n, voltage);
+
+        String network = AppUtils::getNetworkConfig(app.getConfig());
+        app.getHttp()->sendTxt(n, network);
+        break;
     }
     case PG_STATUS: {
         String payload;
         // Version info
         payload = String(TAG_FIRMWARE_INFO);
-        payload += getVersionInfoJson();
+        payload += SysInfo::getVersionJson();
         app.getHttp()->sendTxt(n, payload);
         // System info
         payload = String(TAG_SYSTEM_INFO);
-        payload += getSystemInfoJson();
+        payload += SysInfo::getSystemJson();
         app.getHttp()->sendTxt(n, payload);
         // Network info
         payload = String(TAG_NETWORK_INFO);
-        payload += getNetworkInfoJson();
+        payload += SysInfo::getNetworkJson();
         app.getHttp()->sendTxt(n, payload);
         break;
     }
     }
-}
+} // namespace WebPanel
 } // namespace WebPanel

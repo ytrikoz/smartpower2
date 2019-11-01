@@ -32,9 +32,7 @@ void TelnetServer::end() {
     }
 }
 
-bool TelnetServer::hasClient() {
-    return active && client && client.connected();
-}
+bool TelnetServer::hasClient() { return active && client.connected(); }
 
 void TelnetServer::write(const char *payload) {
     if (hasClient()) {
@@ -60,11 +58,10 @@ void TelnetServer::loop() {
                 server->stop();
                 client = server->available();
             } else {
-                WiFiClient reject;
-                reject = server->available();
-                reject.write(
-                    StrUtils::getStrP(msg_connection_is_busy, false).c_str());
-                reject.stop();
+                WiFiClient rejected;
+                rejected = server->available();
+                rejected.write_P(msg_connection_busy, 32);
+                rejected.stop();
             }
         }
     }

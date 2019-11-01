@@ -40,13 +40,15 @@ void App::loop() {
 }
 
 size_t App::printDiag(Print *p) {
-    size_t n = p->println(getHeapStat());
+    size_t n = p->println(SysInfo::getHeapStats());
+    n += println(p, FPSTR(str_connection));
     n += println_nameP_value(p, str_http, WebPanel::get_http_clients_count());
     n += println_nameP_value(p, str_telnet, telnet && telnet->hasClient());
-    if (Wireless::getMode() != Wireless::WLAN_STA)
-        n +=
-            println_nameP_value(p, str_wifi, getConnectedStationInfo().c_str());
-
+    if (Wireless::getMode() != Wireless::NETWORK_STA) {
+        n += print(p, FPSTR(str_clients));
+        n += println(p, FPSTR(str_connected));
+        n += println(p, SysInfo::getClientsInfo());
+    }
     return n;
 }
 
@@ -136,8 +138,8 @@ void App::restart(uint8_t time_s) {
     if (reboot > 0) {
         leds->set(Led::POWER_LED, Led::BLINK_ERROR);
         leds->set(Led::WIFI_LED, Led::BLINK_ERROR);
-        char buf[16];
-        sprintf_P(buf, msg_restart_in_d_seconds, reboot);
+        char buf[32];
+        sprintf_P(buf, msg_restart_countdown, reboot);
         out->println(buf);
     } else {
         refresh_power_led();
@@ -163,7 +165,7 @@ void App::start() {
     start(MOD_CLOCK);
     start(MOD_PSU);
     display->showProgress(40, "<WIFI>");
-    Wireless::start_wifi();
+    Wireless::start();
     display->showProgress(80, "<INIT>");
 
     Wireless::setOnNetworkStatusChange(

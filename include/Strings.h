@@ -3,15 +3,15 @@
 #include "CommonTypes.h"
 #include <pgmspace.h>
 
-static const char str_build_date[] PROGMEM = BUILD_DATE;
+// TODO refactor
+// now it's not for memory saving, but to collect literals in one place
+// and  code unification
 
-static const char msg_shell_start[] PROGMEM = "press \"enter\" to start";
-static const char msg_shell_quit[] PROGMEM = "exit, bye!";
-static const char msg_restart_in_d_seconds[] PROGMEM =
-    "restart in %d seconds...";
-static const char str_shell_interrupted[] PROGMEM =
-    "the session was interrupted!";
-static const char msg_connection_is_busy[] PROGMEM = "connection is busy!";
+static const char str_build_date[] PROGMEM = BUILD_DATE;
+static const char msg_shell_interrupted[] PROGMEM = "interrupted!";
+static const char msg_shell_exit[] PROGMEM = "exit, bye!";
+static const char msg_connection_busy[] PROGMEM = "connection busy!";
+static const char msg_restart_countdown[] PROGMEM = "restart countdown %d!";
 
 static const char strf_ip[] PROGMEM = "ip %s";
 static const char strf_config_param_unchanged[] PROGMEM = "'%s' unchanged";
@@ -37,6 +37,7 @@ static const char str_action[] PROGMEM = "action";
 static const char str_alert[] PROGMEM = "alert";
 static const char str_as_default[] PROGMEM = "as default";
 static const char str_ap[] PROGMEM = "ap";
+static const char str_ap_not_found[] PROGMEM = "ap not found";
 static const char str_apply[] PROGMEM = "apply";
 static const char str_arrow_dest[] PROGMEM = "->";
 static const char str_arrow_src[] PROGMEM = "<-";
@@ -65,7 +66,9 @@ static const char str_clock[] PROGMEM = "clock";
 static const char str_close[] PROGMEM = "close";
 static const char str_closed[] PROGMEM = "closed";
 static const char str_cli[] PROGMEM = "cli";
-
+static const char str_cpu[] PROGMEM = "cpu";
+static const char str_core[] PROGMEM = "core";
+static const char str_connection_failed[] PROGMEM = "connection failed";
 static const char str_netsvc[] PROGMEM = "netsvc";
 static const char str_data[] PROGMEM = "data";
 static const char str_date[] PROGMEM = "date";
@@ -91,6 +94,8 @@ static const char str_free[] PROGMEM = "free";
 static const char str_freq[] PROGMEM = "freq";
 static const char str_file[] PROGMEM = "file";
 static const char str_for[] PROGMEM = "for";
+static const char str_fw[] PROGMEM = "fw";
+static const char str_sdk[] PROGMEM = "sdk";
 static const char str_invalid[] PROGMEM = "invalid";
 static const char str_http[] PROGMEM = "http";
 static const char str_empty[] PROGMEM = "empty";
@@ -215,6 +220,7 @@ static const char str_valid[] PROGMEM = "valid";
 static const char str_voltage[] PROGMEM = "voltage";
 static const char str_wifi[] PROGMEM = "wifi";
 static const char str_wrong[] PROGMEM = "wrong";
+static const char str_wrong_password[] PROGMEM = "wrong password";
 static const char str_wait[] PROGMEM = "wait";
 static const char str_write[] PROGMEM = "write";
 static const char str_wol[] PROGMEM = "wol";

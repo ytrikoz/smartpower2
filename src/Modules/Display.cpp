@@ -110,52 +110,55 @@ void Display::refresh(void) {
         }
     }
 
-    Wireless::Mode mode = Wireless::getMode();
+    Wireless::NetworkMode mode = Wireless::getMode();
     switch (mode) {
-    case Wireless::WLAN_STA:
+    case Wireless::NETWORK_OFF:
+        setScreen(SCREEN_READY);
+        load_ready(&screen);
+        return;
+    case Wireless::NETWORK_STA:
         setScreen(SCREEN_STA);
         load_wifi_sta(&screen);
         return;
-    case Wireless::WLAN_AP:
+    case Wireless::NETWORK_AP:
         setScreen(SCREEN_AP);
         load_wifi_ap(&screen);
         return;
-    case Wireless::WLAN_AP_STA:
+    case Wireless::NETWORK_AP_STA:
         setScreen(SCREEN_AP_STA);
         load_wifi_ap_sta(&screen);
-        return;
-    case Wireless::WLAN_OFF:
-        setScreen(SCREEN_READY);
-        load_ready(&screen);
         return;
     }
 }
 
 void Display::load_wifi_sta(Screen *obj) {
-    obj->set(0, "WIFI> ", Wireless::getConnectionStatus().c_str());
-    obj->set(1, "STA> ", Wireless::hostSTA_SSID().c_str());
-    obj->set(2, "IP> ", Wireless::hostIP().toString().c_str());
-    obj->set(3, "RSSI> ", Wireless::RSSIInfo().c_str());
-    obj->set(4, "CLK> ", getTimeStr(app.getClock()->getLocal(), true).c_str());
-    obj->setCount(5);
+    size_t n = 0;
+    obj->set(n++, "WIFI> ", Wireless::hostSTA_StatusStr());
+    obj->set(n++, "STA> ", Wireless::hostSTA_SSID());
+    obj->set(n++, "IP> ", Wireless::hostIP().toString());
+    obj->set(n++, "RSSI> ", Wireless::getRSSI());
+    obj->set(n++, "CLK> ", getTimeStr(app.getClock()->getLocal(), true));
+    obj->setCount(n);
 };
 
 void Display::load_wifi_ap(Screen *obj) {
-    obj->set(0, "AP> ", Wireless::hostAP_SSID().c_str());
-    obj->set(1, "PWD> ", Wireless::hostAP_Password().c_str());
-    obj->set(2, "CLK> ", getTimeStr(app.getClock()->getLocal(), true).c_str());
-    obj->setCount(3);
+    size_t n = 0;
+    obj->set(n++, "AP> ", Wireless::hostAP_SSID());
+    obj->set(n++, "PWD> ", Wireless::hostAP_Password());
+    obj->set(n++, "CLK> ", getTimeStr(app.getClock()->getLocal(), true));
+    obj->setCount(n);
 };
 
 void Display::load_wifi_ap_sta(Screen *obj) {
-    obj->set(0, "WIFI> ", Wireless::getConnectionStatus().c_str());
-    obj->set(1, "AP> ", Wireless::hostAP_SSID().c_str());
-    obj->set(2, "STA> ", Wireless::hostSTA_SSID().c_str());
-    obj->set(3, "IP AP> ", Wireless::hostAP_IP().toString().c_str());
-    obj->set(4, "IP STA> ", Wireless::hostSTA_IP().toString().c_str());
-    obj->set(5, "RSSI> ", Wireless::RSSIInfo().c_str());
-    obj->set(6, "CLK> ", getTimeStr(app.getClock()->getLocal(), true).c_str());
-    obj->setCount(7);
+    size_t n = 0;
+    obj->set(n++, "WIFI> ", Wireless::hostSTA_StatusStr());
+    obj->set(n++, "STA> ", Wireless::hostSTA_SSID());
+    obj->set(n++, "AP> ", Wireless::hostAP_SSID());
+    obj->set(n++, "IP AP> ", Wireless::hostAP_IP().toString());
+    obj->set(n++, "IP STA> ", Wireless::hostSTA_IP().toString());
+    obj->set(n++, "RSSI> ", Wireless::getRSSI());
+    obj->set(n++, "CLK> ", getTimeStr(app.getClock()->getLocal(), true));
+    obj->setCount(n);
 };
 
 void Display::load_psu_info(Screen *obj) {

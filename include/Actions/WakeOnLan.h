@@ -7,6 +7,7 @@
 #include <WiFiUdp.h>
 
 #include "PrintUtils.h"
+#include "StrUtils.h"
 #include "Strings.h"
 
 namespace Actions {
@@ -32,7 +33,7 @@ void WakeOnLan::exec(String ipStr, String macStr) {
         return;
     }
     uint8_t mac[6];
-    if (!Wireless::atomac(macStr.c_str(), mac)) {
+    if (!StrUtils::atomac(macStr.c_str(), mac)) {
         PrintUtils::println(out, FPSTR(str_wrong), FPSTR(str_mac),
                             macStr.c_str());
         return;

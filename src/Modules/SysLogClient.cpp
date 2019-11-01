@@ -29,7 +29,7 @@ void SyslogClient::setPort(const uint16_t udp_port) { port = udp_port; }
 
 void SyslogClient::send(SysLogSeverity level, String message) {
     unsigned long time = millis();
-    const char *host = Wireless::getConfigHostname().c_str();
+    const char *host = Wireless::hostName().c_str();
     String payload = getPayload(level, time, host, message.c_str());
 }
 

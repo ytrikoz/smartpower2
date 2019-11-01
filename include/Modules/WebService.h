@@ -17,19 +17,20 @@ typedef std::function<void(uint8_t)> SocketConnectionEventHandler;
 typedef std::function<void(uint8_t, String)> SocketDataEventHandler;
 
 class WebService : public AppModule {
-   public:
+  public:
     WebService();
     bool begin();
     void end();
     void loop();
-    size_t printDiag(Print*);
-   public:
+    size_t printDiag(Print *);
+
+  public:
     void setOnClientConnection(SocketConnectionEventHandler h);
     void setOnClientDisconnected(SocketConnectionEventHandler h);
     void setOnClientData(SocketDataEventHandler h);
     void sendTxt(uint8_t num, String &str);
 
-   private:
+  private:
     bool captivePortal();
 
     bool sendFile(String uri);
@@ -42,8 +43,8 @@ class WebService : public AppModule {
     void handleNoContent();
     void handleNotFound(String &uri);
     const char *getContentType(String filename);
-    void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
-                        size_t lenght);
+    void handleWebSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
+                              size_t lenght);
 
     SocketDataEventHandler onDataEvent;
     SocketConnectionEventHandler onConnectEvent, onDisconnectEvent;

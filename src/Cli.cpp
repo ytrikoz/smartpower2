@@ -138,7 +138,7 @@ bool active() { return out != NULL; }
 
 void setOutput(Print *p) {
     if (out != NULL) {
-        PrintUtils::print_shell_interrupted(out);
+        print_shell_interrupted(out);
         out = NULL;
     }
     out = p;
@@ -146,7 +146,7 @@ void setOutput(Print *p) {
 
 void close() {
     if (out != NULL) {
-        PrintUtils::print_shell_quit(out);
+        print_shell_exit(out);
         out = NULL;
     }
 }
@@ -509,7 +509,7 @@ void onRun(cmd *c) {
 
 void onCommandError(cmd_error *e) {
     CommandError cmdError(e);
-    out->println(cmdError.toString().c_str());
+    out->println(cmdError.toString());
 }
 
 } // namespace Cli

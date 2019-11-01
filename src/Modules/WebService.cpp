@@ -48,11 +48,12 @@ WebService::WebService() : AppModule(MOD_HTTP) {
     websocket = new WebSocketsServer(this->port_websocket);
     websocket->onEvent(
         [this](uint8_t num, WStype_t type, uint8_t *payload, size_t lenght) {
-            webSocketEvent(num, type, payload, lenght);
+            handleWebSocketEvent(num, type, payload, lenght);
         });
 
-    if ((Wireless::getMode() == Wireless::WLAN_STA ||
-         Wireless::getMode() == Wireless::WLAN_AP_STA)) {
+    Wireless::NetworkMode mode = Wireless::getMode();
+
+    if ((mode == Wireless::NETWORK_STA || mode == Wireless::NETWORK_AP_STA)) {
         ssdp = new SSDPClass();
         ssdp->setDeviceType(F("upnp:rootdevice"));
         ssdp->setSchemaURL(F("description.xml"));
@@ -60,7 +61,7 @@ WebService::WebService() : AppModule(MOD_HTTP) {
         ssdp->setName(Wireless::hostName());
         ssdp->setModelName(APP_NAME);
         ssdp->setModelNumber(APP_VERSION);
-        ssdp->setSerialNumber(getChipId());
+        ssdp->setSerialNumber(SysInfo::getChipId());
         ssdp->setURL(F("index.html"));
         ssdp->setModelURL(
             F("https://wiki.odroid.com/accessory/power_supply_battery/"
@@ -162,8 +163,8 @@ void WebService::handleNoContent() {
     server->send(204, "text/plan", "No Content");
 }
 
-void WebService::webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
-                                size_t lenght) {
+void WebService::handleWebSocketEvent(uint8_t num, WStype_t type,
+                                      uint8_t *payload, size_t lenght) {
 #ifdef DEBUG_WEB_SERVICE
     out->print(getIdentStrP(str_http));
     out->print('#');

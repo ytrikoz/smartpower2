@@ -2,27 +2,25 @@
 
 #include <Arduino.h>
 
-String getConnectedStationInfo();
-
-String getChipId();
-
-String getVersionInfoJson();
-String getNetworkInfoJson();
-String getSystemInfoJson();
-
-String getWiFiPhyMode();
-String getWiFiRSSI();
+namespace SysInfo {
 
 String getVcc();
-
 String getCpuFreq();
+String getChipId();
+
+String getVersionJson();
+String getNetworkJson();
+String getSystemJson();
+
+String getHeapStats();
 String getFreeSketch();
 String getFlashMap();
 String getFlashSize();
 
-String getFSTotalSpace();
-String getFSUsedSpace();
-String getFSFileList();
+String getFSTotal();
+String getFSUsed();
+String getFSList();
 
-const char* rssi2human(sint8_t rssi);
-String getHeapStat();
+String getClientsInfo();
+
+}

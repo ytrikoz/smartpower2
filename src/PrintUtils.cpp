@@ -4,14 +4,10 @@ using namespace StrUtils;
 
 namespace PrintUtils {
 
-size_t print_shell_start(Print *p) {
-    return p->println(FPSTR(msg_shell_start));
-}
-
-size_t print_shell_quit(Print *p) { return p->println(FPSTR(msg_shell_quit)); }
+size_t print_shell_exit(Print *p) { return p->println(FPSTR(msg_shell_exit)); }
 
 size_t print_shell_interrupted(Print *p) {
-    return p->println(FPSTR(str_shell_interrupted));
+    return p->println(FPSTR(msg_shell_interrupted));
 }
 
 size_t print_not_found(Print *p, String &str) {

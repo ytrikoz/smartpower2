@@ -1,14 +1,25 @@
 #include "StrUtils.h"
 
 #include "TimeUtils.h"
+#include "user_interface.h"
 
 namespace StrUtils {
 
-static const char strf_mac[] PROGMEM = "mac %02x:%02x:%02x:%02x:%02x:%02x";
+static const char strf_network[] PROGMEM = "ip: %s subnet: %s gateway: %s";
 static const char str_down[] PROGMEM = "down";
 static const char str_up[] PROGMEM = "up";
-static const char *weekdays[] = {"sun", "mon", "tue", "wed",
-                                 "thu", "fri", "sat"};
+static const char *weekdays[] = {"mon", "tue", "wed", "thu",
+                                 "fri", "sat", "sun"};
+
+String asJsonObj(const char *key, const char *value) {
+    char buf[128];
+    sprintf(buf, "{\"%s\":\"%s\"}", key, value);
+    return String(buf);
+}
+
+String asJsonObj(const char *key, String value) {
+    return asJsonObj(key, value.c_str());
+}
 
 String getTimeStr(const unsigned long epoch_s, bool longFormat) {
     // seconds since 1970-01-01 00:00:00
@@ -133,7 +144,15 @@ String formatSize(size_t size) {
 
 String formatMac(uint8 hw[6]) {
     char buf[32];
-    sprintf_P(buf, strf_mac, hw[0], hw[1], hw[2], hw[3], hw[4], hw[5]);
+    sprintf(buf, MACSTR, MAC2STR(hw));
+    return String(buf);
+}
+
+String formatNetwork(const IPAddress ipaddr, const IPAddress subnet,
+                     const IPAddress gateway) {
+    char buf[128];
+    sprintf_P(buf, strf_network, ipaddr.toString().c_str(),
+              subnet.toString().c_str(), gateway.toString().c_str());
     return String(buf);
 }
 
@@ -313,6 +332,45 @@ template <typename... Args> void sayArgsP(Print *p, Args... args) {
         strcpy(buf, (char *)pgm_read_ptr(&args[n]...));
         p->print(buf);
     }
+}
+
+bool atomac(const char *txt, uint8_t *addr) {
+    for (uint8_t i = 0; i < 6; i++) {
+        int a, b;
+        a = hex2num(*txt++);
+        if (a < 0)
+            return false;
+        b = hex2num(*txt++);
+        if (b < 0)
+            return false;
+        *addr++ = (a << 4) | b;
+        if (i < 5 && *txt++ != ':')
+            return false;
+    }
+    return true;
+}
+
+int hex2num(char c) {
+    if (c >= '0' && c <= '9')
+        return c - '0';
+    if (c >= 'a' && c <= 'f')
+        return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F')
+        return c - 'A' + 10;
+    return -1;
+}
+
+bool atomac(const char *txt, uint8_t *addr);
+
+int hex2byte(const char *hex) {
+    int a, b;
+    a = hex2num(*hex++);
+    if (a < 0)
+        return -1;
+    b = hex2num(*hex++);
+    if (b < 0)
+        return -1;
+    return (a << 4) | b;
 }
 
 } // namespace StrUtils

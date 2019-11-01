@@ -5,55 +5,100 @@
 
 #include "CommonTypes.h"
 
-typedef std::function<void(bool hasNetwork, unsigned long time)>
+typedef std::function<void(bool has, unsigned long time)>
     NetworkStatusChangeEventHandler;
 
 namespace Wireless {
 
-enum Mode { WLAN_OFF = 0, WLAN_STA = 1, WLAN_AP = 2, WLAN_AP_STA = 3 };
+enum NetworkMode {
+    NETWORK_OFF = 0,
+    NETWORK_STA = 1,
+    NETWORK_AP = 2,
+    NETWORK_AP_STA = 3
+};
 
-enum NetworkStatus { NETWORK_DOWN, NETWORK_UP };
+enum NetworkStatus { NETWORK_DOWN = 0, NETWORK_UP = 1 };
 
-String getConfigHostname();
-String getConnectionStatus();
-Mode getMode();
+String getWiFiPhyMode();
+
+String getWifiChannel();
+
+void setBroadcast(uint8_t _new);
+
+String getRSSI();
+
+String hostSTA_StatusStr();
+
+NetworkMode getMode();
+
 bool hasNetwork();
-String hostSSID();
-IPAddress hostIP();
-void print_wifi_mode(Print *p);
+
 String networkStateInfo();
+
+String hostSSID();
+
+IPAddress hostDNS();
+
+IPAddress hostIP();
+
+IPAddress hostGateway();
+
+IPAddress hostSubnet();
+
+String hostMac();
+
 String hostIPInfo();
+
 String hostName();
-String RSSIInfo();
+
 String hostSTA_SSID();
+
+String hostAP_Name();
+
 String hostAP_Password();
+
 String hostAP_SSID();
 
 IPAddress hostAP_IP();
+
 IPAddress hostSTA_IP();
 
 size_t printDiag(Print *p);
 
-void start_wifi();
+void start();
+
+void init(NetworkMode mode, const char *host, uint8_t tpw);
+
+void setMode(NetworkMode mode);
+
 void setOnNetworkStatusChange(NetworkStatusChangeEventHandler);
+
 void updateState();
+
 void setNetworkStatus(NetworkStatus);
+
 void onNetworkUp();
+
 void onNetworkDown();
-void setBroadcastTo(uint8_t);
+
 bool scanNetworks(const char *ssid);
+
 bool disconnectWiFi();
 
-void changeMode(Mode mode);
-void setupAP(IPAddress);
+void setupAP(const IPAddress host);
+
 bool startAP(const char *ssid, const char *password);
 
 void setupSTA();
-void setupSTA(IPAddress ipaddr, IPAddress subnet, IPAddress gateway,
-              IPAddress dns);
+
+void setupSTA(const IPAddress ipaddr, const IPAddress subnet,
+              const IPAddress gateway, const IPAddress dns);
+
 bool startSTA(const char *ssid, const char *password);
 
-void useStaticStationIP(bool enabled);
+void println_mode(Print *p, NetworkMode mode);
 
-bool atomac(const char *txt, uint8_t *addr);
+String getModeStr(NetworkMode mode);
 } // namespace Wireless
+
+void useStaticStationIP(bool enabled);

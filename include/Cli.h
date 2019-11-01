@@ -5,8 +5,8 @@
 
 namespace Cli {
 
-void init();
 void setOutput(Print *);
+void init();
 void close();
 bool active();
 
