@@ -1,7 +1,6 @@
 #include "StrUtils.h"
 
 #include "TimeUtils.h"
-#include "user_interface.h"
 
 namespace StrUtils {
 
@@ -21,7 +20,7 @@ String asJsonObj(const char *key, String value) {
     return asJsonObj(key, value.c_str());
 }
 
-String getTimeStr(const unsigned long epoch_s, bool longFormat) {
+String getTimeStr(const unsigned long epoch_s, bool fmtLong) {
     // seconds since 1970-01-01 00:00:00
     unsigned long passed = epoch_s;
     uint8_t seconds = passed % ONE_MINUTE_s;
@@ -31,7 +30,7 @@ String getTimeStr(const unsigned long epoch_s, bool longFormat) {
     uint8_t hours = passed % ONE_DAY_h;
     passed /= ONE_DAY_h;
     char buf[32];
-    if (longFormat) {
+    if (fmtLong) {
         int8_t weekday = ((passed + 4) % 7) + 1;
         sprintf_P(buf, TIME_LONG_FORMAT, weekdays[weekday], hours, minutes,
                   seconds);

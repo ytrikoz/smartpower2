@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <IPAddress.h>
+#include <user_interface.h>
 
 #include "Consts.h"
 
@@ -10,10 +11,10 @@ namespace StrUtils {
 typedef enum { LEFT, CENTER, RIGHT } Align;
 
 String asJsonObj(const char *key, const char *value);
+
 String asJsonObj(const char *key, String value);
 
-
-String getTimeStr(unsigned long time_s, bool longFormat = false);
+String getTimeStr(const unsigned long epoch_s, bool fmtLong = false);
 
 String getDateTimeStr(const unsigned long epoch_s);
 

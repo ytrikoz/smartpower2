@@ -93,17 +93,17 @@ void ConfigHelper::setDefault() {
         config->setDefaultValue(ConfigItem(i));
 }
 
-String ConfigHelper::getConfigJson() {
-    DynamicJsonDocument doc(1024);
-    String str;
-    for (uint8_t i = 0; i < PARAM_COUNT; ++i) {
-        ConfigItem param = ConfigItem(i);
-        JsonObject item = doc.createNestedObject();
-        item[config->getName(param)] = config->getValueAsString(param);
-    }
-    serializeJson(doc, str);
-    return str;
-}
+// String ConfigHelper::getConfigJson() {
+//     DynamicJsonDocument doc(1024);
+//     String str;
+//     for (uint8_t i = 0; i < PARAM_COUNT; ++i) {
+//         ConfigItem param = ConfigItem(i);
+//         JsonObject item = doc.createNestedObject();
+//         item[config->getName(param)] = config->getValueAsString(param);
+//     }
+//     serializeJson(doc, str);
+//     return str;
+// }
 
 bool ConfigHelper::getWhStoreEnabled() {
     return config->getValueAsBool(WH_STORE_ENABLED);

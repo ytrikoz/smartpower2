@@ -1,6 +1,5 @@
 #pragma once
 
-#include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 
 #include "CommonTypes.h"
