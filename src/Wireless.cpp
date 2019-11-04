@@ -168,7 +168,7 @@ void setupAP(const IPAddress host) {
     const IPAddress subnet(255, 255, 255, 0);
     WiFi.softAPConfig(host, gateway, subnet);
 
-    println(&DEBUG, formatNetwork(host, subnet, gateway));
+    println(&DEBUG, fmt_network(host, subnet, gateway));
 }
 
 void setupSTA() {
@@ -184,11 +184,7 @@ void setupSTA(const IPAddress ipaddr, const IPAddress subnet,
     if (ipaddr == IPAddress(IP4_ADDR_ANY)) {
         println_nameP_value(&DEBUG, str_dhcp, getBoolStr(true).c_str());
     } else {
-        char buf[128];
-        sprintf(buf, "ip: %s subnet: %s gateway: %s dns: %s",
-                ipaddr.toString().c_str(), subnet.toString().c_str(),
-                gateway.toString().c_str(), dns.toString().c_str());
-        println(&DEBUG, buf);
+        println(&DEBUG, fmt_network(ipaddr, subnet, gateway, dns));
     }
     WiFi.config(ipaddr, gateway, subnet, dns);
 }
@@ -219,20 +215,18 @@ boolean disconnectWiFi() { return WiFi.disconnect(); }
 
 void start_safe_wifi_ap() {
     print_ident(&DEBUG, FPSTR(str_wifi));
-    print_ident(&DEBUG, FPSTR(str_ap));
-    print(&DEBUG, FPSTR(str_safe));
-    print(&DEBUG, FPSTR(str_mode));
-
+    print_ident(&DEBUG, FPSTR(str_safe));
     char ap_ssid[32];
-    strcpy(ap_ssid, APP_NAME);
+    strcpy(ap_ssid, APP_SHORT);
+    strcat(ap_ssid, "_");
     strcat(ap_ssid, SysInfo::getChipId().c_str());
+    println_strP_var(&DEBUG, str_ssid, FPSTR(ap_ssid));
+
     IPAddress ap_ipaddr = IPAddress(192, 168, 4, 1);
     char ap_passwd[] = "12345678";
     setMode(NETWORK_AP);
     setupAP(ap_ipaddr);
-    if (!startAP(ap_ssid, ap_passwd))
-        print(&DEBUG, FPSTR(str_failed));
-    print_ln(&DEBUG);
+    startAP(ap_ssid, ap_passwd);
 }
 
 void start() {

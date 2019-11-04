@@ -68,7 +68,8 @@ class Config {
         {"ntp_pool", CONFIG_STR, "pool.ntp.org"},
         {"time_backup", CONFIG_NUMBER, "3600"},
         {"store_wh", CONFIG_CHAR, "0"},
-        {"backlight", CONFIG_CHAR, "1"}};
+        {"backlight", CONFIG_CHAR, "1"},
+        {"syslog", CONFIG_STR, ""}};
 
 #ifdef DEBUG_CONFIG
     Print *dbg = &DEBUG;

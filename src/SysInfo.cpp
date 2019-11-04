@@ -18,12 +18,12 @@ String getCpuFreq() {
 }
 
 String getFreeSketch() {
-    String str = formatSize(ESP.getFreeSketchSpace());
+    String str = fmt_size(ESP.getFreeSketchSpace());
     return str;
 }
 
 String getSketchSize() {
-    String str = formatSize(ESP.getSketchSize());
+    String str = fmt_size(ESP.getSketchSize());
     return str;
 }
 
@@ -89,21 +89,21 @@ String getFlashMap() {
     return str;
 }
 
-String getFSUsedSpace() {
+String getFSUsed() {
     FSInfo fsi;
     SPIFFS.info(fsi);
-    String str = formatSize(fsi.usedBytes);
+    String str = fmt_size(fsi.usedBytes);
     return str;
 }
 
-String getFSTotalSpace() {
+String getFSTotal() {
     FSInfo info;
     SPIFFS.info(info);
-    String str = formatSize(info.totalBytes);
+    String str = fmt_size(info.totalBytes);
     return str;
 }
 
-String getFSFileList() {
+String getFSList() {
     FSInfo info;
     SPIFFS.info(info);
     String str = "FileList";
@@ -119,13 +119,21 @@ String getFSFileList() {
         str += " ";
         str += "FileSize";
         str += ":";
-        str += formatSize(fileSize);
+        str += fmt_size(fileSize);
     }
     str += "}";
     return str;
 }
 
-String getClientsInfo() {
+uint8_t getAPClientsNum() {
+    uint res = 0;
+    if (Wireless::getMode() == Wireless::NETWORK_AP ||
+        Wireless::getMode() == Wireless::NETWORK_AP_STA)
+        res = wifi_softap_get_station_num();
+    return res;
+}
+
+String getAPClientsInfo() {
     struct station_info *station = wifi_softap_get_station_info();
     struct station_info *next_station;
     char buf[32];
@@ -207,9 +215,9 @@ String getSystemJson() {
     str += "[";
     str += asJsonObj(str_cpu, getCpuFreq());
     str += ",";
-    str += asJsonObj(str_used, getFSUsedSpace());
+    str += asJsonObj(str_used, getFSUsed());
     str += ",";
-    str += asJsonObj(str_total, getFSTotalSpace());
+    str += asJsonObj(str_total, getFSTotal());
     str += "]";
     return str;
 }
@@ -220,7 +228,7 @@ String getHeapStats() {
     uint8_t frag = 0;
     ESP.getHeapStats(&free, &max, &frag);
     char buf[32];
-    sprintf(buf, "free: %s frag: %d%%", formatSize(free).c_str(), frag);
+    sprintf(buf, "free: %s frag: %d%%", fmt_size(free).c_str(), frag);
     return String(buf);
 }
 

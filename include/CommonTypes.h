@@ -109,7 +109,7 @@ struct ConfigDefine {
     const char *defaults;
 };
 
-#define PARAM_COUNT 22
+#define PARAM_COUNT 23
 
 enum ConfigItem {
     WIFI,
@@ -133,7 +133,8 @@ enum ConfigItem {
     NTP_POOL_SERVER,
     TIME_BACKUP_INTERVAL,
     WH_STORE_ENABLED,
-    BACKLIGHT
+    BACKLIGHT,
+    SYSLOG_SERVER
 };
 
 struct WebClient {

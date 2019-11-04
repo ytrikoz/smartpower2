@@ -40,15 +40,10 @@ void App::loop() {
 }
 
 size_t App::printDiag(Print *p) {
-    size_t n = p->println(SysInfo::getHeapStats());
-    n += println(p, FPSTR(str_connection));
-    n += println_nameP_value(p, str_http, WebPanel::get_http_clients_count());
-    n += println_nameP_value(p, str_telnet, telnet && telnet->hasClient());
-    if (Wireless::getMode() != Wireless::NETWORK_STA) {
-        n += print(p, FPSTR(str_clients));
-        n += println(p, FPSTR(str_connected));
-        n += println(p, SysInfo::getClientsInfo());
-    }
+    size_t n = print(p, SysInfo::getHeapStats().c_str());
+    n += print_nameP_value(p, str_http, WebPanel::get_http_clients_count());
+    n += print_nameP_value(p, str_telnet, telnet && telnet->hasClient());
+    n += println_nameP_value(p, str_ap, SysInfo::getAPClientsNum());
     return n;
 }
 
@@ -63,10 +58,9 @@ size_t App::printDiag(Print *p, const AppModuleEnum module) {
 
 void App::printLoopCapture(Print *p) {
     LoopCapture *cap = loopLogger->getCapture();
-
-    p->print(StrUtils::getStrP(str_capture));
-    p->printf_P(strf_lu_ms, cap->duration);
-    p->println();
+    print(out, FPSTR(str_capture));
+    print(out, cap->duration);
+    println(out, FPSTR(str_ms));
 
     unsigned long time_range = 2;
     for (uint8_t i = 0; i < cap->counters_size; ++i) {
@@ -256,8 +250,6 @@ void App::init(Print *p) {
     lastUpdated = 0;
 
     Wire.begin(I2C_SDA, I2C_SCL);
-    SPIFFS.begin();
-
 #ifdef DEBUG_APP
     dbg->println(ESP.getResetReason());
     dbg->println(ESP.getResetInfo());

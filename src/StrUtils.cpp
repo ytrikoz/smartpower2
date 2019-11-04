@@ -5,6 +5,8 @@
 namespace StrUtils {
 
 static const char strf_network[] PROGMEM = "ip: %s subnet: %s gateway: %s";
+static const char strf_network_dns[] PROGMEM =
+    "ip: %s subnet: %s gateway: %s dns: %s";
 static const char str_down[] PROGMEM = "down";
 static const char str_up[] PROGMEM = "up";
 static const char *weekdays[] = {"mon", "tue", "wed", "thu",
@@ -130,7 +132,7 @@ bool setstr(char *dest, const char *src, size_t size) {
     return false;
 }
 
-String formatSize(size_t size) {
+String fmt_size(size_t size) {
     if (size < 1024)
         return String(size) + "b";
     else if (size < (1024 * 1024))
@@ -141,17 +143,26 @@ String formatSize(size_t size) {
         return String(size / 1024.0 / 1024.0 / 1024.0) + "GB";
 }
 
-String formatMac(uint8 hw[6]) {
+String fmt_mac(uint8 hw[6]) {
     char buf[32];
     sprintf(buf, MACSTR, MAC2STR(hw));
     return String(buf);
 }
 
-String formatNetwork(const IPAddress ipaddr, const IPAddress subnet,
-                     const IPAddress gateway) {
+String fmt_network(const IPAddress ipaddr, const IPAddress subnet,
+                   const IPAddress gateway) {
     char buf[128];
     sprintf_P(buf, strf_network, ipaddr.toString().c_str(),
               subnet.toString().c_str(), gateway.toString().c_str());
+    return String(buf);
+}
+
+String fmt_network(const IPAddress ipaddr, const IPAddress subnet,
+                   const IPAddress gateway, const IPAddress dns) {
+    char buf[128];
+    sprintf(buf, strf_network_dns, ipaddr.toString().c_str(),
+            subnet.toString().c_str(), gateway.toString().c_str(),
+            dns.toString().c_str());
     return String(buf);
 }
 
@@ -201,15 +212,9 @@ void stringToBytes(const char *str, char sep, uint8_t *size, int len,
     }
 }
 
-String getSocketStr(IPAddress ip, int port) {
+String fmt_ip_port(const IPAddress &ip, const uint16_t port) {
     char buf[32];
-    strcpy(buf, iptos(ip).c_str());
-    size_t len = strlen(buf);
-    buf[len++] = ':';
-    buf[len++] = '\x00';
-
-    char tmp[8];
-    strcat(buf, itoa(port, tmp, DEC));
+    sprintf(buf, "%s:%d", ip.toString().c_str(), port);
     return String(buf);
 }
 

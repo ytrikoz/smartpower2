@@ -32,9 +32,9 @@ class NtpClient : public AppModule {
 
   private:
     unsigned long epoch_s;
-    unsigned requestTime, responseTime;
+    unsigned requestTime, responseTime = 0;
     WiFiUDP *udp;
-    bool active;
+    bool active = false;
     unsigned long timeout;
     char *timeServerPool;
     unsigned long syncInterval;

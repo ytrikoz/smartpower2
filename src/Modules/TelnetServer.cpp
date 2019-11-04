@@ -1,6 +1,7 @@
 #include "Modules/TelnetServer.h"
 
 using namespace PrintUtils;
+using namespace StrUtils;
 
 TelnetServer::TelnetServer() : AppModule(MOD_TELNET) {
     active = connected = false;
@@ -78,7 +79,9 @@ void TelnetServer::loop() {
 
 void TelnetServer::onConnect() {
     print_ident(out, FPSTR(str_telnet));
-    print_strP_var(out, str_client, FPSTR(str_connected));
+    println_strP_var(
+        out, str_connected,
+        fmt_ip_port(client.remoteIP(), client.remotePort()).c_str());
 
     if (eventHandler)
         eventHandler(CLIENT_CONNECTED, &client);
@@ -86,7 +89,7 @@ void TelnetServer::onConnect() {
 
 void TelnetServer::onDisconnect() {
     print_ident(out, FPSTR(str_telnet));
-    print_strP_var(out, str_client, FPSTR(str_disconnected));
+    println(out, FPSTR(str_disconnected));
 
     if (eventHandler)
         eventHandler(CLIENT_DISCONNECTED, &client);

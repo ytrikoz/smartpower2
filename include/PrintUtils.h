@@ -36,6 +36,12 @@ template <typename T> size_t print_strP_var(Print *p, PGM_P strP, T var) {
     return n += p->print(' ');
 }
 
+template <typename T> size_t println_strP_var(Print *p, PGM_P strP, T var) {
+    size_t n = p->print(FPSTR(strP));
+    n += p->print(' ');
+    return n += p->println(var);
+}
+
 template <typename T>
 size_t printlm_moduleP_nameP_value(Print *p, PGM_P moduleStrP, PGM_P nameStrP,
                                    T value) {
@@ -89,11 +95,15 @@ size_t print_ln(Print *p);
 
 size_t print_done(Print *p);
 
+size_t print_quoted(Print *p, String &str);
+
 size_t print_quoted(Print *p, const char *str);
 
 size_t print_ident(Print *p, const char *str);
 
 size_t print_file_not_found(Print *p, String &name);
+
+size_t print_dir_not_found(Print *p, String &name);
 
 size_t print_not_found(Print *p, String &str);
 

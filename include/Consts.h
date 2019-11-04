@@ -82,6 +82,8 @@
 #define TIME_BACKUP_INTERVAL_MIN_s 60
 #define WOL_PORT 9
 
+#define SYSLOG_PORT 514
+
 #define PSU_CHECK_INTERVAL_s 5
 #define PSU_VOLTAGE_LOW_v 1.0f
 #define PSU_LOAD_LOW_a 0.001f

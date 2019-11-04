@@ -5,6 +5,7 @@
 #include <WiFiUdp.h>
 
 #include "AppModule.h"
+#include "MemoryBuffer.h"
 
 /* Syslog Facility
 0	kernel messages
@@ -32,7 +33,7 @@
 22	local use 6 (local6)
 23	local use 7 (local7)
 */
-#define SYSLOG_FACILITY 16
+#define SYSLOG_FACILITY 1
 
 /* Syslog Severity
 0	EMERGENCY       A "panic" condition
@@ -52,21 +53,33 @@ class SyslogClient : public AppModule {
     SyslogClient();
     SyslogClient(WiFiUDP *upd);
     void setConfig(Config *cfg);
+    bool begin();
+    void start();
+    void stop();
+    void loop();
+    size_t printDiag(Print *);
 
   public:
-    void alert(String str);
-    void info(String str);
-    void debug(String str);
+    void alert(String &str);
+    void info(String &str);
+    void debug(String &str);
 
   private:
-    void setServer(const char *str);
-    void setPort(const uint16_t udp_port);
-    void send(SysLogSeverity level, String message);
-    String getPayload(const SysLogSeverity level, unsigned long time,
-                      const char *host, const char *message);
+    void setHost(const char *);
+    void setServer(const char *);
+    void setPort(const uint16_t);
 
   private:
+    void send(SysLogSeverity level, String &message);
+    void printPacket(Print *p, const SysLogSeverity level, AppModuleEnum mod,
+                     String &message);
+
+  private:
+    MemoryBuffer *log_buffer;
+    bool active = false;
     WiFiUDP *udp;
-    char *server;
+    char server[16];
+    char host[16];
+    IPAddress serverIp = IPADDR_NONE;
     uint16_t port;
 };

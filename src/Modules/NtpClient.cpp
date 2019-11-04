@@ -9,11 +9,7 @@ using namespace AppUtils;
 using namespace PrintUtils;
 using namespace StrUtils;
 
-NtpClient::NtpClient() : AppModule(MOD_NTP) {
-    udp = new WiFiUDP();
-    requestTime = responseTime = 0;
-    active = false;
-}
+NtpClient::NtpClient() : AppModule(MOD_NTP) { udp = new WiFiUDP(); }
 
 bool NtpClient::begin() {
     start();
@@ -73,6 +69,7 @@ void NtpClient::sendRequest() {
     if (!WiFi.hostByName(timeServerPool, serverIp)) {
         say_strP(str_dns, getStrP(str_error).c_str());
         active = false;
+        return;
     }
 
     uint8_t buf[NTP_PACKET_SIZE];

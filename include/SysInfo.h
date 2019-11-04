@@ -21,6 +21,7 @@ String getFSTotal();
 String getFSUsed();
 String getFSList();
 
-String getClientsInfo();
+uint8_t getAPClientsNum();
+String getAPClientsInfo();
 
-}
+} // namespace SysInfo

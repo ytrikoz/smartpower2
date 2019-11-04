@@ -3,6 +3,7 @@
 
 #include "Actions/PowerAvg.h"
 #include "Actions/WakeOnLan.h"
+#include "CrashReport.h"
 
 using namespace PrintUtils;
 using namespace StrUtils;
@@ -28,6 +29,8 @@ void onLog(cmd *c);
 void onWol(cmd *c);
 void onRestart(cmd *c);
 void onRun(cmd *c);
+void onLs(cmd *c);
+void onTest(cmd *c);
 
 enum CommandAction {
     ACTION_UNKNOWN,
@@ -47,22 +50,9 @@ enum CommandAction {
     ACTION_WOL
 };
 
-enum CommandItems {
-    ITEM_CLIENT,
-    ITEM_CLOCK,
-    ITEM_POWER,
-    ITEM_LOG,
-    ITEM_NETWORK,
-    ITEM_INFO,
-    ITEM_STATUS,
-    ITEM_LOOP,
-    ITEM_NTP,
-    ITEM_DIAG,
-    ITEM_WIFI,
-};
-
 Command cmdConfig, cmdPower, cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet,
-    cmdGet, cmdRm, cmdClock, cmdPlot, cmdLog, cmdWol, cmdRestart, cmdRun;
+    cmdGet, cmdRm, cmdClock, cmdPlot, cmdLog, cmdWol, cmdRestart, cmdRun, cmdLs,
+    cmdTest;
 
 Print *out = NULL;
 
@@ -75,6 +65,7 @@ Print *getOutput() {
 String getActionStr(Command &command) {
     return command.getArgument("action").getValue();
 }
+
 String getParamStr(Command &command) {
     return command.getArgument("param").getValue();
 }
@@ -90,12 +81,19 @@ String getMacStr(Command &command) {
 String getModStr(Command &command) {
     return command.getArgument("mod").getValue();
 }
+
 String getFileStr(Command &command) {
     return command.getArgument("file").getValue();
 }
+
+String getPathStr(Command &command) {
+    return command.getArgument("path").getValue();
+}
+
 String getItemStr(Command &command) {
     return command.getArgument("item").getValue();
 }
+
 String getValueStr(Command &command) {
     return command.getArgument("value").getValue();
 }
@@ -221,6 +219,14 @@ void init() {
     cmdRun = cli->addCommand("run");
     cmdRun.addPositionalArgument("file");
     cmdRun.setCallback(Cli::onRun);
+
+    cmdLs = cli->addCommand("ls");
+    cmdLs.addPositionalArgument("path");
+    cmdLs.setCallback(Cli::onLs);
+
+    cmdTest = cli->addCommand("test");
+    cmdTest.addPositionalArgument("item");
+    cmdTest.setCallback(Cli::onTest);
 }
 
 void onLog(cmd *c) {
@@ -427,16 +433,15 @@ void onShow(cmd *c) {
         LoopLoggerState state = logger->getState();
         switch (state) {
         case CAPTURE_IDLE:
-            out->print(StrUtils::getStrP(str_start));
-            out->print(StrUtils::getStrP(str_capture));
-            out->printf_P(strf_lu_ms, logger->getDuration());
-            out->println();
+            print(out, FPSTR(str_capture));
+            print(out, logger->getDuration());
+            println(out, FPSTR(str_ms));
             app.getLoopLogger()->start();
             return;
         case CAPTURE_IN_PROGRESS:
-            out->print(StrUtils::getStrP(str_capturing));
-            out->printf_P(strf_lu_ms, logger->getDuration());
-            out->println();
+            print(out, FPSTR(str_capturing));
+            print(out, logger->getDuration());
+            println(out, FPSTR(str_ms));
             return;
         case CAPTURE_DONE:
             app.printLoopCapture(out);
@@ -468,6 +473,38 @@ void onPrint(cmd *c) {
         f.close();
     } else {
         PrintUtils::print_file_not_found(out, file);
+    }
+}
+
+uint8_t getLevel(String &name) {
+    uint8_t result = 0;
+    for (uint8_t i = 0; i < name.length(); ++i)
+        if (name.charAt(i) == '/')
+            result++;
+    return result;
+}
+
+String getDirName(String &name) {
+    if (!name.startsWith("/"))
+        name = "/" + name;
+    if (!name.endsWith("/"))
+        name += "/";
+    return name;
+}
+
+void onLs(cmd *c) {
+    Command cmd(c);
+    String pathStr = getPathStr(cmd);
+    String path = getDirName(pathStr);
+    uint8_t max_level = getLevel(path);
+    Dir dir = SPIFFS.openDir(path);
+    while (dir.next()) {
+        String name = dir.fileName();
+        if (getLevel(name) > max_level)
+            continue;
+        print(out, dir.fileName());
+        print(out, '\t');
+        println(out, fmt_size(dir.fileSize()));
     }
 }
 
@@ -504,6 +541,23 @@ void onRun(cmd *c) {
         } else {
             print(out, FPSTR(str_failed));
         }
+    }
+}
+
+void onTest(cmd *c) {
+    Command cmd(c);
+    String item = cmd.getArgument("item").getValue();
+    if (item.equals("crash")) {
+        print(out, FPSTR(str_start));
+        print_quoted(out, item);
+        int result, zero;
+        zero = 0;
+        result = 1 / zero;
+        println(out, result);
+    } else {
+        CrashReport rep;
+        if (!rep.print(out, item.c_str()))
+            print_not_found(out, item);
     }
 }
 

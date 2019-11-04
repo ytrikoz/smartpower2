@@ -18,10 +18,16 @@ size_t print_not_found(Print *p, String &str) {
     return n = p->println(FPSTR(str_found));
 }
 
-size_t print_file_not_found(Print *p, String &file) {
+size_t print_file_not_found(Print *p, String &name) {
     size_t n = p->print(FPSTR(str_file));
     n += p->print(' ');
-    return n += print_not_found(p, file);
+    return n += print_not_found(p, name);
+}
+
+size_t print_dir_not_found(Print *p, String &name) {
+    size_t n = p->print(FPSTR(str_dir));
+    n += p->print(' ');
+    return n += print_not_found(p, name);
 }
 
 size_t print_ln(Print *p) { return p->println(); }
@@ -36,6 +42,10 @@ size_t print_quoted(Print *p, const char *str) {
     n += p->print(str);
     n += p->print('\'');
     return n;
+}
+
+size_t print_quoted(Print *p, String &str) {
+    return print_quoted(p, str.c_str());
 }
 
 size_t print_ident(Print *p, const char *str) {

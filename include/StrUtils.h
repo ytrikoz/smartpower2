@@ -41,16 +41,17 @@ bool strpositiv(String &);
 
 bool strnegativ(String &);
 
-String getSocketStr(IPAddress ip, int port);
+String fmt_ip_port(const IPAddress &ip, const uint16_t port);
 
-String getMacStr(uint8 hwaddr[6]);
+String fmt_network(const IPAddress ipddr, const IPAddress subnet,
+                   const IPAddress gateway);
 
-String formatNetwork(const IPAddress ipddr, const IPAddress subnet,
-                     const IPAddress gateway);
+String fmt_network(const IPAddress ipaddr, const IPAddress subnet,
+                   const IPAddress gateway, const IPAddress dns);
 
-String formatSize(size_t bytes);
+String fmt_size(size_t bytes);
 
-String formatInMHz(uint32_t);
+String fmt_mhz(uint32_t);
 
 void strpadd(char *str, Align align, size_t size, const char ch = ' ');
 
