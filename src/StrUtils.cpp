@@ -9,8 +9,8 @@ static const char strf_network_dns[] PROGMEM =
     "ip: %s subnet: %s gateway: %s dns: %s";
 static const char str_down[] PROGMEM = "down";
 static const char str_up[] PROGMEM = "up";
-static const char *weekdays[] = {"mon", "tue", "wed", "thu",
-                                 "fri", "sat", "sun"};
+static const char *weekdays[] = {"sun", "mon", "tue", "wed",
+                                 "thu", "fri", "sat"};
 
 bool atomac(const char *txt, uint8_t *addr) {
     for (uint8_t i = 0; i < 6; i++) {
@@ -61,7 +61,7 @@ String asJsonObj(const char *key, String value) {
     return asJsonObj(key, value.c_str());
 }
 
-String : getTimeStr(const unsigned long epoch_s, bool fmtLong) {
+String getTimeStr(const unsigned long epoch_s, bool fmtLong) {
     // seconds since 1970-01-01 00:00:00
     unsigned long passed = epoch_s;
     uint8_t seconds = passed % ONE_MINUTE_s;
@@ -72,7 +72,7 @@ String : getTimeStr(const unsigned long epoch_s, bool fmtLong) {
     passed /= ONE_DAY_h;
     char buf[32];
     if (fmtLong) {
-        int8_t weekday = ((passed + 4) % 7) + 1;
+        int8_t weekday = ((passed + 4) % 7);
         sprintf_P(buf, TIME_LONG_FORMAT, weekdays[weekday], hours, minutes,
                   seconds);
     } else {
