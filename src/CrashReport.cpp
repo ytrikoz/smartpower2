@@ -44,5 +44,5 @@ void CrashReport::print(Print *p) {
                 cur.depc);
     p->println();
     println(p, FPSTR(str_stack));
-    println(p, cur.stack);
+    println(p, cur.stack_size);
 }
