@@ -543,29 +543,21 @@ void onCrash(cmd *c) {
     Command cmd(c);
     String item = getItemStr(cmd);
     switch (getAction(cmd)) {
-    case ACTION_LIST: {
-        printFileList(out, FS_CRASH_ROOT);
+    case ACTION_LIST:
+        fileList(out, FS_CRASH_ROOT);
         break;
-    }
-    case ACTION_PRINT: {
-        CrashReport rep;
-        if (!rep.load(item.c_str())) {
+    case ACTION_PRINT:
+        if (!CrashReport().print(out, item.c_str()))
             print_not_found(out, item);
-        } else {
-            rep.print(out);
-        }
         break;
-    }
-    case ACTION_CLEAR: {
-
+    case ACTION_CLEAR:
+        clearDir(out, FS_CRASH_ROOT);
         break;
-    }
     case ACTION_TEST: {
         int val = 0;
         int res = 1 / val;
         println(out, res);
-        break;
-    }
+    } break;
     case ACTION_UNKNOWN:
     default:
         String actionStr = getActionStr(cmd);

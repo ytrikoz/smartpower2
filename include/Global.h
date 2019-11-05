@@ -10,4 +10,3 @@
 
 extern App app;
 extern SimpleCLI *cli;
-extern SimpleTimer timer;

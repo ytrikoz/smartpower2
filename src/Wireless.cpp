@@ -1,7 +1,6 @@
 #include "Wireless.h"
 
 #include <Arduino.h>
-
 #include <ESP8266WiFi.h>
 #include <user_interface.h>
 
@@ -26,6 +25,9 @@ unsigned long lastUp, lastDown = 0;
 WiFiEventHandler staGotIpEventHandler, staConnectedEventHandler,
     staDisconnectedEventHandler;
 
+WiFiEventHandler stationConnectedHandler, stationDisconnectedHandler,
+    probeRequestHandler;
+
 NetworkStatusChangeEventHandler statusChangeHandler;
 
 String hostAP_SSID() { return WiFi.softAPSSID(); }
@@ -33,6 +35,8 @@ String hostAP_SSID() { return WiFi.softAPSSID(); }
 String hostAP_Password() { return WiFi.softAPPSK(); }
 
 IPAddress hostAP_IP() { return WiFi.softAPIP(); }
+
+String hostSTA_RSSI() { return fmt_rssi(WiFi.RSSI()); }
 
 String hostSTA_SSID() { return WiFi.SSID(); }
 
@@ -161,11 +165,11 @@ void setMode(const NetworkMode mode) {
 }
 
 void setupAP(const IPAddress host) {
-    print_ident(&DEBUG, FPSTR(str_wifi));
-    print_ident(&DEBUG, FPSTR(str_ap));
+    print_wifi_ap(&DEBUG);
 
     const IPAddress gateway(host);
     const IPAddress subnet(255, 255, 255, 0);
+
     WiFi.softAPConfig(host, gateway, subnet);
 
     println(&DEBUG, fmt_network(host, subnet, gateway));
@@ -178,9 +182,7 @@ void setupSTA() {
 
 void setupSTA(const IPAddress ipaddr, const IPAddress subnet,
               const IPAddress gateway, const IPAddress dns) {
-    print_ident(&DEBUG, FPSTR(str_wifi));
-    print_ident(&DEBUG, FPSTR(str_sta));
-
+    print_wifi_sta(&DEBUG);
     if (ipaddr == IPAddress(IP4_ADDR_ANY)) {
         println_nameP_value(&DEBUG, str_dhcp, getBoolStr(true).c_str());
     } else {
@@ -192,8 +194,7 @@ void setupSTA(const IPAddress ipaddr, const IPAddress subnet,
 bool startSTA(const char *ssid, const char *passwd) {
     WiFi.begin(ssid, passwd);
     uint8_t result = WiFi.waitForConnectResult();
-    print_ident(&DEBUG, FPSTR(str_wifi));
-    print_ident(&DEBUG, FPSTR(str_sta));
+    print_wifi_sta(&DEBUG);
     print_nameP_value(&DEBUG, str_ssid, ssid);
     println_nameP_value(&DEBUG, str_status, hostSTA_StatusStr());
     return result;
@@ -201,8 +202,7 @@ bool startSTA(const char *ssid, const char *passwd) {
 
 bool startAP(const char *ssid, const char *passwd) {
     bool res = WiFi.softAP(ssid, passwd);
-    print_ident(&DEBUG, FPSTR(str_wifi));
-    print_ident(&DEBUG, FPSTR(str_ap));
+    print_wifi_ap(&DEBUG);
     if (res) {
         println_nameP_value(&DEBUG, str_ssid, WiFi.softAPSSID().c_str());
     } else {
@@ -215,24 +215,21 @@ boolean disconnectWiFi() { return WiFi.disconnect(); }
 
 void start_safe_wifi_ap() {
     print_ident(&DEBUG, FPSTR(str_wifi));
-    print_ident(&DEBUG, FPSTR(str_safe));
-    char ap_ssid[32];
-    strcpy(ap_ssid, APP_SHORT);
-    strcat(ap_ssid, "_");
-    strcat(ap_ssid, SysInfo::getChipId().c_str());
-    println_strP_var(&DEBUG, str_ssid, FPSTR(ap_ssid));
+    print(&DEBUG, FPSTR(str_safe));
+    String ap_ssid = getUniqueName();
+    println_strP_var(&DEBUG, str_ssid, ap_ssid.c_str());
 
     IPAddress ap_ipaddr = IPAddress(192, 168, 4, 1);
     char ap_passwd[] = "12345678";
     setMode(NETWORK_AP);
     setupAP(ap_ipaddr);
-    startAP(ap_ssid, ap_passwd);
+    startAP(ap_ssid.c_str(), ap_passwd);
 }
 
 void start() {
     String host = hostAP_Name();
     print_ident(&DEBUG, FPSTR(str_wifi));
-    println_nameP_value(&DEBUG, str_host, host);
+    println_nameP_value(&DEBUG, str_host, host.c_str());
 
     uint8_t tpw = app.getConfig()->getValueAsByte(TPW);
     print_ident(&DEBUG, FPSTR(str_wifi));
@@ -241,34 +238,48 @@ void start() {
     NetworkMode mode = (NetworkMode)app.getConfig()->getValueAsByte(WIFI);
     init(mode, host.c_str(), tpw);
 
+    stationConnectedHandler = WiFi.onSoftAPModeStationConnected(
+        [](const WiFiEventSoftAPModeStationConnected &e) {
+            print_wifi_ap(&DEBUG);
+            print(&DEBUG, FPSTR(str_connected));
+            print_wifi_ap_station(&DEBUG, e.aid, e.mac);
+        });
+
+    stationDisconnectedHandler = WiFi.onSoftAPModeStationDisconnected(
+        [](const WiFiEventSoftAPModeStationDisconnected &e) {
+            print_wifi_ap(&DEBUG);
+            print(&DEBUG, FPSTR(str_disconnected));
+            print_wifi_ap_station(&DEBUG, e.aid, e.mac);
+        });
+
+    /*
+    probeRequestHandler = WiFi.onSoftAPModeProbeRequestReceived(
+        [](const WiFiEventSoftAPModeProbeRequestReceived &e) {
+            print_wifi_ap(&DEBUG);
+            print(&DEBUG, FPSTR(str_probe));
+            print_paramP_value(&DEBUG, str_mac, fmt_mac(e.mac).c_str());
+            print_paramP_value(&DEBUG, str_rssi, fmt_rssi(e.rssi).c_str());
+        });
+*/
     staConnectedEventHandler =
         WiFi.onStationModeConnected([](const WiFiEventStationModeConnected &e) {
-            char buf[32];
-            sprintf(buf, MACSTR, MAC2STR(e.bssid));
-            print_ident(&DEBUG, FPSTR(str_wifi));
-            print_ident(&DEBUG, FPSTR(str_sta));
-            print_nameP_value(&DEBUG, str_ch, e.channel);
-            println_nameP_value(&DEBUG, str_bssid, buf);
+            print_wifi_sta(&DEBUG);
+            print_nameP_value(&DEBUG, str_bssid, fmt_mac(e.bssid).c_str());
+            println_nameP_value(&DEBUG, str_ch, e.channel);
         });
 
     staGotIpEventHandler =
         WiFi.onStationModeGotIP([](const WiFiEventStationModeGotIP &e) {
-            print_ident(&DEBUG, FPSTR(str_wifi));
-            print_ident(&DEBUG, FPSTR(str_sta));
+            print_wifi_sta(&DEBUG);
             print(&DEBUG, FPSTR(str_got));
-            char buf[128];
-            sprintf(buf, "ip: %s subnet: %s gateway: %s",
-                    e.ip.toString().c_str(), e.mask.toString().c_str(),
-                    e.gw.toString().c_str());
-            println(&DEBUG, buf);
+            println(&DEBUG, fmt_network(e.ip, e.mask, e.gw).c_str());
             updateState();
         });
 
     staDisconnectedEventHandler = WiFi.onStationModeDisconnected(
         [](const WiFiEventStationModeDisconnected &e) {
             if (networkStatus == NETWORK_UP) {
-                print_ident(&DEBUG, FPSTR(str_wifi));
-                print_ident(&DEBUG, FPSTR(str_sta));
+                print_wifi_sta(&DEBUG);
                 println(&DEBUG, FPSTR(str_disconnected));
             }
             updateState();
@@ -311,21 +322,20 @@ void start() {
 
 void init(NetworkMode mode, const char *host, uint8_t tpw) {
     system_phy_set_max_tpw(tpw);
+    WiFi.persistent(false);
     WiFi.hostname(host);
     WiFi.setAutoConnect(false);
     setMode(mode);
 }
 
 void setBroadcast(uint8_t _new) {
+    // 1: station 2: soft-AP 3: both station and soft-AP
     print_ident(&DEBUG, FPSTR(str_wifi));
-    uint8_t _old = wifi_get_broadcast_if();
     print(&DEBUG, FPSTR(str_broadcast));
-    print(&DEBUG, _old);
-    print(&DEBUG, FPSTR(str_arrow_dest));
-    print(&DEBUG, _new);
-    if (!wifi_set_broadcast_if(_new))
-        print(&DEBUG, FPSTR(str_failed));
-    print_ln(&DEBUG);
+    if (wifi_set_broadcast_if(_new))
+        println(&DEBUG, _new);
+    else
+        println(&DEBUG, FPSTR(str_failed));
 }
 
 void updateState() {
@@ -372,7 +382,6 @@ bool isActive() {
 
 void setOnNetworkStatusChange(NetworkStatusChangeEventHandler h) {
     statusChangeHandler = h;
-
     if (statusChangeHandler)
         statusChangeHandler(hasNetwork(), millis());
 }
@@ -465,12 +474,6 @@ size_t printDiag(Print *p) {
     return n;
 }
 
-String getRSSI() {
-    char buf[32];
-    sprintf(buf, "%d dB", WiFi.RSSI());
-    return String(buf);
-}
-
 bool scanWiFi(const char *ssid) {
     setupSTA(hostIP(), IPAddress(IP_ADDR_ANY), IPAddress(IP_ADDR_ANY),
              IPAddress(IP_ADDR_ANY));
@@ -505,7 +508,7 @@ String getWiFiPhyMode() {
 }
 
 String getUniqueName() {
-    char buf[16];
+    char buf[32];
     strcpy(buf, APP_SHORT "_");
     strcat(buf, SysInfo::getChipId().c_str());
     return String(buf);

@@ -1,7 +1,5 @@
 #include "CrashReport.h"
 
-#include <FS.h>
-
 #include "BuildConfig.h"
 
 #include "FSUtils.h"
@@ -11,38 +9,46 @@
 using namespace PrintUtils;
 using namespace StrUtils;
 
-CrashReport::CrashReport() {
-    SPIFFS.begin();
-    num = getFilesCount(FS_CRASH_ROOT);
-}
+CrashReport::CrashReport() {}
 
-String CrashReport::getName(uint8_t num, unsigned long uptime) {
-    char buf[32];
-    sprintf(buf, "%d_%lu", num, uptime);
-    return String(buf);
-}
-
-bool CrashReport::load(String &name) { return load(name.c_str()); }
-
-bool CrashReport::load(const char *name) {
-    if (!SPIFFS.exists(name))
+bool CrashReport::print(Print *p, const char *file) {
+    if (!SPIFFS.exists(file))
         return false;
 
-    File file = SPIFFS.open(name, "r");
-    file.readBytes((char *)&cur, sizeof(cur));
-    file.close();
+    File f = SPIFFS.open(file, "r");
+    if (!f)
+        return false;
 
+    this->print(p, f);
+
+    f.close();
     return true;
 }
 
-uint8_t CrashReport::getNum() { return num; }
+bool CrashReport::print(Print *p, File &f) {
+    p->println(FPSTR(str_crash_report));
 
-void CrashReport::print(Print *p) {
-    print_nameP_value(p, str_restart_reason, cur.reason);
-    println_nameP_value(p, str_exception, cur.exccause);
-    p->printf_P(strf_exception, cur.epc1, cur.epc2, cur.epc3, cur.excvaddr,
-                cur.depc);
-    p->println();
-    println(p, FPSTR(str_stack));
-    println(p, cur.stack_size);
+    AppCrash c;
+    f.readBytes((char *)&c, sizeof(c));
+
+    p->printf_P(strf_restart_reason, c.reason, getRestartStr(c.reason).c_str());
+    p->printf_P(strf_except_cause, c.exccause,
+                getExceptStr(c.exccause).c_str());
+    p->printf_P(strf_except, c.epc1, c.epc2, c.epc3, c.excvaddr, c.depc);
+    p->printf_P(str_stack);
+    int16_t stack_size = c.stack_end - c.stack_start;
+    for (int16_t i = 0; i < stack_size; i += 0x10) {
+        p->printf("%08x: ", c.stack_start + i);
+        for (uint8_t j = 0; j < 4; j++) {
+            uint32_t stack_trace = 0;
+            if (f.read(reinterpret_cast<uint8_t *>(&stack_trace), 4))
+                p->printf("%08x ", stack_trace);
+        }
+        p->println();
+    }
+    p->printf_P(str_stack);
+
+    p->println(FPSTR(str_crash_report));
+
+    return true;
 }

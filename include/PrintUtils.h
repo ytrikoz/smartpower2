@@ -113,4 +113,10 @@ size_t print_name_value(Print *p, String &name, String &value);
 
 size_t print_prompt(Print *p);
 
+size_t print_wifi_ap(Print *p);
+
+size_t print_wifi_ap_station(Print *p, const uint8_t aid, const uint8_t *mac);
+
+size_t print_wifi_sta(Print *p);
+
 } // namespace PrintUtils

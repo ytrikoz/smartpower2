@@ -101,6 +101,9 @@
 
 #define ONE_MHz_hz 1000000UL
 
+#define CRASH_MAX_SIZE 512
+#define CRASH_MAX_NUM 10
+
 static const char TIME_FORMAT[] PROGMEM = "%02d:%02d:%02d";
 static const char TIME_LONG_FORMAT[] PROGMEM = "%s %02d:%02d:%02d";
 static const char DATETIME_FORMAT[] PROGMEM = "%02d/%02d/%04d %02d:%02d:%02d";

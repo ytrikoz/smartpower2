@@ -9,8 +9,10 @@ String asDir(const char *pathStr);
 
 uint8_t getLevel(String &pathStr);
 
-size_t getFilesCount(const char *pathStr);
+uint8_t getFilesCount(const char *pathStr);
 
-size_t getFilesCount(String &pathStr);
+uint8_t getFilesCount(String &pathStr);
 
-void printFileList(Print *p, const char *pathStr);
+uint8_t fileList(Print *p, const char *pathStr);
+
+void clearDir(Print *p, const char *pathStr);

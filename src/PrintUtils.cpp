@@ -9,6 +9,7 @@ size_t print_shell_exit(Print *p) { return p->println(FPSTR(msg_shell_exit)); }
 size_t print_shell_interrupted(Print *p) {
     return p->println(FPSTR(msg_shell_interrupted));
 }
+size_t print_done(Print *p) { return print(p, FPSTR(str_done)); }
 
 size_t print_not_found(Print *p, String &str) {
     size_t n = print_quoted(p, str.c_str());
@@ -19,23 +20,16 @@ size_t print_not_found(Print *p, String &str) {
 }
 
 size_t print_file_not_found(Print *p, String &name) {
-    size_t n = p->print(FPSTR(str_file));
-    n += p->print(' ');
+    size_t n = print(p, FPSTR(str_file));
     return n += print_not_found(p, name);
 }
 
 size_t print_dir_not_found(Print *p, String &name) {
-    size_t n = p->print(FPSTR(str_dir));
-    n += p->print(' ');
+    size_t n = print(p, FPSTR(str_dir));
     return n += print_not_found(p, name);
 }
 
 size_t print_ln(Print *p) { return p->println(); }
-
-size_t print_done(Print *p) {
-    size_t n = p->println(FPSTR(str_done));
-    return n;
-}
 
 size_t print_quoted(Print *p, const char *str) {
     size_t n = p->print('\'');
@@ -85,29 +79,23 @@ void print_delay(Print *p, const char *message, uint8_t wait_s) {
 }
 
 size_t print_unknown_item(Print *p, String &name) {
-    size_t n = p->print(getStrP(str_unknown));
-    n += p->print(' ');
-    n += p->print(getStrP(str_item));
-    n += p->print(' ');
-    n += p->println(getQuotedStr(name));
+    size_t n = print(p, FPSTR(str_unknown));
+    n += print(p, FPSTR(str_item));
+    n += println(p, getQuotedStr(name).c_str());
     return n;
 }
 
 size_t print_unknown_param(Print *p, String &name) {
-    size_t n = p->print(getStrP(str_unknown));
-    n += p->print(' ');
-    n += p->print(getStrP(str_param));
-    n += p->print(' ');
-    n += p->print(getQuotedStr(name));
+    size_t n = print(p, FPSTR(str_unknown));
+    n += print(p, FPSTR(str_param));
+    n += println(p, getQuotedStr(name).c_str());
     return n;
 }
 
 size_t print_unknown_action(Print *p, String &name) {
-    size_t n = p->print(getStrP(str_unknown));
-    n += p->print(' ');
-    n += p->print(getStrP(str_action));
-    n += p->print(' ');
-    n += p->println(getQuotedStr(name));
+    size_t n = print(p, FPSTR(str_unknown));
+    n += print(p, FPSTR(str_action));
+    n += println(p, getQuotedStr(name).c_str());
     return n;
 }
 
@@ -123,6 +111,16 @@ size_t print_param_value(Print *p, const char *param, const char *value) {
     char buf[OUTPUT_MAX_LENGTH];
     sprintf(buf, "%s=\"%s\"", param, value);
     return p->println(buf);
+}
+
+size_t print_wifi_ap(Print *p) { return print_ident(p, FPSTR(str_wifi_ap)); }
+
+size_t print_wifi_sta(Print *p) { return print_ident(p, FPSTR(str_wifi_sta)); }
+
+size_t print_wifi_ap_station(Print *p, const uint8_t aid, const uint8_t *mac) {
+    size_t n = print_nameP_value(p, str_id, aid);
+    n += println_nameP_value(p, str_mac, fmt_mac(mac).c_str());
+    return n;
 }
 
 } // namespace PrintUtils

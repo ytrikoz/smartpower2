@@ -12,6 +12,45 @@ static const char str_up[] PROGMEM = "up";
 static const char *weekdays[] = {"mon", "tue", "wed", "thu",
                                  "fri", "sat", "sun"};
 
+bool atomac(const char *txt, uint8_t *addr) {
+    for (uint8_t i = 0; i < 6; i++) {
+        int a, b;
+        a = hex2num(*txt++);
+        if (a < 0)
+            return false;
+        b = hex2num(*txt++);
+        if (b < 0)
+            return false;
+        *addr++ = (a << 4) | b;
+        if (i < 5 && *txt++ != ':')
+            return false;
+    }
+    return true;
+}
+
+int hex2num(char c) {
+    if (c >= '0' && c <= '9')
+        return c - '0';
+    if (c >= 'a' && c <= 'f')
+        return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F')
+        return c - 'A' + 10;
+    return -1;
+}
+
+bool atomac(const char *txt, uint8_t *addr);
+
+int hex2byte(const char *hex) {
+    int a, b;
+    a = hex2num(*hex++);
+    if (a < 0)
+        return -1;
+    b = hex2num(*hex++);
+    if (b < 0)
+        return -1;
+    return (a << 4) | b;
+}
+
 String asJsonObj(const char *key, const char *value) {
     char buf[128];
     sprintf(buf, "{\"%s\":\"%s\"}", key, value);
@@ -22,7 +61,7 @@ String asJsonObj(const char *key, String value) {
     return asJsonObj(key, value.c_str());
 }
 
-String getTimeStr(const unsigned long epoch_s, bool fmtLong) {
+String : getTimeStr(const unsigned long epoch_s, bool fmtLong) {
     // seconds since 1970-01-01 00:00:00
     unsigned long passed = epoch_s;
     uint8_t seconds = passed % ONE_MINUTE_s;
@@ -80,14 +119,6 @@ void strfill(char *str, char chr, size_t len) {
     str[len - 1] = '\x00';
 }
 
-bool strpositiv(String &s) {
-    return s.equals("on") || s.equals("+") || s.equals("yes");
-}
-
-bool strnegativ(String &s) {
-    return s.equals("off") || s.equals("-") || s.equals("no");
-}
-
 IPAddress atoip(const char *input) {
     uint8_t parts[4] = {0, 0, 0, 0};
     uint8_t part = 0;
@@ -132,6 +163,12 @@ bool setstr(char *dest, const char *src, size_t size) {
     return false;
 }
 
+String fmt_ip_port(const IPAddress &ip, const uint16_t port) {
+    char buf[32];
+    sprintf(buf, "%s:%d", ip.toString().c_str(), port);
+    return String(buf);
+}
+
 String fmt_size(size_t size) {
     if (size < 1024)
         return String(size) + "b";
@@ -143,9 +180,15 @@ String fmt_size(size_t size) {
         return String(size / 1024.0 / 1024.0 / 1024.0) + "GB";
 }
 
-String fmt_mac(uint8 hw[6]) {
+String fmt_rssi(int db) {
     char buf[32];
-    sprintf(buf, MACSTR, MAC2STR(hw));
+    sprintf(buf, "%d dB", db);
+    return String(buf);
+}
+
+String fmt_mac(const uint8_t *mac) {
+    char buf[32];
+    sprintf(buf, MACSTR, MAC2STR(mac));
     return String(buf);
 }
 
@@ -166,7 +209,7 @@ String fmt_network(const IPAddress ipaddr, const IPAddress subnet,
     return String(buf);
 }
 
-String formatInMHz(uint32_t value) {
+String fmt_mhz(uint32_t value) {
     char buf[8];
     itoa(value / ONE_MHz_hz, buf, DEC);
     strcat(buf, "MHz");
@@ -210,12 +253,6 @@ void stringToBytes(const char *str, char sep, uint8_t *size, int len,
         }
         str++;
     }
-}
-
-String fmt_ip_port(const IPAddress &ip, const uint16_t port) {
-    char buf[32];
-    sprintf(buf, "%s:%d", ip.toString().c_str(), port);
-    return String(buf);
 }
 
 bool isip(const char *str) {
@@ -336,45 +373,6 @@ template <typename... Args> void sayArgsP(Print *p, Args... args) {
         strcpy(buf, (char *)pgm_read_ptr(&args[n]...));
         p->print(buf);
     }
-}
-
-bool atomac(const char *txt, uint8_t *addr) {
-    for (uint8_t i = 0; i < 6; i++) {
-        int a, b;
-        a = hex2num(*txt++);
-        if (a < 0)
-            return false;
-        b = hex2num(*txt++);
-        if (b < 0)
-            return false;
-        *addr++ = (a << 4) | b;
-        if (i < 5 && *txt++ != ':')
-            return false;
-    }
-    return true;
-}
-
-int hex2num(char c) {
-    if (c >= '0' && c <= '9')
-        return c - '0';
-    if (c >= 'a' && c <= 'f')
-        return c - 'a' + 10;
-    if (c >= 'A' && c <= 'F')
-        return c - 'A' + 10;
-    return -1;
-}
-
-bool atomac(const char *txt, uint8_t *addr);
-
-int hex2byte(const char *hex) {
-    int a, b;
-    a = hex2num(*hex++);
-    if (a < 0)
-        return -1;
-    b = hex2num(*hex++);
-    if (b < 0)
-        return -1;
-    return (a << 4) | b;
 }
 
 } // namespace StrUtils

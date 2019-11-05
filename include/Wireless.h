@@ -19,13 +19,11 @@ enum NetworkMode {
 
 enum NetworkStatus { NETWORK_DOWN = 0, NETWORK_UP = 1 };
 
+String getUniqueName();
+
 String getWiFiPhyMode();
 
 String getWifiChannel();
-
-void setBroadcast(uint8_t _new);
-
-String getRSSI();
 
 String hostSTA_StatusStr();
 
@@ -63,6 +61,8 @@ IPAddress hostAP_IP();
 
 IPAddress hostSTA_IP();
 
+String hostSTA_RSSI();
+
 size_t printDiag(Print *p);
 
 void start();
@@ -99,6 +99,9 @@ bool startSTA(const char *ssid, const char *password);
 void println_mode(Print *p, NetworkMode mode);
 
 String getModeStr(NetworkMode mode);
-} // namespace Wireless
 
 void useStaticStationIP(bool enabled);
+
+void setBroadcast(uint8_t _new);
+
+} // namespace Wireless

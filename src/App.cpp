@@ -149,13 +149,10 @@ void App::handle_restart() {
 }
 
 void App::start() {
-    CrashReport crash;
-    uint8_t crashNum = crash.getNum();
-
-    if (crashNum) {
-        print_ident(out, FPSTR(str_crash));
-        println(out, crashNum);
-    }
+    // if (crashNum) {
+    //     print_ident(out, FPSTR(str_crash));
+    //     println(out, crashNum);
+    // }
 
     env = new ConfigHelper();
     print_welcome(out, " Welcome ", APP_NAME " v" APP_VERSION,

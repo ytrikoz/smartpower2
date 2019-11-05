@@ -53,6 +53,10 @@ String fmt_size(size_t bytes);
 
 String fmt_mhz(uint32_t);
 
+String fmt_mac(const uint8_t *);
+
+String fmt_rssi(int db);
+
 void strpadd(char *str, Align align, size_t size, const char ch = ' ');
 
 String getStr(String &str);
