@@ -4,6 +4,7 @@
 #include "Actions/PowerAvg.h"
 #include "Actions/WakeOnLan.h"
 #include "CrashReport.h"
+#include "FSUtils.h"
 
 using namespace PrintUtils;
 using namespace StrUtils;
@@ -30,7 +31,7 @@ void onWol(cmd *c);
 void onRestart(cmd *c);
 void onRun(cmd *c);
 void onLs(cmd *c);
-void onTest(cmd *c);
+void onCrash(cmd *c);
 
 enum CommandAction {
     ACTION_UNKNOWN,
@@ -47,12 +48,15 @@ enum CommandAction {
     ACTION_RESTART,
     ACTION_BACKLIGHT,
     ACTION_UPTIME,
-    ACTION_WOL
+    ACTION_WOL,
+    ACTION_LIST,
+    ACTION_CLEAR,
+    ACTION_TEST
 };
 
 Command cmdConfig, cmdPower, cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet,
     cmdGet, cmdRm, cmdClock, cmdPlot, cmdLog, cmdWol, cmdRestart, cmdRun, cmdLs,
-    cmdTest;
+    cmdCrash;
 
 Print *out = NULL;
 
@@ -128,9 +132,15 @@ CommandAction getAction(Command &cmd) {
         return ACTION_UPTIME;
     } else if (strcasecmp_P(str.c_str(), str_wol) == 0) {
         return ACTION_WOL;
+    } else if (strcasecmp_P(str.c_str(), str_list) == 0) {
+        return ACTION_LIST;
+    } else if (strcasecmp_P(str.c_str(), str_clear) == 0) {
+        return ACTION_CLEAR;
+    } else if (strcasecmp_P(str.c_str(), str_test) == 0) {
+        return ACTION_TEST;
     }
     return ACTION_UNKNOWN;
-}
+} // namespace Cli
 
 bool active() { return out != NULL; }
 
@@ -224,9 +234,10 @@ void init() {
     cmdLs.addPositionalArgument("path");
     cmdLs.setCallback(Cli::onLs);
 
-    cmdTest = cli->addCommand("test");
-    cmdTest.addPositionalArgument("item");
-    cmdTest.setCallback(Cli::onTest);
+    cmdCrash = cli->addCommand("crash");
+    cmdCrash.addPositionalArgument("action", "list");
+    cmdCrash.addPositionalArgument("item", "*");
+    cmdCrash.setCallback(Cli::onCrash);
 }
 
 void onLog(cmd *c) {
@@ -476,26 +487,10 @@ void onPrint(cmd *c) {
     }
 }
 
-uint8_t getLevel(String &name) {
-    uint8_t result = 0;
-    for (uint8_t i = 0; i < name.length(); ++i)
-        if (name.charAt(i) == '/')
-            result++;
-    return result;
-}
-
-String getDirName(String &name) {
-    if (!name.startsWith("/"))
-        name = "/" + name;
-    if (!name.endsWith("/"))
-        name += "/";
-    return name;
-}
-
 void onLs(cmd *c) {
     Command cmd(c);
     String pathStr = getPathStr(cmd);
-    String path = getDirName(pathStr);
+    String path = asDir(pathStr);
     uint8_t max_level = getLevel(path);
     Dir dir = SPIFFS.openDir(path);
     while (dir.next()) {
@@ -544,20 +539,38 @@ void onRun(cmd *c) {
     }
 }
 
-void onTest(cmd *c) {
+void onCrash(cmd *c) {
     Command cmd(c);
-    String item = cmd.getArgument("item").getValue();
-    if (item.equals("crash")) {
-        print(out, FPSTR(str_start));
-        print_quoted(out, item);
-        int result, zero;
-        zero = 0;
-        result = 1 / zero;
-        println(out, result);
-    } else {
+    String item = getItemStr(cmd);
+    switch (getAction(cmd)) {
+    case ACTION_LIST: {
+        printFileList(out, FS_CRASH_ROOT);
+        break;
+    }
+    case ACTION_PRINT: {
         CrashReport rep;
-        if (!rep.print(out, item.c_str()))
+        if (!rep.load(item.c_str())) {
             print_not_found(out, item);
+        } else {
+            rep.print(out);
+        }
+        break;
+    }
+    case ACTION_CLEAR: {
+
+        break;
+    }
+    case ACTION_TEST: {
+        int val = 0;
+        int res = 1 / val;
+        println(out, res);
+        break;
+    }
+    case ACTION_UNKNOWN:
+    default:
+        String actionStr = getActionStr(cmd);
+        print_unknown_action(out, actionStr);
+        break;
     }
 }
 

@@ -5,39 +5,50 @@
 
 #include "App.h"
 #include "BuildConfig.h"
+#include "CrashReport.h"
 
-extern "C" void custom_crash_callback(struct rst_info *rst_info, uint32_t stack,
+CrashReport crash;
+
+extern "C" void custom_crash_callback(struct rst_info *rst_info,
+                                      uint32_t stack_start,
                                       uint32_t stack_end) {
-    unsigned long time = millis();
-    char name[32];
-    strcpy(name, CRASH_ROOT);
-    char tmp[16];
-    strcat(name, itoa(time, tmp, DEC));
-    File file = SPIFFS.open(name, "w");
-    file.println(rst_info->reason);
-    file.println(rst_info->exccause);
-    file.println(rst_info->epc1);
-    file.println(rst_info->epc2);
-    file.println(rst_info->epc3);
-    file.println(rst_info->excvaddr);
-    file.println(rst_info->depc);
-    file.println(stack);
-    file.println(stack_end);
-    for (uint32_t addr = stack; addr < stack_end; ++addr) {
-        byte *value = (byte *)addr;
-        file.print(*value);
-    }
+    SPIFFS.begin();
+    String name(FS_CRASH_ROOT);
+    name += String(millis());
+
+    AppCrash c;
+    c.reason = rst_info->reason;
+    c.exccause = rst_info->exccause;
+    c.epc1 = rst_info->epc1;
+    c.epc2 = rst_info->epc2;
+    c.epc3 = rst_info->epc3;
+    c.excvaddr = rst_info->excvaddr;
+    c.depc = rst_info->depc;
+    c.stack_size = stack_end - stack_start;
+
+    File f = SPIFFS.open(name, "w");
+    f.write((byte *)&c, sizeof(c));
+    f.flush();
+    f.close();
+
+    /*
+        file.println(stack);
+        file.println(stack_end);
+        for (uint32_t addr = stack; addr < stack_end; ++addr) {
+            byte *value = (byte *)addr;
+            file.print(*value);
+        }
+
     file.println();
     file.flush();
     file.close();
+            */
 }
 
 void setup() {
     // Setup serial
     USE_SERIAL.begin(115200);
     USE_SERIAL.println();
-
-    SPIFFS.begin();
 
 #ifdef SERIAL_DEBUG
     USE_SERIAL.setDebugOutput(true);

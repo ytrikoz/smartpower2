@@ -3,6 +3,14 @@
 
 ## 0.6.9 (2019-10-27)
 
+### Crash reports
+
+`crash list`
+
+`crash test`
+
+`crash print`
+
 ### Time on lcd display
 
 ### Total consumption

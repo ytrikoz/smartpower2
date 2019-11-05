@@ -12,8 +12,8 @@ using namespace PrintUtils;
 WebService::WebService() : AppModule(MOD_HTTP) {
     this->port_http = HTTP_PORT;
     this->port_websocket = WEBSOCKET_PORT;
-    this->web_root = new char[strlen(HTTP_WEB_ROOT) + 1];
-    strcpy(this->web_root, HTTP_WEB_ROOT);
+    this->web_root = new char[strlen(FS_WEB_ROOT) + 1];
+    strcpy(this->web_root, FS_WEB_ROOT);
 
     server = new ESP8266WebServer(port_http);
     server->on("/upload", HTTP_POST, [this]() { server->send(200); },
@@ -88,7 +88,7 @@ bool WebService::begin() {
     String tmp = "ipaddr=\"";
     tmp += ip_str;
     tmp += "\"\r\n";
-    StoreUtils::storeString(FILE_WEB_SETTINGS, tmp);
+    StoreUtils::storeString(FS_WEB_CONFIG, tmp);
 
     server->begin();
 

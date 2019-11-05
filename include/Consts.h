@@ -49,13 +49,14 @@
 
 #define FILENAME_SIZE 31
 
-#define DIR_PSU_LOG "/log/"
-
-#define FILE_WEB_SETTINGS "/www/js/settings.js"
-#define FILE_CONFIG "/etc/main"
-#define FILE_VAR_POWER_STATE "/var/ps"
-#define FILE_VAR_UTC "/var/utc"
-#define FILE_VAR_WH "/var/wh"
+#define FS_LOG_ROOT "/log/"
+#define FS_WEB_ROOT "/www"
+#define FS_WEB_CONFIG "/www/js/settings.js"
+#define FS_CRASH_ROOT "/err/"
+#define FS_MAIN_CONFIG "/etc/main"
+#define FS_POWER_STATE_VAR "/var/ps"
+#define FS_UTC_VAR "/var/utc"
+#define FS_WH_VAR "/var/wh"
 
 #define CONFIG_CHAR 1
 #define CONFIG_STR 31
@@ -69,7 +70,6 @@
 #define MAX_WEB_CLIENTS 5
 #define OTA_PORT 8266
 #define DNS_PORT 53
-#define HTTP_WEB_ROOT "/www"
 #define HTTP_PORT 80
 #define WEBSOCKET_PORT 81
 #define TELNET_PORT 23

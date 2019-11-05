@@ -160,7 +160,7 @@ void Psu::setWh(double value) {
 }
 
 bool Psu::storeWh(double value) {
-    bool res = storeDouble(FILE_VAR_WH, value);
+    bool res = storeDouble(FS_WH_VAR, value);
     return res;
 }
 
@@ -175,7 +175,7 @@ bool Psu::enableWhStore(bool new_value) {
 
 bool Psu::restoreWh(double &value) {
     bool res = false;
-    if (restoreDouble(FILE_VAR_WH, value)) {
+    if (restoreDouble(FS_WH_VAR, value)) {
         print_ident(out, FPSTR(str_psu));
         println_nameP_value(out, str_restore, value);
         res = true;
@@ -201,12 +201,12 @@ bool Psu::isWhStoreEnabled(void) {
 }
 
 bool Psu::storeState(PsuState value) {
-    return StoreUtils::storeInt(FILE_VAR_POWER_STATE, (byte)value);
+    return StoreUtils::storeInt(FS_POWER_STATE_VAR, (byte)value);
 }
 
 bool Psu::restoreState(PsuState &value) {
     int tmp = 0;
-    bool res = StoreUtils::restoreInt(FILE_VAR_POWER_STATE, tmp);
+    bool res = StoreUtils::restoreInt(FS_POWER_STATE_VAR, tmp);
     if (res)
         value = PsuState(tmp);
     return res;

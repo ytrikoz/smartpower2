@@ -64,8 +64,8 @@ void onHttpClientData(uint8_t num, String data) {
         break;
     }
     case SET_NETWORK: {
-        static const ConfigItem items[] = {WIFI,   SSID,    PASSWD,  DHCP,
-                                           IPADDR, NETMASK, GATEWAY, DNS};
+        static const ConfigItem items[] = {WIFI,   SSID,    PASSWORD, DHCP,
+                                           IPADDR, NETMASK, GATEWAY,  DNS};
         static const size_t paramCount = sizeof(items) / sizeof(ConfigItem);
         size_t index = 0;
         size_t last = 0;
@@ -138,7 +138,8 @@ void sendPageState(uint8_t n, uint8_t page) {
         voltage += String(app.getPsu()->getVoltage(), 2);
         app.getHttp()->sendTxt(n, voltage);
 
-        String network = AppUtils::getNetworkConfig(app.getConfig());
+        String network = String(SET_NETWORK);
+        AppUtils::getNetworkConfig(app.getConfig());
         app.getHttp()->sendTxt(n, network);
         break;
     }

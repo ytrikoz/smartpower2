@@ -3,41 +3,46 @@
 #include <FS.h>
 
 #include "BuildConfig.h"
+
+#include "FSUtils.h"
 #include "PrintUtils.h"
+#include "StrUtils.h"
 
 using namespace PrintUtils;
+using namespace StrUtils;
 
-bool CrashReport::print(Print *p, const char *name) {
-    String crashfile = String(CRASH_ROOT) + name;
+CrashReport::CrashReport() {
+    SPIFFS.begin();
+    num = getFilesCount(FS_CRASH_ROOT);
+}
 
-    if (!SPIFFS.exists(crashfile))
+String CrashReport::getName(uint8_t num, unsigned long uptime) {
+    char buf[32];
+    sprintf(buf, "%d_%lu", num, uptime);
+    return String(buf);
+}
+
+bool CrashReport::load(String &name) { return load(name.c_str()); }
+
+bool CrashReport::load(const char *name) {
+    if (!SPIFFS.exists(name))
         return false;
 
-    File file = SPIFFS.open(crashfile, "r");
-
-    print_nameP_value(p, str_crash_report, crashfile.c_str());
-    print_nameP_value(p, str_restart_reason,
-                      file.readStringUntil('\n').toInt());
-    print_nameP_value(p, str_exception_cause,
-                      file.readStringUntil('\n').toInt());
-
-    uint32_t epc1, epc2, epc3, excvaddr, depc;
-    epc1 = file.readStringUntil('\n').toInt();
-    epc2 = file.readStringUntil('\n').toInt();
-    epc3 = file.readStringUntil('\n').toInt();
-    excvaddr = file.readStringUntil('\n').toInt();
-    depc = file.readStringUntil('\n').toInt();
-    p->printf(
-        "epc1=0x%08x epc2=0x%08x epc3=0x%08x excvaddr=0x%08x depc=0x%08x\n",
-        epc1, epc2, epc3, excvaddr, depc);
-    uint32_t stackStart, stackEnd;
-    stackStart = file.readStringUntil('\n').toInt();
-    stackEnd = file.readStringUntil('\n').toInt();
-    int16_t stackLength = stackEnd - stackStart;
-    uint32_t stackTrace;
-    print(p, ">>>stack>>>");
-    println(p, stackLength);
-    int16_t currentAddress;
+    File file = SPIFFS.open(name, "r");
+    file.readBytes((char *)&cur, sizeof(cur));
     file.close();
+
     return true;
+}
+
+uint8_t CrashReport::getNum() { return num; }
+
+void CrashReport::print(Print *p) {
+    print_nameP_value(p, str_restart_reason, cur.reason);
+    println_nameP_value(p, str_exception, cur.exccause);
+    p->printf_P(strf_exception, cur.epc1, cur.epc2, cur.epc3, cur.excvaddr,
+                cur.depc);
+    p->println();
+    println(p, FPSTR(str_stack));
+    println(p, cur.stack);
 }

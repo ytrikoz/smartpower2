@@ -1,12 +1,16 @@
 #include "ConfigHelper.h"
 
 #include "FileStore.h"
+#include "PrintUtils.h"
+
+using namespace PrintUtils;
 
 void ConfigHelper::onConfigChanged(ConfigItem param) { stored = false; }
 
 ConfigHelper::ConfigHelper() {
-    this->filename = new char[sizeof(FILE_CONFIG)];
-    strcpy(this->filename, FILE_CONFIG);
+    this->filename = new char[sizeof(FS_MAIN_CONFIG)];
+    strcpy(this->filename, FS_MAIN_CONFIG);
+
     this->config = new Config();
     loadConfig();
     this->config->setOnConfigChaged(
@@ -20,9 +24,9 @@ void ConfigHelper::loadConfig() {
         if (store->getError(SE_NOT_EXIST)) {
             saveConfig();
         } else {
-            err->print(StrUtils::getIdentStrP(str_config));
-            err->print(StrUtils::getStrP(str_load));
-            err->println(store->getErrorInfo());
+            print_ident(err, FPSTR(str_config));
+            print(err, FPSTR(str_load));
+            println(err, store->getErrorInfo().c_str());
         }
     } else {
         if (data->available())
@@ -53,13 +57,13 @@ bool ConfigHelper::loadStrings(Config *config, StringQueue *data) {
         data->get(buf);
         String paramStr = extractName(buf);
         String valueStr = extractValue(buf);
-        if (paramStr.length() && valueStr.length()) {
+        if (paramStr.length()) {
             config->setValueStringByName(paramStr.c_str(), valueStr.c_str());
         } else {
-            err->print(StrUtils::getIdentStrP(str_config));
-            err->print(StrUtils::getStrP(str_load));
-            err->print(StrUtils::getStrP(str_error));
-            err->println(buf);
+            print_ident(err, FPSTR(str_config));
+            print(err, FPSTR(str_load));
+            print_quoted(err, buf);
+            println(err, FPSTR(str_error));
         }
         if (millis_since(started) > 10)
             break;
@@ -77,7 +81,7 @@ bool ConfigHelper::saveConfig(Config *config, StringQueue *data) {
         String str = config->toString(ConfigItem(index));
         data->put(str);
     }
-    FileStore *store = new FileStore(FILE_CONFIG);
+    FileStore *store = new FileStore(FS_MAIN_CONFIG);
     return store->write(data);
 }
 

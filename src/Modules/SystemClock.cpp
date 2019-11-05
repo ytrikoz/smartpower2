@@ -96,7 +96,7 @@ bool SystemClock::isStoreNeedsUpdate(unsigned long now) {
 
 bool SystemClock::restoreState(EpochTime &value) {
     String buf;
-    bool res = StoreUtils::restoreString(FILE_VAR_UTC, buf);
+    bool res = StoreUtils::restoreString(FS_UTC_VAR, buf);
     if (res)
         value = EpochTime(buf.toInt());
     return res;
@@ -104,5 +104,5 @@ bool SystemClock::restoreState(EpochTime &value) {
 
 bool SystemClock::storeState(EpochTime &value) {
     String buf = value.toString();
-    return StoreUtils::storeString(FILE_VAR_UTC, buf);
+    return StoreUtils::storeString(FS_UTC_VAR, buf);
 }
