@@ -1,7 +1,6 @@
 #pragma once
 
 #include <SimpleCLI.h>
-#include <SimpleTimer.h>
 
 #include "App.h"
 #include "PrintUtils.h"

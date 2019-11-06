@@ -58,6 +58,8 @@
 #define FS_UTC_VAR "/var/utc"
 #define FS_WH_VAR "/var/wh"
 
+#define FS_START_FLAG "/start"
+
 #define CONFIG_CHAR 1
 #define CONFIG_STR 31
 #define CONFIG_IPADDR 16
@@ -76,6 +78,8 @@
 
 #define NTP_REMOTE_PORT 123
 #define NTP_LOCAL_PORT 2390
+#define NTP_RETRY_INTERVAL 64
+#define NTP_TIMEOUT 1000
 
 #define DEF_NTP_POOL_SERVER "pool.ntp.org"
 #define DEF_TIME_BACKUP_INTERVAL_s "3600"

@@ -43,6 +43,8 @@ bool strnegativ(String &);
 
 String fmt_ip_port(const IPAddress &ip, const uint16_t port);
 
+String fmt_ip_port(const char *ip, const uint16_t port);
+
 String fmt_network(const IPAddress ipddr, const IPAddress subnet,
                    const IPAddress gateway);
 

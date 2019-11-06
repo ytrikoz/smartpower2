@@ -9,8 +9,8 @@ using namespace StrUtils;
 using namespace PrintUtils;
 
 SyslogClient::SyslogClient() : AppModule(MOD_SYSLOG) {
-    log_buffer = new MemoryBuffer(512);
-    udp = new WiFiUDP();
+    // log_buffer = new MemoryBuffer(512);
+    // udp = new WiFiUDP();
 }
 
 SyslogClient::SyslogClient(WiFiUDP *udp) : AppModule(MOD_SYSLOG) {
@@ -24,28 +24,28 @@ void SyslogClient::info(String &str) { send(SYSLOG_INFO, str); }
 void SyslogClient::debug(String &str) { send(SYSLOG_DEBUG, str); }
 
 bool SyslogClient::begin() {
-    String msg = getStrP(str_start);
+    String msg = FPSTR(str_start);
     start();
     if (active)
         send(SYSLOG_INFO, msg);
     return active;
 }
 
-void SyslogClient::start() {
+bool SyslogClient::start() {
     active = false;
-    if (strcmp(server, "") == 0) {
+    if (String(server).length() == 0) {
         say_strP(str_disabled);
         serverIp = IPADDR_NONE;
-        return;
+        return false;
     }
     if (!WiFi.hostByName(server, serverIp)) {
         say_strP(str_dns, getStrP(str_error).c_str());
-        return;
+        return false;
     }
     char buf[32];
     sprintf(buf, "%s:%d", serverIp.toString().c_str(), port);
     say_strP(server, buf);
-    active = true;
+    return active = true;
 }
 
 void SyslogClient::loop() {}
@@ -103,19 +103,18 @@ size_t SyslogClient::printDiag(Print *p) {
     return n;
 }
 
-const char *getLevelStr(SysLogSeverity level) {
+String getLevelStr(SysLogSeverity level) {
+    PGM_P strP = str_unknown;
     switch (level) {
     case SYSLOG_ALERT:
-        return getStrP(str_alert).c_str();
+        strP = str_alert;
         break;
     case SYSLOG_INFO:
-        return getStrP(str_info).c_str();
+        strP = str_info;
         break;
     case SYSLOG_DEBUG:
-        return getStrP(str_debug).c_str();
-        break;
-    default:
-        return getStrP(str_unknown).c_str();
+        strP = str_debug;
         break;
     }
+    return String(FPSTR(strP));
 }

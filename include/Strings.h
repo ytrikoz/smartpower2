@@ -7,6 +7,8 @@
 // now it's not for memory saving, but to collect literals in one place
 // and  code unification
 
+static const char msg_dns_resolve_error[] PROGMEM = "dsn resolve error";
+
 static const char str_build_date[] PROGMEM = BUILD_DATE;
 static const char msg_shell_interrupted[] PROGMEM = "interrupted!";
 static const char msg_shell_exit[] PROGMEM = "exit, bye!";
@@ -49,6 +51,8 @@ static const char str_begin[] PROGMEM = "begin";
 static const char str_bssid[] PROGMEM = "bssid";
 static const char str_broadcast[] PROGMEM = "broadcast";
 static const char str_btn[] PROGMEM = "btn";
+static const char str_bind[] PROGMEM = "bind";
+static const char str_boot[] PROGMEM = "boot";
 static const char str_capture[] PROGMEM = "capture";
 static const char str_crash[] PROGMEM = "crash";
 static const char str_capturing[] PROGMEM = "capturing";

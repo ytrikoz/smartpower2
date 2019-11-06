@@ -9,7 +9,10 @@
 #include "FSUtils.h"
 #include "StrUtils.h"
 
+bool crashEnabled = false;
 uint8_t crashNum = 0;
+bool safeBoot = false;
+bool setupDone = false;
 
 extern "C" void custom_crash_callback(struct rst_info *rst_info,
                                       uint32_t stack_start,
@@ -44,37 +47,101 @@ extern "C" void custom_crash_callback(struct rst_info *rst_info,
     }
 }
 
+void preinit() {
+    // SYS_CPU_80MHZ
+    system_update_cpu_freq(SYS_CPU_160MHZ);
+}
+
+void setup() {
+    initSerial();
+
+    if (!initFS()) {
+        USE_SERIAL.println(F("[FS] error"));
+        return;
+    }
+
+    initCrashReport();
+
+    if (getCrashReportNum()) {
+        USE_SERIAL.print(getIdentStrP(str_crash));
+        USE_SERIAL.print(getStrP(str_stored));
+        USE_SERIAL.print(' ');
+        USE_SERIAL.println(crashNum);
+    }
+
+    if (!isCrashReportEnabled()) {
+        USE_SERIAL.print(getIdentStrP(str_crash));
+        USE_SERIAL.println(FPSTR(str_disabled));
+    }
+
+    initApp();
+
+    safeBoot = hasBootError();
+    if (safeBoot) {
+        USE_SERIAL.print(getIdentStrP(str_boot));
+        USE_SERIAL.println(FPSTR(str_safe));
+        clearBootError();
+        app.startSafe();
+    } else {
+        beforeStart();
+        app.start();
+        afterStart();
+    }
+    setupDone = true;
+}
+
+void loop() {
+    if (!setupDone)
+        return;
+
+    if (safeBoot)
+        app.loopSafe();
+    else
+        app.loop();
+}
+
+bool hasBootError() {
+    bool res = SPIFFS.exists(FS_START_FLAG);
+    return res;
+}
+
+void beforeStart() {
+    File f = SPIFFS.open(FS_START_FLAG, "w");
+    f.print(APP_VERSION);
+    f.flush();
+    f.close();
+}
+
+void afterStart() { SPIFFS.remove(FS_START_FLAG); }
+
+void clearBootError() { SPIFFS.remove(FS_START_FLAG); }
+
+void initSerial() {
+    USE_SERIAL.begin(115200);
+    USE_SERIAL.println();
+#ifdef SERIAL_DEBUG
+    USE_SERIAL.setDebugOutput(true);
+#endif
+}
+
+bool initFS() { return SPIFFS.begin(); }
+
+void initApp() { app.init(&USE_SERIAL); }
+
+/*
+ * CRASH REPORT
+ */
+void initCrashReport() {
+    crashNum = getFilesCount(FS_CRASH_ROOT);
+    crashEnabled = crashNum < CRASH_MAX_NUM;
+}
+
+bool isCrashReportEnabled() { return crashEnabled; }
+
+uint8_t getCrashReportNum() { return crashNum; };
+
 String getCrashName() {
     char buf[32];
     sprintf(buf, "%s%d_%lu", FS_CRASH_ROOT, crashNum + 1, millis());
     return String(buf);
 }
-
-bool isCrashReportEnabled() { return crashNum < CRASH_MAX_NUM; }
-
-void setup() {
-    // Setup serial
-    USE_SERIAL.begin(115200);
-    USE_SERIAL.println();
-
-    SPIFFS.begin();
-    crashNum = getFilesCount(FS_CRASH_ROOT);
-
-    USE_SERIAL.print(StrUtils::getIdentStrP(str_crash));
-    if (isCrashReportEnabled()) {
-        USE_SERIAL.println(crashNum);
-    } else {
-        USE_SERIAL.println(StrUtils::getStrP(str_disabled));
-    }
-
-#ifdef SERIAL_DEBUG
-    USE_SERIAL.setDebugOutput(true);
-#endif
-    // Try pushing frequency to 160MHz.
-    system_update_cpu_freq(SYS_CPU_160MHZ);
-    // system_update_cpu_freq(SYS_CPU_80MHZ);
-    app.init(&USE_SERIAL);
-    app.start();
-}
-
-void loop() { app.loop(); }

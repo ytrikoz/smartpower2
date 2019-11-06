@@ -14,7 +14,7 @@ class SystemClock : public AppModule {
     size_t printDiag(Print *p);
 
   public:
-    void setOnChange(TimeEventHandler);
+    void setOnChange(TimeHandler);
     void setEpoch(const EpochTime &epochTime, bool trusted = false);
     unsigned long getUptime();
     unsigned long getUtc();
@@ -29,7 +29,7 @@ class SystemClock : public AppModule {
     void onTimeChange();
 
   private:
-    TimeEventHandler timeHandler;
+    TimeHandler timeHandler;
     bool trusted;
     EpochTime epoch;
     uint8_t rollover;

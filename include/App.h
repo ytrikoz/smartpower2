@@ -25,6 +25,7 @@ class App {
   public:
     App();
     void init(Print *p);
+    void startSafe();
     void start();
     bool start(const AppModuleEnum);
     void stop(const AppModuleEnum);
@@ -32,6 +33,7 @@ class App {
     bool getModule(const char *str, AppModuleEnum &mod);
     AppModule *getInstance(const AppModuleEnum);
     void loop();
+    void loopSafe();
     void restart(uint8_t time);
     size_t printDiag(Print *p);
     size_t printDiag(Print *p, const AppModuleEnum module);
@@ -60,6 +62,7 @@ class App {
     void send_psu_data_to_clients();
 
   private:
+    bool safemode = false;
     WiFiEventHandler onDisconnected, onGotIp;
     unsigned long lastUpdated;
     uint8_t reboot;

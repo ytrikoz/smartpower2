@@ -7,6 +7,8 @@
 #include "Config.h"
 #include "PrintUtils.h"
 
+enum ModState { STOPPED, STARTED };
+
 class Named {
   public:
     Named(AppModuleEnum module);
@@ -14,6 +16,8 @@ class Named {
     const char *getName();
 
   protected:
+    size_t log_error(PGM_P errorStrP, const char *paramStr);
+
     size_t say(char *str);
     size_t say_strP(PGM_P strP);
     size_t say_strP(PGM_P strP, const char *value);
@@ -25,12 +29,6 @@ class Named {
     Print *err = &USE_SERIAL;
 
   private:
-    size_t print_name(Print *);
-    size_t print(Print *, char);
-    size_t print(Print *, const char *);
-    size_t print(Print *, char *, size_t);
-
-  private:
     AppModuleEnum module;
     char name[16];
 };
@@ -38,16 +36,22 @@ class Named {
 class AppModule : public Named {
   public:
     AppModule(AppModuleEnum module);
+    //
     virtual void init(Config *) final;
+    //
     virtual bool begin() { return false; };
     virtual void end(){};
-    virtual void start(){};
+    //
+    virtual bool start() { return false; };
     virtual void stop(){};
+    //
     virtual void loop(){};
+    //
     virtual size_t printDiag(Print *p);
     size_t printDiag() { return printDiag(out); };
 
   protected:
+    ModState state;
     virtual void setConfig(Config *){};
     Config *config;
 };

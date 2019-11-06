@@ -12,10 +12,23 @@ using namespace AppUtils;
 using namespace PrintUtils;
 using namespace StrUtils;
 
-App::App() {
-    memset(appMod, 0, sizeof(&appMod[0]) * APP_MODULES);
-    loopLogger = new LoopLogger();
+App::App() { memset(appMod, 0, sizeof(&appMod[0]) * APP_MODULES); }
+
+void App::startSafe() {
+    print_welcome(out, " SAFE MODE ", APP_NAME " v" APP_VERSION,
+                  " " BUILD_DATE " ");
+    print_ident(out, FPSTR(str_config));
+    env = new ConfigHelper();
+    println(out, getStrP(str_done));
+
+    print_ident(out, FPSTR(str_shell));
+    shell = new ShellMod();
+    shell->begin();
+    shell->setSerial();
+    println(out, getStrP(str_done));
 }
+
+void App::loopSafe() { shell->loop(); }
 
 void App::loop() {
     for (uint8_t i = 0; i < APP_MODULES; ++i) {
@@ -153,14 +166,15 @@ void App::start() {
     //     print_ident(out, FPSTR(str_crash));
     //     println(out, crashNum);
     // }
-
+    loopLogger = new LoopLogger();
     env = new ConfigHelper();
+
     print_welcome(out, " Welcome ", APP_NAME " v" APP_VERSION,
                   " " BUILD_DATE " ");
     start(MOD_BTN);
     start(MOD_LED);
     start(MOD_DISPLAY);
-    print_delay(&USE_SERIAL, getIdentStr(str_wait, false).c_str(), 5);
+    print_delay(&USE_SERIAL, getIdentStrP(str_wait, false).c_str(), 5);
     display->showProgress(0, BUILD_DATE);
     start(MOD_CLOCK);
     start(MOD_PSU);

@@ -164,8 +164,12 @@ bool setstr(char *dest, const char *src, size_t size) {
 }
 
 String fmt_ip_port(const IPAddress &ip, const uint16_t port) {
+    return fmt_ip_port(ip.toString().c_str(), port);
+}
+
+String fmt_ip_port(const char *ip, const uint16_t port) {
     char buf[32];
-    sprintf(buf, "%s:%d", ip.toString().c_str(), port);
+    sprintf(buf, "%s:%d", ip, port);
     return String(buf);
 }
 

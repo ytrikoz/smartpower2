@@ -8,7 +8,7 @@
 #include "Strings.h"
 #include "TimeUtils.h"
 
-typedef std::function<void(unsigned long epoch_s)> TimeEventHandler;
+typedef std::function<void(unsigned long epoch_s)> TimeHandler;
 
 enum AppModuleEnum {
     MOD_BTN,

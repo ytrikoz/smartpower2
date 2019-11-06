@@ -21,7 +21,7 @@ class Shell {
     bool run(const char *cmdStr);
 
   private:
-    void requestHistoryHandler();
+    void useHistory();
     void onSessionOpen();
     void onSessionClose();
     void onSessionData(const char *);

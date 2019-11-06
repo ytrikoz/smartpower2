@@ -15,7 +15,7 @@ void Shell::setTerminal(Termul *term) {
     t->setOnOpen([this]() { this->onSessionOpen(); });
     t->setOnClose([this]() { this->onSessionClose(); });
     t->setOnReadLine([this](const char *str) { this->onSessionData(str); });
-    t->setOnTabKey([this]() { this->requestHistoryHandler(); });
+    t->setOnTabKey([this]() { this->useHistory(); });
 }
 
 bool Shell::run(const char *cmdStr) {
@@ -71,20 +71,21 @@ void Shell::setEditBuffer(String &str) {
     t->print(str);
 }
 
-void Shell::requestHistoryHandler() {
+void Shell::useHistory() {
 #ifdef DEBUG_SHELL
-    DEBUG.println("[shell] requestHistoryHandler");
+    DEBUG.println("[shell] getHistory");
 #endif
-    if (history.size() > 0) {
-        if (t->getEditBuffer()->available()) {
-            t->println();
-            print_prompt(t);
-        }
-        String str;
-        if (getLastInput(str)) {
-            setEditBuffer(str);
-        };
+    if (!history.size())
+        return;
+
+    if (t->getEditBuffer()->available()) {
+        t->println();
+        print_prompt(t);
     }
+    String str;
+    if (getLastInput(str)) {
+        setEditBuffer(str);
+    };
 }
 
 bool Shell::getLastInput(String &str) {
@@ -99,9 +100,11 @@ bool Shell::getLastInput(String &str) {
 void Shell::addHistory(const char *str) {
     if (str == NULL)
         return;
-    String buf(str);
-    if (buf.length()) {
-        history.push_back(buf);
+    if (history.size() && history.back().equals(str))
+        return;
+    String _new(str);
+    if (_new.length()) {
+        history.push_back(_new);
         if (history.size() > SHELL_HISTORY_SIZE)
             history.pop_back();
     }
@@ -111,11 +114,11 @@ void Shell::onSessionData(const char *str) {
 #ifdef DEBUG_SHELL
     DEBUG.printf("[shell] onSessionData(%s)", str);
 #endif
+    addHistory(str);
     cli->parse(str);
     while (cli->available()) {
         t->println();
         cli->getCmd().run();
-        addHistory(str);
     }
     print_prompt(t);
 }

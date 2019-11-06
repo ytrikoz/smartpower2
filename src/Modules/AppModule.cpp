@@ -9,23 +9,14 @@ Named::Named(AppModuleEnum module) {
     setstr(name, getModuleName(module).c_str(), 16);
 }
 
+size_t Named::log_error(PGM_P errorStrP, const char *paramStr) {
+    size_t n = print_ident(err, name);
+    return n += println(err, FPSTR(errorStrP));
+}
+
 void Named::setOutput(Print *p) { this->out = this->dbg = this->err = p; }
 
 const char *Named::getName() { return name; }
-
-size_t Named::print(Print *p, char ch) { return p->print(ch); };
-
-size_t Named::print(Print *p, const char *str) { return p->print(str); }
-
-size_t Named::print(Print *p, char *str, size_t size) {
-    size_t n = 0;
-    for (n = 0; n < size; ++n) {
-        n += print(p, str[n]);
-        if (str[n] == '\x00')
-            break;
-    }
-    return n;
-};
 
 size_t Named::say(char *str) {
     size_t n = print_ident(out, name);

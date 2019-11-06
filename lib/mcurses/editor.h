@@ -1,25 +1,9 @@
-/*
- * editor.h
- *
- * Created: 19.01.2017 11:01:08
- *  Author: ChrisMicro
- */ 
+#pragma once
 
-#ifdef __cplusplus
-extern "C"
-{
-	#endif
+#include "Arduino.h"
 
-	#ifndef EDITOR_H_
-	#define EDITOR_H_
+#include "mcurses.h"
 
-	#include "mcurses.h"
-	
-	void editLine (char * str, uint8_t lineLength );
-	int16_t editInt16(int16_t initialNumber);
+void editLine(char *str, uint8_t lineLength);
 
-	#endif /* EDITOR_H_ */
-
-	#ifdef __cplusplus
-}
-#endif
+int16_t editInt16(int16_t initialNumber);

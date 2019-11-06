@@ -9,66 +9,69 @@ using namespace AppUtils;
 using namespace PrintUtils;
 using namespace StrUtils;
 
-NtpClient::NtpClient() : AppModule(MOD_NTP) { udp = new WiFiUDP(); }
+NtpClient::NtpClient() : AppModule(MOD_NTP) { state = STOPPED; }
 
 bool NtpClient::begin() {
-    start();
-    return active;
+    udp = new WiFiUDP();
+    return start();
 }
 
-void NtpClient::start() {
-    say_strP(str_server, timeServerPool);
-    say_strP(str_port, NTP_REMOTE_PORT);
-    active = udp->begin(NTP_LOCAL_PORT);
-    if (!active)
-        say_strP(str_failed);
+bool NtpClient::start() {
+    if (state == STOPPED)
+        if (udp->begin(NTP_LOCAL_PORT)) {
+            state = STARTED;
+        }
+    return state != STOPPED;
 }
 
 void NtpClient::stop() {
-    if (active) {
+    if (state == STARTED) {
         udp->stop();
-        say_strP(str_stopped);
+        state = STOPPED;
     }
-    active = false;
 }
 
 void NtpClient::loop() {
-    if (!active)
+    if (state == STOPPED)
         return;
 
-    if (millis_since(requestTime) <= timeout && responseTime <= requestTime) {
-        waitResponse();
+    if (millis_since(requestTime) <= NTP_TIMEOUT &&
+        responseTime <= requestTime) {
+        checkResponse();
         return;
     }
 
-    if ((millis_since(responseTime) >= syncInterval) || !responseTime) {
+    if (!responseTime || (millis_since(responseTime) >= requestInterval))
         sendRequest();
-    }
 }
 
 void NtpClient::setConfig(Config *config) {
+    setLocalPort(NTP_LOCAL_PORT);
+    setServer(config->getValueAsString(NTP_POOL_SERVER));
     setInterval(config->getValueAsInt(NTP_SYNC_INTERVAL));
-    setPoolServer(config->getValueAsString(NTP_POOL_SERVER));
-    setTimeout(1000);
 };
 
-void NtpClient::setTimeout(uint16_t time_ms) { timeout = time_ms; }
+void NtpClient::setServer(const char *str) { setServer(str, NTP_REMOTE_PORT); }
 
-void NtpClient::setInterval(uint16_t time_s) {
-    syncInterval = time_s * ONE_SECOND_ms;
+void NtpClient::setServer(const char *str, uint16_t port) {
+    server = new char[strlen(str) + 1];
+    strcpy(server, str);
+    localPort = port;
 }
 
-void NtpClient::setPoolServer(const char *str) {
-    size_t len = strlen(str);
-    timeServerPool = new char[len + 1];
-    strcpy(timeServerPool, str);
+void NtpClient::setInterval(uint16_t value) {
+    requestInterval = value * ONE_SECOND_ms;
 }
+
+void NtpClient::setRemotePort(int16_t port) { remotePort = port; }
+
+void NtpClient::setLocalPort(int16_t port) { localPort = port; }
 
 void NtpClient::sendRequest() {
     IPAddress serverIp;
-    if (!WiFi.hostByName(timeServerPool, serverIp)) {
-        say_strP(str_dns, getStrP(str_error).c_str());
-        active = false;
+    if (!WiFi.hostByName(server, serverIp)) {
+        log_error(msg_dns_resolve_error, server);
+        stop();
         return;
     }
 
@@ -96,36 +99,40 @@ void NtpClient::sendRequest() {
     requestTime = millis();
 }
 
-void NtpClient::waitResponse() {
-    int cb = udp->parsePacket();
-    if (cb) {
-        responseTime = millis();
-
+void NtpClient::checkResponse() {
+    if (udp->parsePacket()) {
         char buf[NTP_PACKET_SIZE];
         udp->read(buf, NTP_PACKET_SIZE);
         uint16_t high = word(buf[40], buf[41]);
         uint16_t low = word(buf[42], buf[43]);
-
-        epoch_s = (high << 16 | low) - SEVENTY_YEARS_ms;
-        say_strP(str_response, epoch_s);
-        if (responseHandler)
-            responseHandler(epoch_s);
+        unsigned long epoch = (high << 16 | low) - SEVENTY_YEARS_ms;
+        gotResponse(epoch);
     }
 }
 
-void NtpClient::setOnResponse(TimeEventHandler h) {
-    responseHandler = h;
-    if (responseHandler && responseTime > 0)
-        responseHandler(epoch_s + millis_since(responseTime) / ONE_SECOND_ms);
+void NtpClient::gotResponse(unsigned long epoch) {
+    say_strP(str_got, epoch);
+    responseTime = millis();
+    time.set(epoch, responseTime);
+    if (timeHandler)
+        timeHandler(time.now());
+    stop();
+}
+
+void NtpClient::setOnResponse(TimeHandler handler) {
+    if (handler && time.now())
+        handler(time.now());
+    timeHandler = handler;
 }
 
 size_t NtpClient::printDiag(Print *p) {
-    size_t n = println_nameP_value(p, str_active, boolStr(active).c_str());
-    n += println_nameP_value(p, str_server, timeServerPool);
-    n += println_nameP_value(p, str_port, NTP_LOCAL_PORT);
-    n += println_nameP_value(p, str_epoch, epoch_s);
-    n += println_nameP_value(p, str_interval, syncInterval / ONE_SECOND_ms);
+    size_t n = println_nameP_value(p, str_active, boolStr(active));
+    n += println_nameP_value(p, str_bind, NTP_LOCAL_PORT);
+    n += println_nameP_value(p, str_server,
+                             fmt_ip_port(server, NTP_REMOTE_PORT));
+    n += println_nameP_value(p, str_interval, requestInterval / ONE_SECOND_ms);
     n += println_nameP_value(p, str_request, requestTime / ONE_SECOND_ms);
     n += println_nameP_value(p, str_response, responseTime / ONE_SECOND_ms);
+    n += println_nameP_value(p, str_epoch, time.epoch);
     return n;
 }

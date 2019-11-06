@@ -54,7 +54,7 @@ class SyslogClient : public AppModule {
     SyslogClient(WiFiUDP *upd);
     void setConfig(Config *cfg);
     bool begin();
-    void start();
+    bool start();
     void stop();
     void loop();
     size_t printDiag(Print *);
