@@ -9,7 +9,7 @@ size_t print_shell_exit(Print *p) { return p->println(FPSTR(msg_shell_exit)); }
 size_t print_shell_interrupted(Print *p) {
     return p->println(FPSTR(msg_shell_interrupted));
 }
-size_t print_done(Print *p) { return print(p, FPSTR(str_done)); }
+size_t println_done(Print *p) { return println(p, FPSTR(str_done)); }
 
 size_t print_not_found(Print *p, String &str) {
     size_t n = print_quoted(p, str.c_str());

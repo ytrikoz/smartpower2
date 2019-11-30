@@ -6,7 +6,7 @@
 #include "CharBuffer.h"
 
 class ArrayBuffer : public CharBuffer {
-  public:
+   public:
     ArrayBuffer(size_t size);
     ArrayBuffer(const CharBuffer &b);
     ArrayBuffer &operator=(const ArrayBuffer &b);

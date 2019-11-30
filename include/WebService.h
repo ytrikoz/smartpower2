@@ -7,7 +7,6 @@
 
 #include <WebSocketsServer.h>
 
-#include "AppModule.h"
 #include "BuildConfig.h"
 #include "Consts.h"
 #include "StrUtils.h"
@@ -16,15 +15,16 @@
 typedef std::function<void(uint8_t)> SocketConnectionEventHandler;
 typedef std::function<void(uint8_t, String)> SocketDataEventHandler;
 
-class WebService : public AppModule {
+class WebService {
   public:
-    WebService();
-    bool begin();
-    void end();
+    WebService(uint16_t http, uint16_t websocket);
+    bool start();
+    void stop();
     void loop();
     size_t printDiag(Print *);
 
   public:
+    void setRoot(const char *path);
     void setOnClientConnection(SocketConnectionEventHandler h);
     void setOnClientDisconnected(SocketConnectionEventHandler h);
     void setOnClientData(SocketDataEventHandler h);
@@ -32,7 +32,6 @@ class WebService : public AppModule {
 
   private:
     bool captivePortal();
-
     bool sendFile(String uri);
     bool sendFileContent(String path);
     String getFilePath(String uri);
@@ -48,13 +47,11 @@ class WebService : public AppModule {
 
     SocketDataEventHandler onDataEvent;
     SocketConnectionEventHandler onConnectEvent, onDisconnectEvent;
-
-    bool active = false;
-    int16_t port_http, port_websocket;
-    char *web_root;
+    int16_t port_, wsport_;
+    char root_[16];
 
     ESP8266WebServer *server;
-    WebSocketsServer *websocket;
+    WebSocketsServer *socket;
     SSDPClass *ssdp;
     File fsUploadFile;
 };

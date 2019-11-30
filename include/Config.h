@@ -6,27 +6,37 @@
 
 typedef std::function<void(ConfigItem)> ConfigChangeEventHandler;
 
+struct ConfigDefinition {
+    const char *key_name;
+    size_t value_size;
+    const char *default_value;
+};
+
 class Config {
-  public:
+   public:
     Config();
     ~Config();
     bool load(const char *str, size_t size);
     void setOnConfigChaged(ConfigChangeEventHandler);
-    void setDefaultValue(ConfigItem param);
+    void resetDefault(ConfigItem param);
+
     String toString(ConfigItem param);
+    //
     bool setValueString(const ConfigItem param, String &str);
     bool setValueString(const ConfigItem param, const char *str);
     bool setValueStringByName(const char *name, const char *value);
-    bool setValueChar(const ConfigItem param, char ch);
+    bool setValueChar(const ConfigItem param, const char ch);
     bool setValueBool(const ConfigItem param, const bool value);
     bool setValueSignedByte(const ConfigItem param, const sint8_t value);
     bool setValueByte(const ConfigItem param, const uint8_t value);
     bool setValueInt(const ConfigItem param, const uint16_t value);
     bool setValueFloat(const ConfigItem param, const float value);
-    ConfigDefine getDefine(size_t index);
+
+    ConfigDefinition getDefinition(size_t index);
     const char *getName(ConfigItem param);
     const size_t getSize(ConfigItem param);
-    const char *getDefaults(ConfigItem param);
+    const char *getDefaultValue(ConfigItem param);
+    const char *getDefaultValue(uint8_t index);
 
     bool getValueAsBool(ConfigItem param);
     uint8_t getValueAsByte(ConfigItem param);
@@ -40,13 +50,13 @@ class Config {
     bool getConfig(String &name, ConfigItem &param, size_t &size);
     bool getConfig(const char *name, ConfigItem &param, size_t &size);
 
-  private:
+   private:
     void onChangedEvent(ConfigItem param);
-    char *values[PARAM_COUNT];
+    char *values[CONFIG_ITEMS];
     ConfigChangeEventHandler onChangeEventHandler;
 
-  private:
-    ConfigDefine define[PARAM_COUNT] = {
+   private:
+    ConfigDefinition define[CONFIG_ITEMS] = {
         {"wifi", CONFIG_CHAR, "2"},
         {"ssid", CONFIG_STR, "LocalNetwork"},
         {"passwd", CONFIG_STR, "Password"},
@@ -70,8 +80,4 @@ class Config {
         {"store_wh", CONFIG_CHAR, "0"},
         {"backlight", CONFIG_CHAR, "1"},
         {"syslog", CONFIG_STR, ""}};
-
-#ifdef DEBUG_CONFIG
-    Print *dbg = &DEBUG;
-#endif
 };

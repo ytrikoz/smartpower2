@@ -101,11 +101,16 @@ using StrUtils::strpadd;
 
 LcdDisplay::LcdDisplay() { addr = NONE_ADDRESS; }
 
+bool LcdDisplay::isEnabled() {
+    return addr != NONE_ADDRESS;
+}
+
 bool LcdDisplay::connect() {
     if (addr != NONE_ADDRESS)
         return true;
 
     Wire.beginTransmission(LCD_SLAVE_ADDRESS);
+
     if (!Wire.endTransmission()) {
         addr = LCD_SLAVE_ADDRESS;
     } else {
@@ -118,9 +123,9 @@ bool LcdDisplay::connect() {
         lcd = new LiquidCrystal_I2C(addr, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
         lcd->begin(LCD_COLS, LCD_ROWS);
         lcd->clear();
-        return true;
     }
-    return false;
+
+    return addr != NONE_ADDRESS;
 }
 
 void LcdDisplay::turnOn() {

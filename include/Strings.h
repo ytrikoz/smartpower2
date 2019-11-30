@@ -6,7 +6,6 @@
 // TODO refactor
 // now it's not for memory saving, but to collect literals in one place
 // and  code unification
-
 static const char msg_dns_resolve_error[] PROGMEM = "dsn resolve error";
 
 static const char str_build_date[] PROGMEM = BUILD_DATE;
@@ -236,9 +235,10 @@ static const char str_wifi_ap[] PROGMEM = "wifi ap";
 static const char str_wifi_ap_sta[] PROGMEM = "wifi ap sta";
 static const char str_wifi_sta[] PROGMEM = "wifi sta";
 
+static const char str_wait[] PROGMEM = "wait";
+static const char str_warn[] PROGMEM = "warn";
+static const char str_write[] PROGMEM = "write";
 static const char str_wrong[] PROGMEM = "wrong";
 static const char str_wrong_password[] PROGMEM = "wrong password";
-static const char str_wait[] PROGMEM = "wait";
-static const char str_write[] PROGMEM = "write";
 static const char str_wol[] PROGMEM = "wol";
 static const char str_yes[] PROGMEM = "yes";

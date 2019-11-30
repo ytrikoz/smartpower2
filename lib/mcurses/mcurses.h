@@ -52,7 +52,7 @@ void setFunction_getchar(char (*functionPoitner)(void));
 uint8_t initscr(void); // initialize mcurses
 void move(uint8_t,
           uint8_t);          // move cursor to line, column (home = 0, 0)
-void attrset(uint_fast16_t); // set attribute(s)
+void attrset(uint16_t );  // set attribute(s)
 void addch(uint8_t);         // add a character
 void addstr(const char *);   // add a string
 void addstr_P(const char *); // add a string (PROGMEM)

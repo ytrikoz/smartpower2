@@ -2,14 +2,11 @@
 
 #include <FS.h>
 
-#include "AppModule.h"
-#include "Consts.h"
 #include "PrintUtils.h"
 #include "PsuUtils.h"
 #include "StoreUtils.h"
 #include "TimeUtils.h"
-#include "ina231.h"
-#include "mcp4652.h"
+
 
 using namespace PrintUtils;
 using namespace StrUtils;
@@ -28,17 +25,13 @@ int Psu::quadratic_regression(double value) {
     return root;
 }
 
-Psu::Psu() : AppModule(MOD_PSU) {
+bool Psu::onInit() {
+    setVoltage(config()->getValueAsFloat(OUTPUT_VOLTAGE));
+    enableWhStore(config()->getValueAsBool(WH_STORE_ENABLED));
     startTime = infoUpdated = powerInfoUpdated = loggerUpdated = lastStore = 0;
     pinMode(POWER_SWITCH_PIN, OUTPUT);
-    ina231_configure();
-    mcp4652_init();
     clearErrorsAndAlerts();
-}
-
-void Psu::setConfig(Config *config) {
-    setVoltage(config->getValueAsFloat(OUTPUT_VOLTAGE));
-    enableWhStore(config->getValueAsBool(WH_STORE_ENABLED));
+    return true;
 }
 
 void Psu::powerOn() {
@@ -67,9 +60,9 @@ void Psu::setState(PsuState value) {
         stateChangeHandler(state, status);
 }
 
-bool Psu::checkVoltageRange(float value) { return alterRange = value > 7; }
+bool Psu::checkVoltageRange(double value) { return alterRange = value > 7; }
 
-void Psu::setVoltage(float value) {
+void Psu::setVoltage(double value) {
     if (checkVoltageRange(value))
         outputVoltage = constrain(value, 11.8, 12.9);
     else
@@ -78,9 +71,9 @@ void Psu::setVoltage(float value) {
     mcp4652_write(WRITE_WIPER0_ADDR, quadratic_regression(value));
 }
 
-bool Psu::begin() {
+bool Psu::onStart() {
     PsuState ps;
-    switch (config->getValueAsByte(POWER)) {
+    switch (config()->getValueAsByte(POWER)) {
     case BOOT_POWER_OFF:
         ps = POWER_OFF;
         break;
@@ -104,7 +97,7 @@ bool Psu::begin() {
     return true;
 }
 
-void Psu::loop() {
+void Psu::onLoop() {
     if (!checkState(POWER_ON))
         return;
 
@@ -168,7 +161,7 @@ bool Psu::enableWhStore(bool new_value) {
     if (wh_store == new_value)
         return true;
     wh_store = new_value ? restoreWh(info.mWh) : false;
-    printlm_moduleP_nameP_value(out, str_psu, str_store,
+    println_moduleP_nameP_value(out, str_psu, str_store,
                                 getEnabledStr(wh_store).c_str());
     return wh_store == new_value;
 }
@@ -183,20 +176,20 @@ bool Psu::restoreWh(double &value) {
     return res;
 }
 
-float Psu::getP() { return info.P; }
+const float Psu::getP() { return info.P; }
 
-float Psu::getV() { return info.V; }
+const float Psu::getV() { return info.V; }
 
-float Psu::getI() { return info.I; }
+const float Psu::getI() { return info.I; }
 
-double Psu::getWh() { return info.mWh / ONE_WATT_mW; }
+const double Psu::getWh() { return info.mWh / ONE_WATT_mW; }
 
-unsigned long Psu::getUptime() {
+const unsigned long Psu::getUptime() {
     return millis_passed(startTime, infoUpdated) / ONE_SECOND_ms;
 }
 
 bool Psu::isWhStoreEnabled(void) {
-    wh_store = config->getValueAsBool(WH_STORE_ENABLED);
+    wh_store = config()->getValueAsBool(WH_STORE_ENABLED);
     return wh_store;
 }
 
@@ -212,7 +205,7 @@ bool Psu::restoreState(PsuState &value) {
     return res;
 }
 
-size_t Psu::printDiag(Print *p) {
+size_t Psu::onDiag(Print *p) {
     size_t n = println_nameP_value(p, str_power, getStateStr(state));
     n += println_nameP_value(p, str_status, getStatusStr(status));
     n += println_nameP_value(p, str_output, outputVoltage);
@@ -268,9 +261,9 @@ void Psu::setLogger(PsuLogger *logger) { this->logger = logger; }
 
 PsuLogger *Psu::getLogger() { return this->logger; }
 
-PsuInfo Psu::getInfo() { return info; }
+const PsuInfo Psu::getInfo() { return info; }
 
-float Psu::getVoltage() { return outputVoltage; }
+const float Psu::getVoltage() { return outputVoltage; }
 
 void Psu::clearErrorsAndAlerts() {
     alert = PSU_ALERT_NONE;

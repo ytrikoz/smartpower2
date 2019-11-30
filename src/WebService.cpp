@@ -1,6 +1,7 @@
-#include "Modules/WebService.h"
+#include "WebService.h"
 
-#include "AppModule.h"
+#include "AppUtils.h"
+#include "PrintUtils.h"
 #include "StoreUtils.h"
 #include "Wireless.h"
 
@@ -9,13 +10,10 @@ using namespace StoreUtils;
 using namespace StrUtils;
 using namespace PrintUtils;
 
-WebService::WebService() : AppModule(MOD_HTTP) {
-    this->port_http = HTTP_PORT;
-    this->port_websocket = WEBSOCKET_PORT;
-    this->web_root = new char[strlen(FS_WEB_ROOT) + 1];
-    strcpy(this->web_root, FS_WEB_ROOT);
-
-    server = new ESP8266WebServer(port_http);
+WebService::WebService(uint16_t http, uint16_t websocket)
+    : port_(http), wsport_(websocket) {
+    server = new ESP8266WebServer();
+    socket = new WebSocketsServer(this->wsport_);
     server->on("/upload", HTTP_POST, [this]() { server->send(200); },
                [this]() { handleUpload(); });
 
@@ -39,14 +37,14 @@ WebService::WebService() : AppModule(MOD_HTTP) {
     });
 
     // Android captive portal.
-    server->on("/generate_204", [this]() { handleNoContent(); });
+    server->on("/generate_204", [this]() { handleRoot(); });//handleNoContent(); });
     // Microsoft captive portal.
-    server->on("/fwlink", [this]() { handleRoot(); });
+    server->on("/fwlink", [this]() {  handleRoot(); });//handleNoContent(); });
+
     server->on("/", [this]() { handleRoot(); });
     server->onNotFound([this]() { handleUri(); });
 
-    websocket = new WebSocketsServer(this->port_websocket);
-    websocket->onEvent(
+    socket->onEvent(
         [this](uint8_t num, WStype_t type, uint8_t *payload, size_t lenght) {
             handleWebSocketEvent(num, type, payload, lenght);
         });
@@ -57,7 +55,7 @@ WebService::WebService() : AppModule(MOD_HTTP) {
         ssdp = new SSDPClass();
         ssdp->setDeviceType(F("upnp:rootdevice"));
         ssdp->setSchemaURL(F("description.xml"));
-        ssdp->setHTTPPort(port_http);
+        ssdp->setHTTPPort(port_);
         ssdp->setName(Wireless::hostName());
         ssdp->setModelName(APP_NAME);
         ssdp->setModelNumber(APP_VERSION);
@@ -72,43 +70,31 @@ WebService::WebService() : AppModule(MOD_HTTP) {
         server->on(F("/description.xml"), HTTP_GET,
                    [this]() { ssdp->schema(server->client()); });
     }
-    active = false;
 }
 
-size_t WebService::printDiag(Print *p) {
-    size_t n = print_paramP_value(p, str_active, boolStr(active).c_str());
-    return n;
-}
+void WebService::setRoot(const char *path) { strcpy(root_, path); }
 
-bool WebService::begin() {
+bool WebService::start() {
     String ip_str = Wireless::hostIP().toString();
-    // saylnf("%s %s:%d,%d", web_root, ip_str.c_str(), port_http,
-    // port_websocket);
-
     String tmp = "ipaddr=\"";
     tmp += ip_str;
     tmp += "\"\r\n";
     StoreUtils::storeString(FS_WEB_CONFIG, tmp);
 
-    server->begin();
-
-    websocket->begin();
-
-    active = true;
+    server->begin(port_);
+    socket->begin();
 
     return true;
 }
 
-void WebService::end() {
-    say_strP(str_stopped);
-    active = false;
+void WebService::stop() {
+    server->stop();
+    socket->close();
 }
 
 void WebService::loop() {
-    if (!active)
-        return;
     server->handleClient();
-    websocket->loop();
+    socket->loop();
 }
 
 void WebService::handleRoot() {
@@ -156,7 +142,7 @@ void WebService::sendTxt(uint8_t num, String &payload) {
     out->print(StrUtils::getStrP(str_arrow_dest));
     out->println(payload);
 #endif
-    websocket->sendTXT(num, payload);
+    socket->sendTXT(num, payload);
 }
 
 void WebService::handleNoContent() {
@@ -223,7 +209,7 @@ bool WebService::sendFile(String uri) {
 }
 
 String WebService::getFilePath(String uri) {
-    String path = String(web_root);
+    String path = String(root_);
     path += uri;
     if (uri.endsWith("/"))
         path.concat("index.html");
@@ -254,7 +240,7 @@ bool WebService::sendFileContent(String path) {
 }
 
 void WebService::handleFileList() {
-    String path = server->hasArg("path") ? server->arg("path") : web_root;
+    String path = server->hasArg("path") ? server->arg("path") : root_;
     if (!path.startsWith("/"))
         path = "/" + path;
     Dir dir = SPIFFS.openDir(path);
@@ -284,7 +270,7 @@ void WebService::handleUpload() {
             char buf[64];
             sprintf(buf, "%d %s=%s", i, server->argName(i).c_str(),
                     server->arg(i).c_str());
-            say(buf);
+            // pinr(buf);
         }
 
         String filename = upload.filename;

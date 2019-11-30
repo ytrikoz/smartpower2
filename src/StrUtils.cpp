@@ -119,11 +119,13 @@ void strfill(char *str, char chr, size_t len) {
     str[len - 1] = '\x00';
 }
 
-IPAddress atoip(const char *input) {
+IPAddress atoip(const char *str) {
+    if (!isip(str))
+        return IPAddress(IPADDR_NONE);
     uint8_t parts[4] = {0, 0, 0, 0};
     uint8_t part = 0;
-    for (uint8_t a = 0; a < strlen(input); a++) {
-        uint8_t b = input[a];
+    for (uint8_t a = 0; a < strlen(str); a++) {
+        uint8_t b = str[a];
         if (b == '.') {
             part++;
             continue;
@@ -132,7 +134,7 @@ IPAddress atoip(const char *input) {
         parts[part] += b - '0';
     }
     return IPAddress(parts[0], parts[1], parts[2], parts[3]);
-}
+} // namespace StrUtils
 
 String iptos(IPAddress &ip) { return ip.toString(); }
 
@@ -163,11 +165,11 @@ bool setstr(char *dest, const char *src, size_t size) {
     return false;
 }
 
-String fmt_ip_port(const IPAddress &ip, const uint16_t port) {
+const String fmt_ip_port(const IPAddress &ip, const uint16_t port) {
     return fmt_ip_port(ip.toString().c_str(), port);
 }
 
-String fmt_ip_port(const char *ip, const uint16_t port) {
+const String fmt_ip_port(const char *ip, const uint16_t port) {
     char buf[32];
     sprintf(buf, "%s:%d", ip, port);
     return String(buf);

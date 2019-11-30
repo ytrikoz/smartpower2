@@ -13,11 +13,11 @@
 namespace Actions {
 
 class WakeOnLan {
-  public:
+   public:
     WakeOnLan(Print *p);
     void exec(String ipaddr, String mac);
 
-  private:
+   private:
     const char wol_preamble[6] = {'\xFF', '\xFF', '\xFF',
                                   '\xFF', '\xFF', '\xFF'};
     Print *out;
@@ -53,6 +53,6 @@ void WakeOnLan::exec(String ipStr, String macStr) {
     }
     udp->stop();
     free(udp);
-} // namespace Actions
+}  // namespace Actions
 
-} // namespace Actions
+}  // namespace Actions

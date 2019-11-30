@@ -8,18 +8,20 @@
 
 class ShellMod : public AppModule {
   public:
-    bool setSerial();
-    bool setRemote(Stream *);
+    void setSerial();
+    void setRemote(Stream *);
     bool isActive();
     bool run(const char *strCmd);
 
   public:
-    ShellMod();
-    bool begin();
-    void loop();
+    ShellMod() : AppModule(MOD_SHELL){};
+
+  protected:
+    bool onInit();
+    bool onStart();
+    void onLoop();
 
   private:
-    bool active;
     Shell shell;
     Termul local, remote;
 };

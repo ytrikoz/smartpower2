@@ -7,7 +7,7 @@
 namespace Actions {
 
 class PowerAvg : public NumericAction {
-  public:
+   public:
     PowerAvg(size_t param);
     void exec(Print *p);
     void print_config_reg(Print *p);
@@ -62,4 +62,4 @@ void PowerAvg::exec(Print *p) {
     print_config_reg(p);
 }
 
-} // namespace Actions
+}  // namespace Actions

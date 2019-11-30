@@ -72,12 +72,12 @@ bool ConfigHelper::loadStrings(Config *config, StringQueue *data) {
 }
 
 bool ConfigHelper::saveConfig() {
-    StringQueue *data = new StringQueue(PARAM_COUNT);
+    StringQueue *data = new StringQueue(CONFIG_ITEMS);
     return saveConfig(this->config, data);
 }
 
 bool ConfigHelper::saveConfig(Config *config, StringQueue *data) {
-    for (size_t index = 0; index < PARAM_COUNT; ++index) {
+    for (size_t index = 0; index < CONFIG_ITEMS; ++index) {
         String str = config->toString(ConfigItem(index));
         data->put(str);
     }
@@ -87,27 +87,15 @@ bool ConfigHelper::saveConfig(Config *config, StringQueue *data) {
 
 size_t ConfigHelper::printTo(Print &p) const {
     size_t n = 0;
-    for (size_t i = 0; i < PARAM_COUNT; ++i)
+    for (size_t i = 0; i < CONFIG_ITEMS; ++i)
         n += p.println(config->toString(ConfigItem(i)));
     return n;
 }
 
 void ConfigHelper::setDefault() {
-    for (size_t i = 0; i < PARAM_COUNT; ++i)
-        config->setDefaultValue(ConfigItem(i));
+    for (size_t i = 0; i < CONFIG_ITEMS; ++i)
+        config->resetDefault(ConfigItem(i));
 }
-
-// String ConfigHelper::getConfigJson() {
-//     DynamicJsonDocument doc(1024);
-//     String str;
-//     for (uint8_t i = 0; i < PARAM_COUNT; ++i) {
-//         ConfigItem param = ConfigItem(i);
-//         JsonObject item = doc.createNestedObject();
-//         item[config->getName(param)] = config->getValueAsString(param);
-//     }
-//     serializeJson(doc, str);
-//     return str;
-// }
 
 bool ConfigHelper::getWhStoreEnabled() {
     return config->getValueAsBool(WH_STORE_ENABLED);
@@ -201,5 +189,18 @@ const char *ConfigHelper::getPassword() {
 const char *ConfigHelper::getPassword_AP() {
     return config->getValueAsString(AP_PASSWORD);
 }
+
 // maximum value of RF Tx Power, unit: 0.25 dBm, range [0, 82]
 uint8_t ConfigHelper::getTPW() { return config->getValueAsByte(TPW); }
+
+// String ConfigHelper::getConfigJson() {
+//     DynamicJsonDocument doc(1024);
+//     String str;
+//     for (uint8_t i = 0; i < CONFIG_ITEMS; ++i) {
+//         ConfigItem param = ConfigItem(i);
+//         JsonObject item = doc.createNestedObject();
+//         item[config->getName(param)] = config->getValueAsString(param);
+//     }
+//     serializeJson(doc, str);
+//     return str;
+// }

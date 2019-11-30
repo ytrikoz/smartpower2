@@ -4,6 +4,8 @@
 #include "CommonTypes.h"
 #include "ConfigHelper.h"
 #include "PsuLogger.h"
+#include "ina231.h"
+#include "mcp4652.h"
 
 #define POWER_SWITCH_PIN D6
 
@@ -12,14 +14,20 @@ typedef std::function<void(PsuState, PsuStatus)> PsuStateChangeHandler;
 typedef std::function<void(PsuInfo)> PsuInfoHandler;
 
 class Psu : public AppModule {
-  public:
-    Psu();
-    void setConfig(Config *config);
-    bool begin();
-    void loop();
-    size_t printDiag(Print *p);
+   public:
+    Psu() : AppModule(MOD_PSU) {
+        ina231_configure();
+        mcp4652_init();
+    };
 
-  public:
+    size_t onDiag(Print *p) override;
+
+   protected:
+    bool onInit() override;
+    bool onStart() override;
+    void onLoop() override;
+
+   public:
     void setLogger(PsuLogger *);
     PsuLogger *getLogger();
     void togglePower();
@@ -34,21 +42,21 @@ class Psu : public AppModule {
     bool checkState(PsuState);
     bool checkStatus(PsuStatus);
 
-  public:
-    void setVoltage(float voltage);
-    bool checkVoltageRange(float value);
-    float getVoltage();
-    PsuInfo getInfo();
-    float getP();
-    float getV();
-    float getI();
-    double getWh();
-    unsigned long getUptime();
+   public:
+    const PsuInfo getInfo();
+    void setVoltage(const double voltage);
+    bool checkVoltageRange(const double value);
+    const float getVoltage();
+    const float getP();
+    const float getV();
+    const float getI();
+    const double getWh();
+    const unsigned long getUptime();
     bool enableWhStore(bool enabled = true);
     bool isWhStoreEnabled(void);
     void setWh(double value);
 
-  private:
+   private:
     void clearErrorsAndAlerts(void);
     void setStatus(PsuStatus value);
     void setError(PsuError value);
@@ -59,7 +67,7 @@ class Psu : public AppModule {
     bool storeState(PsuState);
     bool restoreState(PsuState &);
 
-  private:
+   private:
     int quadratic_regression(double value);
 
     PsuState state;

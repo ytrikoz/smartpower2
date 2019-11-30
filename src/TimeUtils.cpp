@@ -99,8 +99,8 @@ bool encodeMonth(String str, int &month) {
 
 bool encodeTime(const char *str, struct tm &tm) {
 #ifdef DEBUG_TIME_UTILS
-    USE_SERIAL.printf("[encodeTime] %s", str);
-    USE_SERIAL.println();
+    DEBUG.printf("[encodeTime] %s", str);
+    DEBUG.println();
 #endif
     char buf[16];
     strncpy(buf, str, 16);
@@ -108,9 +108,8 @@ bool encodeTime(const char *str, struct tm &tm) {
     tm.tm_min = atoi(strtok(NULL, ":"));
     tm.tm_sec = atoi(buf);
 #ifdef DEBUG_TIME_UTILS
-    USE_SERIAL.printf("[encodeTime] %d %d %d", tm.tm_hour, tm.tm_min,
-                      tm.tm_sec);
-    USE_SERIAL.println();
+    DEBUG.printf("[encodeTime] %d %d %d", tm.tm_hour, tm.tm_min, tm.tm_sec);
+    DEBUG.println();
 #endif
     return true;
     // isValidTime(tm.tm_hour, tm.tm_min, tm.tm_sec);
@@ -118,8 +117,8 @@ bool encodeTime(const char *str, struct tm &tm) {
 
 bool encodeDate(char *str, struct tm &tm) {
 #ifdef DEBUG_TIME_UTILS
-    USE_SERIAL.printf("[encodeDate] %s", str);
-    USE_SERIAL.println();
+    DEBUG.printf("[encodeDate] %s", str);
+    DEBUG.println();
 #endif
     char buf[8];
     strcpy(buf, strtok(str, " "));
@@ -127,9 +126,8 @@ bool encodeDate(char *str, struct tm &tm) {
     tm.tm_mday = atoi(strtok(NULL, " "));
     tm.tm_year = atoi(strtok(NULL, " ")) - 1900;
 #ifdef DEBUG_TIME_UTILS
-    USE_SERIAL.printf("[encodeDate] %d %d %d", tm.tm_mon, tm.tm_mday,
-                      tm.tm_year);
-    USE_SERIAL.println();
+    DEBUG.printf("[encodeDate] %d %d %d", tm.tm_mon, tm.tm_mday, tm.tm_year);
+    DEBUG.println();
 #endif
     return true;
     // isValidDate(tm.tm_mday, tm.tm_mon, tm.tm_year);
@@ -137,7 +135,7 @@ bool encodeDate(char *str, struct tm &tm) {
 
 void epochToDateTime(unsigned long epoch_s, struct tm &tm) {
 #ifdef DEBUG_passed_UTILS
-    USE_SERIAL.printf("epoch_to_tm (%lu) ", epoch_s);
+    DEBUG.printf("epoch_to_tm (%lu) ", epoch_s);
 #endif
     // seconds since 1970-01-01 00:00:00
     unsigned long passed = epoch_s;

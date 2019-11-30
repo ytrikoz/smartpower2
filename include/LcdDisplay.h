@@ -6,8 +6,8 @@
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
 
-#include "AppModule.h"
 #include "BuildConfig.h"
+#include "Modules/AppModule.h"
 #include "Plot.h"
 #include "Screen.h"
 #include "StrUtils.h"
@@ -31,6 +31,7 @@ class LcdDisplay {
     void loop();
 
   public:
+    bool isEnabled();
     void loadBank(CharBank bank, bool force = false);
     bool connect();
     void turnOn();

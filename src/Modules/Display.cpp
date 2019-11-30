@@ -5,9 +5,9 @@
 
 using namespace StrUtils;
 
-Display::Display() : AppModule(MOD_DISPLAY) {
-    lcd = new LcdDisplay();
-    lastUpdated = lockTimeout = lockUpdated = 0;
+
+bool Display::isEnabled() {
+    return lcd && lcd->isEnabled();
 }
 
 void Display::setScreen(ScreenEnum value) {
@@ -43,16 +43,16 @@ void Display::setScreen(ScreenEnum value) {
     activeScreen = value;
 }
 
-bool Display::begin() {
-    bool res = lcd->connect();
-    if (res) {
+bool Display::onInit() {
+    lcd = new LcdDisplay();
+    lastUpdated = lockTimeout = lockUpdated = 0;
+    backlight = config()->getValueAsBool(BACKLIGHT);
+    bool result = lcd->connect();
+    if (result) {
         lcd->turnOn();
-        say_strP(str_ready);
         enableBacklight(backlight);
-    } else {
-        say_strP(str_failed);
     }
-    return res;
+    return result;
 }
 
 void Display::showProgress(uint8_t per, const char *str) {
@@ -81,17 +81,13 @@ void Display::enableBacklight(bool value) {
     backlight = value;
 }
 
-void Display::setConfig(Config *config) {
-    backlight = config->getValueAsBool(BACKLIGHT);
-}
-
 void Display::clear(void) { activeScreen = SCREEN_CLEAR; }
 
 void Display::refresh(void) {
 #ifdef DEBUG_DISPLAY
     DEBUG.println("refresh()");
 #endif
-    Psu *psu = app.getPsu();
+    Psu *psu = app.psu();
     if (psu->checkState(POWER_ON)) {
         setScreen(SCREEN_PSU);
         PsuStatus status = psu->getStatus();
@@ -137,7 +133,7 @@ void Display::load_wifi_sta(Screen *obj) {
     obj->set(n++, "STA> ", Wireless::hostSTA_SSID());
     obj->set(n++, "IP> ", Wireless::hostSTA_IP().toString());
     obj->set(n++, "RSSI> ", Wireless::hostSTA_RSSI());
-    obj->set(n++, "CLK> ", getTimeStr(app.getClock()->getLocal(), true));
+    obj->set(n++, "CLK> ", getTimeStr(app.clock()->getLocal(), true));
     obj->setCount(n);
 };
 
@@ -145,7 +141,7 @@ void Display::load_wifi_ap(Screen *obj) {
     size_t n = 0;
     obj->set(n++, "AP> ", Wireless::hostAP_SSID());
     obj->set(n++, "PWD> ", Wireless::hostAP_Password());
-    obj->set(n++, "CLK> ", getTimeStr(app.getClock()->getLocal(), true));
+    obj->set(n++, "CLK> ", getTimeStr(app.clock()->getLocal(), true));
     obj->setCount(n);
 };
 
@@ -157,12 +153,12 @@ void Display::load_wifi_ap_sta(Screen *obj) {
     obj->set(n++, "AP> ", Wireless::hostAP_SSID());
     obj->set(n++, "IP AP> ", Wireless::hostAP_IP().toString());
     obj->set(n++, "IP STA> ", Wireless::hostSTA_IP().toString());
-    obj->set(n++, "CLK> ", getTimeStr(app.getClock()->getLocal(), true));
+    obj->set(n++, "CLK> ", getTimeStr(app.clock()->getLocal(), true));
     obj->setCount(n);
 };
 
 void Display::load_psu_info(Screen *obj) {
-    Psu *psu = app.getPsu();
+    Psu *psu = app.psu();
     String str = String(psu->getV(), 3);
     if (str.length() == 5)
         str += " ";
@@ -189,7 +185,7 @@ void Display::load_psu_info(Screen *obj) {
 
 void Display::load_ready(Screen *obj) {
     obj->set(0, "READY> ");
-    obj->set(1, "CLK> ", getTimeStr(app.getClock()->getLocal(), true).c_str());
+    obj->set(1, "CLK> ", getTimeStr(app.clock()->getLocal(), true).c_str());
     obj->setCount(2);
     obj->moveFirst();
 }
@@ -243,7 +239,7 @@ void Display::updateScreen(void) {
     }
 }
 
-void Display::loop(void) {
+void Display::onLoop() {
     if (activeScreen == SCREEN_CLEAR || activeScreen == SCREEN_BOOT)
         return;
 

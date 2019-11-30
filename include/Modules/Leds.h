@@ -7,19 +7,16 @@
 
 #define LED_PWM_DUTY_ON 0
 
-namespace Led {
-
-class Leds : public AppModule {
-  public:
+class LedMod : public AppModule {
+   public:
+    LedMod() : AppModule(MOD_LED){};
     void set(LedLamp, LedMode);
 
-  public:
-    Leds();
-    void loop();
-    size_t printDiag(Print *p);
+   protected:
+    bool onInit() override;
+    void onLoop() override;
+    size_t onDiag(Print *p) override;
 
-  private:
+   private:
     LedBlinker *wifi, *power;
 };
-
-} // namespace Led

@@ -47,7 +47,7 @@ String hostMac();
 
 String hostIPInfo();
 
-String hostName();
+const String hostName();
 
 String hostSTA_SSID();
 

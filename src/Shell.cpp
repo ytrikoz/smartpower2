@@ -135,8 +135,8 @@ size_t Shell::print_prompt(Print *p) {
     DEBUG.print("[shell] print_prompt");
 #endif
     char buf[64];
-    if (app.getClock())
-        strcpy(buf, getTimeStr(app.getClock()->getLocal(), true).c_str());
+    if (app.clock())
+        strcpy(buf, getTimeStr(app.clock()->getLocal(), true).c_str());
     size_t n = strlen(buf);
     buf[n] = '>';
     buf[++n] = '\x20';

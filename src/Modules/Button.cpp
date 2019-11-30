@@ -1,31 +1,12 @@
 #include "Modules/Button.h"
 
-Button::Button() : AppModule(MOD_BTN) {
+bool Button::onInit() {
     pinMode(POWER_BTN_PIN, INPUT);
     lastUpdated = 0;
-}
-void Button::setOnClicked(ButtonCLickHandler h) { clickHandler = h; }
-
-void Button::setOnHold(ButtonHoldHandler h) { holdHandler = h; }
-
-void Button::setOnHoldRelease(ButtonHoldHandler h) { holdReleaseHandler = h; }
-
-void Button::onClicked() {
-    if (clickHandler)
-        clickHandler();
+    return true;
 }
 
-void Button::onHold(unsigned long time) {
-    if (holdHandler)
-        holdHandler(time);
-}
-
-void Button::onHoldRelease(unsigned long time) {
-    if (holdReleaseHandler)
-        holdReleaseHandler(time);
-}
-
-void Button::loop() {
+void Button::onLoop() {
     unsigned long now = millis();
     handleButton(now);
     if (clickFlag) {
@@ -46,6 +27,27 @@ void Button::loop() {
             holdTime = 0;
         }
     }
+}
+
+void Button::setOnClicked(ButtonCLickHandler h) { clickHandler = h; }
+
+void Button::setOnHold(ButtonHoldHandler h) { holdHandler = h; }
+
+void Button::setOnHoldRelease(ButtonHoldHandler h) { holdReleaseHandler = h; }
+
+void Button::onClicked() {
+    if (clickHandler)
+        clickHandler();
+}
+
+void Button::onHold(unsigned long time) {
+    if (holdHandler)
+        holdHandler(time);
+}
+
+void Button::onHoldRelease(unsigned long time) {
+    if (holdReleaseHandler)
+        holdReleaseHandler(time);
 }
 
 void Button::handleButton(unsigned long now) {

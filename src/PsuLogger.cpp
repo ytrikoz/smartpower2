@@ -5,40 +5,61 @@
 using namespace StrUtils;
 
 PsuLogger::PsuLogger() {
-    this->psuLog[static_cast<int>(PsuLogEnum::VOLTAGE)] =
-        new PsuLog("V", PSU_LOG_VOLTAGE_SIZE);
-    this->psuLog[static_cast<int>(PsuLogEnum::CURRENT)] =
-        new PsuLog("I", PSU_LOG_CURRENT_SIZE);
-    this->psuLog[static_cast<int>(PsuLogEnum::POWER)] =
-        new PsuLog("P", PSU_LOG_POWER_SIZE);
-    this->psuLog[static_cast<int>(PsuLogEnum::WATTSHOURS)] =
-        new PsuLog("Wh", PSU_LOG_WATTHOURS_SIZE);
+    if (PSU_LOG_VOLTAGE_SIZE) {
+        this->psuLog[static_cast<int>(PsuLogEnum::VOLTAGE)] =
+            new PsuLog("V", PSU_LOG_VOLTAGE_SIZE);
+    }
+    if (PSU_LOG_CURRENT_SIZE) {
+        this->psuLog[static_cast<int>(PsuLogEnum::CURRENT)] =
+            new PsuLog("I", PSU_LOG_CURRENT_SIZE);
+    }
+    if (PSU_LOG_POWER_SIZE) {
+        this->psuLog[static_cast<int>(PsuLogEnum::POWER)] =
+            new PsuLog("P", PSU_LOG_POWER_SIZE);
+    }
+    if (PSU_LOG_WATTHOURS_SIZE) {
+        this->psuLog[static_cast<int>(PsuLogEnum::WATTSHOURS)] =
+            new PsuLog("Wh", PSU_LOG_WATTHOURS_SIZE);
+    }
 }
 
 void PsuLogger::log(PsuInfo &item) {
-    if (v_enabled)
+    if (PSU_LOG_VOLTAGE_SIZE)
         getLog(PsuLogEnum::VOLTAGE)->log(item.time, item.V);
-    if (i_enabled)
+    if (PSU_LOG_CURRENT_SIZE)
         getLog(PsuLogEnum::CURRENT)->log(item.time, item.I);
-    if (p_enabled)
+    if (PSU_LOG_POWER_SIZE)
         getLog(PsuLogEnum::POWER)->log(item.time, item.P);
-    if (wh_enabled)
+    if (PSU_LOG_WATTHOURS_SIZE)
         getLog(PsuLogEnum::WATTSHOURS)->log(item.time, item.mWh / ONE_WATT_mW);
 
-    lastLogged = millis();
+    lastRecord = millis();
 }
 
 PsuLog *PsuLogger::getLog(PsuLogEnum item) {
-    return psuLog[static_cast<int>(item)];
+    PsuLog *result = 0;
+    if (item == PsuLogEnum::VOLTAGE && PSU_LOG_VOLTAGE_SIZE)
+        result = psuLog[static_cast<int>(item)];
+    if (item == PsuLogEnum::CURRENT && PSU_LOG_CURRENT_SIZE)
+        result = psuLog[static_cast<int>(item)];
+    if (item == PsuLogEnum::POWER && PSU_LOG_POWER_SIZE)
+        result = psuLog[static_cast<int>(item)];
+    if (item == PsuLogEnum::WATTSHOURS && PSU_LOG_WATTHOURS_SIZE)
+        result = psuLog[static_cast<int>(item)];
+    return result;
 }
 
-size_t PsuLogger::getSize(PsuLogEnum item) { return getLog(item)->count(); }
+size_t PsuLogger::getSize(PsuLogEnum item) { 
+    return getLog(item)? getLog(item)->count(): 0;
+}
 
 bool PsuLogger::getValues(PsuLogEnum item, float *dest, size_t &size) {
     PsuLog *log = getLog(item);
-    size = log->count();
-    if (size)
-        log->values(dest, size);
+    if (log) {
+        size = log->count();
+        if (size)
+            log->values(dest, size);
+    }
     return size;
 }
 
@@ -47,14 +68,13 @@ void PsuLogger::clear() {
         PsuLog *log = getLog(PsuLogEnum(i));
         log->clear();
     }
-    lastLogged = startTime = 0;
-    v_enabled = i_enabled = p_enabled = wh_enabled = true;
+    lastRecord = startTime = 0;
 }
 
 void PsuLogger::print(PsuLogEnum item, Print *p) { getLog(item)->printTo(p); }
 
 void PsuLogger::printDiag(Print *p) {
-    if (!lastLogged) {
+    if (!lastRecord) {
         p->println(FPSTR(str_empty));
         return;
     }

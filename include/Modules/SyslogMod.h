@@ -48,21 +48,26 @@ developers for debugging, not useful during operations.
 */
 enum SysLogSeverity { SYSLOG_ALERT = 1, SYSLOG_INFO = 6, SYSLOG_DEBUG = 7 };
 
-class SyslogClient : public AppModule {
-  public:
-    SyslogClient();
-    SyslogClient(WiFiUDP *upd);
-    void setConfig(Config *cfg);
-    bool begin();
-    bool start();
-    void stop();
-    void loop();
-    size_t printDiag(Print *);
-
+class SyslogMod : public AppModule {
   public:
     void alert(String &str);
     void info(String &str);
     void debug(String &str);
+
+  public:
+    SyslogMod() : AppModule(MOD_SYSLOG){};
+    size_t onDiag(Print *) override;
+    bool isCompatible(Wireless::NetworkMode value) override{
+        return (value == Wireless::NETWORK_STA) ||
+               (value == Wireless::NETWORK_AP_STA);
+    }
+    bool isNetworkDepended() override { return true; }
+
+  protected:
+    bool onInit() override;
+    bool onStart() override;
+    void onStop() override;
+    void onLoop() override;
 
   private:
     void setHost(const char *);

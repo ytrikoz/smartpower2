@@ -57,8 +57,9 @@
 #define FS_POWER_STATE_VAR "/var/ps"
 #define FS_UTC_VAR "/var/utc"
 #define FS_WH_VAR "/var/wh"
-
-#define FS_START_FLAG "/start"
+#define FS_LOG_ROOT "/log/"
+#define FS_BOOT_LOG FS_LOG_ROOT "boot"
+#define FS_START_FLAG "_boot"
 
 #define CONFIG_CHAR 1
 #define CONFIG_STR 31
@@ -92,10 +93,10 @@
 #define PSU_VOLTAGE_LOW_v 1.0f
 #define PSU_LOAD_LOW_a 0.001f
 #define PSU_LOG_INTERVAL_ms 250
-#define PSU_LOG_VOLTAGE_SIZE 128
-#define PSU_LOG_CURRENT_SIZE 128
-#define PSU_LOG_POWER_SIZE 128
-#define PSU_LOG_WATTHOURS_SIZE 128
+#define PSU_LOG_VOLTAGE_SIZE 64
+#define PSU_LOG_CURRENT_SIZE 64
+#define PSU_LOG_POWER_SIZE 64
+#define PSU_LOG_WATTHOURS_SIZE 64
 
 #define SCREEN_WIDTH 80
 #define INPUT_MAX_LENGTH 128
@@ -105,8 +106,10 @@
 
 #define ONE_MHz_hz 1000000UL
 
-#define CRASH_MAX_SIZE 512
+#define CRASH_MAX_SIZE 32 + 512 + 1
 #define CRASH_MAX_NUM 10
+
+#define HOLD_TIME_TO_RESET ONE_SECOND_ms * 5
 
 static const char TIME_FORMAT[] PROGMEM = "%02d:%02d:%02d";
 static const char TIME_LONG_FORMAT[] PROGMEM = "%s %02d:%02d:%02d";

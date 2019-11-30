@@ -32,16 +32,17 @@
 
 #define DEBUG Serial
 #define ERROR Serial
-#define USE_SERIAL Serial
+#define INFO Serial
 
 #define NO_GLOBAL_SSDP
 #define NO_GLOBAL_MDNS
 #define NO_GLOBAL_NBNS
 #define NO_GLOBAL_NETBIOS
 #define NO_GLOBAL_ARDUINOOTA
-#define NO_GLOBAL_SSDP
+#define NO_GLOBAL_EEPROM
+#define ATOMIC_FS_UPDATE
 
-//#define SERIAL_DEBUG
+//#define INFO_DEBUG
 
 //#define DEBUG_APP
 //#define DEBUG_LEDS

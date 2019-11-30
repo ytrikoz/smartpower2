@@ -3,44 +3,41 @@
 #define LED_PWM_FREQ 500
 #define LED_PWM_RANGE 100
 
-namespace Led {
-
-Leds::Leds() : AppModule(MOD_LED) {
+bool LedMod::onInit() {
     analogWriteFreq(LED_PWM_FREQ);
     analogWriteRange(LED_PWM_RANGE);
-    power = new Led::LedBlinker(POWER_LED_PIN, true, true);
-    wifi = new Led::LedBlinker(WIFI_LED_PIN, false, true);
-};
+    power = new LedBlinker(POWER_LED_PIN, true, true);
+    wifi = new LedBlinker(WIFI_LED_PIN, false, true);
+    return true;
+}
 
-size_t Leds::printDiag(Print *p) {
+size_t LedMod::onDiag(Print *p) {
     size_t n = p->print(StrUtils::getStrP(str_power));
     n += p->print(':');
     n += p->print(' ');
-    n += power->printDiag(p);
+    n += power->onDiag(p);
     n += p->print(StrUtils::getStrP(str_wifi));
     n += p->print(':');
     n += p->print(' ');
-    n += wifi->printDiag(p);
+    n += wifi->onDiag(p);
 
     return n;
 }
 
-void Leds::loop() {
+void LedMod::onLoop() {
     wifi->loop();
     power->loop();
 }
 
-void Leds::set(Led::LedLamp led, Led::LedMode mode) {
+void LedMod::set(LedLamp led, LedMode mode) {
     switch (led) {
-    case Led::POWER_LED:
+    case POWER_LED:
         power->set(mode);
         break;
-    case Led::WIFI_LED:
+    case WIFI_LED:
         wifi->set(mode);
         break;
     default:
         break;
     }
-}
-
 }

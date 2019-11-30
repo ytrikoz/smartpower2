@@ -7,34 +7,25 @@
 
 using namespace PrintUtils;
 
-SystemClock::SystemClock() : AppModule(MOD_CLOCK) {
-    trusted = false;
-    timeOffset = storeInterval = lastStored = rollover = 0;
-    epoch = EpochTime(TimeUtils::getAppBuildUtc());
-    lastUpdated = millis();
-}
-
-bool SystemClock::begin() {
-    if (!trusted)
-        if (restoreState(epoch))
-            setEpoch(epoch);
+bool SystemClock::onInit() {
+    setTimeZone(config()->getValueAsByte(TIME_ZONE));
+    setBackupInterval(config()->getValueAsInt(TIME_BACKUP_INTERVAL));
+    EpochTime now;
+    if (!restoreState(now))
+        now = EpochTime(TimeUtils::getAppBuildUtc());
+    setEpoch(now);
     return true;
 }
 
 size_t SystemClock::printDiag(Print *p) {
     size_t n =
-        println_nameP_value(p, str_timezone, (float)timeOffset / ONE_HOUR_s);
+        println_nameP_value(p, str_timezone, timeOffset / ONE_HOUR_s);
     n += println_nameP_value(p, str_backup, storeInterval / ONE_SECOND_ms);
     n += println_nameP_value(p, str_updated, lastUpdated / ONE_SECOND_ms);
     n += println_nameP_value(p, str_stored, lastStored / ONE_SECOND_ms);
     n += println_nameP_value(p, str_rollover, rollover);
     n += println_nameP_value(p, str_epoch, epoch);
     return n += println_nameP_value(p, str_trusted, trusted);
-}
-
-void SystemClock::setConfig(Config *config) {
-    setTimeZone(config->getValueAsByte(TIME_ZONE));
-    setBackupInterval(config->getValueAsInt(TIME_BACKUP_INTERVAL));
 }
 
 void SystemClock::setTimeZone(uint8_t timeZone) {
@@ -48,7 +39,7 @@ void SystemClock::setBackupInterval(unsigned long time) {
                  : 0;
 }
 
-void SystemClock::loop() {
+void SystemClock::onLoop() {
     unsigned long now = millis();
     if (now < lastUpdated)
         rollover++;

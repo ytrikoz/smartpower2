@@ -2,44 +2,35 @@
 
 #include "Global.h"
 
-ShellMod::ShellMod() : AppModule(MOD_SHELL) {
+bool ShellMod::onInit() {
     Cli::init();
-    active = false;
-}
-
-void ShellMod::loop() {
-    if (active)
-        shell.loop();
-}
-
-bool ShellMod::begin() {
     shell.setParser(cli);
-    active = setSerial();
-    return active;
+    return true;
 }
 
-bool ShellMod::setSerial() {
+bool ShellMod::onStart() {
+    setSerial();
+    return true;
+}
+
+void ShellMod::onLoop() { shell.loop(); }
+
+void ShellMod::setSerial() {
     local.enableControlCodes(false);
     local.enableEcho();
-    local.setConsole(&USE_SERIAL);
+    local.setConsole(&Serial);
 
     shell.enableWelcome();
     shell.setTerminal(&local);
-
-    return active = true;
 }
 
-bool ShellMod::setRemote(Stream *stream) {
+void ShellMod::setRemote(Stream *stream) {
     remote.enableControlCodes();
     remote.enableEcho(false);
     remote.setConsole(stream);
 
     shell.enableWelcome();
     shell.setTerminal(&remote);
-
-    active = true;
-
-    return active;
 }
 
 bool ShellMod::run(const char *cmdStr) { return shell.run(cmdStr); }

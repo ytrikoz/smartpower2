@@ -90,7 +90,7 @@ String hostMac() {
     return str;
 }
 
-String hostName() {
+const String hostName() {
     String str;
     switch (getMode()) {
     case NETWORK_STA:
@@ -231,11 +231,11 @@ void start() {
     print_ident(&DEBUG, FPSTR(str_wifi));
     println_nameP_value(&DEBUG, str_host, host.c_str());
 
-    uint8_t tpw = app.getConfig()->getValueAsByte(TPW);
+    uint8_t tpw = app.params()->getValueAsByte(TPW);
     print_ident(&DEBUG, FPSTR(str_wifi));
     println_nameP_value(&DEBUG, str_tpw, tpw);
 
-    NetworkMode mode = (NetworkMode)app.getConfig()->getValueAsByte(WIFI);
+    NetworkMode mode = (NetworkMode)app.params()->getValueAsByte(WIFI);
     init(mode, host.c_str(), tpw);
 
     stationConnectedHandler = WiFi.onSoftAPModeStationConnected(
@@ -286,18 +286,18 @@ void start() {
         });
 
     if (mode == NETWORK_STA || mode == NETWORK_AP_STA) {
-        const char *ssid = app.getConfig()->getValueAsString(SSID);
-        const char *passwd = app.getConfig()->getValueAsString(PASSWORD);
-        const bool dhcp = app.getConfig()->getValueAsBool(DHCP);
+        const char *ssid = app.params()->getValueAsString(SSID);
+        const char *passwd = app.params()->getValueAsString(PASSWORD);
+        const bool dhcp = app.params()->getValueAsBool(DHCP);
 
         if (dhcp) {
             setupSTA();
         } else {
             IPAddress ip, subnet, gateway, dns;
-            ip = app.getConfig()->getValueAsIPAddress(IPADDR);
-            subnet = app.getConfig()->getValueAsIPAddress(NETMASK);
-            gateway = app.getConfig()->getValueAsIPAddress(GATEWAY);
-            dns = app.getConfig()->getValueAsIPAddress(DNS);
+            ip = app.params()->getValueAsIPAddress(IPADDR);
+            subnet = app.params()->getValueAsIPAddress(NETMASK);
+            gateway = app.params()->getValueAsIPAddress(GATEWAY);
+            dns = app.params()->getValueAsIPAddress(DNS);
             setupSTA(ip, gateway, subnet, dns);
         }
 
@@ -308,9 +308,9 @@ void start() {
     }
 
     if (mode == NETWORK_AP || mode == NETWORK_AP_STA) {
-        const char *ap_ssid = app.getConfig()->getValueAsString(AP_SSID);
-        const char *ap_passwd = app.getConfig()->getValueAsString(AP_PASSWORD);
-        IPAddress ap_ipaddr = app.getConfig()->getValueAsIPAddress(AP_IPADDR);
+        const char *ap_ssid = app.params()->getValueAsString(AP_SSID);
+        const char *ap_passwd = app.params()->getValueAsString(AP_PASSWORD);
+        IPAddress ap_ipaddr = app.params()->getValueAsIPAddress(AP_IPADDR);
 
         setupAP(ap_ipaddr);
 
@@ -322,9 +322,7 @@ void start() {
 
 void init(NetworkMode mode, const char *host, uint8_t tpw) {
     system_phy_set_max_tpw(tpw);
-    WiFi.persistent(false);
     WiFi.hostname(host);
-    WiFi.setAutoConnect(false);
     setMode(mode);
 }
 

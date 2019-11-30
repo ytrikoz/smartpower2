@@ -9,4 +9,4 @@ void init();
 void close();
 bool active();
 
-} // namespace Cli
+}  // namespace Cli

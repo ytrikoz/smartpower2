@@ -12,7 +12,7 @@ struct NtpTime : Printable {
     unsigned long epoch = 0;
     unsigned long when = 0;
 
-  public:
+   public:
     void set(const unsigned long epoch, const unsigned long when) {
         this->epoch = epoch;
         this->when = when;
@@ -29,35 +29,38 @@ struct NtpTime : Printable {
 };
 
 class NtpClient : public AppModule {
-  public:
-    NtpClient();
-    bool begin();
-    //
-    bool start();
-    void stop();
-    //
-    void loop();
-    //
-    size_t printDiag(Print *);
+   public:
+    NtpClient() : AppModule(MOD_NTP){};
 
-  protected:
-    void setConfig(Config *config);
+    bool isCompatible(Wireless::NetworkMode value) override {
+        return (value == Wireless::NETWORK_STA) ||
+               (value == Wireless::NETWORK_AP_STA);
+    }
+    bool isNetworkDepended() override { return true; } 
 
-  public:
+    size_t onDiag(Print *) override;
+
+   protected:
+    bool onInit() override;
+    void onDeinit() override;
+    bool onStart() override;
+    void onStop() override ;
+    void onLoop()override;
+
+   public:
     void setServer(const char *server);
     void setServer(const char *str, uint16_t port);
     void setRemotePort(int16_t port);
     void setLocalPort(int16_t port);
     void setInterval(uint16_t time);
-
     void setOnResponse(TimeHandler);
 
-  private:
+   private:
     void sendRequest();
     void checkResponse();
     void gotResponse(unsigned long epoch);
 
-  private:
+   private:
     bool enabled = false;
     bool active = false;
     TimeHandler timeHandler;

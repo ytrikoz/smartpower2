@@ -10,28 +10,25 @@
 
 #include "Modules/Button.h"
 #include "Modules/Display.h"
+#include "Modules/HttpMod.h"
 #include "Modules/Leds.h"
 #include "Modules/NetworkService.h"
 #include "Modules/NtpClient.h"
 #include "Modules/OTAUpdate.h"
 #include "Modules/Psu.h"
 #include "Modules/ShellMod.h"
-#include "Modules/SyslogClient.h"
+#include "Modules/SyslogMod.h"
 #include "Modules/SystemClock.h"
 #include "Modules/TelnetServer.h"
-#include "Modules/WebService.h"
 
 class App {
-  public:
+   public:
     App();
     void init(Print *p);
-    void startSafe();
     void start();
-    bool start(const AppModuleEnum);
+    void startSafe();
+    bool begin(const AppModuleEnum);
     void stop(const AppModuleEnum);
-    bool getModule(String &str, AppModuleEnum &mod);
-    bool getModule(const char *str, AppModuleEnum &mod);
-    AppModule *getInstance(const AppModuleEnum);
     void loop();
     void loopSafe();
     void restart(uint8_t time);
@@ -41,48 +38,89 @@ class App {
     void printPlot(PlotData *data, Print *p);
     void printCapture(Print *);
 
-    Config *getConfig();
-    SystemClock *getClock();
-    Display *getDisplay();
+    AppModule *getModuleByName(const char *);
+    AppModule *getModule(const AppModuleEnum);
+
+    Config *params();
+    SystemClock *clock();
+    Display *lcd();
     LoopLogger *getLoopLogger();
-    ConfigHelper *getEnv();
-    WebService *getHttp();
-    Psu *getPsu();
-    ShellMod *getShell();
+    ConfigHelper *config();
+    HttpMod *http();
+    Psu *psu();
+    NtpClient *ntp();
+    LedMod *led();
+    ShellMod *shell();
+    Button *btn();
+    TelnetServer *telnet();
+
     bool setBootPowerState(BootPowerState state);
     bool setOutputVoltageAsDefault();
     uint8_t getTPW();
     void refresh_power_led();
     void refresh_wifi_led();
 
-  private:
-    bool isNetworkDepended(AppModuleEnum module);
-    void refresh_network_modules(bool hasNetwork);
-    void handle_restart();
+    void logInfo(const String &routine, const String &msg) {
+        String message = routine;
+        message += " : ";
+        message += msg;
+        logMessage(LEVEL_INFO, message);
+    }
+
+    void logMessage(const LogLevel level, const String &msg) {
+        char buf[16];
+        out->print(millis() / ONE_SECOND_ms);
+        out->print(' ');
+        out->print(getLogLevel(buf, level));
+        out->print(' ');
+        out->println(msg);
+        out->flush();
+    }
+
+    char *getLogLevel(char *buf, LogLevel level) {
+        PGM_P strP;
+        switch (level) {
+            case LEVEL_ERROR:
+                strP = str_error;
+                break;
+            case LEVEL_WARN:
+                strP = str_warn;
+                break;
+            case LEVEL_INFO:
+                strP = str_info;
+                break;
+            default:
+                strP = str_unknown;
+                break;
+        }
+        char str[16];
+        strncpy_P(str, strP, 13);
+        for (char *p = str; *p; p++)
+            *p = toupper(*p);
+        sprintf(buf, "[%s]", str);
+        return buf;
+    }
+
+   private:
+    void displayProgress(uint8_t progress, const char *message);
+    void restartNetworkDependedModules(Wireless::NetworkMode mode, bool hasNetwork);
+    void handleRestart();
     void send_psu_data_to_clients();
 
-  private:
+   private:
+    bool networkChanged;
+    AppModule *appMod[APP_MODULES];
+    LoopLogger *loopLogger;
+    ConfigHelper *configHelper;
+    OTAUpdate *ota;
+
+    PsuLogger *logger;
     bool safemode = false;
     WiFiEventHandler onDisconnected, onGotIp;
     unsigned long lastUpdated;
     uint8_t reboot;
     uint8_t boot_per;
-    LoopLogger *loopLogger;
-    ConfigHelper *env = NULL;
-    ShellMod *shell = NULL;
-    OTAUpdate *ota = NULL;
-    Display *display = NULL;
-    WebService *http = NULL;
-    TelnetServer *telnet = NULL;
-    SystemClock *rtc = NULL;
-    NtpClient *ntp = NULL;
-    PsuLogger *logger = NULL;
-    Psu *psu = NULL;
-    Button *btn = NULL;
-    Led::Leds *leds = NULL;
-    NetworkService *netsvc = NULL;
-    SyslogClient *syslog = NULL;
-    AppModule *appMod[APP_MODULES];
+
     Print *out, *dbg, *err = NULL;
 };
 

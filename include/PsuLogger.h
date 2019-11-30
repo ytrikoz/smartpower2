@@ -22,6 +22,5 @@ class PsuLogger {
   private:
     PsuLog *psuLog[4];
     unsigned long startTime;
-    unsigned long lastLogged;
-    bool v_enabled, i_enabled, p_enabled, wh_enabled;
+    unsigned long lastRecord;
 };

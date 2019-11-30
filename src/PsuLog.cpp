@@ -108,19 +108,18 @@ void PsuLog::values(float array[], size_t &size) {
 }
 
 void PsuLog::printTo(Print *p) {
-    float value = 0;
     size_t readPos = getFirstEntryIndex();
     size_t first_n = getFirstEntry()->n;
     size_t last_n = getLastEntry()->n;
     if (first_n == last_n)
         first_n = 1;
     for (size_t n = first_n; n <= last_n; ++n) {
-        value = getEntry(readPos)->v;
+        float value = getEntry(readPos)->v;
         if (n >= getEntry(readPos)->n)
             readPos++;
         p->print(n);
         p->print('\t');
-        p->println(value);
+        p->println(value, 4);
     }
 }
 

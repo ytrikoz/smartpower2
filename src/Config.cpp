@@ -5,23 +5,41 @@
 
 #include "StrUtils.h"
 
+using namespace StrUtils;
+
 Config::Config() {
-    for (size_t index = 0; index < PARAM_COUNT; ++index) {
-        ConfigDefine df = getDefine(index);
-        size_t size = getSize(ConfigItem(index));
-        values[index] = new char[df.value_size + 1];
-        StrUtils::setstr(values[index], getDefine(index).defaults, size + 1);
+    for (size_t i = 0; i < CONFIG_ITEMS; ++i) {
+        size_t len = getSize(ConfigItem(i)) + 1;
+        values[i] = new char[len];
+        setstr(values[i], getDefaultValue(i), len);
     }
 }
 
 Config::~Config() {
-    for (int index = 0; index < PARAM_COUNT; ++index)
+    for (int index = 0; index < CONFIG_ITEMS; ++index)
         delete[] values[index];
 }
 
-void Config::setDefaultValue(ConfigItem param) {
-    String value = String(getDefaults(param));
-    setValueString(param, value.c_str());
+bool Config::load(const char *str, size_t len) {
+    char buf[128];
+    size_t index;
+    for (index = 0; index < len; ++index)
+        if (str[index] == '=')
+            break;
+    if (index == len)
+        return false;
+    strncpy(buf, str, index);
+    ConfigItem param;
+    size_t size;
+    if (getConfig(buf, param, size)) {
+        strncpy(buf, &str[index + 2], strlen(str) - (index + 2));
+        return setValueString(param, buf);
+    }
+    return false;
+}
+
+void Config::resetDefault(ConfigItem param) {
+    setValueString(param, getDefaultValue(param));
 }
 
 void Config::setOnConfigChaged(ConfigChangeEventHandler h) {
@@ -33,12 +51,10 @@ void Config::onChangedEvent(ConfigItem param) {
         onChangeEventHandler(param);
 }
 
-ConfigDefine Config::getDefine(size_t index) { return define[index]; }
-
-const char *Config::getValueAsString(ConfigItem param) { return values[param]; }
+ConfigDefinition Config::getDefinition(size_t index) { return define[index]; }
 
 bool Config::getConfig(const char *name, ConfigItem &param) {
-    for (uint8_t i = 0; i < PARAM_COUNT; ++i) {
+    for (uint8_t i = 0; i < CONFIG_ITEMS; ++i) {
         param = ConfigItem(i);
         if (strcmp(name, getName(param)) == 0)
             return true;
@@ -59,15 +75,19 @@ String Config::toString(ConfigItem param) {
 }
 
 const char *Config::getName(ConfigItem param) {
-    return getDefine(param).key_name;
+    return getDefinition(param).key_name;
 }
 
 const size_t Config::getSize(ConfigItem param) {
-    return getDefine(param).value_size;
+    return getDefinition(param).value_size;
 }
 
-const char *Config::getDefaults(ConfigItem param) {
-    return getDefine(param).defaults;
+const char *Config::getDefaultValue(uint8_t index) {
+    return getDefaultValue(ConfigItem(index));
+}
+
+const char *Config::getDefaultValue(ConfigItem param) {
+    return getDefinition(param).default_value;
 }
 
 bool Config::setValueBool(ConfigItem param, bool value) {
@@ -91,11 +111,11 @@ bool Config::setValueInt(ConfigItem param, uint16_t value) {
 }
 
 bool Config::setValueFloat(ConfigItem param, float value) {
-    char buf[8];
+    char buf[16];
     return setValueString(param, dtostrf(value, 2, 1, buf));
 }
 
-bool Config::setValueChar(ConfigItem param, char ch) {
+bool Config::setValueChar(ConfigItem param, const char ch) {
     char buf[2];
     buf[0] = ch;
     buf[1] = '\x00';
@@ -112,28 +132,10 @@ bool Config::setValueString(const ConfigItem param, String &str) {
 }
 
 bool Config::setValueString(const ConfigItem param, const char *str) {
-    bool result = StrUtils::setstr(values[param], str, getSize(param) + 1);
+    bool result = setstr(values[param], str, getSize(param) + 1);
     if (result)
         onChangedEvent(param);
     return result;
-}
-
-bool Config::load(const char *str, size_t len) {
-    char buf[128];
-    size_t index;
-    for (index = 0; index < len; ++index)
-        if (str[index] == '=')
-            break;
-    if (index == len)
-        return false;
-    strncpy(buf, str, index);
-    ConfigItem param;
-    size_t size;
-    if (getConfig(buf, param, size)) {
-        strncpy(buf, &str[index + 2], strlen(str) - (index + 2));
-        return setValueString(param, buf);
-    }
-    return false;
 }
 
 uint8_t Config::getValueAsByte(ConfigItem param) {
@@ -157,5 +159,7 @@ bool Config::getValueAsBool(ConfigItem param) {
 }
 
 IPAddress Config::getValueAsIPAddress(ConfigItem param) {
-    return StrUtils::atoip(getValueAsString(param));
+    return atoip(getValueAsString(param));
 }
+
+const char *Config::getValueAsString(ConfigItem param) { return values[param]; }

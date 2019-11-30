@@ -10,6 +10,10 @@
 
 typedef std::function<void(unsigned long epoch_s)> TimeHandler;
 
+enum LogLevel { LEVEL_ERROR,
+                LEVEL_WARN,
+                LEVEL_INFO };
+
 enum AppModuleEnum {
     MOD_BTN,
     MOD_CLOCK,
@@ -25,15 +29,24 @@ enum AppModuleEnum {
     MOD_SYSLOG
 };
 
-enum PsuState { POWER_ON = 0, POWER_OFF = 1 };
+enum PsuState { POWER_ON = 0,
+                POWER_OFF = 1 };
 
-enum PsuStatus { PSU_OK, PSU_ERROR, PSU_ALERT };
+enum PsuStatus { PSU_OK,
+                 PSU_ERROR,
+                 PSU_ALERT };
 
-enum PsuError { PSU_ERROR_NONE, PSU_ERROR_LOW_VOLTAGE };
+enum PsuError { PSU_ERROR_NONE,
+                PSU_ERROR_LOW_VOLTAGE };
 
-enum PsuAlert { PSU_ALERT_NONE, PSU_ALERT_LOAD_LOW };
+enum PsuAlert { PSU_ALERT_NONE,
+                PSU_ALERT_LOAD_LOW };
 
-enum StoreState { SS_UNSET, SS_CLOSED, SS_READING, SS_WRITING, SS_EOF };
+enum StoreState { SS_UNSET,
+                  SS_CLOSED,
+                  SS_READING,
+                  SS_WRITING,
+                  SS_EOF };
 
 enum StoreError {
     SE_OK,
@@ -51,7 +64,7 @@ struct PsuInfo : Printable {
     float P;
     double mWh;
 
-  public:
+   public:
     PsuInfo() { time = V = I = P = mWh = 0; }
 
     PsuInfo(unsigned long time_ms, float V, float I, float P, double mWh)
@@ -87,7 +100,7 @@ struct PsuInfo : Printable {
 };
 
 class Logger {
-  public:
+   public:
     virtual PsuInfo getInfo() = 0;
 };
 
@@ -97,20 +110,27 @@ enum BootPowerState {
     BOOT_POWER_LAST_STATE = 2
 };
 
-enum EOLType { CRLF, LFCR, LF, CR };
+enum EOLType { CRLF,
+               LFCR,
+               LF,
+               CR };
 
-enum MoveDirection { MD_LEFT, MD_RIGHT, MD_UP, MD_DOWN };
+enum MoveDirection { MD_LEFT,
+                     MD_RIGHT,
+                     MD_UP,
+                     MD_DOWN };
 
-enum State { ST_INACTIVE, ST_NORMAL, ST_ESC_SEQ, ST_CTRL_SEQ };
+enum State { ST_INACTIVE,
+             ST_NORMAL,
+             ST_ESC_SEQ,
+             ST_CTRL_SEQ };
 
-struct ConfigDefine {
-    const char *key_name;
-    size_t value_size;
-    const char *defaults;
+struct WebClient {
+    bool connected = false;
+    uint8_t page = 0;
 };
 
-#define PARAM_COUNT 23
-
+#define CONFIG_ITEMS 23
 enum ConfigItem {
     WIFI,
     SSID,
@@ -135,9 +155,4 @@ enum ConfigItem {
     WH_STORE_ENABLED,
     BACKLIGHT,
     SYSLOG_SERVER
-};
-
-struct WebClient {
-    bool connected = false;
-    uint8_t page = 0;
 };

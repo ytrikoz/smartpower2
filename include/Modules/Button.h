@@ -4,23 +4,32 @@
 
 #include "AppModule.h"
 
-enum ButtonState { BTN_PRESSED, BTN_RELEASED };
+enum ButtonState { BTN_PRESSED,
+                   BTN_RELEASED };
 
 typedef std::function<void(void)> ButtonCLickHandler;
 typedef std::function<void(unsigned long)> ButtonHoldHandler;
 typedef std::function<void(unsigned long)> ButtonHoldReleaseHandler;
 
 class Button : public AppModule {
-  public:
-    void loop();
-
-  public:
-    Button();
+   public:
     void setOnClicked(ButtonCLickHandler h);
     void setOnHold(ButtonHoldHandler h);
     void setOnHoldRelease(ButtonHoldHandler h);
 
-  private:
+   public:
+    Button() : AppModule(MOD_BTN) {
+        clickFlag = false;
+        holdTime = lastEvent = pressTime = 0;
+        state = BTN_RELEASED;
+        lastUpdated = 0;
+    };
+
+   protected:
+    bool onInit() override;
+    void onLoop() override;
+
+   private:
     bool isPressed();
     bool isReleased();
     void handleButton(unsigned long now);
@@ -28,15 +37,15 @@ class Button : public AppModule {
     void onHold(unsigned long time);
     void onHoldRelease(unsigned long time);
 
-  private:
+   private:
     ButtonCLickHandler clickHandler;
     ButtonHoldHandler holdHandler;
     ButtonHoldReleaseHandler holdReleaseHandler;
 
-    bool clickFlag = false;
-    unsigned long holdTime = 0;
-    unsigned long lastEvent = 0;
-    unsigned long pressTime = 0;
+    bool clickFlag;
+    unsigned long holdTime;
+    unsigned long lastEvent;
+    unsigned long pressTime;
     ButtonState state = BTN_RELEASED;
-    unsigned long lastUpdated = 0;
+    unsigned long lastUpdated;
 };

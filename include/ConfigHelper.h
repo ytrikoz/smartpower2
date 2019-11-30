@@ -55,13 +55,15 @@ class ConfigHelper : public Printable {
     void loadConfig(Config *config);
     bool loadStrings(Config *config, StringQueue *data);
     bool saveConfig(Config *config, StringQueue *data);
+    
     void onConfigChanged(ConfigItem param);
+    
     Config *config;
     char *filename;
     bool stored;
 #ifdef DEBUG_CONFIG
     Print *dbg = &DEBUG;
 #endif
-    Print *err = &USE_SERIAL;
-    Print *out = &USE_SERIAL;
+    Print *err = &INFO;
+    Print *out = &INFO;
 };

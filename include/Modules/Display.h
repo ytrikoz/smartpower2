@@ -5,13 +5,8 @@
 #include "Screen.h"
 
 class Display : public AppModule {
-  public:
-    Display();
-    bool begin();
-    void loop();
-    void setConfig(Config *config);
-
-  public:
+   public:
+    bool isEnabled();
     void showProgress(uint8_t per, const char *str);
     void showPlot(PlotData *data, size_t cols);
     void showMessage(const char *header, const char *message);
@@ -28,7 +23,14 @@ class Display : public AppModule {
     void load_psu_info(Screen *obj);
     void load_psu_stat(Screen *obj);
 
-  private:
+   public:
+    Display() : AppModule(MOD_DISPLAY){};
+
+   protected:
+    bool onInit() override;
+    void onLoop() override;
+
+   private:
     void setFirst();
     void refreshScreen();
     void setScreen(ScreenEnum value);
@@ -37,7 +39,7 @@ class Display : public AppModule {
     bool locked(unsigned long now);
     bool locked(void);
 
-  private:
+   private:
     LcdDisplay *lcd;
     bool backlight;
     unsigned long lockUpdated, lockTimeout;

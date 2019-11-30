@@ -9,32 +9,25 @@ using namespace AppUtils;
 using namespace PrintUtils;
 using namespace StrUtils;
 
-NtpClient::NtpClient() : AppModule(MOD_NTP) { state = STOPPED; }
-
-bool NtpClient::begin() {
+bool NtpClient::onInit() {
     udp = new WiFiUDP();
-    return start();
+    setLocalPort(NTP_LOCAL_PORT);
+    setServer(config()->getValueAsString(NTP_POOL_SERVER));
+    setInterval(config()->getValueAsInt(NTP_SYNC_INTERVAL));
+    return true;
 }
 
-bool NtpClient::start() {
-    if (state == STOPPED)
-        if (udp->begin(NTP_LOCAL_PORT)) {
-            state = STARTED;
-        }
-    return state != STOPPED;
+void NtpClient::onDeinit() {
+    delete udp;
 }
 
-void NtpClient::stop() {
-    if (state == STARTED) {
-        udp->stop();
-        state = STOPPED;
-    }
+bool NtpClient::onStart() { return udp->begin(NTP_LOCAL_PORT); }
+
+void NtpClient::onStop() { 
+    udp->stop();         
 }
 
-void NtpClient::loop() {
-    if (state == STOPPED)
-        return;
-
+void NtpClient::onLoop() {
     if (millis_since(requestTime) <= NTP_TIMEOUT &&
         responseTime <= requestTime) {
         checkResponse();
@@ -45,15 +38,11 @@ void NtpClient::loop() {
         sendRequest();
 }
 
-void NtpClient::setConfig(Config *config) {
-    setLocalPort(NTP_LOCAL_PORT);
-    setServer(config->getValueAsString(NTP_POOL_SERVER));
-    setInterval(config->getValueAsInt(NTP_SYNC_INTERVAL));
-};
-
 void NtpClient::setServer(const char *str) { setServer(str, NTP_REMOTE_PORT); }
 
 void NtpClient::setServer(const char *str, uint16_t port) {
+    if (server)
+        delete server;
     server = new char[strlen(str) + 1];
     strcpy(server, str);
     localPort = port;
@@ -70,7 +59,6 @@ void NtpClient::setLocalPort(int16_t port) { localPort = port; }
 void NtpClient::sendRequest() {
     IPAddress serverIp;
     if (!WiFi.hostByName(server, serverIp)) {
-        log_error(msg_dns_resolve_error, server);
         stop();
         return;
     }
@@ -111,12 +99,13 @@ void NtpClient::checkResponse() {
 }
 
 void NtpClient::gotResponse(unsigned long epoch) {
-    say_strP(str_got, epoch);
     responseTime = millis();
     time.set(epoch, responseTime);
     if (timeHandler)
         timeHandler(time.now());
-    stop();
+    onStop();
+    onDeinit();
+    state_ = STATE_INIT;
 }
 
 void NtpClient::setOnResponse(TimeHandler handler) {
@@ -125,14 +114,11 @@ void NtpClient::setOnResponse(TimeHandler handler) {
     timeHandler = handler;
 }
 
-size_t NtpClient::printDiag(Print *p) {
+size_t NtpClient::onDiag(Print *p) {
     size_t n = println_nameP_value(p, str_active, boolStr(active));
-    n += println_nameP_value(p, str_bind, NTP_LOCAL_PORT);
     n += println_nameP_value(p, str_server,
                              fmt_ip_port(server, NTP_REMOTE_PORT));
     n += println_nameP_value(p, str_interval, requestInterval / ONE_SECOND_ms);
-    n += println_nameP_value(p, str_request, requestTime / ONE_SECOND_ms);
-    n += println_nameP_value(p, str_response, responseTime / ONE_SECOND_ms);
     n += println_nameP_value(p, str_epoch, time.epoch);
     return n;
 }

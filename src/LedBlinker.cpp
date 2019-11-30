@@ -1,6 +1,6 @@
 #include "LedBlinker.h"
 
-namespace Led {
+namespace {
 #define LED_PWM_DUTY_OFF 80
 
 /* LED  off            on on              off
@@ -15,6 +15,7 @@ uint16_t per_to_pwm_duty(float per, bool phase = false) {
     uint16_t duty = floor(per * range);
     return duty;
 }
+} // namespace
 
 LedBlinker::LedBlinker(uint8_t pin, bool on, bool smooth) {
     this->pin = pin;
@@ -23,7 +24,7 @@ LedBlinker::LedBlinker(uint8_t pin, bool on, bool smooth) {
     set(on ? STAY_ON : STAY_OFF, true);
 }
 
-size_t LedBlinker::printDiag(Print *p) {
+size_t LedBlinker::onDiag(Print *p) {
     size_t n = p->print(state);
     n += p->print(' ');
     n += p->print(mode);
@@ -111,5 +112,3 @@ void LedBlinker::updateState(LedState req) {
     digitalWrite(pin, req);
     state = req;
 }
-
-} // namespace Led

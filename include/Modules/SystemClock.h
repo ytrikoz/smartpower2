@@ -6,21 +6,26 @@
 #include "TimeUtils.h"
 
 class SystemClock : public AppModule {
-  public:
-    SystemClock();
-    void setConfig(Config *config);
-    bool begin();
-    void loop();
+   public:
+    SystemClock() : AppModule(MOD_CLOCK) {
+        timeOffset = storeInterval = lastStored = rollover = 0;
+        trusted = false;
+        lastUpdated = millis();
+    };
     size_t printDiag(Print *p);
 
-  public:
+   protected:
+    bool onInit();
+    void onLoop();
+
+   public:
     void setOnChange(TimeHandler);
     void setEpoch(const EpochTime &epochTime, bool trusted = false);
     unsigned long getUptime();
     unsigned long getUtc();
     unsigned long getLocal();
 
-  private:
+   private:
     void setTimeZone(uint8_t timeZone);
     void setBackupInterval(unsigned long time_s);
     bool isStoreNeedsUpdate(unsigned long);
@@ -28,7 +33,7 @@ class SystemClock : public AppModule {
     bool storeState(EpochTime &value);
     void onTimeChange();
 
-  private:
+   private:
     TimeHandler timeHandler;
     bool trusted;
     EpochTime epoch;
