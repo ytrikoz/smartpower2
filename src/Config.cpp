@@ -33,13 +33,13 @@ bool Config::load(const char *str, size_t len) {
     size_t size;
     if (getConfig(buf, param, size)) {
         strncpy(buf, &str[index + 2], strlen(str) - (index + 2));
-        return setValueString(param, buf);
+        return setValueAsString(param, buf);
     }
     return false;
 }
 
 void Config::resetDefault(ConfigItem param) {
-    setValueString(param, getDefaultValue(param));
+    setValueAsString(param, getDefaultValue(param));
 }
 
 void Config::setOnConfigChaged(ConfigChangeEventHandler h) {
@@ -68,7 +68,7 @@ bool Config::getConfig(const char *name, ConfigItem &param, size_t &size) {
     return result;
 }
 
-String Config::toString(ConfigItem param) {
+const String Config::asString(const ConfigItem param) {
     char buf[128];
     sprintf(buf, "%s=\"%s\"", getName(param), getValueAsString(param));
     return String(buf);
@@ -92,47 +92,47 @@ const char *Config::getDefaultValue(ConfigItem param) {
 
 bool Config::setValueBool(ConfigItem param, bool value) {
     char buf[8];
-    return setValueString(param, itoa(value, buf, DEC));
+    return setValueAsString(param, itoa(value, buf, DEC));
 }
 
 bool Config::setValueSignedByte(ConfigItem param, sint8_t value) {
     char buf[8];
-    return setValueString(param, itoa(value, buf, DEC));
+    return setValueAsString(param, itoa(value, buf, DEC));
 }
 
 bool Config::setValueByte(ConfigItem param, uint8_t value) {
     char buf[8];
-    return setValueString(param, itoa(value, buf, DEC));
+    return setValueAsString(param, itoa(value, buf, DEC));
 }
 
 bool Config::setValueInt(ConfigItem param, uint16_t value) {
     char buf[16];
-    return setValueString(param, itoa(value, buf, DEC));
+    return setValueAsString(param, itoa(value, buf, DEC));
 }
 
 bool Config::setValueFloat(ConfigItem param, float value) {
     char buf[16];
-    return setValueString(param, dtostrf(value, 2, 1, buf));
+    return setValueAsString(param, dtostrf(value, 2, 1, buf));
 }
 
 bool Config::setValueChar(ConfigItem param, const char ch) {
     char buf[2];
     buf[0] = ch;
     buf[1] = '\x00';
-    return setValueString(param, buf);
+    return setValueAsString(param, buf);
 }
 
-bool Config::setValueStringByName(const char *name, const char *value) {
+bool Config::setValueAsStringByName(const char *name, const char *value) {
     ConfigItem param;
-    return getConfig(name, param) && setValueString(param, value);
+    return getConfig(name, param) && setValueAsString(param, value);
 }
 
-bool Config::setValueString(const ConfigItem param, String &str) {
-    return setValueString(param, str.c_str());
+bool Config::setValueAsString(const ConfigItem param, String &value) {
+    return setValueAsString(param, value.c_str());
 }
 
-bool Config::setValueString(const ConfigItem param, const char *str) {
-    bool result = setstr(values[param], str, getSize(param) + 1);
+bool Config::setValueAsString(const ConfigItem param, const char *value) {
+    bool result = setstr(values[param], value, getSize(param) + 1);
     if (result)
         onChangedEvent(param);
     return result;

@@ -8,7 +8,7 @@
 #define APP_SHORT "SP2"
 #define APP_VERSION "0.6.9"
 #define APP_BUILD_COMMIT ""
-#define APP_MODULES 12
+#define APP_MODULES 11
 
 // address are 0x27 or 0x3f
 #define NONE_ADDRESS 0x00

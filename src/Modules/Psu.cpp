@@ -26,8 +26,8 @@ int Psu::quadratic_regression(double value) {
 }
 
 bool Psu::onInit() {
-    setVoltage(config()->getValueAsFloat(OUTPUT_VOLTAGE));
-    enableWhStore(config()->getValueAsBool(WH_STORE_ENABLED));
+    setVoltage(config_->getValueAsFloat(OUTPUT_VOLTAGE));
+    enableWhStore(config_->getValueAsBool(WH_STORE_ENABLED));
     startTime = infoUpdated = powerInfoUpdated = loggerUpdated = lastStore = 0;
     pinMode(POWER_SWITCH_PIN, OUTPUT);
     clearErrorsAndAlerts();
@@ -73,7 +73,7 @@ void Psu::setVoltage(double value) {
 
 bool Psu::onStart() {
     PsuState ps;
-    switch (config()->getValueAsByte(POWER)) {
+    switch (config_->getValueAsByte(POWER)) {
     case BOOT_POWER_OFF:
         ps = POWER_OFF;
         break;
@@ -189,19 +189,18 @@ const unsigned long Psu::getUptime() {
 }
 
 bool Psu::isWhStoreEnabled(void) {
-    wh_store = config()->getValueAsBool(WH_STORE_ENABLED);
+    wh_store = config_->getValueAsBool(WH_STORE_ENABLED);
     return wh_store;
 }
 
 bool Psu::storeState(PsuState value) {
-    return StoreUtils::storeInt(FS_POWER_STATE_VAR, (byte)value);
+    return StoreUtils::storeInt(FS_POWER_STATE_VAR, (byte) value);
 }
 
 bool Psu::restoreState(PsuState &value) {
-    int tmp = 0;
-    bool res = StoreUtils::restoreInt(FS_POWER_STATE_VAR, tmp);
-    if (res)
-        value = PsuState(tmp);
+    byte buf;
+    bool res = StoreUtils::restoreByte(FS_POWER_STATE_VAR, buf);
+    if (res) value = (PsuState) buf;
     return res;
 }
 

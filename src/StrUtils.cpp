@@ -334,7 +334,7 @@ String getQuotedStr(const char *str, bool with_space, char ch) {
     return getIdentStr(str, with_space, ch, ch);
 }
 
-String getQuotedStr(String &str, bool with_space) {
+String getQuotedStr(const String &str, bool with_space) {
     return getQuotedStr(str.c_str(), with_space, '\'');
 }
 
@@ -379,6 +379,17 @@ template <typename... Args> void sayArgsP(Print *p, Args... args) {
         strcpy(buf, (char *)pgm_read_ptr(&args[n]...));
         p->print(buf);
     }
+}
+
+const String double2str(double value) {    
+    char buf[64];
+    sprintf(buf, "%.6f", value);
+    return String(buf);
+}
+const String long2str(long value) {
+    char buf[64];
+    sprintf(buf, "%ld", value);
+    return String(buf);
 }
 
 } // namespace StrUtils

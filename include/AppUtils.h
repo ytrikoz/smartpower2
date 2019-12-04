@@ -6,8 +6,7 @@
 namespace AppUtils {
 
 static const char *mod_name[APP_MODULES] PROGMEM = {
-    str_btn, str_clock, str_http, str_display, str_led, str_netsvc,
-    str_ntp, str_psu, str_shell, str_telnet, str_update, str_syslog};
+    str_btn, str_clock, str_http, str_display, str_led, str_netsvc, str_psu, str_shell, str_telnet, str_update, str_syslog};
 
 inline String boolStr(bool value) {
     return String(value ? FPSTR(str_true) : FPSTR(str_false));

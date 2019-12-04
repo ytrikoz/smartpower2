@@ -3,16 +3,16 @@
 #include "Print.h"
 #include "Strings.h"
 
-String asDir(String &pathStr);
+const String asDir(const String &path);
 
-String asDir(const char *pathStr);
+const String asDir(const char *path);
 
-uint8_t getLevel(String &pathStr);
+size_t getNestedLevel(const String &path);
 
-uint8_t getFilesCount(const char *pathStr);
+size_t getFilesCount(const char *path);
 
-uint8_t getFilesCount(String &pathStr);
+size_t getFilesCount(String &path);
 
-uint8_t fileList(Print *p, const char *pathStr);
+size_t printDir(Print *p, const char *path);
 
-void clearDir(Print *p, const char *pathStr);
+size_t rmDir(Print *p, const char *path);

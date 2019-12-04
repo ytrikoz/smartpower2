@@ -46,7 +46,7 @@ void Display::setScreen(ScreenEnum value) {
 bool Display::onInit() {
     lcd = new LcdDisplay();
     lastUpdated = lockTimeout = lockUpdated = 0;
-    backlight = config()->getValueAsBool(BACKLIGHT);
+    backlight = config_->getValueAsBool(BACKLIGHT);
     bool result = lcd->connect();
     if (result) {
         lcd->turnOn();

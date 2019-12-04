@@ -11,7 +11,7 @@ size_t print_shell_interrupted(Print *p) {
 }
 size_t println_done(Print *p) { return println(p, FPSTR(str_done)); }
 
-size_t print_not_found(Print *p, String &str) {
+size_t print_not_found(Print *p, const String &str) {
     size_t n = print_quoted(p, str.c_str());
     n += p->print(' ');
     n += p->print(FPSTR(str_not));
@@ -19,12 +19,12 @@ size_t print_not_found(Print *p, String &str) {
     return n = p->println(FPSTR(str_found));
 }
 
-size_t print_file_not_found(Print *p, String &name) {
+size_t print_file_not_found(Print *p, const String &name) {
     size_t n = print(p, FPSTR(str_file));
     return n += print_not_found(p, name);
 }
 
-size_t print_dir_not_found(Print *p, String &name) {
+size_t print_dir_not_found(Print *p, const String &name) {
     size_t n = print(p, FPSTR(str_dir));
     return n += print_not_found(p, name);
 }
@@ -38,7 +38,7 @@ size_t print_quoted(Print *p, const char *str) {
     return n;
 }
 
-size_t print_quoted(Print *p, String &str) {
+size_t print_quoted(Print *p, const String &str) {
     return print_quoted(p, str.c_str());
 }
 
@@ -78,24 +78,24 @@ void print_delay(Print *p, const char *message, uint8_t wait_s) {
     p->println();
 }
 
-size_t print_unknown_item(Print *p, String &name) {
+size_t print_unknown_item(Print *p, const String &name) {
     size_t n = print(p, FPSTR(str_unknown));
     n += print(p, FPSTR(str_item));
-    n += println(p, getQuotedStr(name).c_str());
+    n += println(p, getQuotedStr(name));
     return n;
 }
 
-size_t print_unknown_param(Print *p, String &name) {
+size_t print_unknown_param(Print *p, const String &name) {
     size_t n = print(p, FPSTR(str_unknown));
     n += print(p, FPSTR(str_param));
     n += println(p, getQuotedStr(name).c_str());
     return n;
 }
 
-size_t print_unknown_action(Print *p, String &name) {
+size_t print_unknown_action(Print *p, const String &name) {
     size_t n = print(p, FPSTR(str_unknown));
     n += print(p, FPSTR(str_action));
-    n += println(p, getQuotedStr(name).c_str());
+    n += println(p, getQuotedStr(name));
     return n;
 }
 
@@ -122,5 +122,6 @@ size_t print_wifi_ap_station(Print *p, const uint8_t aid, const uint8_t *mac) {
     n += println_nameP_value(p, str_mac, fmt_mac(mac).c_str());
     return n;
 }
+
 
 } // namespace PrintUtils

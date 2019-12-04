@@ -13,12 +13,11 @@
 #include "Modules/HttpMod.h"
 #include "Modules/Leds.h"
 #include "Modules/NetworkService.h"
-#include "Modules/NtpClient.h"
 #include "Modules/OTAUpdate.h"
 #include "Modules/Psu.h"
 #include "Modules/ShellMod.h"
 #include "Modules/SyslogMod.h"
-#include "Modules/SystemClock.h"
+#include "Modules/ClockMod.h"
 #include "Modules/TelnetServer.h"
 
 class App {
@@ -42,13 +41,12 @@ class App {
     AppModule *getModule(const AppModuleEnum);
 
     Config *params();
-    SystemClock *clock();
+    ClockMod *clock();
     Display *lcd();
     LoopLogger *getLoopLogger();
     ConfigHelper *config();
     HttpMod *http();
     Psu *psu();
-    NtpClient *ntp();
     LedMod *led();
     ShellMod *shell();
     Button *btn();
@@ -112,7 +110,6 @@ class App {
     AppModule *appMod[APP_MODULES];
     LoopLogger *loopLogger;
     ConfigHelper *configHelper;
-    OTAUpdate *ota;
 
     PsuLogger *logger;
     bool safemode = false;

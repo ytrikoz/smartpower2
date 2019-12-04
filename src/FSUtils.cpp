@@ -7,9 +7,9 @@
 using namespace PrintUtils;
 using namespace StrUtils;
 
-String asDir(String &pathStr) { return asDir(pathStr.c_str()); }
+const String asDir(const String &pathStr) { return asDir(pathStr.c_str()); }
 
-String asDir(const char *pathStr) {
+const String asDir(const char *pathStr) {
     String res(pathStr);
     if (!res.startsWith("/"))
         res = "/" + res;
@@ -18,72 +18,57 @@ String asDir(const char *pathStr) {
     return res;
 }
 
-uint8_t getLevel(String &pathStr) {
-    uint8_t result = 0;
-    for (uint8_t i = 0; i < pathStr.length(); ++i)
-        if (pathStr.charAt(i) == '/')
-            result++;
-    return result;
-}
-
-uint8_t getFilesCount(String &pathStr) {
-    String path = asDir(pathStr);
-    uint8_t level = getLevel(path);
-    Dir dir = SPIFFS.openDir(path);
+size_t getNestedLevel(const String &path) {
     size_t result = 0;
-    while (dir.next()) {
-        String name = dir.fileName();
-        if (!getLevel(name) > level)
+    for (size_t i = 0; i < path.length(); ++i)
+        if (path.charAt(i) == '/')
             result++;
-    };
     return result;
 }
 
-uint8_t getFilesCount(const char *pathStr) {
-    String path = asDir(pathStr);
-    uint8_t max_level = getLevel(path);
+size_t getFilesCount(const String &path) {
+    return getFilesCount(path.c_str());
+}
+
+size_t getFilesCount(const char *path) {
+    size_t max_level = getNestedLevel(asDir(path));
     Dir dir = SPIFFS.openDir(path);
-    uint8_t res = 0;
+    size_t res = 0;
     String name;
     while (dir.next()) {
         name = dir.fileName();
-        if (getLevel(name) > max_level)
+        if (getNestedLevel(name) > max_level)
             continue;
         res++;
     };
     return res;
 }
 
-uint8_t fileList(Print *p, const char *pathStr) {
-    String path = asDir(pathStr);
-    uint8_t max_level = getLevel(path);
-    Dir dir = SPIFFS.openDir(path);
-    uint8_t res = 0;
-    String name;
+size_t printDir(Print *p, const char *path) {
+    String dir_path = asDir(path);
+    uint8_t max_level = getNestedLevel(dir_path);
+    Dir dir = SPIFFS.openDir(dir_path);
+    size_t n = 0;
     while (dir.next()) {
-        name = dir.fileName();
-        if (getLevel(name) > max_level)
+        auto name = dir.fileName();
+        if (getNestedLevel(name) > max_level)
             continue;
-        res++;
-        print(p, dir.fileName());
-        print(p, '\t');
-        println(p, fmt_size(dir.fileSize()));
+        n += println(p, name, '\t', fmt_size(dir.fileSize()));
     }
-    return res;
+    return n;
 }
 
-void clearDir(Print *p, const char *pathStr) {
-    String path = asDir(pathStr);
-    uint8_t max_level = getLevel(path);
-    Dir dir = SPIFFS.openDir(path);
-    String name;
+size_t rmDir(Print *p, const char *path) {
+    String dir_path = asDir(path);
+    uint8_t max_level = getNestedLevel(dir_path);
+    Dir dir = SPIFFS.openDir(dir_path);
+    size_t n = 0;
     while (dir.next()) {
-        name = dir.fileName();
-        if (getLevel(name) > max_level)
+        auto name = dir.fileName();
+        if (getNestedLevel(name) > max_level)
             continue;
-        print(p, dir.fileName());
-        print(p, '\t');
-        println(p, FPSTR(str_deleted));
+        n += println(p, name, '\t', fmt_size(dir.fileSize()));
         SPIFFS.remove(dir.fileName());
     }
+    return n;
 }

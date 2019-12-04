@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 
 #include "AppUtils.h"
 #include "Config.h"
@@ -70,7 +71,7 @@ class AppModule {
 
         if (state_ != STATE_INIT_COMPLETE) {
             print_ident(dbg, getName());
-            println(dbg, FPSTR(str_failed));
+            println(dbg, FPSTR(str_init), FPSTR(str_failed));
         }
 
         return state_ == STATE_INIT_COMPLETE;
@@ -109,8 +110,8 @@ class AppModule {
         return printDiag(out);
     };
 
-    size_t printDiag(Print *p){
-        size_t n = print_paramP_value(out, str_state, getModStateStr(state_).c_str());
+    size_t printDiag(Print *p) {
+        size_t n = println_nameP_value(out, str_state, getModStateStr(state_));
         return n += onDiag(out);
     }
 
@@ -148,24 +149,22 @@ class AppModule {
     }
 
    protected:
-    virtual bool onInit() = 0;
+    virtual bool onInit() { return true; };
     virtual void onDeinit(){};
     virtual bool onStart() { return true; }
     virtual void onStop(){};
     virtual void onLoop() = 0;
-
-    Config *config() { return config_; }
 
    protected:
     Print *out = &INFO;
     Print *dbg = &INFO;
     Print *err = &INFO;
     ModState state_;
+    Config *config_;
 
    private:
     char name_[16];
     AppModuleEnum module_;
-    Config *config_;
 };
 
 // template <Print*, typename... Args>

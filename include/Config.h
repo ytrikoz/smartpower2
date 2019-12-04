@@ -20,11 +20,11 @@ class Config {
     void setOnConfigChaged(ConfigChangeEventHandler);
     void resetDefault(ConfigItem param);
 
-    String toString(ConfigItem param);
+    const String asString(const ConfigItem param);
     //
-    bool setValueString(const ConfigItem param, String &str);
-    bool setValueString(const ConfigItem param, const char *str);
-    bool setValueStringByName(const char *name, const char *value);
+    bool setValueAsString(const ConfigItem param, String &str);
+    bool setValueAsString(const ConfigItem param, const char *str);
+    bool setValueAsStringByName(const char *name, const char *value);
     bool setValueChar(const ConfigItem param, const char ch);
     bool setValueBool(const ConfigItem param, const bool value);
     bool setValueSignedByte(const ConfigItem param, const sint8_t value);

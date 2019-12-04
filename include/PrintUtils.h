@@ -92,27 +92,27 @@ void print_welcome(Print *p, const char *title, const char *message,
 
 void print_delay(Print *p, const char *message, uint8_t wait_s);
 
-size_t print_unknown_item(Print *p, String &name);
+size_t print_unknown_item(Print *p, const String &name);
 
-size_t print_unknown_param(Print *p, String &name);
+size_t print_unknown_param(Print *p, const String &name);
 
-size_t print_unknown_action(Print *p, String &name);
+size_t print_unknown_action(Print *p, const String &name);
 
 size_t print_ln(Print *p);
 
 size_t println_done(Print *p);
 
-size_t print_quoted(Print *p, String &str);
+size_t print_quoted(Print *p, const String &str);
 
 size_t print_quoted(Print *p, const char *str);
 
 size_t print_ident(Print *p, const char *str);
 
-size_t print_file_not_found(Print *p, String &name);
+size_t print_file_not_found(Print *p, const String &name);
 
-size_t print_dir_not_found(Print *p, String &name);
+size_t print_dir_not_found(Print *p, const String &name);
 
-size_t print_not_found(Print *p, String &str);
+size_t print_not_found(Print *p, const String &str);
 
 size_t print_param_value(Print *p, const char *name, const char *value);
 
