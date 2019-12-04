@@ -72,7 +72,6 @@ bool ConfigHelper::save() {
     return save(*obj_, container);
 }
 
-<<<<<<< HEAD
 bool ConfigHelper::save(Config &src, Container<String> &container) {
     for (size_t i = 0; i < CONFIG_ITEMS; ++i) {
         String buf(src.asString(ConfigItem(i)));
@@ -81,15 +80,6 @@ bool ConfigHelper::save(Config &src, Container<String> &container) {
     FileStorage store = FileStorage(FS_MAIN_CONFIG);
     store.use(&container);
     return store.write();
-=======
-bool ConfigHelper::save(Config &src, Container<String> &desc) {
-    for (size_t i = 0; i < CONFIG_ITEMS; ++i) {
-        String buf(src.asString(ConfigItem(i)));
-        desc.put(buf);
-    }
-    FileStorage *store = new FileStorage(FS_MAIN_CONFIG);
-    return store->write();
->>>>>>> cc6c0a313bd63601c1fe72bd1dcea73cd3f1fb19
 }
 
 size_t ConfigHelper::printTo(Print &p) const {
