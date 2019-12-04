@@ -138,7 +138,11 @@ const timezone ClockMod::getTimeZone() {
 void ClockMod::setSystemTime(const time_t epoch) {
     timeval tv{epoch, 0};
     timezone tz = getTimeZone();
+<<<<<<< HEAD
     if (settimeofday(&tv, &tz) == -1)
+=======
+    if (!settimeofday(&tv, &tz) != -1)
+>>>>>>> cc6c0a313bd63601c1fe72bd1dcea73cd3f1fb19
         println(out, "settimeofday: error");
 }
 
