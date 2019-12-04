@@ -4,7 +4,7 @@
 
 #include "CommonTypes.h"
 #include "Config.h"
-#include "StringQueue.h"
+#include "Storage.h"
 
 class ConfigHelper : public Printable {
   public:
@@ -13,8 +13,8 @@ class ConfigHelper : public Printable {
 
   public:
     void setDefault();
-    void loadConfig();
-    bool saveConfig();
+    void load();
+    bool save();
     bool setBootPowerState(BootPowerState);
     bool setBootPowerState(uint8_t);
     BootPowerState getBootPowerState();
@@ -53,17 +53,15 @@ class ConfigHelper : public Printable {
     String extractName(String &str);
     String extractValue(String &str);
     void loadConfig(Config *config);
-    bool loadStrings(Config *config, StringQueue *data);
-    bool saveConfig(Config *config, StringQueue *data);
+    bool load(Config *config, Container<String>& data);
+    bool save(Config &config, Container<String>& data);
     
     void onConfigChanged(ConfigItem param);
     
-    Config *config;
-    char *filename;
-    bool stored;
-#ifdef DEBUG_CONFIG
+    Config *obj_;
+    char name_[FILENAME_SIZE + 1];
+    bool stored_;
     Print *dbg = &DEBUG;
-#endif
     Print *err = &INFO;
     Print *out = &INFO;
 };

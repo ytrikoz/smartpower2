@@ -10,10 +10,10 @@ unsigned long millis_since(unsigned long since);
 unsigned long millis_passed(unsigned long start, unsigned long finish);
 
 struct EpochTime : public Printable {
-  public:
+   public:
     size_t printTo(Print &p) const { return p.print(epoch_s); }
 
-  public:
+   public:
     EpochTime() : EpochTime(0) {}
 
     EpochTime(unsigned long epoch_s) { this->epoch_s = epoch_s; }
@@ -28,12 +28,12 @@ struct EpochTime : public Printable {
 
     uint8_t asMinutes(unsigned long s) { return s / ONE_MINUTE_s; }
 
-  private:
+   private:
     unsigned long epoch_s;
 };
 
 struct Date {
-  public:
+   public:
     Date(uint16_t year, uint8_t month, uint8_t day) {
         this->year = year;
         this->month = month;
@@ -63,14 +63,14 @@ struct Date {
         return mktime(&t);
     }
 
-  protected:
+   protected:
     uint16_t year;
     uint8_t day;
     uint8_t month;
 };
 
 struct DateTime : public Date, public Printable {
-  public:
+   public:
     size_t printTo(Print &p) const {
         char buf[32];
         sprintf_P(buf, DATETIME_FORMAT, day, month, year, hour, minute,
@@ -78,12 +78,12 @@ struct DateTime : public Date, public Printable {
         return p.print(buf);
     }
 
-  protected:
+   protected:
     uint8_t hour;
     uint8_t minute;
     uint8_t seconds;
 
-  public:
+   public:
     DateTime(struct tm &tm) : Date(tm) {
         this->hour = tm.tm_hour;
         this->minute = tm.tm_min;
@@ -138,9 +138,8 @@ struct DateTime : public Date, public Printable {
 namespace TimeUtils {
 
 uint16_t daysInYear(uint16_t year);
-uint8_t daysInMonth(uint8_t month, uint16_t year);
 
-unsigned long getAppBuildUtc();
+uint8_t daysInMonth(uint8_t month, uint16_t year);
 
 bool isLeapYear(uint16_t year);
 
@@ -151,8 +150,6 @@ bool encodeMonth(String str, uint8_t &month);
 bool encodeDate(const char *str, struct tm &tm);
 
 bool encodeTime(const char *str, struct tm &tm);
-
-void epochToDateTime(unsigned long epoch_s, struct tm &tm);
 
 bool isValidMonth(uint8_t month);
 
@@ -170,5 +167,12 @@ unsigned long encodeEpochDate(uint16_t year, uint8_t month, uint16_t day);
 
 size_t tmtodtf(struct tm &tm, char *str);
 
-sint32_t timeZoneToOffset(const uint8_t timeZone);
-} // namespace TimeUtils
+int timeZoneInSeconds(const byte timeZone);
+
+int timeZoneInHours(const byte timeZone);
+
+void format_elapsed_time(char *buf, time_t elapsed);
+
+void format_elapsed_time(char *buf, double elapsed);
+}  // namespace TimeUtils
+

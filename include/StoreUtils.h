@@ -1,68 +1,57 @@
 #pragma once
 
-#include "FileStore.h"
-#include "StringQueue.h"
+#include "Storage.h"
 
-// TODO templates, async calls
 namespace StoreUtils {
 
-inline bool restoreString(const char *file, String &value) {
-    FileStore *store = new FileStore(file);
-    StringQueue *queue = new StringQueue(1);
-    bool result = store->read(queue);
-    if (result && queue->available()) { queue->get(value); };
-    return result;
+inline bool storeString(const char *filename, const String &value) {
+    auto store = Storage<File, String>(filename);
+    auto container = Container<String>(1);
+    store.use(&container);
+    store.get()->put(value);
+    return store.write();
 }
 
-inline bool restoreInt(const char *file, int &value) {
-    FileStore *store = new FileStore(file);
-    StringQueue *queue = new StringQueue(1);
-    bool result = store->read(queue);
-    if (result && queue->available()) {
-        String buf;
-        queue->get(buf);
+inline bool restoreString(const char *filename, String &value) {
+    auto store = FileStorage(filename);
+    auto container = Container<String>(1);
+    store.use(&container);
+    return store.read() && store.get()->get(value);
+}
+
+inline bool restoreByte(const char *file, byte &value) {
+    String buf;
+    if (restoreString(file, buf)) {
         value = buf.toInt();
+        return true;
     }
-    return result;
+    return false;
+}
+
+inline bool restoreInt(const char *file, long &value) {
+    String buf;
+    if (restoreString(file, buf)) {
+        value = buf.toInt();
+        return true;
+    }
+    return false;
 }
 
 inline bool restoreDouble(const char *file, double &value) {
-    FileStore *store = new FileStore(file);
-    StringQueue *queue = new StringQueue(1);
-    bool result = store->read(queue);
-    if (result && queue->available()) {
-        String buf;
-        queue->get(buf);
+    String buf;
+    if (restoreString(file, buf)) {
         value = buf.toDouble();
+        return true;
     }
-    return result;
+    return false;
 }
 
-inline bool storeString(const char *file, String& value) {
-	FileStore* store = new FileStore(file);
-    StringQueue* queue = new StringQueue(1);
-    queue->put(value);        
-    return store->write(queue);
-}
-
-inline bool storeInt(const char *file, int value) {
-    FileStore *store = new FileStore(file);
-    StringQueue *queue = new StringQueue(1);
-    char buf[16];
-    sprintf(buf, "%d", value);
-    String str(buf);
-    queue->put(str);
-    return store->write(queue);
+inline bool storeInt(const char *file, long value) {
+    return storeString(file, StrUtils::long2str(value));
 }
 
 inline bool storeDouble(const char *file, double value) {
-    FileStore *store = new FileStore(file);
-    StringQueue *queue = new StringQueue(1);
-    char buf[16];
-    sprintf(buf, "%.6f", value);
-    String str(buf);
-    queue->put(str);
-    return store->write(queue);
+    return storeString(file, StrUtils::double2str(value));
 }
 
 }  // namespace StoreUtils

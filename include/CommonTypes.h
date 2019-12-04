@@ -8,7 +8,7 @@
 #include "Strings.h"
 #include "TimeUtils.h"
 
-typedef std::function<void(unsigned long epoch_s)> TimeHandler;
+typedef std::function<void(time_t local, double drift)> TimeChangeEvent;
 
 enum LogLevel { LEVEL_ERROR,
                 LEVEL_WARN,
@@ -21,7 +21,6 @@ enum AppModuleEnum {
     MOD_DISPLAY,
     MOD_LED,
     MOD_NETSVC,
-    MOD_NTP,
     MOD_PSU,
     MOD_SHELL,
     MOD_TELNET,
@@ -49,7 +48,7 @@ enum StoreState { SS_UNSET,
                   SS_EOF };
 
 enum StoreError {
-    SE_OK,
+    SE_NONE = 0,
     SE_INVALID,
     SE_NOT_EXIST,
     SE_ERROR_CLOSE,
@@ -131,6 +130,7 @@ struct WebClient {
 };
 
 #define CONFIG_ITEMS 23
+
 enum ConfigItem {
     WIFI,
     SSID,

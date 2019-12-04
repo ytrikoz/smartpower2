@@ -46,20 +46,20 @@ void App::loop() {
             delay(0);
         }
     }
-
+    yield();
     unsigned long now = millis();
     if (millis_passed(lastUpdated, now) > ONE_SECOND_ms) {
         handleRestart();
         send_psu_data_to_clients();
         lastUpdated = now;
     }
-
+    yield();
     if (networkChanged) {
         restartNetworkDependedModules(Wireless::getMode(), Wireless::hasNetwork());
         refresh_wifi_led();
         networkChanged = false;
     }
-
+    yield();
     loopLogger->loop();
 }
 
@@ -245,14 +245,14 @@ void App::restartNetworkDependedModules(Wireless::NetworkMode networkMode, bool 
 bool App::setOutputVoltageAsDefault() {
     float v = psu()->getVoltage();
     if (config()->setOutputVoltage(v))
-        return config()->saveConfig();
+        return config()->save();
     return false;
 }
 
 bool App::setBootPowerState(BootPowerState value) {
     bool res = false;
     if (config()->setBootPowerState(value))
-        res = config()->saveConfig();
+        res = config()->save();
     return res;
 }
 
@@ -287,7 +287,14 @@ AppModule *App::getModule(const AppModuleEnum mod) {
                 break;
             }
             case MOD_CLOCK: {
-                appMod[mod] = new SystemClock();
+                appMod[mod] = new ClockMod();
+                clock()->setOnChange([this](time_t local, double drift) {
+                    print_ident(out, FPSTR(str_clock));
+                    char buf[32];
+                    TimeUtils::format_elapsed_time(buf, drift);
+                    println(out, ctime(&local), buf);
+                });
+
                 break;
             }
             case MOD_LED: {
@@ -316,14 +323,6 @@ AppModule *App::getModule(const AppModuleEnum mod) {
                 appMod[mod] = new NetworkService();
                 break;
             }
-            case MOD_NTP: {
-                appMod[mod] = new NtpClient();
-                ntp()->setOnResponse([this](const EpochTime &epoch) {
-                    if (clock())
-                        clock()->setEpoch(epoch, true);
-                });
-                break;
-            }
             case MOD_TELNET: {
                 appMod[mod] = new TelnetServer();
                 telnet()->setEventHandler([this](TelnetEventType et, Stream *client) {
@@ -347,7 +346,7 @@ AppModule *App::getModule(const AppModuleEnum mod) {
                 break;
             }
             case MOD_UPDATE: {
-                appMod[mod] = ota = new OTAUpdate();
+                appMod[mod] = new OTAUpdate();
                 break;
             }
         }
@@ -430,9 +429,7 @@ TelnetServer *App::telnet() { return (TelnetServer *)appMod[MOD_TELNET]; }
 
 Psu *App::psu() { return (Psu *)appMod[MOD_PSU]; }
 
-NtpClient *App::ntp() { return (NtpClient *)appMod[MOD_NTP]; }
-
-SystemClock *App::clock() { return (SystemClock *)appMod[MOD_CLOCK]; }
+ClockMod *App::clock() { return (ClockMod *)appMod[MOD_CLOCK]; }
 
 ShellMod *App::shell() { return (ShellMod *)appMod[MOD_SHELL]; }
 

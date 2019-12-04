@@ -93,13 +93,17 @@ String getQuotedStrP(PGM_P str, bool with_space, char ch = '\'');
 
 String getQuotedStr(const char *str, bool with_space = true, char ch = '\'');
 
-String getQuotedStr(String &str, bool with_space = true);
+String getQuotedStr(const String &str, bool with_space = true);
 
 bool atomac(const char *txt, uint8_t *addr);
 
 int hex2num(char c);
 
 int hex2byte(const char *hex);
+
+const String long2str(long value); 
+
+const String double2str(double value);
 
 template <typename T> T concat(T v) { return v; }
 

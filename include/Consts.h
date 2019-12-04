@@ -21,7 +21,7 @@
 #define TAG_NETWORK_INFO 'N'
 
 #define BOOT_WAIT_s 5
-#define BUILD_TIMEOFFSET_h 3
+#define BUILD_TIMEOFFSET_s 3 * 60 
 #define BUILD_DATE __DATE__
 #define BUILD_TIME __TIME__
 
@@ -29,12 +29,13 @@
 #define ONE_SECOND_ms 1000
 #define ONE_MINUTE_s 60
 #define ONE_MINUTE_ms ONE_MINUTE_s *ONE_SECOND_ms
+#define ONE_HOUR_m 60
 #define ONE_DAY_s 86400L
 #define ONE_WEEK_days 7
-#define ONE_HOUR_s 3600
+#define ONE_HOUR_s ONE_HOUR_m * ONE_MINUTE_s
 #define ONE_YEAR_days 365
 
-#define ONE_HOUR_m 60
+
 #define ONE_DAY_h 24
 #define ONE_HOUR_ms ONE_HOUR_s *ONE_SECOND_ms;
 #define ONE_WATT_mW 1000
@@ -49,15 +50,19 @@
 
 #define FILENAME_SIZE 31
 
-#define FS_LOG_ROOT "/log/"
+#define FS_CONFIG_ROOT "/etc"
+#define FS_LOG_ROOT "/log"
 #define FS_WEB_ROOT "/www"
-#define FS_WEB_CONFIG "/www/js/settings.js"
-#define FS_CRASH_ROOT "/err/"
-#define FS_MAIN_CONFIG "/etc/main"
-#define FS_POWER_STATE_VAR "/var/ps"
-#define FS_UTC_VAR "/var/utc"
-#define FS_WH_VAR "/var/wh"
-#define FS_LOG_ROOT "/log/"
+#define FS_CRASH_ROOT "/err"
+#define FS_VAR_ROOT "/var"
+
+#define FS_WEB_CONFIG FS_WEB_ROOT "/js/settings.js"
+#define FS_MAIN_CONFIG FS_CONFIG_ROOT "/main"
+
+#define FS_POWER_STATE_VAR FS_VAR_ROOT "/ps"
+#define FS_UTC_VAR FS_VAR_ROOT "/utc"
+#define FS_WH_VAR FS_VAR_ROOT "/wh"
+
 #define FS_BOOT_LOG FS_LOG_ROOT "boot"
 #define FS_START_FLAG "_boot"
 

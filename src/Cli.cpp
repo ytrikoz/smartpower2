@@ -49,6 +49,7 @@ enum CommandAction {
     ACTION_RESTART,
     ACTION_BACKLIGHT,
     ACTION_UPTIME,
+    ACTION_TIME,
     ACTION_WOL,
     ACTION_LIST,
     ACTION_CLEAR,
@@ -131,6 +132,8 @@ CommandAction getAction(Command &cmd) {
         return ACTION_BACKLIGHT;
     } else if (strcasecmp_P(str.c_str(), str_uptime) == 0) {
         return ACTION_UPTIME;
+    } else if (strcasecmp_P(str.c_str(), str_time) == 0) {
+        return ACTION_TIME;
     } else if (strcasecmp_P(str.c_str(), str_wol) == 0) {
         return ACTION_WOL;
     } else if (strcasecmp_P(str.c_str(), str_list) == 0) {
@@ -141,7 +144,7 @@ CommandAction getAction(Command &cmd) {
         return ACTION_TEST;
     }
     return ACTION_UNKNOWN;
-} // namespace Cli
+}  // namespace Cli
 
 bool active() { return out != NULL; }
 
@@ -206,7 +209,7 @@ void init() {
     cmdRm.setCallback(Cli::onRemove);
 
     cmdClock = cli->addCommand("clock");
-    cmdClock.addPositionalArgument("action");
+    cmdClock.addPositionalArgument("action", "time");
     cmdClock.addPositionalArgument("param", "");
     cmdClock.setCallback(Cli::onClock);
 
@@ -286,26 +289,26 @@ void onConfig(cmd *c) {
     Command cmd(c);
     CommandAction action = getAction(cmd);
     switch (action) {
-    case ACTION_PRINT:
-        app.config()->printTo(*out);
-        return;
-    case ACTION_RESET:
-        app.config()->setDefault();
-        break;
-    case ACTION_SAVE:
-        app.config()->saveConfig();
-        break;
-    case ACTION_LOAD:
-        app.config()->loadConfig();
-        break;
-    case ACTION_APPLY:
-        if (app.config()->saveConfig())
-            app.restart(3);
-        return;
-    default:
-        String actionStr = getActionStr(cmd);
-        PrintUtils::print_unknown_action(out, actionStr);
-        return;
+        case ACTION_PRINT:
+            app.config()->printTo(*out);
+            return;
+        case ACTION_RESET:
+            app.config()->setDefault();
+            break;
+        case ACTION_SAVE:
+            app.config()->save();
+            break;
+        case ACTION_LOAD:
+            app.config()->load();
+            break;
+        case ACTION_APPLY:
+            if (app.config()->save())
+                app.restart(3);
+            return;
+        default:
+            String actionStr = getActionStr(cmd);
+            PrintUtils::print_unknown_action(out, actionStr);
+            return;
     }
     println_done(out);
 }
@@ -314,24 +317,24 @@ void onPower(cmd *c) {
     Command cmd(c);
     CommandAction action = getAction(cmd);
     switch (action) {
-    case ACTION_AVG: {
-        String paramStr = getParamStr(cmd);
-        Actions::PowerAvg(paramStr.toInt()).exec(out);
-        break;
-    }
-    case ACTION_ON: {
-        app.psu()->powerOn();
-        break;
-    }
-    case ACTION_OFF: {
-        app.psu()->powerOff();
-        break;
-    }
-    default: {
-        String actionStr = getActionStr(cmd);
-        print_unknown_action(out, actionStr);
-        return;
-    }
+        case ACTION_AVG: {
+            String paramStr = getParamStr(cmd);
+            Actions::PowerAvg(paramStr.toInt()).exec(out);
+            break;
+        }
+        case ACTION_ON: {
+            app.psu()->powerOn();
+            break;
+        }
+        case ACTION_OFF: {
+            app.psu()->powerOff();
+            break;
+        }
+        default: {
+            String actionStr = getActionStr(cmd);
+            print_unknown_action(out, actionStr);
+            return;
+        }
     }
 }
 
@@ -354,41 +357,53 @@ void onSystem(cmd *c) {
     CommandAction action = getAction(cmd);
     String value = getValueStr(cmd);
     switch (action) {
-    case ACTION_BACKLIGHT: {
-        bool enabled = value.toInt();
-        println_nameP_value(out, str_backlight, getOnOffStr(enabled));
-        app.lcd()->enableBacklight(enabled);
-        break;
-    }
-    case ACTION_UPTIME: {
-        println(out, getTimeStr(app.clock()->getUptime(), true));
-        break;
-    }
-    default:
-        String actionStr = getActionStr(cmd);
-        print_unknown_action(out, actionStr);
-        return;
+        case ACTION_BACKLIGHT: {
+            bool enabled = value.toInt();
+            println_nameP_value(out, str_backlight, getOnOffStr(enabled));
+            app.lcd()->enableBacklight(enabled);
+            break;
+        }
+        default:
+            String actionStr = getActionStr(cmd);
+            print_unknown_action(out, actionStr);
+            return;
     }
 }
 
 void onClock(cmd *c) {
     Command cmd(c);
-    String action = getActionStr(cmd);
+    CommandAction action = getAction(cmd);
     String paramStr = getParamStr(cmd);
-    if (action.equals("set")) {
-        tm tm;
-        if (TimeUtils::encodeTime(paramStr.c_str(), tm)) {
-            DateTime dt = DateTime(tm);
-            out->println(dt);
-        } else {
-            out->print(StrUtils::getStrP(str_invalid));
-            out->print(' ');
-            out->print(StrUtils::getStrP(str_time));
-            out->print(' ');
-            out->println(paramStr);
+    switch (action) {
+        case ACTION_UPTIME: {
+            char buf[16];
+            TimeUtils::format_elapsed_time(buf, app.clock()->getUptime());
+            println(out, buf);
+            break;
+        }
+        case ACTION_TIME: {
+            time_t local = app.clock()->getLocal();
+            println(out, ctime(&local));
+            break;
+        }
+        default: {
+            print_unknown_action(out, getActionStr(cmd));
+            return;
         }
     }
-}
+
+    // tm tm;
+    // if (TimeUtils::encodeTime(paramStr.c_str(), tm)) {
+    //     DateTime dt = DateTime(tm);
+    //     out->println(dt);
+    // } else {
+    //     out->print(StrUtils::getStrP(str_invalid));
+    //     out->print(' ');
+    //     out->print(StrUtils::getStrP(str_time));
+    //     out->print(' ');
+    //     out->println(paramStr);
+    // }
+} 
 
 void onWifiScan(cmd *c) {
     Command cmd(c);
@@ -416,7 +431,7 @@ void onSet(cmd *c) {
     size_t size;
     Config *cfg = app.params();
     if (cfg->getConfig(paramStr.c_str(), param, size)) {
-        if (cfg->setValueString(param, valueStr)) {
+        if (cfg->setValueAsString(param, valueStr)) {
             PrintUtils::println_done(out);
         }
     } else {
@@ -442,28 +457,28 @@ void onGet(cmd *c) {
 void onShow(cmd *c) {
     Command cmd(c);
     String modStr = getModStr(cmd);
-    if (modStr== "loop") {
+    if (modStr == "loop") {
         LoopLogger *logger = app.getLoopLogger();
         LoopLoggerState state = logger->getState();
         switch (state) {
-        case CAPTURE_IDLE:
-            print(out, FPSTR(str_capture));
-            print(out, logger->getDuration());
-            println(out, FPSTR(str_ms));
-            app.getLoopLogger()->start();
-            return;
-        case CAPTURE_IN_PROGRESS:
-            print(out, FPSTR(str_capturing));
-            print(out, logger->getDuration());
-            println(out, FPSTR(str_ms));
-            return;
-        case CAPTURE_DONE:
-            app.printLoopCapture(out);
-            logger->setIdle();
-            return;
+            case CAPTURE_IDLE:
+                print(out, FPSTR(str_capture));
+                print(out, logger->getDuration());
+                println(out, FPSTR(str_ms));
+                app.getLoopLogger()->start();
+                return;
+            case CAPTURE_IN_PROGRESS:
+                print(out, FPSTR(str_capturing));
+                print(out, logger->getDuration());
+                println(out, FPSTR(str_ms));
+                return;
+            case CAPTURE_DONE:
+                app.printLoopCapture(out);
+                logger->setIdle();
+                return;
         };
         return;
-    } else if (modStr=="app") {
+    } else if (modStr == "app") {
         app.printDiag(out);
         return;
     }
@@ -473,17 +488,17 @@ void onShow(cmd *c) {
         mod->printDiag(out);
     else
         print_not_found(out, modStr);
-} // namespace Cli
+}  // namespace Cli
 
 void onPlot(cmd *c) { Command cmd(c); }
 
 void onPrint(cmd *c) {
     Command cmd(c);
-    String file = getFileStr(cmd);
+    auto file = getFileStr(cmd);
     if (SPIFFS.exists(file)) {
-        File f = SPIFFS.open(file, "r");
+        auto f = SPIFFS.open(file, "r");
         while (f.available())
-            out->println(f.readString());
+            print(out, f.readString());
         f.close();
     } else {
         print_file_not_found(out, file);
@@ -492,52 +507,48 @@ void onPrint(cmd *c) {
 
 void onLs(cmd *c) {
     Command cmd(c);
-    String pathStr = getPathStr(cmd);
-    String path = asDir(pathStr);
-    uint8_t max_level = getLevel(path);
-    Dir dir = SPIFFS.openDir(path);
+    String str = getPathStr(cmd);
+    String path = asDir(str);
+    uint8_t max_level = getNestedLevel(path);
+    auto dir = SPIFFS.openDir(path);
     while (dir.next()) {
         String name = dir.fileName();
-        if (getLevel(name) > max_level)
+        if (getNestedLevel(name) > max_level)
             continue;
-        print(out, dir.fileName());
-        print(out, '\t');
-        println(out, fmt_size(dir.fileSize()));
+        println(out, dir.fileName(), '\t', fmt_size(dir.fileSize()));
     }
 }
 
 void onRemove(cmd *c) {
     Command cmd(c);
-    String file = getFileStr(cmd);
-    if (SPIFFS.exists(file)) {
-        out->print(StrUtils::getStrP(str_file));
-        out->print(file);
-        if (SPIFFS.remove(file)) {
-            out->print(StrUtils::getStrP(str_deleted));
+    String name = getFileStr(cmd);
+    if (SPIFFS.exists(name)) {
+        print(out, FPSTR(str_file));
+        if (SPIFFS.remove(name)) {
+            println(out, FPSTR(str_deleted));
         } else {
-            out->print(StrUtils::getStrP(str_failed));
+            println(out, FPSTR(str_failed));
         }
     } else {
-        out->print(StrUtils::getStrP(str_not));
-        out->print(StrUtils::getStrP(str_found));
+        print_file_not_found(out, name);
     }
 }
 
 void onRun(cmd *c) {
     Command cmd(c);
-    String file = getFileStr(cmd);
-    if (SPIFFS.exists(file)) {
-        StringQueue *data = new StringQueue();
-        FileStore *store = new FileStore(file.c_str());
-        bool res = store->read(data);
-        if (res) {
-            while (data->available()) {
-                String strCmd;
-                data->get(strCmd);
-                app.shell()->run(strCmd.c_str());
+    String name = getFileStr(cmd);
+    if (SPIFFS.exists(name)) {
+        auto storage = FileStorage(name.c_str());
+        auto container = Container<String>();
+        storage.use(&container);
+        if (storage.read()) {
+            while (container.available()) {
+                String str;
+                if (container.get(str)) app.shell()->run(str.c_str());
+                yield();
             }
         } else {
-            print(out, FPSTR(str_failed));
+            println(out, FPSTR(str_failed));
         }
     }
 }
@@ -546,29 +557,30 @@ void onCrash(cmd *c) {
     Command cmd(c);
     String item = getItemStr(cmd);
     switch (getAction(cmd)) {
-    case ACTION_LIST:
-        fileList(out, FS_CRASH_ROOT);
-        break;
-    case ACTION_PRINT: {
-        File f = SPIFFS.open(item, "r");
-        if (!f)
-            print_not_found(out, item);
-        else
-            CrashReport(f).printTo(*out);
-    } break;
-    case ACTION_CLEAR:
-        clearDir(out, FS_CRASH_ROOT);
-        break;
-    case ACTION_TEST: {
-        int val = 0;
-        int res = 1 / val;
-        println(out, res);
-    } break;
-    case ACTION_UNKNOWN:
-    default:
-        String actionStr = getActionStr(cmd);
-        print_unknown_action(out, actionStr);
-        break;
+        case ACTION_LIST: {
+            printDir(out, FS_CRASH_ROOT);
+            break;
+        }
+        case ACTION_PRINT: {
+            File f = SPIFFS.open(item, "r");
+            if (!f)
+                print_not_found(out, item);
+            else
+                CrashReport(f).printTo(*out);
+            break;
+        }
+        case ACTION_CLEAR:
+            rmDir(out, FS_CRASH_ROOT);
+            break;
+        case ACTION_TEST: {
+            int val = 0;
+            int res = 1 / val;
+            println(out, res);
+        } break;
+        case ACTION_UNKNOWN:
+        default:
+            print_unknown_action(out, getActionStr(cmd));
+            break;
     }
 }
 
@@ -577,4 +589,4 @@ void onCommandError(cmd_error *e) {
     out->println(cmdError.toString());
 }
 
-} // namespace Cli
+}  // namespace Cli

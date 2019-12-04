@@ -90,11 +90,11 @@ void HttpMod::onHttpClientData(uint8_t num, String data) {
         size_t last = 0;
         size_t pos = 0;
         while (index < paramCount && (pos = data.indexOf(",", last))) {
-            app.params()->setValueString(items[index++],
+            app.params()->setValueAsString(items[index++],
                                          data.substring(last, pos).c_str());
             last = pos + 1;
         }
-        app.config()->saveConfig();
+        app.config()->save();
         break;
     }
     case SET_LOG_WATTHOURS: {
@@ -109,7 +109,7 @@ void HttpMod::onHttpClientData(uint8_t num, String data) {
                 sendToClients(data, PG_HOME, num);
             }
             app.params()->setValueBool(WH_STORE_ENABLED, mode);
-            app.config()->saveConfig();
+            app.config()->save();
         }
         break;
     }

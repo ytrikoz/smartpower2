@@ -46,9 +46,7 @@ struct Month {
 };
 
 static const Month calendar[] = {
-    {"Jan", 31, 0},   {"Feb", 28, 31},  {"Mar", 31, 59},  {"Apr", 30, 90},
-    {"May", 31, 120}, {"Jun", 30, 151}, {"Jul", 31, 181}, {"Aug", 31, 212},
-    {"Sep", 30, 273}, {"Oct", 31, 304}, {"Nov", 30, 334}, {"Dec", 31, 365}};
+    {"Jan", 31, 0}, {"Feb", 28, 31}, {"Mar", 31, 59}, {"Apr", 30, 90}, {"May", 31, 120}, {"Jun", 30, 151}, {"Jul", 31, 181}, {"Aug", 31, 212}, {"Sep", 30, 273}, {"Oct", 31, 304}, {"Nov", 30, 334}, {"Dec", 31, 365}};
 
 // 2019
 bool isLeapYear(uint16_t year) {
@@ -133,182 +131,155 @@ bool encodeDate(char *str, struct tm &tm) {
     // isValidDate(tm.tm_mday, tm.tm_mon, tm.tm_year);
 }
 
-void epochToDateTime(unsigned long epoch_s, struct tm &tm) {
-#ifdef DEBUG_passed_UTILS
-    DEBUG.printf("epoch_to_tm (%lu) ", epoch_s);
-#endif
-    // seconds since 1970-01-01 00:00:00
-    unsigned long passed = epoch_s;
-
-    tm.tm_sec = passed % ONE_MINUTE_s;
-    passed = passed / ONE_MINUTE_s;
-
-    tm.tm_min = passed % ONE_HOUR_m;
-    passed = passed / ONE_HOUR_m;
-
-    tm.tm_hour = passed % ONE_DAY_h;
-    passed = passed / ONE_DAY_h;
-
-    tm.tm_wday = ((passed + 4) % 7) + 1;
-
-    uint16_t year = 0;
-    unsigned long days = 0;
-    while ((days += daysInYear(year)) <= passed)
-        year++;
-    tm.tm_year = encodeYear(year);
-    passed = passed - (days - daysInYear(tm.tm_year));
-    uint8_t month;
-    for (month = 1; month <= 12; month++) {
-        uint8_t daym = daysInMonth(month, tm.tm_year);
-        if (passed >= daym)
-            passed -= daym;
-        else
-            break;
-    }
-    tm.tm_mon = month;
-    tm.tm_mday = passed + 1;
-#ifdef DEBUG_TIME_UTILS
-    DEBUG.printf("year %d buf %d day %d weekday %d passed %02d:%02d:%02d \r\n",
-                 tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_wday, tm.tm_hour,
-                 tm.tm_min, tm.tm_sec);
-#endif
-}
-
 size_t tmtodtf(struct tm &tm, char *str) {
     sprintf(str, DATETIME_FORMAT, tm.tm_mday, tm.tm_mon, tm.tm_year, tm.tm_hour,
             tm.tm_min, tm.tm_sec);
     return strlen(str);
 }
 
-unsigned long getAppBuildUtc() {
-    tm tm;
-    char buf[16];
-    strcpy(buf, BUILD_DATE);
-    encodeDate(buf, tm);
-    strcpy(buf, BUILD_TIME);
-    encodeTime(buf, tm);
-    return DateTime(tm).asEpoch() - BUILD_TIMEOFFSET_h * ONE_HOUR_s;
+void format_elapsed_time(char *buf, time_t elapsed) {
+    int h, m;
+    h = m = 0;
+    h = elapsed / 3600;
+    elapsed -= (h * 3600);
+    m = elapsed / 60;
+    elapsed -= (m * 60);
+    sprintf(buf, "%02i:%02i:%02lu", h, m, elapsed);
 }
 
-sint32_t timeZoneToOffset(const uint8_t timeZone) {
-    sint32_t result = 0;
+void format_elapsed_time(char *buf, double elapsed) {
+    int h, m, s, ms;
+    h = m = s = ms = 0;
+    ms = elapsed * 1000;
+    h = ms / 3600000;
+    ms -= (h * 3600000);
+    m = ms / 60000;
+    ms -= (m * 60000);
+    s = ms / 1000;
+    ms -= (s * 1000);
+    sprintf(buf, "%02i:%02i:%02i.%03i", h, m, s, ms);
+}
+
+
+int timeZoneInSeconds(const byte timeZone) {
+    int res = 0;
     switch (constrain(timeZone, 1, 38)) {
-    case 1:
-        result = -12 * ONE_HOUR_s;
-        break;
-    case 2:
-        result = -11 * ONE_HOUR_s;
-        break;
-    case 3:
-        result = -10 * ONE_HOUR_s;
-        break;
-    case 4:
-        result = -9 * ONE_HOUR_s + 30 * ONE_MINUTE_s;
-        break;
-    case 5:
-        result = -9 * ONE_HOUR_s;
-        break;
-    case 6:
-        result = -8 * ONE_HOUR_s;
-        break;
-    case 7:
-        result = -7 * ONE_HOUR_s;
-        break;
-    case 8:
-        result = -6 * ONE_HOUR_s;
-        break;
-    case 9:
-        result = -5 * ONE_HOUR_s;
-        break;
-    case 10:
-        result = -4 * ONE_HOUR_s;
-        break;
-    case 11:
-        result = -3 * ONE_HOUR_s + 30 * ONE_MINUTE_s;
-        break;
-    case 12:
-        result = -3 * ONE_HOUR_s;
-        break;
-    case 13:
-        result = -2 * ONE_HOUR_s;
-        break;
-    case 14:
-        result = -1 * ONE_HOUR_s;
-        break;
-    case 15:
-        result = 0;
-        break;
-    case 16:
-        result = 1 * ONE_HOUR_s;
-        break;
-    case 17:
-        result = 2 * ONE_HOUR_s;
-        break;
-    case 18:
-        result = 3 * ONE_HOUR_s;
-        break;
-    case 19:
-        result = 3 * ONE_HOUR_s + 30 * ONE_MINUTE_s;
-        break;
-    case 20:
-        result = 4 * ONE_HOUR_s;
-        break;
-    case 21:
-        result = 4 * ONE_HOUR_s + 30 * ONE_MINUTE_s;
-        break;
-    case 22:
-        result = 5 * ONE_HOUR_s;
-        break;
-    case 23:
-        result = 5 * ONE_HOUR_s + 30 * ONE_MINUTE_s;
-        break;
-    case 24:
-        result = 5 * ONE_HOUR_s + 45 * ONE_MINUTE_s;
-        break;
-    case 25:
-        result = 6 * ONE_HOUR_s;
-        break;
-    case 26:
-        result = 6 * ONE_HOUR_s + 30 * ONE_MINUTE_s;
-        break;
-    case 27:
-        result = 7 * ONE_HOUR_s;
-        break;
-    case 28:
-        result = 8 * ONE_HOUR_s;
-        break;
-    case 29:
-        result = 8 * ONE_HOUR_s + 45 * ONE_MINUTE_s;
-        break;
-    case 30:
-        result = 9 * ONE_HOUR_s;
-        break;
-    case 31:
-        result = 9 * ONE_HOUR_s + 30 * ONE_MINUTE_s;
-        break;
-    case 32:
-        result = 10 * ONE_HOUR_s;
-        break;
-    case 33:
-        result = 10 * ONE_HOUR_s + 30 * ONE_MINUTE_s;
-        break;
-    case 34:
-        result = 11 * ONE_HOUR_s;
-        break;
-    case 35:
-        result = 12 * ONE_HOUR_s;
-        break;
-    case 36:
-        result = 12 * ONE_HOUR_s + 45 * ONE_MINUTE_s;
-        break;
-    case 37:
-        result = 13 * ONE_HOUR_s;
-        break;
-    case 38:
-        result = 14 * ONE_HOUR_s;
-        break;
+        case 1:
+            res = -12 * ONE_HOUR_s;
+            break;
+        case 2:
+            res = -11 * ONE_HOUR_s;
+            break;
+        case 3:
+            res = -10 * ONE_HOUR_s;
+            break;
+        case 4:
+            res = -9 * ONE_HOUR_s - 30 * ONE_MINUTE_s;
+            break;
+        case 5:
+            res = -9 * ONE_HOUR_s;
+            break;
+        case 6:
+            res = -8 * ONE_HOUR_s;
+            break;
+        case 7:
+            res = -7 * ONE_HOUR_s;
+            break;
+        case 8:
+            res = -6 * ONE_HOUR_s;
+            break;
+        case 9:
+            res = -5 * ONE_HOUR_s;
+            break;
+        case 10:
+            res = -4 * ONE_HOUR_s;
+            break;
+        case 11:
+            res = -3 * ONE_HOUR_s - 30 * ONE_MINUTE_s;
+            break;
+        case 12:
+            res = -3 * ONE_HOUR_s;
+            break;
+        case 13:
+            res = -2 * ONE_HOUR_s;
+            break;
+        case 14:
+            res = -1 * ONE_HOUR_s;
+            break;
+        case 15:
+            res = 0;
+            break;
+        case 16:
+            res = 1 * ONE_HOUR_s;
+            break;
+        case 17:
+            res = 2 * ONE_HOUR_s;
+            break;
+        case 18:
+            res = 3 * ONE_HOUR_s;
+            break;
+        case 19:
+            res = 3 * ONE_HOUR_s + 30 * ONE_MINUTE_s;
+            break;
+        case 20:
+            res = 4 * ONE_HOUR_s;
+            break;
+        case 21:
+            res = 4 * ONE_HOUR_s + 30 * ONE_MINUTE_s;
+            break;
+        case 22:
+            res = 5 * ONE_HOUR_s;
+            break;
+        case 23:
+            res = 5 * ONE_HOUR_s + 30 * ONE_MINUTE_s;
+            break;
+        case 24:
+            res = 5 * ONE_HOUR_s + 45 * ONE_MINUTE_s;
+            break;
+        case 25:
+            res = 6 * ONE_HOUR_s;
+            break;
+        case 26:
+            res = 6 * ONE_HOUR_s + 30 * ONE_MINUTE_s;
+            break;
+        case 27:
+            res = 7 * ONE_HOUR_s;
+            break;
+        case 28:
+            res = 8 * ONE_HOUR_s;
+            break;
+        case 29:
+            res = 8 * ONE_HOUR_s + 45 * ONE_MINUTE_s;
+            break;
+        case 30:
+            res = 9 * ONE_HOUR_s;
+            break;
+        case 31:
+            res = 9 * ONE_HOUR_s + 30 * ONE_MINUTE_s;
+            break;
+        case 32:
+            res = 10 * ONE_HOUR_s;
+            break;
+        case 33:
+            res = 10 * ONE_HOUR_s + 30 * ONE_MINUTE_s;
+            break;
+        case 34:
+            res = 11 * ONE_HOUR_s;
+            break;
+        case 35:
+            res = 12 * ONE_HOUR_s;
+            break;
+        case 36:
+            res = 12 * ONE_HOUR_s + 45 * ONE_MINUTE_s;
+            break;
+        case 37:
+            res = 13 * ONE_HOUR_s;
+            break;
+        case 38:
+            res = 14 * ONE_HOUR_s;
+            break;
     }
-    return result;
+    return res;
 }
 
-} // namespace TimeUtils
+}  // namespace TimeUtils

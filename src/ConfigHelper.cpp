@@ -1,36 +1,34 @@
 #include "ConfigHelper.h"
 
-#include "FileStore.h"
+#include "Storage.h"
 #include "PrintUtils.h"
 
 using namespace PrintUtils;
 
-void ConfigHelper::onConfigChanged(ConfigItem param) { stored = false; }
+void ConfigHelper::onConfigChanged(ConfigItem param) { stored_ = false; }
 
 ConfigHelper::ConfigHelper() {
-    this->filename = new char[sizeof(FS_MAIN_CONFIG)];
-    strcpy(this->filename, FS_MAIN_CONFIG);
-
-    this->config = new Config();
-    loadConfig();
-    this->config->setOnConfigChaged(
+    strncpy(name_, FS_MAIN_CONFIG, FILENAME_SIZE);
+    obj_ = new Config();
+    load();
+    obj_->setOnConfigChaged(
         [this](ConfigItem param) { onConfigChanged(param); });
 }
 
-void ConfigHelper::loadConfig() {
-    FileStore *store = new FileStore(filename);
-    StringQueue *data = new StringQueue();
-    if (!store->read(data)) {
-        if (store->getError(SE_NOT_EXIST)) {
-            saveConfig();
+void ConfigHelper::load() {
+    auto store = FileStorage(name_);
+    auto container = Container<String>();
+    store.use(&container);
+    if (store.read()) {
+     if (container.available())
+        load(obj_, container);
+    } else {
+        if (store.has(SE_NOT_EXIST)) {
+            save();
         } else {
             print_ident(err, FPSTR(str_config));
-            print(err, FPSTR(str_load));
-            println(err, store->getErrorInfo().c_str());
-        }
-    } else {
-        if (data->available())
-            this->loadStrings(config, data);
+            println(err, FPSTR(str_load), FPSTR(str_failed), ": ", store.getErrorInfo().c_str());
+        }        
     }
 }
 
@@ -50,70 +48,68 @@ String ConfigHelper::extractValue(String &str) {
         return str.substring(split_index + 2, str.length() - 2);
 }
 
-bool ConfigHelper::loadStrings(Config *config, StringQueue *data) {
-    String buf;
+bool ConfigHelper::load(Config *config, Container<String>& data) {
     unsigned long started = millis();
-    while (data->available()) {
-        data->get(buf);
-        String paramStr = extractName(buf);
-        String valueStr = extractValue(buf);
-        if (paramStr.length()) {
-            config->setValueStringByName(paramStr.c_str(), valueStr.c_str());
+    while (data.available()) {
+        String buf;
+        data.get(buf);
+        String param_str = extractName(buf);
+        String value_str = extractValue(buf);
+        if (param_str.length()) {
+            config->setValueAsStringByName(param_str.c_str(), value_str.c_str());
         } else {
             print_ident(err, FPSTR(str_config));
-            print(err, FPSTR(str_load));
-            print_quoted(err, buf);
-            println(err, FPSTR(str_error));
+            print(err, FPSTR(str_load), FPSTR(str_error), ": ", StrUtils::getQuotedStr(buf));
         }
         if (millis_since(started) > 10)
             break;
     }
-    return data->available();
+    return data.available();
 }
 
-bool ConfigHelper::saveConfig() {
-    StringQueue *data = new StringQueue(CONFIG_ITEMS);
-    return saveConfig(this->config, data);
+bool ConfigHelper::save() {
+    auto container = Container<String>(CONFIG_ITEMS);
+    return save(*obj_, container);
 }
 
-bool ConfigHelper::saveConfig(Config *config, StringQueue *data) {
-    for (size_t index = 0; index < CONFIG_ITEMS; ++index) {
-        String str = config->toString(ConfigItem(index));
-        data->put(str);
+bool ConfigHelper::save(Config &src, Container<String> &desc) {
+    for (size_t i = 0; i < CONFIG_ITEMS; ++i) {
+        String buf(src.asString(ConfigItem(i)));
+        desc.put(buf);
     }
-    FileStore *store = new FileStore(FS_MAIN_CONFIG);
-    return store->write(data);
+    FileStorage *store = new FileStorage(FS_MAIN_CONFIG);
+    return store->write();
 }
 
 size_t ConfigHelper::printTo(Print &p) const {
     size_t n = 0;
     for (size_t i = 0; i < CONFIG_ITEMS; ++i)
-        n += p.println(config->toString(ConfigItem(i)));
+        n += p.println(obj_->asString(ConfigItem(i)));
     return n;
 }
 
 void ConfigHelper::setDefault() {
     for (size_t i = 0; i < CONFIG_ITEMS; ++i)
-        config->resetDefault(ConfigItem(i));
+        obj_->resetDefault(ConfigItem(i));
 }
 
 bool ConfigHelper::getWhStoreEnabled() {
-    return config->getValueAsBool(WH_STORE_ENABLED);
+    return obj_->getValueAsBool(WH_STORE_ENABLED);
 }
 
-Config *ConfigHelper::get() { return config; }
+Config *ConfigHelper::get() { return obj_; }
 
 bool ConfigHelper::setBootPowerState(BootPowerState value) {
-    return config->setValueByte(POWER, (uint8_t)(value));
+    return obj_->setValueByte(POWER, (uint8_t)(value));
 }
 
 BootPowerState ConfigHelper::getBootPowerState() {
-    return BootPowerState(config->getValueAsByte(POWER));
+    return BootPowerState(obj_->getValueAsByte(POWER));
 }
 
 bool ConfigHelper::setNtpConfig(sint8_t timeZone_h, uint16_t sync_s) {
-    return config->setValueSignedByte(TIME_ZONE, timeZone_h) |
-           config->setValueInt(NTP_SYNC_INTERVAL, sync_s);
+    return obj_->setValueSignedByte(TIME_ZONE, timeZone_h) |
+           obj_->setValueInt(NTP_SYNC_INTERVAL, sync_s);
 }
 
 bool ConfigHelper::setNetworkSTAConfig(uint8_t wifi, const char *ssid,
@@ -124,7 +120,7 @@ bool ConfigHelper::setNetworkSTAConfig(uint8_t wifi, const char *ssid,
                       setPassword(passwd) | setDHCP(dhcp) |
                       setIPAddress(ipaddr) | setNetmask(netmask) |
                       setGateway(gateway) | setDns(dns);
-    stored |= hasChanged;
+    stored_ |= hasChanged;
     return hasChanged;
 }
 
@@ -134,20 +130,20 @@ bool ConfigHelper::setPowerConfig(BootPowerState state, float voltage) {
 
 bool ConfigHelper::setWiFiMode(uint8_t value) {
     return (value >= WIFI_OFF) && (value <= WIFI_AP_STA)
-               ? config->setValueByte(WIFI, value)
+               ? obj_->setValueByte(WIFI, value)
                : false;
 }
 
 bool ConfigHelper::setWiFiMode(WiFiMode_t value) {
-    return config->setValueByte(WIFI, (uint8_t)value);
+    return obj_->setValueByte(WIFI, (uint8_t)value);
 }
 
 bool ConfigHelper::setSSID(const char *value) {
-    return config->setValueString(SSID, value);
+    return obj_->setValueAsString(SSID, value);
 }
 
 bool ConfigHelper::setPassword(const char *value) {
-    return config->setValueString(PASSWORD, value);
+    return obj_->setValueAsString(PASSWORD, value);
 }
 
 bool ConfigHelper::setIPAddress(IPAddress value) {
@@ -155,43 +151,43 @@ bool ConfigHelper::setIPAddress(IPAddress value) {
 }
 
 bool ConfigHelper::setIPAddress(const char *value) {
-    return config->setValueString(IPADDR, value);
+    return obj_->setValueAsString(IPADDR, value);
 }
 
 bool ConfigHelper::setGateway(const char *value) {
-    return config->setValueString(GATEWAY, value);
+    return obj_->setValueAsString(GATEWAY, value);
 }
 
 bool ConfigHelper::setNetmask(const char *value) {
-    return config->setValueString(NETMASK, value);
+    return obj_->setValueAsString(NETMASK, value);
 }
 
 bool ConfigHelper::setDns(const char *value) {
-    return config->setValueString(DNS, value);
+    return obj_->setValueAsString(DNS, value);
 }
 
 bool ConfigHelper::setDHCP(bool value) {
-    return config->setValueBool(DHCP, value);
+    return obj_->setValueBool(DHCP, value);
 }
 
 bool ConfigHelper::setOutputVoltage(float value) {
-    return config->setValueFloat(OUTPUT_VOLTAGE, value);
+    return obj_->setValueFloat(OUTPUT_VOLTAGE, value);
 }
 
 float ConfigHelper::getOutputVoltage() {
-    return config->getValueAsFloat(OUTPUT_VOLTAGE);
+    return obj_->getValueAsFloat(OUTPUT_VOLTAGE);
 }
 
 const char *ConfigHelper::getPassword() {
-    return config->getValueAsString(PASSWORD);
+    return obj_->getValueAsString(PASSWORD);
 }
 
 const char *ConfigHelper::getPassword_AP() {
-    return config->getValueAsString(AP_PASSWORD);
+    return obj_->getValueAsString(AP_PASSWORD);
 }
 
 // maximum value of RF Tx Power, unit: 0.25 dBm, range [0, 82]
-uint8_t ConfigHelper::getTPW() { return config->getValueAsByte(TPW); }
+uint8_t ConfigHelper::getTPW() { return obj_->getValueAsByte(TPW); }
 
 // String ConfigHelper::getConfigJson() {
 //     DynamicJsonDocument doc(1024);

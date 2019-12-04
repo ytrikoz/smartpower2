@@ -8,12 +8,12 @@ class MemoryBuffer : public Stream {
     MemoryBuffer(size_t capacity = MemoryBuffer::DEFALT_CAPACITY);
     ~MemoryBuffer();
     void clear();
-    virtual size_t write(uint8_t);
-    virtual int availableForWrite(void);
-    virtual int available();
-    virtual int read();
-    virtual int peek();
-    virtual void flush();
+        virtual int availableForWrite(void) ;
+    virtual size_t write(uint8_t) override;
+    virtual int available() override;
+    virtual int read() override;
+    virtual int peek() override;
+    virtual void flush() override;
 
   private:
     uint8_t *buffer;

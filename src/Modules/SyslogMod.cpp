@@ -13,7 +13,7 @@ void SyslogMod::info(String &str) { send(SYSLOG_INFO, str); }
 void SyslogMod::debug(String &str) { send(SYSLOG_DEBUG, str); }
 
 bool SyslogMod::onInit() {
-    setServer(config()->getValueAsString(SYSLOG_SERVER));
+    setServer(config_->getValueAsString(SYSLOG_SERVER));
     setPort(SYSLOG_PORT);
     setHost(Wireless::hostName().c_str());
 
