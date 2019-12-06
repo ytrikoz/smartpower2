@@ -45,15 +45,15 @@ IPAddress hostSTA_IP() { return WiFi.localIP(); }
 IPAddress hostDNS() {
     IPAddress res(IPADDR_NONE);
     switch (getMode()) {
-    case NETWORK_OFF:
-        break;
-    case NETWORK_AP:
-        res = WiFi.softAPIP();
-        break;
-    case NETWORK_STA:
-    case NETWORK_AP_STA:
-        res = WiFi.dnsIP();
-        break;
+        case NETWORK_OFF:
+            break;
+        case NETWORK_AP:
+            res = WiFi.softAPIP();
+            break;
+        case NETWORK_STA:
+        case NETWORK_AP_STA:
+            res = WiFi.dnsIP();
+            break;
     }
     return res;
 }
@@ -61,15 +61,15 @@ IPAddress hostDNS() {
 String hostSSID() {
     String res;
     switch (getMode()) {
-    case NETWORK_OFF:
-        break;
-    case NETWORK_AP:
-        res = hostAP_SSID();
-        break;
-    case NETWORK_STA:
-    case NETWORK_AP_STA:
-        res = hostSTA_SSID();
-        break;
+        case NETWORK_OFF:
+            break;
+        case NETWORK_AP:
+            res = hostAP_SSID();
+            break;
+        case NETWORK_STA:
+        case NETWORK_AP_STA:
+            res = hostSTA_SSID();
+            break;
     }
     return res;
 }
@@ -77,15 +77,15 @@ String hostSSID() {
 String hostMac() {
     String str;
     switch (getMode()) {
-    case NETWORK_OFF:
-        break;
-    case NETWORK_AP:
-        str = WiFi.softAPmacAddress();
-        break;
-    case NETWORK_STA:
-    case NETWORK_AP_STA:
-        str = WiFi.macAddress();
-        break;
+        case NETWORK_OFF:
+            break;
+        case NETWORK_AP:
+            str = WiFi.softAPmacAddress();
+            break;
+        case NETWORK_STA:
+        case NETWORK_AP_STA:
+            str = WiFi.macAddress();
+            break;
     }
     return str;
 }
@@ -93,14 +93,14 @@ String hostMac() {
 const String hostName() {
     String str;
     switch (getMode()) {
-    case NETWORK_STA:
-    case NETWORK_AP_STA:
-        str += WiFi.hostname();
-        break;
-    case NETWORK_OFF:
-    case NETWORK_AP:
-        str += hostAP_Name();
-        break;
+        case NETWORK_STA:
+        case NETWORK_AP_STA:
+            str += WiFi.hostname();
+            break;
+        case NETWORK_OFF:
+        case NETWORK_AP:
+            str += hostAP_Name();
+            break;
     }
     return str;
 }
@@ -108,17 +108,17 @@ const String hostName() {
 IPAddress hostSubnet() {
     IPAddress res(IPADDR_NONE);
     switch (getMode()) {
-    case NETWORK_OFF:
-        break;
-    case NETWORK_AP:
-        res = IPAddress(255, 255, 255, 0);
-        break;
-    case NETWORK_STA:
-    case NETWORK_AP_STA:
-        res = WiFi.subnetMask();
-        break;
-    default:
-        break;
+        case NETWORK_OFF:
+            break;
+        case NETWORK_AP:
+            res = IPAddress(255, 255, 255, 0);
+            break;
+        case NETWORK_STA:
+        case NETWORK_AP_STA:
+            res = WiFi.subnetMask();
+            break;
+        default:
+            break;
     }
     return res;
 }
@@ -126,17 +126,17 @@ IPAddress hostSubnet() {
 IPAddress hostGateway() {
     IPAddress res(IPADDR_NONE);
     switch (getMode()) {
-    case NETWORK_OFF:
-        break;
-    case NETWORK_AP:
-        res = WiFi.softAPIP();
-        break;
-    case NETWORK_STA:
-    case NETWORK_AP_STA:
-        res = WiFi.gatewayIP();
-        break;
-    default:
-        break;
+        case NETWORK_OFF:
+            break;
+        case NETWORK_AP:
+            res = WiFi.softAPIP();
+            break;
+        case NETWORK_STA:
+        case NETWORK_AP_STA:
+            res = WiFi.gatewayIP();
+            break;
+        default:
+            break;
     }
     return res;
 }
@@ -144,15 +144,15 @@ IPAddress hostGateway() {
 IPAddress hostIP() {
     IPAddress res(IPADDR_NONE);
     switch (getMode()) {
-    case NETWORK_OFF:
-        break;
-    case NETWORK_AP:
-        res = hostAP_IP();
-        break;
-    case NETWORK_STA:
-    case NETWORK_AP_STA:
-        res = hostSTA_IP();
-        break;
+        case NETWORK_OFF:
+            break;
+        case NETWORK_AP:
+            res = hostAP_IP();
+            break;
+        case NETWORK_STA:
+        case NETWORK_AP_STA:
+            res = hostSTA_IP();
+            break;
     }
     return res;
 }
@@ -214,10 +214,8 @@ bool startAP(const char *ssid, const char *passwd) {
 boolean disconnectWiFi() { return WiFi.disconnect(); }
 
 void start_safe_wifi_ap() {
-    print_ident(&DEBUG, FPSTR(str_wifi));
-    print(&DEBUG, FPSTR(str_safe));
-    String ap_ssid = getUniqueName();
-    println_strP_var(&DEBUG, str_ssid, ap_ssid.c_str());
+    String ap_ssid = SysInfo::getUniqueName();
+    print(&DEBUG, getIdentStrP(str_wifi), FPSTR(str_safe), FPSTR(str_ssid), ap_ssid);
 
     IPAddress ap_ipaddr = IPAddress(192, 168, 4, 1);
     char ap_passwd[] = "12345678";
@@ -340,17 +338,17 @@ void updateState() {
     NetworkMode mode = getMode();
     bool res = false;
     switch (mode) {
-    case NETWORK_OFF:
-        break;
-    case WIFI_AP:
-        res = ap_enabled;
-        break;
-    case WIFI_STA:
-    case WIFI_AP_STA:
-        res = WiFi.isConnected();
-        break;
-    default:
-        break;
+        case NETWORK_OFF:
+            break;
+        case WIFI_AP:
+            res = ap_enabled;
+            break;
+        case WIFI_STA:
+        case WIFI_AP_STA:
+            res = WiFi.isConnected();
+            break;
+        default:
+            break;
     }
     setNetworkStatus(res ? NETWORK_UP : NETWORK_DOWN);
 }
@@ -395,78 +393,57 @@ String networkStateInfo() {
 String getModeStr(NetworkMode mode) {
     PGM_P strP = str_unknown;
     switch (mode) {
-    case NETWORK_OFF:
-        strP = str_off;
-        break;
-    case NETWORK_AP:
-        strP = str_ap;
-        break;
-    case NETWORK_STA:
-        strP = str_sta;
-        break;
-    case NETWORK_AP_STA:
-        strP = str_ap_sta;
-        break;
+        case NETWORK_OFF:
+            strP = str_off;
+            break;
+        case NETWORK_AP:
+            strP = str_ap;
+            break;
+        case NETWORK_STA:
+            strP = str_sta;
+            break;
+        case NETWORK_AP_STA:
+            strP = str_ap_sta;
+            break;
     }
     return FPSTR(strP);
 }
 
-String hostIPInfo() {
-    String str = getStrP(str_ip);
-    switch (getMode()) {
-    case NETWORK_OFF:
-        str += getStrP(str_none);
-        break;
-    case NETWORK_STA:
-        str += hostSTA_IP().toString();
-        break;
-    case NETWORK_AP:
-        str += hostAP_IP().toString();
-        break;
-    case NETWORK_AP_STA:
-        str += hostSTA_IP().toString();
-        str += " ";
-        str += hostAP_IP().toString();
-    }
-    return str;
-}
-
 String hostAP_Name() {
-    char host_name[] = "smartpower2";
-    char buf[16];
-    strcpy(buf, host_name);
-    return String(buf);
+    return String("smartpower2");
 }
 
 String hostSTA_StatusStr() {
-    PGM_P strP = str_unknown;
+    PGM_P strP;
     switch (wifi_station_get_connect_status()) {
-    case STATION_CONNECTING:
-        strP = str_connecting;
-        break;
-    case STATION_GOT_IP:
-        strP = str_connected;
-        break;
-    case STATION_NO_AP_FOUND:
-        strP = str_ap_not_found;
-        break;
-    case STATION_CONNECT_FAIL:
-        strP = str_connection_failed;
-        break;
-    case STATION_WRONG_PASSWORD:
-        strP = str_wrong_password;
-        break;
-    case STATION_IDLE:
-        strP = str_idle;
-        break;
+        case STATION_CONNECTING:
+            strP = str_connecting;
+            break;
+        case STATION_GOT_IP:
+            strP = str_connected;
+            break;
+        case STATION_NO_AP_FOUND:
+            strP = str_ap_not_found;
+            break;
+        case STATION_CONNECT_FAIL:
+            strP = str_connection_failed;
+            break;
+        case STATION_WRONG_PASSWORD:
+            strP = str_wrong_password;
+            break;
+        case STATION_IDLE:
+            strP = str_idle;
+            break;
+        default:
+            strP = str_unknown;
+            break;
     }
     return FPSTR(strP);
 }
 
 size_t printDiag(Print *p) {
-    size_t n = println_nameP_value(p, str_network, getUpDownStr(hasNetwork()));
-    n += println_nameP_value(p, str_for,
-                             millis_since(hasNetwork() ? lastDown : lastUp));
+    size_t n = print(p, FPSTR(str_network), getUpDownStr(hasNetwork()));
+    n += println(p, FPSTR(str_for), millis_since(hasNetwork() ? lastDown : lastUp));
     n += println_nameP_value(p, str_mode, getMode());
     WiFi.printDiag(*p);
     return n;
@@ -488,35 +465,29 @@ bool scanWiFi(const char *ssid) {
 String getWifiChannel() { return String(WiFi.channel()); }
 
 String getWiFiPhyMode() {
-    char buf[8];
-    strcpy(buf, "801.11");
+    char ch;
     switch (WiFi.getPhyMode()) {
-    case WIFI_PHY_MODE_11B:
-        buf[6] = 'b';
-        break;
-    case WIFI_PHY_MODE_11G:
-        buf[6] = 'g';
-        break;
-    case WIFI_PHY_MODE_11N:
-        buf[6] = 'n';
-        break;
+        case WIFI_PHY_MODE_11B:
+            ch = 'b';
+            break;
+        case WIFI_PHY_MODE_11G:
+            ch = 'g';
+            break;
+        case WIFI_PHY_MODE_11N:
+            ch = 'n';
+            break;
+        default:
+            ch = '?';
+            break;
     }
-    buf[7] = '\x00';
-    return String(buf);
+    return String("801.11") + ch;
 }
 
-String getUniqueName() {
-    char buf[32];
-    strcpy(buf, APP_SHORT "_");
-    strcat(buf, SysInfo::getChipId().c_str());
-    return String(buf);
-}
-
-} // namespace Wireless
+}  // namespace Wireless
 
 // https://github.com/esp8266/Arduino/issues/4114
 class WiFiStationStaticIP : public ESP8266WiFiSTAClass {
-  public:
+   public:
     void useStaticStationIP(bool enabled) { _useStaticIp = enabled; }
 };
 

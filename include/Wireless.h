@@ -17,9 +17,10 @@ enum NetworkMode {
     NETWORK_AP_STA = 3
 };
 
-enum NetworkStatus { NETWORK_DOWN = 0, NETWORK_UP = 1 };
+enum NetworkStatus { NETWORK_DOWN = 0,
+                     NETWORK_UP = 1 };
 
-String getUniqueName();
+
 
 String getWiFiPhyMode();
 
@@ -104,4 +105,4 @@ void useStaticStationIP(bool enabled);
 
 void setBroadcast(uint8_t _new);
 
-} // namespace Wireless
+}  // namespace Wireless

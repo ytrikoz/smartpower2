@@ -15,41 +15,38 @@
 typedef std::function<void(uint8_t)> SocketConnectionEventHandler;
 typedef std::function<void(uint8_t, String)> SocketDataEventHandler;
 
-class WebService {
+class WebServer {
   public:
-    WebService(uint16_t http, uint16_t websocket);
+    WebServer(uint16_t http, uint16_t websocket);
     bool start();
     void stop();
     void loop();
     size_t printDiag(Print *);
 
   public:
-    void setRoot(const char *path);
-    void setOnClientConnection(SocketConnectionEventHandler h);
-    void setOnClientDisconnected(SocketConnectionEventHandler h);
-    void setOnClientData(SocketDataEventHandler h);
-    void sendTxt(uint8_t num, String &str);
+    void setOnClientConnection(SocketConnectionEventHandler);
+    void setOnClientDisconnected(SocketConnectionEventHandler);
+    void setOnClientData(SocketDataEventHandler);
+    void sendTxt(const uint8_t, String &);
 
   private:
     bool captivePortal();
-    bool sendFile(String uri);
-    bool sendFileContent(String path);
-    String getFilePath(String uri);
+    bool sendFile(String);
+    bool sendFileContent(String);
+    String getFilePath(String);
+    String getContentType(String);
     void handleUpload();
     void handleRoot();
     void handleUri();
     void handleFileList();
     void handleNoContent();
-    void handleNotFound(String &uri);
-    const char *getContentType(String filename);
+    void handleNotFound(String &);
+    
     void handleWebSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
                               size_t lenght);
 
     SocketDataEventHandler onDataEvent;
     SocketConnectionEventHandler onConnectEvent, onDisconnectEvent;
-    int16_t port_, wsport_;
-    char root_[16];
-
     ESP8266WebServer *server;
     WebSocketsServer *socket;
     SSDPClass *ssdp;

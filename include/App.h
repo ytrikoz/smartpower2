@@ -8,9 +8,8 @@
 #include "PsuLogger.h"
 #include "Strings.h"
 
-#include "Modules/Button.h"
+#include "Modules/ButtonMod.h"
 #include "Modules/Display.h"
-#include "Modules/HttpMod.h"
 #include "Modules/Leds.h"
 #include "Modules/NetworkService.h"
 #include "Modules/OTAUpdate.h"
@@ -19,18 +18,21 @@
 #include "Modules/SyslogMod.h"
 #include "Modules/ClockMod.h"
 #include "Modules/TelnetServer.h"
+#include "Modules/WebMod.h"
 
 class App {
    public:
     App();
+    void restart(time_t delay = 0);    
+    void handleRestart();
     void init(Print *p);
     void start();
     void startSafe();
-    bool begin(const AppModuleEnum);
+    bool start(const AppModuleEnum);
     void stop(const AppModuleEnum);
     void loop();
     void loopSafe();
-    void restart(uint8_t time);
+    
     size_t printDiag(Print *p);
     size_t printDiag(Print *p, const AppModuleEnum module);
     void printLoopCapture(Print *p);
@@ -45,11 +47,11 @@ class App {
     Display *lcd();
     LoopLogger *getLoopLogger();
     ConfigHelper *config();
-    HttpMod *http();
+    WebMod *web();
     Psu *psu();
     LedMod *led();
     ShellMod *shell();
-    Button *btn();
+    ButtonMod *btn();
     TelnetServer *telnet();
 
     bool setBootPowerState(BootPowerState state);
@@ -102,7 +104,7 @@ class App {
    private:
     void displayProgress(uint8_t progress, const char *message);
     void restartNetworkDependedModules(Wireless::NetworkMode mode, bool hasNetwork);
-    void handleRestart();
+    void restart();
     void send_psu_data_to_clients();
 
    private:
@@ -114,10 +116,12 @@ class App {
     PsuLogger *logger;
     bool safemode = false;
     WiFiEventHandler onDisconnected, onGotIp;
-    unsigned long lastUpdated;
-    uint8_t reboot;
-    uint8_t boot_per;
+    
+    unsigned long restartUpdated_;
+    time_t restartCountdown_;
+    bool restartFlag_;
 
+    uint8_t boot_per;
     Print *out, *dbg, *err = NULL;
 };
 

@@ -101,7 +101,7 @@ const String getItemStr(Command &command) {
 }
 
 const String getValueStr(Command &command) {
-    return command.getArgument("value").getValue();
+    return command.getArgument(FPSTR(str_value)).getValue();
 }
 
 CommandAction getAction(Command &cmd) {
@@ -515,7 +515,7 @@ void onLs(cmd *c) {
         String name = dir.fileName();
         if (getNestedLevel(name) > max_level)
             continue;
-        println(out, dir.fileName(), '\t', fmt_size(dir.fileSize()));
+        println(out, dir.fileName(), '\t', prettyBytes(dir.fileSize()));
     }
 }
 

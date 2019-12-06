@@ -18,8 +18,8 @@ App::App() {
 
 void App::init(Print *p) {
     out = dbg = err = p;
-    reboot = 0;
-    lastUpdated = 0;
+    restartCountdown_ = 0;
+    restartFlag_ = false;
     loopLogger = new LoopLogger();
     configHelper = new ConfigHelper();
 }
@@ -47,25 +47,23 @@ void App::loop() {
         }
     }
     yield();
-    unsigned long now = millis();
-    if (millis_passed(lastUpdated, now) > ONE_SECOND_ms) {
-        handleRestart();
-        send_psu_data_to_clients();
-        lastUpdated = now;
-    }
+
+    handleRestart();
     yield();
+
     if (networkChanged) {
         restartNetworkDependedModules(Wireless::getMode(), Wireless::hasNetwork());
         refresh_wifi_led();
         networkChanged = false;
     }
     yield();
+
     loopLogger->loop();
 }
 
 size_t App::printDiag(Print *p) {
     size_t n = println(p, SysInfo::getHeapStats().c_str());
-    n += print_nameP_value(p, str_http, http()->getClients());
+    n += print_nameP_value(p, str_http, web()->getClients());
     n += print_nameP_value(p, str_telnet, getBoolStr(telnet()->hasClient()).c_str());
     n += println_nameP_value(p, str_ap, SysInfo::getAPClientsNum());
     return n;
@@ -134,42 +132,50 @@ void App::printLoopCapture(Print *p) {
     p->println();
 }
 
-void App::restart(uint8_t time_s) {
-    reboot = time_s;
-    if (reboot > 0) {
-        led()->set(POWER_LED, BLINK_ERROR);
-        led()->set(WIFI_LED, BLINK_ERROR);
+void App::restart(time_t time) {
+    restartCountdown_ = time;
+    restartFlag_ = true;
+    restartUpdated_ = millis();
+    if (restartCountdown_) {
         char buf[32];
-        sprintf_P(buf, msg_restart_countdown, reboot);
-        out->println(buf);
-    } else {
-        refresh_power_led();
+        sprintf_P(buf, msg_restart_countdown, restartCountdown_);
+        PrintUtils::println(out, buf);
     }
 }
 
 void App::handleRestart() {
-    if (reboot == 1)
-        system_restart();
-    if (reboot > 1)
-        reboot--;
+    if (!restartFlag_) return;
+
+    unsigned long now = millis();
+    if (millis_passed(restartUpdated_, now) >= ONE_SECOND_ms) {
+        restartUpdated_ = now;
+        restartCountdown_--;
+        if (restartCountdown_ <= 3) {
+            refresh_power_led();
+            refresh_wifi_led();
+        }
+        if (restartCountdown_ == 0)
+            system_restart();
+    }
 }
 
+
 void App::displayProgress(uint8_t progress, const char *message) {
-    if (lcd()->isEnabled())
-        lcd()->showProgress(progress, message);
+    if (lcd()->isEnabled()) lcd()->showProgress(progress, message);
 }
 
 void App::start() {
-    begin(MOD_DISPLAY);
-    print_delay(&INFO, getIdentStrP(str_wait, false).c_str(), 5);
+    //print_delay(&INFO, getIdentStrP(str_wait, false).c_str(), 5);
+
+    start(MOD_DISPLAY);
 
     displayProgress(0, BUILD_DATE);
 
-    begin(MOD_BTN);
-    begin(MOD_LED);
-    begin(MOD_CLOCK);
-    begin(MOD_PSU);
-    begin(MOD_SHELL);
+    start(MOD_BTN);
+    start(MOD_LED);
+    start(MOD_CLOCK);
+    start(MOD_PSU);
+    start(MOD_SHELL);
     displayProgress(40, "<WIFI>");
 
     Wireless::start();
@@ -195,7 +201,7 @@ void App::start() {
     });
 
     psu()->setOnStateChange([this](PsuState state, PsuStatus status) {
-        http()->sendPageState(PG_HOME);
+        web()->sendPageState(PG_HOME);
         switch (status) {
             case PSU_OK: {
                 led()->set(POWER_LED,
@@ -268,18 +274,9 @@ AppModule *App::getModule(const AppModuleEnum mod) {
     if (!appMod[mod]) {
         switch (mod) {
             case MOD_BTN: {
-                appMod[mod] = new Button();
-                btn()->setOnClicked([this]() {
-                    if (psu())
-                        psu()->togglePower();
-                });
-                btn()->setOnHold([this](unsigned long time) {
-                    if (time > HOLD_TIME_TO_RESET)
-                        if (led())
-                            led()->set(POWER_LED, BLINK_ERROR);
-                });
-                btn()->setOnHoldRelease(
-                    [this](unsigned long time) { refresh_power_led(); });
+                appMod[mod] = new ButtonMod();
+                btn()->setOnClick([this]() { if (psu()) psu()->togglePower(); });
+                btn()->setOnHold([this](time_t time) {if (time >= HOLD_TIME_TO_RESET_s) restart(3); });
                 break;
             }
             case MOD_SYSLOG: {
@@ -311,8 +308,8 @@ AppModule *App::getModule(const AppModuleEnum mod) {
                 appMod[mod] = new Display();
                 break;
             }
-            case MOD_HTTP: {
-                appMod[mod] = new HttpMod();
+            case MOD_WEB: {
+                appMod[mod] = new WebMod();
                 break;
             }
             case MOD_SHELL: {
@@ -358,22 +355,17 @@ AppModule *App::getModule(const AppModuleEnum mod) {
     return appMod[mod];
 }
 
-bool App::begin(const AppModuleEnum mod) {
-    AppModule *obj = getModule(mod);
-    bool result = false;
-    if (obj)
-        result = obj->start();
-    return result;
+bool App::start(const AppModuleEnum mod) {
+    auto obj = getModule(mod);
+    return obj && obj->start();
 }
 
 void App::stop(AppModuleEnum mod) {
-    if (AppModule *obj = getModule(mod))
-        obj->stop();
+    auto obj = getModule(mod);
+    if (obj) obj->stop();
 }
 
 void App::send_psu_data_to_clients() {
-    if (!psu()->checkState(POWER_ON))
-        return;
     PsuInfo pi = psu()->getInfo();
     if (Wireless::hasNetwork()) {
         if ((telnet() && telnet()->hasClient()) && !shell()->isActive()) {
@@ -381,19 +373,21 @@ void App::send_psu_data_to_clients() {
             data += '\r';
             telnet()->write(data.c_str());
         }
-        if (http()->getClients()) {
+        if (web()->getClients()) {
             String data = String(TAG_PVI);
             data += pi.toString();
-            http()->sendToClients(data, PG_HOME);
+            web()->sendToClients(data, PG_HOME);
         }
     }
 }
 
 void App::refresh_wifi_led() {
     LedMode mode = STAY_OFF;
-    if (Wireless::hasNetwork()) {
+    if (restartFlag_ && restartCountdown_ <= 3)
+        mode = BLINK_ERROR;
+    else if (Wireless::hasNetwork()) {
         mode = STAY_ON;
-        if (http()->getClients() || (telnet() && telnet()->hasClient()))
+        if (web()->getClients() || (telnet() && telnet()->hasClient()))
             mode = BLINK;
     }
     led()->set(WIFI_LED, mode);
@@ -401,7 +395,9 @@ void App::refresh_wifi_led() {
 
 void App::refresh_power_led() {
     LedMode mode = STAY_OFF;
-    if (psu()) {
+    if (restartFlag_ && restartCountdown_ <= 3)
+        mode = BLINK_ERROR;
+    else if (psu()) {
         if (psu()->checkStatus(PSU_OK))
             mode = psu()->checkState(POWER_ON) ? BLINK : STAY_ON;
         else
@@ -423,7 +419,7 @@ void App::printPlot(PlotData *data, Print *p) {
 
 LedMod *App::led() { return (LedMod *)appMod[MOD_LED]; }
 
-Button *App::btn() { return (Button *)appMod[MOD_BTN]; }
+ButtonMod *App::btn() { return (ButtonMod *)appMod[MOD_BTN]; }
 
 TelnetServer *App::telnet() { return (TelnetServer *)appMod[MOD_TELNET]; }
 
@@ -439,6 +435,6 @@ Config *App::params() { return configHelper->get(); }
 
 Display *App::lcd() { return (Display *)appMod[MOD_DISPLAY]; }
 
-HttpMod *App::http() { return (HttpMod *)appMod[MOD_HTTP]; }
+WebMod *App::web() { return (WebMod *)appMod[MOD_WEB]; }
 
 LoopLogger *App::getLoopLogger() { return loopLogger; }

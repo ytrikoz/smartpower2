@@ -18,20 +18,17 @@ void Shell::setTerminal(Termul *term) {
     t->setOnTabKey([this]() { this->useHistory(); });
 }
 
-bool Shell::run(const char *cmdStr) {
-#ifdef DEBUG_SHELL
-    DEBUG.printf("run(%s)", cmdStr);
-#endif
-    bool res = true;
-    cli->parse(cmdStr);
+bool Shell::run(const char *str) {
+    bool result = true;
+    cli->parse(str);
     while (cli->available()) {
         cli->getCmd().run();
         if (cli->getError()) {
-            res = false;
+            result = false;
             break;
         }
     }
-    return res;
+    return result;
 }
 
 bool Shell::isActive() { return this->active; }

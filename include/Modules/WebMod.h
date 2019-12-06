@@ -3,23 +3,20 @@
 #include <Arduino.h>
 
 #include "AppModule.h"
-#include "WebService.h"
+#include "WebServer.h"
 
-class HttpMod : public AppModule {
+class WebMod : public AppModule {
    public:
+    void sendToClients(String&, const uint8_t);
+    void sendToClients(String&, const uint8_t, const uint8_t);
+    void sendPageState(const uint8_t page);
+    void sendPageState(const uint8_t n, const uint8_t page);
+    uint8_t getClients(); 
 
-    void sendToClients(String, uint8_t);
-    void sendToClients(String, uint8_t, uint8_t);
-    void sendPageState(uint8_t page);
-    void sendPageState(uint8_t n, uint8_t page);
-    uint8_t getClients();
-    
    public:
-    HttpMod() : AppModule(MOD_HTTP) {}
+    WebMod() : AppModule(MOD_WEB) {}
 
-    bool isCompatible(Wireless::NetworkMode value) override {
-        return value != Wireless::NETWORK_OFF;
-    }
+    bool isCompatible(Wireless::NetworkMode value) override { return value != Wireless::NETWORK_OFF; }
 
     bool isNetworkDepended() { return true; }
 
@@ -36,5 +33,5 @@ class HttpMod : public AppModule {
 
    private:
     WebClient clients_[MAX_WEB_CLIENTS];
-    WebService *http_;
+    WebServer *web_;
 };

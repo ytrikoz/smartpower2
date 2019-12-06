@@ -4,6 +4,7 @@
 #include <FS.h>
 
 #include "StrUtils.h"
+#include "FSUtils.h"
 #include "Strings.h"
 #include "Wireless.h"
 
@@ -11,117 +12,89 @@ using namespace StrUtils;
 
 namespace SysInfo {
 
-String getCpuFreq() {
+const String getUniqueName() {
+    String str(APP_SHORT "_");
+    str += getChipId();
+    return str;
+}
+
+const String getCpuFreq() {
     String str(system_get_cpu_freq());
     str += "MHz";
     return str;
 }
 
-String getFreeSketch() {
-    String str = fmt_size(ESP.getFreeSketchSpace());
+const String getFreeSketch() {
+    String str = prettyBytes(ESP.getFreeSketchSpace());
     return str;
 }
 
-String getSketchSize() {
-    String str = fmt_size(ESP.getSketchSize());
+const String getSketchSize() {
+    String str = prettyBytes(ESP.getSketchSize());
     return str;
 }
 
-String getFlashSize() {
-    flash_size_map flash_map = system_get_flash_size_map();
-    uint8_t flash_size_mbit = 0;
-    switch (flash_map) {
-    case FLASH_SIZE_2M:
-        flash_size_mbit = 2;
-        break;
-    case FLASH_SIZE_4M_MAP_256_256:
-        flash_size_mbit = 4;
-        break;
-    case FLASH_SIZE_8M_MAP_512_512:
-        flash_size_mbit = 8;
-        break;
-    case FLASH_SIZE_16M_MAP_512_512:
-    case FLASH_SIZE_16M_MAP_1024_1024:
-        flash_size_mbit = 16;
-        break;
-    case FLASH_SIZE_32M_MAP_512_512:
-    case FLASH_SIZE_32M_MAP_1024_1024:
-    case FLASH_SIZE_32M_MAP_2048_2048:
-        flash_size_mbit = 32;
-        break;
-    case FLASH_SIZE_64M_MAP_1024_1024:
-        flash_size_mbit = 64;
-        break;
-    case FLASH_SIZE_128M_MAP_1024_1024:
-        flash_size_mbit = 128;
-        break;
+const String getFlashSize() {
+    uint8_t flash_size_mbit;
+    switch (system_get_flash_size_map()) {
+        case FLASH_SIZE_2M:
+            flash_size_mbit = 2;
+            break;
+        case FLASH_SIZE_4M_MAP_256_256:
+            flash_size_mbit = 4;
+            break;
+        case FLASH_SIZE_8M_MAP_512_512:
+            flash_size_mbit = 8;
+            break;
+        case FLASH_SIZE_16M_MAP_512_512:
+        case FLASH_SIZE_16M_MAP_1024_1024:
+            flash_size_mbit = 16;
+            break;
+        case FLASH_SIZE_32M_MAP_512_512:
+        case FLASH_SIZE_32M_MAP_1024_1024:
+        case FLASH_SIZE_32M_MAP_2048_2048:
+            flash_size_mbit = 32;
+            break;
+        case FLASH_SIZE_64M_MAP_1024_1024:
+            flash_size_mbit = 64;
+            break;
+        case FLASH_SIZE_128M_MAP_1024_1024:
+            flash_size_mbit = 128;
+            break;
+        default:
+            flash_size_mbit = 0;
     };
     String str(flash_size_mbit);
-    str += "Mbit";
+    str += "Mb";
     return str;
 }
 
-String getFlashMap() {
-    flash_size_map flash_map = system_get_flash_size_map();
+const String getFlashMap() {
     String str;
-    switch (flash_map) {
-    case FLASH_SIZE_4M_MAP_256_256:
-        str = "256KB+256KB";
-        break;
-    case FLASH_SIZE_2M:
-        str = "256KB";
-        break;
-    case FLASH_SIZE_8M_MAP_512_512:
-    case FLASH_SIZE_16M_MAP_512_512:
-    case FLASH_SIZE_32M_MAP_512_512:
-        str = "512KB+512KB";
-        break;
-    case FLASH_SIZE_16M_MAP_1024_1024:
-    case FLASH_SIZE_32M_MAP_1024_1024:
-    case FLASH_SIZE_64M_MAP_1024_1024:
-    case FLASH_SIZE_128M_MAP_1024_1024:
-        str = "1024KB+1024KB";
-        break;
-    case FLASH_SIZE_32M_MAP_2048_2048:
-        str = "2048KB+2048KB";
-        break;
+    switch (system_get_flash_size_map()) {
+        case FLASH_SIZE_4M_MAP_256_256:
+            str = F("256KB+256KB");
+            break;
+        case FLASH_SIZE_2M:
+            str = F("256KB");
+            break;
+        case FLASH_SIZE_8M_MAP_512_512:
+        case FLASH_SIZE_16M_MAP_512_512:
+        case FLASH_SIZE_32M_MAP_512_512:
+            str = F("512KB+512KB");
+            break;
+        case FLASH_SIZE_16M_MAP_1024_1024:
+        case FLASH_SIZE_32M_MAP_1024_1024:
+        case FLASH_SIZE_64M_MAP_1024_1024:
+        case FLASH_SIZE_128M_MAP_1024_1024:
+            str = F("1024KB+1024KB");
+            break;
+        case FLASH_SIZE_32M_MAP_2048_2048:
+            str = F("2048KB+2048KB");
+            break;
+        default:
+            str = FPSTR(str_unknown);
     };
-    return str;
-}
-
-String getFSUsed() {
-    FSInfo fsi;
-    SPIFFS.info(fsi);
-    String str = fmt_size(fsi.usedBytes);
-    return str;
-}
-
-String getFSTotal() {
-    FSInfo info;
-    SPIFFS.info(info);
-    String str = fmt_size(info.totalBytes);
-    return str;
-}
-
-String getFSList() {
-    FSInfo info;
-    SPIFFS.info(info);
-    String str = "FileList";
-    str += " {";
-    Dir dir = SPIFFS.openDir("/");
-    while (dir.next()) {
-        String fileName = dir.fileName();
-        size_t fileSize = dir.fileSize();
-        str += "FileName";
-        str += ":";
-        str += fileName.c_str();
-        str += ",";
-        str += " ";
-        str += "FileSize";
-        str += ":";
-        str += fmt_size(fileSize);
-    }
-    str += "}";
     return str;
 }
 
@@ -153,11 +126,6 @@ String getAPClientsInfo() {
     return str;
 }
 
-String getWifiChannel() {
-    String str(WiFi.channel());
-    return str;
-}
-
 String getVcc() {
     String str(ESP.getVcc() / 1000.0, 4);
     return str;
@@ -186,50 +154,53 @@ String getNetworkJson() {
     String str;
     if (!str.reserve(256))
         return str;
-    str += "[";
+    str += ',';
     str += asJsonObj(str_ssid, Wireless::hostSSID());
-    str += ",";
+    str += ',';
     str += asJsonObj(str_phy, Wireless::getWiFiPhyMode());
-    str += ",";
+    str += ',';
     str += asJsonObj(str_ch, Wireless::getWifiChannel());
-    str += ",";
+    str += ',';
     str += asJsonObj(str_mac, Wireless::hostMac());
-    str += ",";
+    str += ',';
     str += asJsonObj(str_host, Wireless::hostName());
-    str += ",";
+    str += ',';
     str += asJsonObj(str_ip, Wireless::hostIP().toString());
-    str += ",";
+    str += ',';
     str += asJsonObj(str_subnet, Wireless::hostSubnet().toString());
-    str += ",";
+    str += ',';
     str += asJsonObj(str_gateway, Wireless::hostGateway().toString());
-    str += ",";
+    str += ',';
     str += asJsonObj(str_dns, Wireless::hostDNS().toString());
-    str += "]";
+    str += ']';
     return str;
 }
 
 String getSystemJson() {
-    String str;
-    if (!str.reserve(64))
-        return str;
-    str += "[";
+    String str((char *)nullptr);
+    str.reserve(64);
+    str += '[';
     str += asJsonObj(str_cpu, getCpuFreq());
-    str += ",";
+    str += ',';
     str += asJsonObj(str_used, getFSUsed());
-    str += ",";
+    str += ',';
     str += asJsonObj(str_total, getFSTotal());
-    str += "]";
+    str += ']';
     return str;
 }
 
-String getHeapStats() {
-    uint32_t free = 0;
-    uint16_t max = 0;
-    uint8_t frag = 0;
+const String getHeapStats() {
+    uint32_t free;
+    uint16_t max;
+    uint8_t frag;
     ESP.getHeapStats(&free, &max, &frag);
-    char buf[32];
-    sprintf(buf, "free: %s frag: %d%%", fmt_size(free).c_str(), frag);
-    return String(buf);
+    String buf;
+    buf = "free: ";
+    buf += prettyBytes(free);
+    buf += " frag: ";
+    buf += frag;
+    buf += '%';
+    return buf;
 }
 
-} // namespace SysInfo
+}  // namespace SysInfo

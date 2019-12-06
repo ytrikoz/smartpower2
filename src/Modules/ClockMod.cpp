@@ -105,18 +105,15 @@ void ClockMod::onLoop() {
     // world time
     time_t now = getSystemTime();
     time_t estimated = epoch_ + (passed / 1000);
-    if (difftime(now, estimated))
-        onTimeChange(now);
-
-    updateStored(now, FORCED);
-
+    bool drift = difftime(now, estimated);
+    if (drift) onTimeChange(now);        
+    updateStored(now, drift);
     epoch_ = now;
 }
 
 void ClockMod::onTimeChange(const time_t now) {
-    if (timeChangeHandler) {
+    if (timeChangeHandler)
         timeChangeHandler(toLocal(now), difftime(now, epoch_));
-    }
 }
 
 time_t ClockMod::toLocal(time_t epoch) {

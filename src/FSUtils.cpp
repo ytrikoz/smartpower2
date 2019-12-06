@@ -7,6 +7,18 @@
 using namespace PrintUtils;
 using namespace StrUtils;
 
+const String getFSUsed() {
+    FSInfo fsi;
+    SPIFFS.info(fsi);    
+    return prettyBytes(fsi.usedBytes);
+}
+
+const String getFSTotal() {
+    FSInfo fsi;
+    SPIFFS.info(fsi);
+    return prettyBytes(fsi.totalBytes);
+}
+
 const String asDir(const String &pathStr) { return asDir(pathStr.c_str()); }
 
 const String asDir(const char *pathStr) {
@@ -53,7 +65,7 @@ size_t printDir(Print *p, const char *path) {
         auto name = dir.fileName();
         if (getNestedLevel(name) > max_level)
             continue;
-        n += println(p, name, '\t', fmt_size(dir.fileSize()));
+        n += println(p, name, '\t', prettyBytes(dir.fileSize()));
     }
     return n;
 }
@@ -67,7 +79,7 @@ size_t rmDir(Print *p, const char *path) {
         auto name = dir.fileName();
         if (getNestedLevel(name) > max_level)
             continue;
-        n += println(p, name, '\t', fmt_size(dir.fileSize()));
+        n += println(p, name, '\t', prettyBytes(dir.fileSize()));
         SPIFFS.remove(dir.fileName());
     }
     return n;

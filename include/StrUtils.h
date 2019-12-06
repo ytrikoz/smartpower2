@@ -51,7 +51,7 @@ String fmt_network(const IPAddress ipddr, const IPAddress subnet,
 String fmt_network(const IPAddress ipaddr, const IPAddress subnet,
                    const IPAddress gateway, const IPAddress dns);
 
-String fmt_size(size_t bytes);
+const String prettyBytes(size_t bytes);
 
 String fmt_mhz(uint32_t);
 
@@ -60,12 +60,6 @@ String fmt_mac(const uint8_t *);
 String fmt_rssi(int db);
 
 void strpadd(char *str, Align align, size_t size, const char ch = ' ');
-
-String getStr(String &str);
-
-String getStr(IPAddress &value);
-
-String getStr(int num);
 
 String getStrP(PGM_P strP, bool space = true);
 

@@ -114,7 +114,7 @@
 #define CRASH_MAX_SIZE 32 + 512 + 1
 #define CRASH_MAX_NUM 10
 
-#define HOLD_TIME_TO_RESET ONE_SECOND_ms * 5
+#define HOLD_TIME_TO_RESET_s 5
 
 static const char TIME_FORMAT[] PROGMEM = "%02d:%02d:%02d";
 static const char TIME_LONG_FORMAT[] PROGMEM = "%s %02d:%02d:%02d";

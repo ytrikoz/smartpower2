@@ -10,7 +10,6 @@
 #define POWER_SWITCH_PIN D6
 
 typedef std::function<void(PsuState, PsuStatus)> PsuStateChangeHandler;
-
 typedef std::function<void(PsuInfo)> PsuInfoHandler;
 
 class Psu : public AppModule {
@@ -19,7 +18,6 @@ class Psu : public AppModule {
         ina231_configure();
         mcp4652_init();
     };
-
     size_t onDiag(Print *p) override;
 
    protected:

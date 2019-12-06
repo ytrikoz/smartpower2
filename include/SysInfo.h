@@ -4,22 +4,26 @@
 
 namespace SysInfo {
 
+const String getUniqueName();
+const String getCpuFreq();
+const String getFreeSketch();
+const String getSketchSize();
+
+const String getFlashMap();
+const String getFlashSize();
+
 String getVcc();
-String getCpuFreq();
+
 String getChipId();
 
 String getVersionJson();
 String getNetworkJson();
 String getSystemJson();
 
-String getHeapStats();
-String getFreeSketch();
-String getFlashMap();
-String getFlashSize();
+const String getHeapStats();
 
-String getFSTotal();
-String getFSUsed();
-String getFSList();
+
+
 
 uint8_t getAPClientsNum();
 String getAPClientsInfo();

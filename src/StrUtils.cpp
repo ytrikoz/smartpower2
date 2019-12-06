@@ -175,7 +175,7 @@ const String fmt_ip_port(const char *ip, const uint16_t port) {
     return String(buf);
 }
 
-String fmt_size(size_t size) {
+const String prettyBytes(size_t size) {
     if (size < 1024)
         return String(size) + "b";
     else if (size < (1024 * 1024))
@@ -272,27 +272,6 @@ bool isip(const char *str) {
 
 bool isip(const String &str) { return isip(str.c_str()); }
 
-String getStr(String &str) { return str + " "; }
-
-String getStr(IPAddress &value) {
-    String res = value.toString() + " ";
-    return res;
-}
-
-String getStr(long unsigned int value) {
-    String res(value);
-    return res;
-}
-
-String getStr(const char *str) {
-    String res(str);
-    return res + " ";
-}
-
-String getStr(int num) {
-    String res(num, DEC);
-    return res + " ";
-}
 
 String getBoolStr(bool value, bool space) {
     return String(value ? F("true") : F("false"));

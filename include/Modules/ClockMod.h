@@ -42,7 +42,7 @@ class ClockMod : public AppModule {
     
     bool writeStored(time_t);
     bool readStored(time_t&);
-    void updateStored(const time_t epoch, bool forced);
+    void updateStored(const time_t epoch, bool forced = false);
    private:
     // ms    
     TimeChangeEvent timeChangeHandler;

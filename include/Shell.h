@@ -28,6 +28,8 @@ class Shell {
     bool getLastInput(String &);
     size_t print_prompt(Print *);
     size_t print_welcome(Print *);
+
+  private:
     SimpleCLI *cli;
     Termul *t;
     std::vector<String> history;

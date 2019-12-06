@@ -17,7 +17,7 @@ enum LogLevel { LEVEL_ERROR,
 enum AppModuleEnum {
     MOD_BTN,
     MOD_CLOCK,
-    MOD_HTTP,
+    MOD_WEB,
     MOD_DISPLAY,
     MOD_LED,
     MOD_NETSVC,

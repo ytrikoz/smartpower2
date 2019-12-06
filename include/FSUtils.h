@@ -3,6 +3,10 @@
 #include "Print.h"
 #include "Strings.h"
 
+const String getFSTotal();
+
+const String getFSUsed();
+
 const String asDir(const String &path);
 
 const String asDir(const char *path);

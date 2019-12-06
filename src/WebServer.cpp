@@ -1,4 +1,4 @@
-#include "WebService.h"
+#include "WebServer.h"
 
 #include "AppUtils.h"
 #include "PrintUtils.h"
@@ -10,15 +10,15 @@ using namespace StoreUtils;
 using namespace StrUtils;
 using namespace PrintUtils;
 
-WebService::WebService(uint16_t http, uint16_t websocket)
-    : port_(http), wsport_(websocket) {
+WebServer::WebServer(uint16_t http, uint16_t websocket) {
     server = new ESP8266WebServer();
-    socket = new WebSocketsServer(this->wsport_);
+    socket = new WebSocketsServer(WEBSOCKET_PORT);
+    
+    server->on("/", [this]() { handleRoot(); });
     server->on("/upload", HTTP_POST, [this]() { server->send(200); },
                [this]() { handleUpload(); });
 
     server->on("/filelist", HTTP_GET, [this]() { handleFileList(); });
-
     server->on("/cli", HTTP_GET, [this]() {
         if (server->args() > 0) {
             String command = "";
@@ -39,9 +39,8 @@ WebService::WebService(uint16_t http, uint16_t websocket)
     // Android captive portal.
     server->on("/generate_204", [this]() { handleRoot(); });//handleNoContent(); });
     // Microsoft captive portal.
-    server->on("/fwlink", [this]() {  handleRoot(); });//handleNoContent(); });
+    server->on("/fwlink", [this]() { handleRoot(); });//handleNoContent(); });
 
-    server->on("/", [this]() { handleRoot(); });
     server->onNotFound([this]() { handleUri(); });
 
     socket->onEvent(
@@ -55,7 +54,7 @@ WebService::WebService(uint16_t http, uint16_t websocket)
         ssdp = new SSDPClass();
         ssdp->setDeviceType(F("upnp:rootdevice"));
         ssdp->setSchemaURL(F("description.xml"));
-        ssdp->setHTTPPort(port_);
+        ssdp->setHTTPPort(HTTP_PORT);
         ssdp->setName(Wireless::hostName());
         ssdp->setModelName(APP_NAME);
         ssdp->setModelNumber(APP_VERSION);
@@ -72,50 +71,38 @@ WebService::WebService(uint16_t http, uint16_t websocket)
     }
 }
 
-void WebService::setRoot(const char *path) { strcpy(root_, path); }
+bool WebServer::start() {
+    char buf[64];
+    sprintf(buf, "ipaddr=\"%s\"\r\n", Wireless::hostIP().toString().c_str());
+    StoreUtils::storeString(FS_WEB_CONFIG, buf);
 
-bool WebService::start() {
-    String ip_str = Wireless::hostIP().toString();
-    String tmp = "ipaddr=\"";
-    tmp += ip_str;
-    tmp += "\"\r\n";
-    StoreUtils::storeString(FS_WEB_CONFIG, tmp);
-
-    server->begin(port_);
+    server->begin(HTTP_PORT);
     socket->begin();
-
     return true;
 }
 
-void WebService::stop() {
+void WebServer::stop() {
     server->stop();
     socket->close();
 }
 
-void WebService::loop() {
+void WebServer::loop() {
     server->handleClient();
     socket->loop();
 }
 
-void WebService::handleRoot() {
+void WebServer::handleRoot() {
     if (!captivePortal())
         handleUri();
 }
 
-void WebService::handleUri() {
+void WebServer::handleUri() {
     String uri = server->uri();
     if (!sendFile(uri))
         handleNotFound(uri);
 }
 
-void WebService::handleNotFound(String &uri) {
-#ifdef DEBUG_WEB_SERVICE
-    DEBUG.print(getIdentStrP(str_http));
-    DEBUG.print(StrUtils::getStrP(str_file));
-    DEBUG.print(StrUtils::getStrP(str_not));
-    DEBUG.print(StrUtils::getStrP(str_found));
-    DEBUG.println(uri);
-#endif
+void WebServer::handleNotFound(String &uri) {
     String str = F("File Not Found\n");
     str += F("\nURI: ");
     str += server->uri();
@@ -128,119 +115,68 @@ void WebService::handleNotFound(String &uri) {
     for (uint8_t i = 0; i < server->args(); i++)
         str += server->argName(i) + ": " + server->arg(i) + '\n';
 
-    server->sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    server->sendHeader("Pragma", "no-cache");
-    server->sendHeader("Expires", "-1");
     server->send(404, "text/plain", str);
 }
 
-void WebService::sendTxt(uint8_t num, String &payload) {
-#ifdef DEBUG_WEB_SERVICE
-    out->print(getIdentStrP(str_http));
-    out->print('#');
-    out->print(getStr(num));
-    out->print(StrUtils::getStrP(str_arrow_dest));
-    out->println(payload);
-#endif
+void WebServer::sendTxt(const uint8_t num, String &payload) {
     socket->sendTXT(num, payload);
 }
 
-void WebService::handleNoContent() {
+void WebServer::handleNoContent() {
     server->send(204, "text/plan", "No Content");
 }
 
-void WebService::handleWebSocketEvent(uint8_t num, WStype_t type,
+void WebServer::handleWebSocketEvent(uint8_t num, WStype_t type,
                                       uint8_t *payload, size_t lenght) {
-#ifdef DEBUG_WEB_SERVICE
-    out->print(getIdentStrP(str_http));
-    out->print('#');
-    out->print(getStr(num));
-    ;
-#endif
     switch (type) {
     case WStype_CONNECTED:
-#ifdef DEBUG_WEB_SERVICE
-        out->println(StrUtils::getStrP(str_connected));
-#endif
         onConnectEvent(num);
         return;
     case WStype_DISCONNECTED:
-#ifdef DEBUG_WEB_SERVICE
-        out->println(StrUtils::getStrP(str_disconnected));
-#endif
         onDisconnectEvent(num);
         return;
     case WStype_TEXT: {
-#ifdef DEBUG_WEB_SERVICE
-        out->print(StrUtils::getStrP(str_arrow_src));
-        out->println((char *)&payload[0]);
-#endif
         onDataEvent(num, (char *)&payload[0]);
         return;
     }
     case WStype_BIN:
-#ifdef DEBUG_WEB_SERVICE
-        out->print(StrUtils::getStrP(str_arrow_src));
-        out->println(StrUtils::formatSize(lenght).c_str());
-#endif
         return;
     case WStype_PING:
-#ifdef DEBUG_WEB_SERVICE
-        out->println(StrUtils::getStrP(str_ping, false));
-#endif
         return;
     case WStype_PONG:
-#ifdef DEBUG_WEB_SERVICE
-        out->println(StrUtils::getStrP(str_pong, false));
-#endif
         return;
     default:
-#ifdef DEBUG_WEB_SERVICE
-        out->print(StrUtils::getStrP(str_unhandled));
-        out->println(type);
-#endif
         return;
     }
 }
 
-bool WebService::sendFile(String uri) {
+bool WebServer::sendFile(String uri) {
     String path = getFilePath(uri);
     return sendFileContent(path + ".gz") || sendFileContent(path);
 }
 
-String WebService::getFilePath(String uri) {
-    String path = String(root_);
+String WebServer::getFilePath(String uri) {
+    String path(FS_WEB_ROOT);
     path += uri;
-    if (uri.endsWith("/"))
-        path.concat("index.html");
+    if (uri.endsWith("/")) path.concat("index.html");
+    println(&DEBUG, uri);
     return path;
 }
 
-bool WebService::sendFileContent(String path) {
+bool WebServer::sendFileContent(String path) {
     size_t sent = 0;
+    println(&DEBUG, path);
     if (SPIFFS.exists(path)) {
-        String type;
-        if (server->hasArg("download"))
-            type = F("application/octet-stream");
-        else
-            type = getContentType(path);
+        String type = server->hasArg("download")? "application/octet-stream": getContentType(path);
         File f = SPIFFS.open(path, "r");
         sent = server->streamFile(f, type);
         f.close();
-
-#ifdef DEBUG_WEB_SERVICE
-        out->print(getIdentStrP(str_http));
-        out->print(path);
-        out->print(' ');
-        out->println(StrUtils::formatSize(sent).c_str());
-#endif
-        return true;
     }
     return sent;
 }
 
-void WebService::handleFileList() {
-    String path = server->hasArg("path") ? server->arg("path") : root_;
+void WebServer::handleFileList() {
+    String path = server->hasArg("path") ? server->arg("path") : FS_WEB_ROOT;
     if (!path.startsWith("/"))
         path = "/" + path;
     Dir dir = SPIFFS.openDir(path);
@@ -249,7 +185,7 @@ void WebService::handleFileList() {
         File entry = dir.openFile("r");
         if (output != "[")
             output += ',';
-        bool isDir = false;
+        bool isDir = dir.isDirectory();
         output += "{\"type\":\"";
         output += (isDir) ? "dir" : "file";
         output += "\",\"name\":\"";
@@ -261,7 +197,7 @@ void WebService::handleFileList() {
     server->send(200, "text/json", output);
 }
 
-void WebService::handleUpload() {
+void WebServer::handleUpload() {
     HTTPUpload &upload = server->upload();
     if (upload.status == UPLOAD_FILE_START) {
         int ac = server->args();
@@ -311,12 +247,7 @@ void WebService::handleUpload() {
     }
 }
 
-bool WebService::captivePortal() {
-#ifdef DEBUG_WEB_SERVICE
-    out->print(StrUtils::getStrP(str_http));
-    out->print(StrUtils::getStrP(str_redirected));
-    out->println(server->hostHeader());
-#endif
+bool WebServer::captivePortal() {
     if (!isip(server->hostHeader()) &&
         server->hostHeader() != Wireless::hostName()) {
         server->sendHeader(
@@ -332,39 +263,41 @@ bool WebService::captivePortal() {
     return false;
 }
 
-void WebService::setOnClientConnection(SocketConnectionEventHandler h) {
+void WebServer::setOnClientConnection(SocketConnectionEventHandler h) {
     onConnectEvent = h;
 }
 
-void WebService::setOnClientDisconnected(SocketConnectionEventHandler h) {
+void WebServer::setOnClientDisconnected(SocketConnectionEventHandler h) {
     onDisconnectEvent = h;
 }
 
-void WebService::setOnClientData(SocketDataEventHandler h) { onDataEvent = h; }
+void WebServer::setOnClientData(SocketDataEventHandler h) { onDataEvent = h; }
 
-const char *WebService::getContentType(String filename) {
+String WebServer::getContentType(String filename) {
+    String result;
     if ((filename.endsWith(".htm")) || (filename.endsWith(".html"))) {
-        return "text/html";
+        result = "text/html";
     } else if (filename.endsWith(".css")) {
-        return "text/css";
+        result = "text/css";
     } else if (filename.endsWith(".js")) {
-        return "application/javascript";
+        result = "application/javascript";
     } else if (filename.endsWith(".png")) {
-        return "image/png";
+        result = "image/png";
     } else if (filename.endsWith(".gif")) {
-        return "image/gif";
+        result = "image/gif";
     } else if (filename.endsWith(".jpg")) {
-        return "image/jpeg";
+        result = "image/jpeg";
     } else if (filename.endsWith(".ico")) {
-        return "image/x-icon";
+        result = "image/x-icon";
     } else if (filename.endsWith(".xml")) {
-        return "text/xml";
+        result = "text/xml";
     } else if (filename.endsWith(".pdf")) {
-        return "application/x-pdf";
+        result = "application/x-pdf";
     } else if (filename.endsWith(".zip")) {
-        return "application/x-zip";
+        result = "application/x-zip";
     } else if (filename.endsWith(".gz")) {
-        return "application/x-gzip";
-    }
-    return "text/plain";
+        result = "application/x-gzip";
+    } else 
+        result =  "text/plain";
+    return result;
 }
