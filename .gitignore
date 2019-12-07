@@ -4,3 +4,6 @@
 .vscode
 smartpower2.code-workspace
 lib
+node_modules
+hw
+scripts

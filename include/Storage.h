@@ -19,20 +19,18 @@ class Storage : public Storable<C> {
         this->data_->clear();
         while (file_.available()) {
             auto buf = file_.readStringUntil('\n');
-             this->data_->put(buf);
-            yield();
+            this->data_->put(buf);
         }
-        return  this->data_->available();
+        return this->data_->available();
     };
 
     bool doWrite() {
-        while ( this->data_->available()) {
+        while (this->data_->available()) {
             String buf;
-             this->data_->get(buf);
+            this->data_->get(buf);
             file_.println(buf);
-            yield();
         }
-        return ! this->data_->available();
+        return !this->data_->available();
     };
 
     bool doClose() {
@@ -58,9 +56,7 @@ class Storage : public Storable<C> {
     S file_;
 };
 
-
 class FileStorage : public Storage<File, String> {
    public:
-    FileStorage(const char* name): Storage(name) {};
-    
+    FileStorage(const char* name) : Storage(name){};
 };

@@ -4,6 +4,36 @@
 #include "EditBuffer.h"
 #include "Strings.h"
 
+#define A_NORMAL 0x0000    // normal
+#define A_UNDERLINE 0x0001 // underline
+#define A_REVERSE 0x0002   // reverse
+#define A_BLINK 0x0004     // blink
+#define A_BOLD 0x0008      // bold
+#define A_DIM 0x0010       // dim
+#define A_STANDOUT A_BOLD  // standout (same as bold)
+
+#define F_BLACK 0x0100   // foreground black
+#define F_RED 0x0200     // foreground red
+#define F_GREEN 0x0300   // foreground green
+#define F_BROWN 0x0400   // foreground brown
+#define F_BLUE 0x0500    // foreground blue
+#define F_MAGENTA 0x0600 // foreground magenta
+#define F_CYAN 0x0700    // foreground cyan
+#define F_WHITE 0x0800   // foreground white
+#define F_YELLOW F_BROWN // some terminals show brown as yellow (with A_BOLD)
+#define F_COLOR 0x0F00   // foreground mask
+
+#define B_BLACK 0x1000   // background black
+#define B_RED 0x2000     // background red
+#define B_GREEN 0x3000   // background green
+#define B_BROWN 0x4000   // background brown
+#define B_BLUE 0x5000    // background blue
+#define B_MAGENTA 0x6000 // background magenta
+#define B_CYAN 0x7000    // background cyan
+#define B_WHITE 0x8000   // background white
+#define B_YELLOW B_BROWN // some terminals show brown as yellow (with A_BOLD)
+#define B_COLOR 0xF000   // background mask
+
 #define CHAR_NULL 0x00
 #define CHAR_BEL 0x07
 #define CHAR_BS 0x08

@@ -2,6 +2,8 @@
 
 #include "Config.h"
 #include "Strings.h"
+#include "PrintUtils.h"
+#include "StoreUtils.h"
 
 namespace AppUtils {
 
@@ -10,12 +12,6 @@ static const char *mod_name[APP_MODULES] PROGMEM = {
 
 inline String boolStr(bool value) {
     return String(value ? FPSTR(str_true) : FPSTR(str_false));
-}
-
-inline char *moduleStr(char *buf, uint8_t index) {
-    PGM_P strP = (char *)pgm_read_ptr(&(mod_name[index]));
-    strcpy_P(buf, strP);
-    return buf;
 }
 
 inline String getModuleName(uint8_t index) {
@@ -31,17 +27,8 @@ inline char *getModuleName(char *buf, AppModuleEnum mod) {
     return buf;
 }
 
-inline char *paramStrP(char *buf, PGM_P strP) {
-    buf = strcpy_P(buf, strP);
-    size_t len = strlen(buf);
-    buf[len++] = ':';
-    buf[len++] = ' ';
-    buf[len++] = '\x00';
-    return buf;
-}
-
 inline String getNetworkConfig(Config *cfg) {
-    String res = String(SET_NETWORK);
+    String res;
     res += cfg->getValueAsByte(WIFI);
     res += ',';
     res += cfg->getValueAsString(SSID);

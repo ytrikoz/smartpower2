@@ -141,11 +141,9 @@ IPAddress hostGateway() {
     return res;
 }
 
-IPAddress hostIP() {
-    IPAddress res(IPADDR_NONE);
+const IPAddress hostIP() {
+    IPAddress res;
     switch (getMode()) {
-        case NETWORK_OFF:
-            break;
         case NETWORK_AP:
             res = hostAP_IP();
             break;
@@ -153,6 +151,8 @@ IPAddress hostIP() {
         case NETWORK_AP_STA:
             res = hostSTA_IP();
             break;
+        default:
+            res = IPADDR_NONE;
     }
     return res;
 }
@@ -366,7 +366,7 @@ void onNetworkUp() { lastUp = millis(); }
 void onNetworkDown() { lastDown = millis(); }
 
 NetworkMode getMode() {
-    networkMode = (NetworkMode)WiFi.getMode();
+    networkMode = (NetworkMode) WiFi.getMode();
     return networkMode;
 }
 
@@ -460,6 +460,12 @@ bool scanWiFi(const char *ssid) {
     delay(100);
 
     return discovered;
+}
+
+
+const uint8_t getAPClients() {
+    return (networkMode == Wireless::NETWORK_AP ||
+        networkMode == Wireless::NETWORK_AP_STA) ? wifi_softap_get_station_num(): 0;
 }
 
 String getWifiChannel() { return String(WiFi.channel()); }

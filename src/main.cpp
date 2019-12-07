@@ -64,7 +64,7 @@ void setup() {
     initWire();
 
     if (!initFS()) {
-        println_moduleP_nameP_value(&Serial, str_spiffs, str_error, 0);
+        println(&Serial, FPSTR(str_spiffs), FPSTR(str_error));
         return;
     };
 
@@ -95,10 +95,15 @@ void setup() {
         beforeStart();
         app.start();
     }
+
     afterStart();
+
+    setupDone = true;
 }
 
 void loop() {
+    if (!setupDone) return;
+
     if (bw->isSafeBootMode())
         app.loopSafe();
     else
@@ -108,6 +113,8 @@ void loop() {
 void beforeStart() {
     File f = SPIFFS.open(FS_START_FLAG, "w");
     f.print(APP_VERSION);
+    f.print(__DATE__);
+    f.print(__TIME__);
     f.flush();
     f.close();
 }
@@ -117,17 +124,16 @@ void afterStart() { SPIFFS.remove(FS_START_FLAG); }
 void clearBootError() { SPIFFS.remove(FS_START_FLAG); }
 
 void initSerial() {
-    INFO.begin(115200);
-    INFO.println();
-    print_welcome(&INFO, " Welcome ", APP_NAME " v" APP_VERSION,
-                  " " BUILD_DATE " ");
+    Serial.begin(115200);
+    Serial.println();
+    print_welcome(&INFO, " Welcome ", APP_NAME " v" APP_VERSION, " " BUILD_DATE " ");
 }
 
 void initWire() { Wire.begin(I2C_SDA, I2C_SCL); }
 
 bool initFS() { return SPIFFS.begin(); }
 
-void initApp() { app.init(&INFO); }
+void initApp() { app.init(&Serial); }
 
 /*
  * CRASH REPORT

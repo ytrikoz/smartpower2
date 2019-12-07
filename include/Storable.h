@@ -14,7 +14,7 @@ class Storable {
         strncpy(name_, name, FILENAME_SIZE);
     }
 
-    T data(){ return data_;}
+    T data() { return data_; }
 
     String getStoreErrorStr(const StoreError error) {
         String str;

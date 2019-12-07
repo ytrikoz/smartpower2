@@ -383,7 +383,7 @@ void onClock(cmd *c) {
         }
         case ACTION_TIME: {
             time_t local = app.clock()->getLocal();
-            println(out, ctime(&local));
+            println(out, TimeUtils::format_time(local));
             break;
         }
         default: {
@@ -403,7 +403,7 @@ void onClock(cmd *c) {
     //     out->print(' ');
     //     out->println(paramStr);
     // }
-} 
+}
 
 void onWifiScan(cmd *c) {
     Command cmd(c);
@@ -536,20 +536,15 @@ void onRemove(cmd *c) {
 
 void onRun(cmd *c) {
     Command cmd(c);
-    String name = getFileStr(cmd);
-    if (SPIFFS.exists(name)) {
-        auto storage = FileStorage(name.c_str());
-        auto container = Container<String>();
-        storage.use(&container);
-        if (storage.read()) {
-            while (container.available()) {
-                String str;
-                if (container.get(str)) app.shell()->run(str.c_str());
-                yield();
-            }
-        } else {
-            println(out, FPSTR(str_failed));
-        }
+    auto name = getFileStr(cmd);
+    auto store = FileStorage(name.c_str());
+    auto data = store.get();
+    if (data->available()) {
+        String buf;
+        while (data->get(buf))
+            app.shell()->run(buf);
+    } else {
+        println(out, FPSTR(str_failed));
     }
 }
 

@@ -243,50 +243,50 @@ void LcdDisplay::loadBank(CharBank bank, bool force) {
 #endif
     this->bank = bank;
     switch (bank) {
-    case BANK_PLOT:
-        lcd->createChar(0, char_solid);
-        lcd->createChar(1, plot_1_8);
-        lcd->createChar(2, plot_2_8);
-        lcd->createChar(3, plot_3_8);
-        lcd->createChar(4, plot_4_8);
-        lcd->createChar(5, plot_5_8);
-        lcd->createChar(6, plot_6_8);
-        lcd->createChar(7, plot_7_8);
-        break;
-    case BANK_PROGRESS:
-        lcd->createChar(0, progress_start_4_4);
-        lcd->createChar(1, progress_0_8);
-        lcd->createChar(2, progress_8_8);
-        lcd->createChar(3, progress_end_0_4);
-        break;
-    case BANK_PROGRESS_START:
-        lcd->createChar(4, progress_start_0_4);
-        lcd->createChar(5, progress_start_1_4);
-        lcd->createChar(6, progress_start_2_4);
-        lcd->createChar(7, progress_start_3_4);
-    case BANK_PROGRESS_1_TO_4:
-        lcd->createChar(4, progress_1_8);
-        lcd->createChar(5, progress_2_8);
-        lcd->createChar(6, progress_3_8);
-        lcd->createChar(7, progress_4_8);
-        break;
-    case BANK_PROGRESS_4_TO_7:
-        lcd->createChar(4, progress_4_8);
-        lcd->createChar(5, progress_5_8);
-        lcd->createChar(6, progress_6_8);
-        lcd->createChar(7, progress_7_8);
-        break;
-    case BANK_PROGRESS_END:
-        lcd->createChar(4, progress_end_1_4);
-        lcd->createChar(5, progress_end_2_4);
-        lcd->createChar(6, progress_end_3_4);
-        lcd->createChar(7, progress_end_4_4);
-        break;
-    case BANK_NONE:
-        for (uint8_t i = 0; i < 8; ++i)
-            lcd->createChar(i, char_empty);
-    default:
-        break;
+        case BANK_PLOT:
+            lcd->createChar(0, char_solid);
+            lcd->createChar(1, plot_1_8);
+            lcd->createChar(2, plot_2_8);
+            lcd->createChar(3, plot_3_8);
+            lcd->createChar(4, plot_4_8);
+            lcd->createChar(5, plot_5_8);
+            lcd->createChar(6, plot_6_8);
+            lcd->createChar(7, plot_7_8);
+            break;
+        case BANK_PROGRESS:
+            lcd->createChar(0, progress_start_4_4);
+            lcd->createChar(1, progress_0_8);
+            lcd->createChar(2, progress_8_8);
+            lcd->createChar(3, progress_end_0_4);
+            break;
+        case BANK_PROGRESS_START:
+            lcd->createChar(4, progress_start_0_4);
+            lcd->createChar(5, progress_start_1_4);
+            lcd->createChar(6, progress_start_2_4);
+            lcd->createChar(7, progress_start_3_4);
+        case BANK_PROGRESS_1_TO_4:
+            lcd->createChar(4, progress_1_8);
+            lcd->createChar(5, progress_2_8);
+            lcd->createChar(6, progress_3_8);
+            lcd->createChar(7, progress_4_8);
+            break;
+        case BANK_PROGRESS_4_TO_7:
+            lcd->createChar(4, progress_4_8);
+            lcd->createChar(5, progress_5_8);
+            lcd->createChar(6, progress_6_8);
+            lcd->createChar(7, progress_7_8);
+            break;
+        case BANK_PROGRESS_END:
+            lcd->createChar(4, progress_end_1_4);
+            lcd->createChar(5, progress_end_2_4);
+            lcd->createChar(6, progress_end_3_4);
+            lcd->createChar(7, progress_end_4_4);
+            break;
+        case BANK_NONE:
+            for (uint8_t i = 0; i < 8; ++i)
+                lcd->createChar(i, char_empty);
+        default:
+            break;
     }
 }
 
@@ -376,13 +376,13 @@ void LcdDisplay::drawPlot(PlotData *data, size_t col_start) {
         for (uint8_t row = LCD_ROWS; row > 0; row--) {
             lcd->setCursor(col, row - 1);
             if (y >= 8) {
-                lcd->write(0); // Full
+                lcd->write(0);  // Full
                 y -= 8;
             } else if (y > 0) {
-                lcd->write(y); // Partial
+                lcd->write(y);  // Partial
                 y = 0;
             } else if (y == 0) {
-                lcd->write('\x20'); // Empty
+                lcd->write('\x20');  // Empty
             }
         }
     }

@@ -13,17 +13,18 @@ class ClockMod : public AppModule {
 
    public:
     void setOnChange(TimeChangeEvent);
-    
+
     time_t getLocal();
     time_t getUtc();
     time_t getUptime();
+
    public:
     size_t onDiag(Print *p) override;
 
    protected:
     bool onInit() override;
     bool onStart() override;
-    void onLoop() override; 
+    void onLoop() override;
 
    private:
     time_t toLocal(time_t epoch);
@@ -39,12 +40,13 @@ class ClockMod : public AppModule {
     int getBiasInMinutes();
     time_t getStoreInterval();
     time_t getStored();
-    
+
     bool writeStored(time_t);
-    bool readStored(time_t&);
+    bool readStored(time_t &);
     void updateStored(const time_t epoch, bool forced = false);
+
    private:
-    // ms    
+    // ms
     TimeChangeEvent timeChangeHandler;
     unsigned long uptime_;
     time_t epoch_;

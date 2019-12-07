@@ -11,21 +11,18 @@ using namespace PrintUtils;
 #define MIN_DATETIME 1575158400
 #define FORCED true
 
-ClockMod::ClockMod() : AppModule(MOD_CLOCK){
-};
+ClockMod::ClockMod() : AppModule(MOD_CLOCK){};
 
-ClockMod::~ClockMod() {
-}
+ClockMod::~ClockMod() {}
 
 size_t ClockMod::onDiag(Print* p) {
     DynamicJsonDocument doc(256);
-    JsonObject root = doc.createNestedObject();
 
-    root[FPSTR(str_offset)] = getBiasInMinutes();
-    root[FPSTR(str_interval)] = getStoreInterval();
-    root[FPSTR(str_stored)] = getStored();
-    root[FPSTR(str_uptime)] = getUptime();
-    root[FPSTR(str_local)] = getLocal();
+    doc[FPSTR(str_offset)] = getBiasInMinutes();
+    doc[FPSTR(str_interval)] = getStoreInterval();
+    doc[FPSTR(str_stored)] = getStored();
+    doc[FPSTR(str_uptime)] = getUptime();
+    doc[FPSTR(str_local)] = getLocal();
 
     return serializeJsonPretty(doc, *p);
 }
@@ -45,10 +42,10 @@ bool ClockMod::onStart() {
     if (!isTimeSet()) {
         print_ident(out, FPSTR(str_clock));
         if (restoreState()) {
-            println(out, FPSTR(str_restored), epoch_);
+            println(out, FPSTR(str_restored), TimeUtils::format_time(epoch_));
             setSystemTime(epoch_);
         } else {
-            println(out, FPSTR(str_not), FPSTR(str_set));
+            println(out, FPSTR(str_not), FPSTR(str_stored));
         }
     }
     setSntp();
@@ -135,19 +132,15 @@ const timezone ClockMod::getTimeZone() {
 void ClockMod::setSystemTime(const time_t epoch) {
     timeval tv{epoch, 0};
     timezone tz = getTimeZone();
-    if (settimeofday(&tv, &tz) == -1)
-        println(out, "settimeofday: error");
+    settimeofday(&tv, &tz);
 }
 
 time_t ClockMod::getSystemTime() {
     timeval tv{0, 0};
     timezone tz = getTimeZone();
     time_t epoch = 0;
-    if (gettimeofday(&tv, &tz) != -1) {
+    if (gettimeofday(&tv, &tz) != -1)
         epoch = tv.tv_sec;
-    } else {
-        println(out, "gettimeofday: error");
-    }
     return epoch;
 }
 

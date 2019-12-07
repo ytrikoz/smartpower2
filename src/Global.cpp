@@ -1,5 +1,4 @@
 #include "Global.h"
 
-SimpleCLI *cli;
-WebClient clients[MAX_WEB_CLIENTS];
+SimpleCLI* cli;
 App app;

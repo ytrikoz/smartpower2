@@ -8,7 +8,7 @@
 #include "Strings.h"
 #include "TimeUtils.h"
 
-typedef std::function<void(time_t local, double drift)> TimeChangeEvent;
+typedef std::function<void(const time_t local, double drift)> TimeChangeEvent;
 
 enum LogLevel { LEVEL_ERROR,
                 LEVEL_WARN,

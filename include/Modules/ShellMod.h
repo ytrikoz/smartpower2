@@ -11,7 +11,8 @@ class ShellMod : public AppModule {
     void setSerial();
     void setRemote(Stream *);
     bool isActive();
-    bool run(const char *strCmd);
+    bool run(const char *);
+    bool run(const String&);
 
   public:
     ShellMod() : AppModule(MOD_SHELL){};

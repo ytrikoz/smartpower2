@@ -1,5 +1,6 @@
 #include "SysInfo.h"
 
+#include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 #include <FS.h>
 
@@ -98,14 +99,6 @@ const String getFlashMap() {
     return str;
 }
 
-uint8_t getAPClientsNum() {
-    uint res = 0;
-    if (Wireless::getMode() == Wireless::NETWORK_AP ||
-        Wireless::getMode() == Wireless::NETWORK_AP_STA)
-        res = wifi_softap_get_station_num();
-    return res;
-}
-
 String getAPClientsInfo() {
     struct station_info *station = wifi_softap_get_station_info();
     struct station_info *next_station;
@@ -136,57 +129,80 @@ String getChipId() {
     return str;
 }
 
-String getVersionJson() {
-    String str;
-    if (!str.reserve(128))
-        return str;
-    str += "[";
-    str += asJsonObj(str_fw, APP_VERSION APP_BUILD_COMMIT);
-    str += ",";
-    str += asJsonObj(str_sdk, system_get_sdk_version());
-    str += ",";
-    str += asJsonObj(str_core, ESP.getCoreVersion());
-    str += "]";
-    return str;
-}
+const String getVersionJson() {
+    DynamicJsonDocument doc(256);
 
-String getNetworkJson() {
-    String str;
-    if (!str.reserve(256))
-        return str;
-    str += ',';
-    str += asJsonObj(str_ssid, Wireless::hostSSID());
-    str += ',';
-    str += asJsonObj(str_phy, Wireless::getWiFiPhyMode());
-    str += ',';
-    str += asJsonObj(str_ch, Wireless::getWifiChannel());
-    str += ',';
-    str += asJsonObj(str_mac, Wireless::hostMac());
-    str += ',';
-    str += asJsonObj(str_host, Wireless::hostName());
-    str += ',';
-    str += asJsonObj(str_ip, Wireless::hostIP().toString());
-    str += ',';
-    str += asJsonObj(str_subnet, Wireless::hostSubnet().toString());
-    str += ',';
-    str += asJsonObj(str_gateway, Wireless::hostGateway().toString());
-    str += ',';
-    str += asJsonObj(str_dns, Wireless::hostDNS().toString());
-    str += ']';
-    return str;
+    JsonObject doc_0 = doc.createNestedObject();
+    doc_0[FPSTR(str_fw)] = APP_VERSION APP_BUILD_COMMIT;
+
+    JsonObject doc_1 = doc.createNestedObject();
+    doc_1[FPSTR(str_sdk)] = system_get_sdk_version();
+
+    JsonObject doc_2 = doc.createNestedObject();
+    doc_2[FPSTR(str_core)] = ESP.getCoreVersion();
+   
+    String json;
+    serializeJson(doc, json);
+    return json;
 }
 
 String getSystemJson() {
-    String str((char *)nullptr);
-    str.reserve(64);
-    str += '[';
-    str += asJsonObj(str_cpu, getCpuFreq());
-    str += ',';
-    str += asJsonObj(str_used, getFSUsed());
-    str += ',';
-    str += asJsonObj(str_total, getFSTotal());
-    str += ']';
-    return str;
+    DynamicJsonDocument doc(256);
+
+    JsonObject doc_0 = doc.createNestedObject();
+    doc_0[FPSTR(str_cpu)] = getCpuFreq();
+
+    JsonObject doc_1 = doc.createNestedObject();
+    doc_1[FPSTR(str_chip)] = getChipId();
+
+    JsonObject doc_2 = doc.createNestedObject();
+    doc_2[FPSTR(str_file)] = getFSStats();
+
+    JsonObject doc_3 = doc.createNestedObject();
+    doc_3[FPSTR(str_heap)] = getHeapStats();
+
+    String json;
+    serializeJson(doc, json);
+    return json;
+}
+
+String getNetworkJson() {
+    DynamicJsonDocument doc(512);
+
+    JsonObject doc_0 = doc.createNestedObject();
+    doc_0[FPSTR(str_ssid)] = Wireless::hostSSID();
+
+    JsonObject doc_1 = doc.createNestedObject();
+    doc_1[FPSTR(str_phy)] = Wireless::getWiFiPhyMode();
+
+    JsonObject doc_2 = doc.createNestedObject();
+    doc_2[FPSTR(str_ch)] = Wireless::getWifiChannel();
+
+    JsonObject doc_3 = doc.createNestedObject();
+    doc_3[FPSTR(str_mac)] = Wireless::hostMac();
+
+    JsonObject doc_4 = doc.createNestedObject();
+    doc_4[FPSTR(str_host)] = Wireless::hostName();
+
+    JsonObject doc_5 = doc.createNestedObject();
+    doc_5[FPSTR(str_ip)] = Wireless::hostIP().toString();
+
+    JsonObject doc_6 = doc.createNestedObject();
+    doc_6[FPSTR(str_subnet)] =  Wireless::hostSubnet().toString();
+    
+    JsonObject doc_7 = doc.createNestedObject();
+    doc_7[FPSTR(str_gateway)] =  Wireless::hostGateway().toString();
+    
+    JsonObject doc_8 = doc.createNestedObject();
+    doc_8[FPSTR(str_dns)] = Wireless::hostDNS().toString();
+    
+    String json;
+    serializeJson(doc, json);
+    return json;
+}
+
+const String getFSStats() {
+    return getFSUsed() + " / " + getFSTotal();
 }
 
 const String getHeapStats() {

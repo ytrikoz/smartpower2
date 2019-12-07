@@ -16,14 +16,14 @@ class Config {
    public:
     Config();
     ~Config();
-    bool load(const char *str, size_t size);
-    void setOnConfigChaged(ConfigChangeEventHandler);
+    void setOnChange(ConfigChangeEventHandler);
     void resetDefault(ConfigItem param);
-
-    const String asString(const ConfigItem param);
+    bool fromString(const String& str);
+    String toString(const ConfigItem param) const;
     //
     bool setValueAsString(const ConfigItem param, String &str);
     bool setValueAsString(const ConfigItem param, const char *str);
+    bool setValueAsStringByName(const String& name, const String& value);
     bool setValueAsStringByName(const char *name, const char *value);
     bool setValueChar(const ConfigItem param, const char ch);
     bool setValueBool(const ConfigItem param, const bool value);
@@ -32,8 +32,8 @@ class Config {
     bool setValueInt(const ConfigItem param, const uint16_t value);
     bool setValueFloat(const ConfigItem param, const float value);
 
-    ConfigDefinition getDefinition(size_t index);
-    const char *getName(ConfigItem param);
+    ConfigDefinition getDefinition(size_t index) const;
+    const char *getName(ConfigItem param) const;
     const size_t getSize(ConfigItem param);
     const char *getDefaultValue(ConfigItem param);
     const char *getDefaultValue(uint8_t index);
@@ -44,7 +44,7 @@ class Config {
     uint16_t getValueAsInt(ConfigItem param);
     IPAddress getValueAsIPAddress(ConfigItem param);
     float getValueAsFloat(ConfigItem param);
-    const char *getValueAsString(ConfigItem param);
+    const char *getValueAsString(ConfigItem param) const;
 
     bool getConfig(const char *name, ConfigItem &param);
     bool getConfig(String &name, ConfigItem &param, size_t &size);

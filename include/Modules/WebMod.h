@@ -3,7 +3,7 @@
 #include <Arduino.h>
 
 #include "AppModule.h"
-#include "WebServer.h"
+#include "WebServer/WebServer.h"
 
 class WebMod : public AppModule {
    public:
@@ -32,6 +32,6 @@ class WebMod : public AppModule {
     void onHttpClientData(uint8_t n, String data);
 
    private:
-    WebClient clients_[MAX_WEB_CLIENTS];
+    WebClient clients_[WEB_SERVER_CLIENT_MAX];
     WebServer *web_;
 };

@@ -33,6 +33,8 @@ void ShellMod::setRemote(Stream *stream) {
     shell.setTerminal(&remote);
 }
 
-bool ShellMod::run(const char *cmdStr) { return shell.run(cmdStr); }
+bool ShellMod::run(const String& cmd) { return run(cmd.c_str()); }
+
+bool ShellMod::run(const char *cmd) { return shell.run(cmd); }
 
 bool ShellMod::isActive() { return shell.isActive(); }

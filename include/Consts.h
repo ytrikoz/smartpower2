@@ -50,18 +50,18 @@
 
 #define FILENAME_SIZE 31
 
-#define FS_CONFIG_ROOT "/etc"
-#define FS_LOG_ROOT "/log"
-#define FS_WEB_ROOT "/www"
-#define FS_CRASH_ROOT "/err"
-#define FS_VAR_ROOT "/var"
+#define FS_CONFIG_ROOT "/etc/"
+#define FS_LOG_ROOT "/log/"
+#define FS_WEB_ROOT "/www/"
+#define FS_CRASH_ROOT "/err/"
+#define FS_VAR_ROOT "/var/"
 
-#define FS_WEB_CONFIG FS_WEB_ROOT "/js/settings.js"
-#define FS_MAIN_CONFIG FS_CONFIG_ROOT "/main"
+#define FS_WEB_CONFIG FS_WEB_ROOT "js/settings.js"
+#define FS_MAIN_CONFIG FS_CONFIG_ROOT "main"
 
-#define FS_POWER_STATE_VAR FS_VAR_ROOT "/ps"
-#define FS_UTC_VAR FS_VAR_ROOT "/utc"
-#define FS_WH_VAR FS_VAR_ROOT "/wh"
+#define FS_POWER_STATE_VAR FS_VAR_ROOT "ps"
+#define FS_UTC_VAR FS_VAR_ROOT "utc"
+#define FS_WH_VAR FS_VAR_ROOT "wh"
 
 #define FS_BOOT_LOG FS_LOG_ROOT "boot"
 #define FS_START_FLAG "_boot"
@@ -75,7 +75,7 @@
 
 #define HOST_DOMAIN "local"
 #define WIFI_CONNECT_TIMEOUT 40
-#define MAX_WEB_CLIENTS 5
+#define WEB_SERVER_CLIENT_MAX 5
 #define OTA_PORT 8266
 #define DNS_PORT 53
 #define HTTP_PORT 80

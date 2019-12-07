@@ -8,12 +8,14 @@
 
 class ConfigHelper : public Printable {
   public:
-    size_t printTo(Print &p) const;
     ConfigHelper();
+    size_t printTo(Print &p) const;
   public:
     void setDefault();
     void load();
+    bool load(Config *src, Container<String>& data);
     bool save();
+    bool save(Config &src, Container<String>& data);
     bool setBootPowerState(BootPowerState);
     bool setBootPowerState(uint8_t);
     BootPowerState getBootPowerState();
@@ -44,23 +46,14 @@ class ConfigHelper : public Printable {
     bool setPowerConfig(BootPowerState state, float outputVoltage);
     bool setNtpConfig(sint8_t timeZone_h, uint16_t updateInterval_s);
 
-    bool authorize(const char *login, const char *passwd);
-    String getConfigJson();
     Config *get();
-
   private:
     String extractName(String &str);
-    String extractValue(String &str);
-    void loadConfig(Config *config);
-    bool load(Config *config, Container<String>& data);
-    bool save(Config &config, Container<String>& data);
-    
+    String extractValue(String &str);    
     void onConfigChanged(ConfigItem param);
     
-    Config *obj_;
+    Config obj_;
     char name_[FILENAME_SIZE + 1];
     bool stored_;
-    Print *dbg = &DEBUG;
-    Print *err = &INFO;
-    Print *out = &INFO;
+    Print *out = &Serial;
 };

@@ -3,31 +3,27 @@
 #include <Arduino.h>
 #include <ESP8266SSDP.h>
 #include <ESP8266WebServer.h>
+#include <WebSocketsServer.h>
 #include <FS.h>
 
-#include <WebSocketsServer.h>
-
+#include "WebServer.h"
 #include "BuildConfig.h"
 #include "Consts.h"
 #include "StrUtils.h"
 #include "SysInfo.h"
 
-typedef std::function<void(uint8_t)> SocketConnectionEventHandler;
-typedef std::function<void(uint8_t, String)> SocketDataEventHandler;
-
-class WebServer {
+class WebServerESP8266 : public WebServer {
   public:
-    WebServer(uint16_t http, uint16_t websocket);
-    bool start();
-    void stop();
-    void loop();
-    size_t printDiag(Print *);
-
+    bool start() override;
+    void stop() override;
+    void loop() override;
+    void sendData(const uint8_t, String &) override;
+    void setOnConnection(WebConnectionEventHandler) override;
+    void setOnDisconnection(WebConnectionEventHandler) override;
+    void setOnReceiveData(WebDataEventHendler) override;
+  
   public:
-    void setOnClientConnection(SocketConnectionEventHandler);
-    void setOnClientDisconnected(SocketConnectionEventHandler);
-    void setOnClientData(SocketDataEventHandler);
-    void sendTxt(const uint8_t, String &);
+    WebServerESP8266(uint16_t http, uint16_t websocket);
 
   private:
     bool captivePortal();
@@ -45,8 +41,8 @@ class WebServer {
     void handleWebSocketEvent(uint8_t num, WStype_t type, uint8_t *payload,
                               size_t lenght);
 
-    SocketDataEventHandler onDataEvent;
-    SocketConnectionEventHandler onConnectEvent, onDisconnectEvent;
+    WebDataEventHendler onReceiveDataEvent;
+    WebConnectionEventHandler onConnectionEvent, onDisconnectionEvent;
     ESP8266WebServer *server;
     WebSocketsServer *socket;
     SSDPClass *ssdp;

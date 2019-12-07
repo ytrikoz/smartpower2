@@ -3,15 +3,17 @@
 #include "App.h"
 #include "AppUtils.h"
 #include "Wireless.h"
+#include "StoreUtils.h"
+#include "WebServer/WebServerAsync.h"
 
 bool WebMod::onInit() {
-    memset(clients_, 0, sizeof(WebClient) * MAX_WEB_CLIENTS);
-    web_ = new WebServer(HTTP_PORT, WEBSOCKET_PORT);
-    web_->setOnClientConnection(
+    memset(clients_, 0, sizeof(WebClient) * WEB_SERVER_CLIENT_MAX);
+    web_ = new WebServerAsync(HTTP_PORT);
+    web_->setOnConnection(
         [this](uint8_t num) { this->onHttpClientConnect(num); });
-    web_->setOnClientDisconnected(
+    web_->setOnDisconnection(
         [this](uint8_t num) { this->onHttpClientDisconnect(num); });
-    web_->setOnClientData([this](uint8_t num, String data) {
+    web_->setOnReceiveData([this](uint8_t num, String data) {
         this->onHttpClientData(num, data);
     });
 
@@ -29,7 +31,7 @@ void WebMod::onLoop() { web_->loop(); }
 
 uint8_t WebMod::getClients() {
     uint8_t result = 0;
-    for (uint8_t i = 0; i < MAX_WEB_CLIENTS; i++)
+    for (uint8_t i = 0; i < WEB_SERVER_CLIENT_MAX; i++)
         if (clients_[i].connected)
             result++;
     return result;
@@ -117,20 +119,20 @@ void WebMod::onHttpClientData(uint8_t num, String data) {
 }
 
 void WebMod::sendToClients(String &payload, const uint8_t page, const uint8_t except_n) {
-    for (uint8_t i = 0; i < WEBSOCKETS_SERVER_CLIENT_MAX; ++i)
+    for (uint8_t i = 0; i < WEB_SERVER_CLIENT_MAX; ++i)
         if (clients_[i].connected && (clients_[i].page == page) &&
             (except_n != i))
-            web_->sendTxt(i, payload);
+            web_->sendData(i, payload);
 }
 
 void WebMod::sendToClients(String &payload, const uint8_t page) {
-    for (uint8_t i = 0; i < WEBSOCKETS_SERVER_CLIENT_MAX; ++i)
+    for (uint8_t i = 0; i < WEB_SERVER_CLIENT_MAX; ++i)
         if (clients_[i].connected && clients_[i].page == page)
-            web_->sendTxt(i, payload);
+            web_->sendData(i, payload);
 }
 
 void WebMod::sendPageState(const uint8_t page) {
-    for (uint8_t i = 0; i < WEBSOCKETS_SERVER_CLIENT_MAX; i++)
+    for (uint8_t i = 0; i < WEB_SERVER_CLIENT_MAX; ++i)
         if (clients_[i].connected && clients_[i].page == page)
             sendPageState(i, page);
 }
@@ -139,43 +141,42 @@ void WebMod::sendPageState(uint8_t n, uint8_t page) {
     switch (page) {
         case PG_HOME: {
             String power(SET_POWER_ON_OFF);
-            power += String(app.psu()->getState());
-            web_->sendTxt(n, power);
+            power += String(app.psu()->getState(), DEC);
+            web_->sendData(n, power);
 
             String wh_store(SET_LOG_WATTHOURS);
-            wh_store += String(app.psu()->isWhStoreEnabled());
-            web_->sendTxt(n, wh_store);
+            wh_store += String(app.psu()->isWhStoreEnabled(), DEC);
+            web_->sendData(n, wh_store);
             break;
         }
         case PG_SETTINGS: {
-            String bootpower;
-            bootpower = String(SET_BOOT_POWER_MODE);
-            bootpower += app.params()->getValueAsByte(POWER);
-            web_->sendTxt(n, bootpower);
+            String bootpower = String(SET_BOOT_POWER_MODE);
+            bootpower += String(app.params()->getValueAsByte(POWER), DEC);
+            web_->sendData(n, bootpower);
 
             String voltage = String(SET_VOLTAGE);
             voltage += String(app.psu()->getVoltage(), 2);
-            web_->sendTxt(n, voltage);
+            web_->sendData(n, voltage);
 
             String network = String(SET_NETWORK);
-            AppUtils::getNetworkConfig(app.params());
-            web_->sendTxt(n, network);
+            network += AppUtils::getNetworkConfig(app.params());
+            web_->sendData(n, network);
             break;
         }
         case PG_STATUS: {
             String payload;
-            // Version info
+
             payload = String(TAG_FIRMWARE_INFO);
             payload += SysInfo::getVersionJson();
-            web_->sendTxt(n, payload);
-            // System info
+            web_->sendData(n, payload);
+
             payload = String(TAG_SYSTEM_INFO);
             payload += SysInfo::getSystemJson();
-            web_->sendTxt(n, payload);
-            // Network info
+            web_->sendData(n, payload);
+
             payload = String(TAG_NETWORK_INFO);
             payload += SysInfo::getNetworkJson();
-            web_->sendTxt(n, payload);
+            web_->sendData(n, payload);
             break;
         }
     }

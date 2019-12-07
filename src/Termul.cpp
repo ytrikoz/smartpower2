@@ -1,6 +1,6 @@
 #include "Termul.h"
 
-#include <mcurses.h>
+//#include <mcurses.h>
 
 #include "ArrayBuffer.h"
 #include "PrintUtils.h"

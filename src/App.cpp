@@ -4,9 +4,8 @@
 #include "Cli.h"
 #include "CrashReport.h"
 #include "Global.h"
-#include "PrintUtils.h"
+
 #include "PsuLogger.h"
-#include "WebPanel.h"
 
 using namespace AppUtils;
 using namespace PrintUtils;
@@ -61,11 +60,11 @@ void App::loop() {
     loopLogger->loop();
 }
 
-size_t App::printDiag(Print *p) {
-    size_t n = println(p, SysInfo::getHeapStats().c_str());
-    n += print_nameP_value(p, str_http, web()->getClients());
-    n += print_nameP_value(p, str_telnet, getBoolStr(telnet()->hasClient()).c_str());
-    n += println_nameP_value(p, str_ap, SysInfo::getAPClientsNum());
+size_t App::printDiag(Print *out) {
+    size_t n = println(out, SysInfo::getHeapStats());
+    n += println(out, FPSTR(str_ap), Wireless::getAPClients());
+    n += println(out, FPSTR(str_http), web()->getClients());
+    n += println(out, FPSTR(str_telnet), getBoolStr(telnet()->hasClient()));
     return n;
 }
 
@@ -285,11 +284,9 @@ AppModule *App::getModule(const AppModuleEnum mod) {
             }
             case MOD_CLOCK: {
                 appMod[mod] = new ClockMod();
-                clock()->setOnChange([this](time_t local, double drift) {
-                    print_ident(out, FPSTR(str_clock));
-                    char buf[32];
-                    TimeUtils::format_elapsed_time(buf, drift);
-                    println(out, ctime(&local), buf);
+                clock()->setOnChange([this](const time_t local, double drift) {
+                    print_ident(out, FPSTR(str_clock));                                   
+                    println(out, TimeUtils::format_time(local), "(", TimeUtils::format_elapsed(drift), ")");
                 });
 
                 break;

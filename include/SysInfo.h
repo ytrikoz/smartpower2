@@ -16,16 +16,15 @@ String getVcc();
 
 String getChipId();
 
-String getVersionJson();
+const String getVersionJson();
+
 String getNetworkJson();
 String getSystemJson();
 
 const String getHeapStats();
+const String getFSStats();
 
-
-
-
-uint8_t getAPClientsNum();
+uint8_t getAPClients();
 String getAPClientsInfo();
 
 } // namespace SysInfo

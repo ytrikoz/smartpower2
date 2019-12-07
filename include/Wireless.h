@@ -38,7 +38,7 @@ String hostSSID();
 
 IPAddress hostDNS();
 
-IPAddress hostIP();
+const IPAddress hostIP();
 
 IPAddress hostGateway();
 
@@ -104,5 +104,7 @@ String getModeStr(NetworkMode mode);
 void useStaticStationIP(bool enabled);
 
 void setBroadcast(uint8_t _new);
+
+const uint8_t getAPClients();
 
 }  // namespace Wireless

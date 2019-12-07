@@ -1,6 +1,7 @@
 #include "TimeUtils.h"
 
 #include "Consts.h"
+#include "Time.h"
 #include "StrUtils.h"
 
 using namespace StrUtils;
@@ -147,7 +148,8 @@ void format_elapsed_time(char *buf, time_t elapsed) {
     sprintf(buf, "%02i:%02i:%02lu", h, m, elapsed);
 }
 
-void format_elapsed_time(char *buf, double elapsed) {
+char elapsed_buf[32] = {0};
+char* format_elapsed(const double elapsed) {
     int h, m, s, ms;
     h = m = s = ms = 0;
     ms = elapsed * 1000;
@@ -157,9 +159,16 @@ void format_elapsed_time(char *buf, double elapsed) {
     ms -= (m * 60000);
     s = ms / 1000;
     ms -= (s * 1000);
-    sprintf(buf, "%02i:%02i:%02i.%03i", h, m, s, ms);
+    sprintf(elapsed_buf, "%02i:%02i:%02i.%03i", h, m, s, ms);
+    return elapsed_buf;
 }
 
+char* format_time(const time_t time) {
+    char* buf = ctime(&time);
+    size_t len = strlen(buf);
+    buf[len - 1] = '\x00';    
+    return buf;
+}
 
 int timeZoneInSeconds(const byte timeZone) {
     int res = 0;
