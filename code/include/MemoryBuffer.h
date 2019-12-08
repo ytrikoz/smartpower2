@@ -1,4 +1,4 @@
-#pragma once
+ #pragma once
 
 #include <Stream.h>
 
@@ -8,7 +8,8 @@ class MemoryBuffer : public Stream {
     MemoryBuffer(size_t capacity = MemoryBuffer::DEFALT_CAPACITY);
     ~MemoryBuffer();
     void clear();
-        virtual int availableForWrite(void) ;
+    int availableForWrite(void);
+
     virtual size_t write(uint8_t) override;
     virtual int available() override;
     virtual int read() override;

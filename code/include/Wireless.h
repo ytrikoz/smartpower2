@@ -20,8 +20,6 @@ enum NetworkMode {
 enum NetworkStatus { NETWORK_DOWN = 0,
                      NETWORK_UP = 1 };
 
-
-
 String getWiFiPhyMode();
 
 String getWifiChannel();
@@ -105,6 +103,6 @@ void useStaticStationIP(bool enabled);
 
 void setBroadcast(uint8_t _new);
 
-const uint8_t getAPClients();
+uint8_t getAPClients();
 
 }  // namespace Wireless

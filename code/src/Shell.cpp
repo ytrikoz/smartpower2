@@ -64,7 +64,7 @@ void Shell::loop() {
 void Shell::clearHistory() { history.clear(); }
 
 void Shell::setEditBuffer(String &str) {
-    t->setEditBuffer((const uint8_t *)str.c_str(), str.length());
+    t->setLine((const uint8_t *)str.c_str(), str.length());
     t->print(str);
 }
 
@@ -75,7 +75,7 @@ void Shell::useHistory() {
     if (!history.size())
         return;
 
-    if (t->getEditBuffer()->available()) {
+    if (t->getLine().available()) {
         t->println();
         print_prompt(t);
     }

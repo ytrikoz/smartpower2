@@ -46,41 +46,42 @@ error will occur if action is not taken 6	INFORMATIONAL   Normal
 operational messages - no action required. 7	DEBUG	        Info useful to
 developers for debugging, not useful during operations.
 */
-enum SysLogSeverity { SYSLOG_ALERT = 1, SYSLOG_INFO = 6, SYSLOG_DEBUG = 7 };
+enum SysLogSeverity { SYSLOG_ALERT = 1,
+                      SYSLOG_INFO = 6,
+                      SYSLOG_DEBUG = 7 };
 
 class SyslogMod : public AppModule {
-  public:
+   public:
     void alert(String &str);
     void info(String &str);
     void debug(String &str);
 
-  public:
+   public:
     SyslogMod() : AppModule(MOD_SYSLOG){};
     size_t onDiag(Print *) override;
-    bool isCompatible(Wireless::NetworkMode value) override{
+    bool isCompatible(Wireless::NetworkMode value) override {
         return (value == Wireless::NETWORK_STA) ||
                (value == Wireless::NETWORK_AP_STA);
     }
     bool isNetworkDepended() override { return true; }
 
-  protected:
+   protected:
     bool onInit() override;
     bool onStart() override;
     void onStop() override;
     void onLoop() override;
 
-  private:
+   private:
     void setHost(const char *);
     void setServer(const char *);
     void setPort(const uint16_t);
 
-  private:
+   private:
     void send(SysLogSeverity level, String &message);
     void printPacket(Print *p, const SysLogSeverity level, AppModuleEnum mod,
                      String &message);
 
-  private:
-    MemoryBuffer *log_buffer;
+   private:
     bool active = false;
     WiFiUDP *udp;
     char server[16];

@@ -9,7 +9,7 @@ using namespace PrintUtils;
 using namespace StrUtils;
 
 namespace {
-    static const char* str_execept_cause[] PROGMEM = {
+static const char* str_execept_cause[] PROGMEM = {
     str_except_cause_0, str_except_cause_1, str_restart_reason_2,
     str_except_cause_3, str_except_cause_4, str_except_cause_5,
     str_except_cause_6,
@@ -27,7 +27,6 @@ namespace {
     str_except_cause_28, str_except_cause_29, str_except_cause_32_39,
     //
     str_cause_unknown};
-
 
 void getRestartReason(char* buf, uint32_t reason) {
     PGM_P strP;
@@ -59,7 +58,7 @@ void getRestartReason(char* buf, uint32_t reason) {
     strcpy_P(buf, strP);
 };
 
-void getExceptionCause(char* buf, uint32 except) {   
+void getExceptionCause(char* buf, uint32 except) {
     if ((except == 7) || (except == 10) || (except == 11) ||
         (except == 19) || (except == 21) || (except == 22) ||
         (except == 27) || (except == 30) ||
@@ -70,13 +69,13 @@ void getExceptionCause(char* buf, uint32 except) {
     else if (except > 23)
         except = 23;
 
-    strcpy_P(buf, (char *)pgm_read_ptr(&(str_execept_cause[except])));
+    strcpy_P(buf, (char*)pgm_read_ptr(&(str_execept_cause[except])));
 }
 
 }  // namespace
 
-CrashReport::CrashReport(Stream &r) {
-    r.readBytes((char *)&header, sizeof(header));
+CrashReport::CrashReport(Stream& r) {
+    r.readBytes((char*)&header, sizeof(header));
     dump_size = header.stack_end - header.stack_start;
     if (dump_size > 512)
         dump_size = 512;
@@ -94,18 +93,18 @@ void CrashReport::printTo(Print& p) {
     char reason[32];
     getRestartReason(reason, header.reason);
 
-     p.println(FPSTR(str_crash_report));
-     p.printf_P(strf_exception, header.exccause,
-                    exccause, header.reason,
-                    reason, header.epc1,
-                    header.epc2, header.epc3, header.excvaddr, header.depc);
-    
+    p.println(FPSTR(str_crash_report));
+    p.printf_P(strf_exception, header.exccause,
+               exccause, header.reason,
+               reason, header.epc1,
+               header.epc2, header.epc3, header.excvaddr, header.depc);
+
     p.println(FPSTR(str_crash_stack));
     uint32* stack_trace = reinterpret_cast<uint32_t*>(stack_dump);
     for (size_t i = 0; i < dump_size; i += 0x10) {
         p.printf("%08x: ", header.stack_start + i);
-        for (size_t j = 0; j < 4; ++j) {                                 
-            p.printf("%08x ", *stack_trace);          
+        for (size_t j = 0; j < 4; ++j) {
+            p.printf("%08x ", *stack_trace);
             stack_trace++;
         }
         p.println();

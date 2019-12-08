@@ -46,6 +46,7 @@ void LoopLogger::loop() {
         loopStarted = millis();
         return;
     }
+    
     unsigned long now = millis();
     unsigned long passed = millis_passed(loopStarted, now);
 

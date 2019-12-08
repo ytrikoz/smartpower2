@@ -7,6 +7,7 @@ template <typename T>
 class Container : public Printable {
     enum ContainerState { WRITE,
                           READ };
+
    public:
     Container(){};
 
@@ -25,30 +26,22 @@ class Container : public Printable {
         items_.clear();
     }
 
-    bool put(const T& item) {
+    bool push(const T& item) {
         if (!free()) return false;
         items_.push_back(item);
         return true;
     }
 
-    const T get() {
-        prepare(ContainerState::READ);
-        if (!available()) return false;
-        T item = items_.back();
-        items_.pop_back();
-        return item;
-    }
-
-    bool get(T& item) {
-        prepare(ContainerState::READ);
+    bool pop(T& item) {
+        prepare(ContainerState::READ);        
         if (!available()) return false;
         item = items_.back();
         items_.pop_back();
         return true;
     }
 
-    bool available() {
-        return !empty();
+    size_t available() {
+        return items_.size();
     }
 
     bool empty() {
@@ -57,10 +50,6 @@ class Container : public Printable {
 
     size_t free() {
         return capacity_ ? capacity_ - items_.size() : items_.max_size();
-    }
-
-    size_t size() {
-        return items_.size();
     }
 
    protected:
@@ -79,6 +68,4 @@ class Container : public Printable {
         }
         state_ = state;
     }
-
-
 };

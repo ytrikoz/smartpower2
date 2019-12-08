@@ -9,25 +9,41 @@ void ConfigHelper::onConfigChanged(ConfigItem param) { stored_ = false; }
 
 ConfigHelper::ConfigHelper() {
     strncpy(name_, FS_MAIN_CONFIG, FILENAME_SIZE);
+    if (!SPIFFS.exists(name_)) {
+        print_ident(&Serial, FPSTR(str_config));
+        println(&Serial, name_, FPSTR(str_not_exist), FPSTR(str_arrow_dest), FPSTR(str_save), FPSTR(str_default));
+        save();
+    }
     load();
-    obj_.setOnChange(
-        [this](ConfigItem param) { onConfigChanged(param); });
+    obj_.setOnChange([this](ConfigItem param) {
+        onConfigChanged(param);
+    });
 }
 
 void ConfigHelper::load() {
-    auto store = FileStorage(name_);
-    auto container = Container<String>();
-    store.use(&container);
-    if (store.read()) {
-     if (container.available())
-        load(&obj_, container);
-    } else {
-        if (store.has(SE_NOT_EXIST)) {
-            save();
+    print_ident(&Serial, FPSTR(str_config));
+    print(&Serial, FPSTR(str_load), name_);
+    auto file = StringFile(name_);
+    auto data = file.get();
+    if (file.read()) {
+        if (data->available()) {
+            while (data->available()) {
+                String buf;
+                data->pop(buf);
+                String param_str = extractName(buf);
+                String value_str = extractValue(buf);
+                if (param_str.length()) {
+                    obj_.setValueAsStringByName(param_str.c_str(), value_str.c_str());
+                } else {
+                    println(&Serial, FPSTR(str_load), FPSTR(str_error), ":", StrUtils::getQuotedStr(buf));
+                }
+            }
+            print_ln(&Serial);
         } else {
-            print_ident(&Serial, FPSTR(str_config));
-            println(&Serial, FPSTR(str_load), FPSTR(str_failed), ": ", store.getErrorInfo().c_str());
-        }        
+            println(&Serial, FPSTR(str_failed), ":", FPSTR(str_empty));
+        }
+    } else {
+        println(&Serial, FPSTR(str_failed), ":", file.getErrorInfo());
     }
 }
 
@@ -47,38 +63,14 @@ String ConfigHelper::extractValue(String &str) {
         return str.substring(split_index + 2, str.length() - 2);
 }
 
-bool ConfigHelper::load(Config *config, Container<String>& data) {
-    unsigned long started = millis();
-    while (data.available()) {
-        String buf;
-        data.get(buf);
-        String param_str = extractName(buf);
-        String value_str = extractValue(buf);
-        if (param_str.length()) {
-            config->setValueAsStringByName(param_str.c_str(), value_str.c_str());
-        } else {
-            print_ident(&Serial, FPSTR(str_config));
-            print(&Serial, FPSTR(str_load), FPSTR(str_error), ": ", StrUtils::getQuotedStr(buf));
-        }
-        if (millis_since(started) > 10)
-            break;
-    }
-    return data.available();
-}
-
 bool ConfigHelper::save() {
-    auto container = Container<String>(CONFIG_ITEMS);
-    return save(obj_, container);
-}
-
-bool ConfigHelper::save(Config &src, Container<String> &container) {
+    auto file = StringFile(FS_MAIN_CONFIG);
+    auto data = file.get();
     for (size_t i = 0; i < CONFIG_ITEMS; ++i) {
-        String buf(src.toString(ConfigItem(i)));
-        container.put(buf);
+        String buf(obj_.toString(ConfigItem(i)));
+        data->push(buf);
     }
-    FileStorage store = FileStorage(FS_MAIN_CONFIG);
-    store.use(&container);
-    return store.write();
+    return file.write();
 }
 
 size_t ConfigHelper::printTo(Print &p) const {

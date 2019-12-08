@@ -5,18 +5,16 @@
 namespace StoreUtils {
 
 inline bool storeString(const char *filename, const String &value) {
-    auto store = Storage<File, String>(filename);
-    auto container = Container<String>(1);
-    store.use(&container);
-    store.get()->put(value);
-    return store.write();
+    auto file = StringFile(filename);
+    auto data = file.get();
+    data->push(value);        
+    return file.write();
 }
 
 inline bool restoreString(const char *filename, String &value) {
-    auto store = FileStorage(filename);
-    auto container = Container<String>(1);
-    store.use(&container);
-    return store.read() && store.get()->get(value);
+    auto file = StringFile(filename);
+    auto data = file.get();
+    return file.read() && data->pop(value);
 }
 
 inline bool restoreByte(const char *file, byte &value) {

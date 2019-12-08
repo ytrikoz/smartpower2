@@ -537,12 +537,15 @@ void onRemove(cmd *c) {
 void onRun(cmd *c) {
     Command cmd(c);
     auto name = getFileStr(cmd);
-    auto store = FileStorage(name.c_str());
-    auto data = store.get();
-    if (data->available()) {
-        String buf;
-        while (data->get(buf))
-            app.shell()->run(buf);
+    auto file = StringFile(name);
+    auto data = file.get();
+    if (file.read()) {
+        if (data->available()) {
+            String buf;
+            while (data->pop(buf)) {
+                app.shell()->run(buf);
+            }
+        }
     } else {
         println(out, FPSTR(str_failed));
     }

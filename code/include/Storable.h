@@ -8,24 +8,19 @@ using namespace StrUtils;
 template <typename T>
 class Storable {
    public:
-    Storable(const char* name, size_t capacity = 0) {
+    Storable(size_t capacity = 0) {
         state_ = StoreState::SS_UNSET;
         clearError();
-        strncpy(name_, name, FILENAME_SIZE);
     }
-
-    T data() { return data_; }
 
     String getStoreErrorStr(const StoreError error) {
         String str;
         switch (error) {
             case SE_INVALID:
                 str = FPSTR(str_invalid);
-                str += FPSTR(str_state);
                 break;
             case SE_NOT_EXIST:
-                str = FPSTR(str_not);
-                str += FPSTR(str_exist);
+                str = FPSTR(str_not_exist);
                 break;
             case SE_ERROR_READ:
                 str = FPSTR(str_read);
@@ -43,7 +38,6 @@ class Storable {
                 str = FPSTR(str_unknown);
                 break;
         }
-        str += FPSTR(str_error);
         return str;
     }
 
@@ -73,10 +67,6 @@ class Storable {
 
     const String getErrorInfo() { return getStoreErrorStr(this->error_); }
 
-    const char* name() {
-        return name_;
-    }
-
     bool read() {
         return set(SS_READING);
     }
@@ -97,12 +87,12 @@ class Storable {
 
     void clearError() { error_ = StoreError::SE_NONE; }
 
-    void use(Container<T>* data) {
+    void set(const Container<T>& data) {
         data_ = data;
     }
 
     Container<T>* get() {
-        return data_;
+        return &data_;
     }
 
     void setError(StoreError error) { this->error_ = error; }
@@ -135,7 +125,6 @@ class Storable {
     void onClose() {
         if (is(SS_CLOSED))
             return;
-
         if (doClose())
             state_ = SS_CLOSED;
         else
@@ -143,16 +132,16 @@ class Storable {
     }
 
     void onOpenRead() {
-        if (!is(SS_READING)) {
-            if (doExist()) {
-                if (doOpenRead())
-                    state_ = SS_READING;
-                else
-                    setError(SE_ERROR_READ);
-            } else {
-                setError(SE_NOT_EXIST);
-            }
-        }
+        if (is(SS_READING)) 
+            return;
+        if (doExist()) {
+            if (doOpenRead())
+                state_ = SS_READING;
+            else
+                setError(SE_ERROR_READ);
+        } else {
+            setError(SE_NOT_EXIST);
+        }        
     }
 
     void onRead() {
@@ -188,7 +177,7 @@ class Storable {
             setError(SE_INVALID);
     }
 
-    void onStateChange(StoreState, const StoreState to) {
+    void onStateChange(StoreState from, const StoreState to) {
         clearError();
         switch (to) {
             case SS_EOF:
@@ -215,17 +204,8 @@ class Storable {
                 break;
         }
     }
-
    protected:
-    Print* dbg = &DEBUG;
-
-    Print* err = &ERROR;
-
+    Container<T> data_;
     StoreState state_;
-
     StoreError error_;
-
-    char name_[FILENAME_SIZE] = {0};
-
-    Container<T>* data_;
 };

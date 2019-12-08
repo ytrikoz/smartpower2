@@ -2,13 +2,12 @@
 
 //#include <mcurses.h>
 
-#include "ArrayBuffer.h"
 #include "PrintUtils.h"
 #include "SysInfo.h"
 
 using namespace PrintUtils;
 
-Termul::Termul() { this->editor = new EditBuffer(INPUT_MAX_LENGTH); }
+Termul::Termul() { }
 
 Termul::Termul(Stream *console) : Termul() { setConsole(console); }
 
@@ -101,14 +100,14 @@ void Termul::loop() {
     // WHEN NORMAL
     if (state == ST_NORMAL) {
         if (c == CHAR_ESC) {
-            if (!editor->available()) {
+            if (!line.available()) {
                 // QUIT
                 state = ST_INACTIVE;
                 if (onQuitEvent)
                     onQuitEvent();
             } else {
                 // CLEAR
-                editor->clear();
+                line.clear();
                 if (controlCodesEnabled) {
                     clear_line();
                 } else {
@@ -121,9 +120,10 @@ void Termul::loop() {
         switch (c) {
         case CHAR_CR:
             println();
-            if (inputHandler)
-                inputHandler(editor->c_str());
-            editor->clear();
+            if (inputHandler) {
+                inputHandler(line.c_str());
+            }
+            line.clear();
             moveY++;
             break;
         case CHAR_TAB:
@@ -131,24 +131,22 @@ void Termul::loop() {
                 onTabPressed();
             return;
         case KEY_LEFT:
-            if (editor->prev())
+            if (line.prev())
                 moveX--;
             break;
         case KEY_RIGHT:
-            if (editor->next())
+            if (line.next())
                 moveX++;
             break;
         case KEY_HOME:
-            moveX = -1 * editor->available();
-            editor->first();
+            moveX = -1 * line.home();        
             break;
         case KEY_END:
-            moveX = editor->available();
-            editor->last();
+            moveX = line.end();
             break;
         case CHAR_BS:
         case KEY_DEL:
-            if (editor->backspace()) {
+            if (line.backspace()) {
                 backsp();
                 moveX--;
             }
@@ -156,7 +154,7 @@ void Termul::loop() {
         default:
             // printable ascii 7bit or printable 8bit ISO8859
             if ((c & '\x7F') >= 32 && (c & '\x7F') < 127)
-                if (editor->write((uint8_t)c)) {
+                if (line.write(c)) {
                     if (echoEnabled)
                         write(c);
                     moveX++;
@@ -169,15 +167,12 @@ void Termul::loop() {
     }
 }
 
-bool Termul::setEditBuffer(const uint8_t *bytes, size_t size) {
-    editor->clear();
-    size_t max_len = editor->free() - 1;
-    if (size > max_len)
-        size = max_len;
-    return editor->write(bytes, size);
+bool Termul::setLine(const uint8_t *ptr, size_t size) {
+    line.clear();
+    return line.write(ptr, size);
 }
 
-EditBuffer *Termul::getEditBuffer() { return this->editor; }
+EditLine& Termul::getLine() { return this->line; }
 
 void Termul::start() {
     if (controlCodesEnabled)

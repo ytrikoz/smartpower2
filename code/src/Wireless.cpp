@@ -463,7 +463,7 @@ bool scanWiFi(const char *ssid) {
 }
 
 
-const uint8_t getAPClients() {
+uint8_t getAPClients() {
     return (networkMode == Wireless::NETWORK_AP ||
         networkMode == Wireless::NETWORK_AP_STA) ? wifi_softap_get_station_num(): 0;
 }

@@ -42,7 +42,7 @@ bool ClockMod::onStart() {
     if (!isTimeSet()) {
         print_ident(out, FPSTR(str_clock));
         if (restoreState()) {
-            println(out, FPSTR(str_restored), TimeUtils::format_time(epoch_));
+            println(out, FPSTR(str_restored), TimeUtils::format_time(getLocal()));
             setSystemTime(epoch_);
         } else {
             println(out, FPSTR(str_not), FPSTR(str_stored));
