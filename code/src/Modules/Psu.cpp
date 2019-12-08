@@ -1,4 +1,4 @@
-#include "Modules/Psu.h"
+#include "Modules/PsuModule.h"
 
 #include <FS.h>
 
@@ -39,7 +39,6 @@ void Psu::powerOn() {
     info.mWh = 0;
     if (isWhStoreEnabled())
         restoreWh(info.mWh);
-    logger->clear();
     setState(POWER_ON);
 }
 
@@ -124,7 +123,7 @@ void Psu::onLoop() {
 
     if (millis_passed(loggerUpdated, now) >= PSU_LOG_INTERVAL_ms) {
         PsuInfo pi = getInfo();
-        logger->log(pi);
+        logger_->log(pi);
         loggerUpdated = now;
     }
 
@@ -255,10 +254,6 @@ void Psu::setStatus(PsuStatus value) {
     if (stateChangeHandler)
         stateChangeHandler(state, status);
 }
-
-void Psu::setLogger(PsuLogger *logger) { this->logger = logger; }
-
-PsuLogger *Psu::getLogger() { return this->logger; }
 
 const PsuInfo Psu::getInfo() { return info; }
 

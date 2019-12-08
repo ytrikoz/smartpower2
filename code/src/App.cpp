@@ -11,6 +11,23 @@ using namespace AppUtils;
 using namespace PrintUtils;
 using namespace StrUtils;
 
+void App::log(PsuInfo &item) {
+    psuLog->log(item);
+
+    if (Wireless::hasNetwork()) {
+        if ((telnet() && telnet()->hasClient()) && !shell()->isActive()) {
+            String data = item.toString();
+            data += '\r';
+            telnet()->write(data.c_str());
+        }
+        if (web()->getClients()) {
+            String data = String(TAG_PVI);
+            data += item.toString();
+            web()->sendToClients(data, PG_HOME);
+        }
+    }
+}
+
 App::App() {
     memset(&appMod, 0, sizeof(appMod[0]) * APP_MODULES);
 }
@@ -296,9 +313,8 @@ AppModule *App::getModule(const AppModuleEnum mod) {
                 break;
             }
             case MOD_PSU: {
-                appMod[mod] = new Psu();
-                logger = new PsuLogger();
-                psu()->setLogger(logger);
+                appMod[mod] = new Psu(this);
+                psuLog = new MemoryPsuLogger();
                 break;
             }
             case MOD_DISPLAY: {
@@ -362,22 +378,6 @@ void App::stop(AppModuleEnum mod) {
     if (obj) obj->stop();
 }
 
-void App::send_psu_data_to_clients() {
-    PsuInfo pi = psu()->getInfo();
-    if (Wireless::hasNetwork()) {
-        if ((telnet() && telnet()->hasClient()) && !shell()->isActive()) {
-            String data = pi.toString();
-            data += '\r';
-            telnet()->write(data.c_str());
-        }
-        if (web()->getClients()) {
-            String data = String(TAG_PVI);
-            data += pi.toString();
-            web()->sendToClients(data, PG_HOME);
-        }
-    }
-}
-
 void App::refresh_wifi_led() {
     LedMode mode = STAY_OFF;
     if (restartFlag_ && restartCountdown_ <= 3)
@@ -435,3 +435,7 @@ Display *App::lcd() { return (Display *)appMod[MOD_DISPLAY]; }
 WebMod *App::web() { return (WebMod *)appMod[MOD_WEB]; }
 
 LoopLogger *App::getLoopLogger() { return loopLogger; }
+
+MemoryPsuLogger *App::getPsuLog() { return psuLog; }
+
+

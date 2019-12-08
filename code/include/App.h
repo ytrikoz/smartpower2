@@ -13,17 +13,20 @@
 #include "Modules/Leds.h"
 #include "Modules/NetworkService.h"
 #include "Modules/OTAUpdate.h"
-#include "Modules/Psu.h"
+#include "Modules/PsuModule.h"
 #include "Modules/ShellMod.h"
 #include "Modules/SyslogMod.h"
 #include "Modules/ClockMod.h"
 #include "Modules/TelnetServer.h"
 #include "Modules/WebMod.h"
 
-class App {
+class App : PsuLogger {
+   public:
+    void log(PsuInfo &item) override;
+
    public:
     App();
-    void restart(time_t delay = 0);    
+    void restart(time_t delay = 0);
     void handleRestart();
     void init(Print *p);
     void start();
@@ -32,7 +35,7 @@ class App {
     void stop(const AppModuleEnum);
     void loop();
     void loopSafe();
-    
+
     size_t printDiag(Print *p);
     size_t printDiag(Print *p, const AppModuleEnum module);
     void printLoopCapture(Print *p);
@@ -46,6 +49,7 @@ class App {
     ClockMod *clock();
     Display *lcd();
     LoopLogger *getLoopLogger();
+    MemoryPsuLogger *getPsuLog();
     ConfigHelper *config();
     WebMod *web();
     Psu *psu();
@@ -109,14 +113,15 @@ class App {
 
    private:
     bool networkChanged;
+    bool safemode = false;
     AppModule *appMod[APP_MODULES];
     LoopLogger *loopLogger;
     ConfigHelper *configHelper;
 
-    PsuLogger *logger;
-    bool safemode = false;
+    MemoryPsuLogger *psuLog;
+
     WiFiEventHandler onDisconnected, onGotIp;
-    
+
     unsigned long restartUpdated_;
     time_t restartCountdown_;
     bool restartFlag_;

@@ -250,7 +250,7 @@ void onLog(cmd *c) {
     Command cmd(c);
     CommandAction action = getAction(cmd);
     String paramStr = getParamStr(cmd);
-    PsuLogger *logger = app.psu()->getLogger();
+    MemoryPsuLogger *logger = app.getPsuLog();
     bool handled = false;
     if (action == ACTION_PRINT) {
         String paramStr = getParamStr(cmd);

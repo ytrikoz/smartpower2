@@ -98,11 +98,6 @@ struct PsuInfo : Printable {
     }
 };
 
-class Logger {
-   public:
-    virtual PsuInfo getInfo() = 0;
-};
-
 enum BootPowerState {
     BOOT_POWER_OFF = 0,
     BOOT_POWER_ON = 1,

@@ -1,11 +1,12 @@
 #pragma once
 
 #include "CommonTypes.h"
+#include "Modules/PsuModule.h"
 #include "PsuLog.h"
 
-class PsuLogger {
+class MemoryPsuLogger : PsuLogger {
   public:
-    PsuLogger();
+    MemoryPsuLogger();
     void clear();
     void printDiag(Print *p);
 

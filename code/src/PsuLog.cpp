@@ -130,7 +130,6 @@ void PsuLog::printDiag(Print *p) {
         p->println(FPSTR(str_empty));
         return;
     }
-    
     p->print(count());
     p->print('\t');
     p->print(min);

@@ -3,7 +3,6 @@
 #include "AppModule.h"
 #include "CommonTypes.h"
 #include "ConfigHelper.h"
-#include "PsuLogger.h"
 #include "ina231.h"
 #include "mcp4652.h"
 
@@ -11,10 +10,16 @@
 
 typedef std::function<void(PsuState, PsuStatus)> PsuStateChangeHandler;
 typedef std::function<void(PsuInfo)> PsuInfoHandler;
+    
+class PsuLogger {
+    public:
+    virtual void log(PsuInfo &item) { };
+};
 
 class Psu : public AppModule {
    public:
-    Psu() : AppModule(MOD_PSU) {
+    Psu(PsuLogger* logger) : AppModule(MOD_PSU) {
+        logger_ = logger;
         ina231_configure();
         mcp4652_init();
     };
@@ -26,8 +31,6 @@ class Psu : public AppModule {
     void onLoop() override;
 
    public:
-    void setLogger(PsuLogger *);
-    PsuLogger *getLogger();
     void togglePower();
     void powerOff();
     void powerOn();
@@ -72,7 +75,7 @@ class Psu : public AppModule {
     PsuStatus status;
     PsuError error;
     PsuAlert alert;
-    PsuLogger *logger;
+    PsuLogger *logger_;
     PsuStateChangeHandler stateChangeHandler;
     PsuInfoHandler psuInfoHandler;
 

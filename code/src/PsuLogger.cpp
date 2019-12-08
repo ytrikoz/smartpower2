@@ -4,7 +4,7 @@
 
 using namespace StrUtils;
 
-PsuLogger::PsuLogger() {
+MemoryPsuLogger::MemoryPsuLogger() {
     if (PSU_LOG_VOLTAGE_SIZE) {
         this->psuLog[static_cast<int>(PsuLogEnum::VOLTAGE)] =
             new PsuLog("V", PSU_LOG_VOLTAGE_SIZE);
@@ -23,7 +23,7 @@ PsuLogger::PsuLogger() {
     }
 }
 
-void PsuLogger::log(PsuInfo &item) {
+void MemoryPsuLogger::log(PsuInfo &item) {
     if (PSU_LOG_VOLTAGE_SIZE)
         getLog(PsuLogEnum::VOLTAGE)->log(item.time, item.V);
     if (PSU_LOG_CURRENT_SIZE)
@@ -36,7 +36,7 @@ void PsuLogger::log(PsuInfo &item) {
     lastRecord = millis();
 }
 
-PsuLog *PsuLogger::getLog(PsuLogEnum item) {
+PsuLog *MemoryPsuLogger::getLog(PsuLogEnum item) {
     PsuLog *result = 0;
     if (item == PsuLogEnum::VOLTAGE && PSU_LOG_VOLTAGE_SIZE)
         result = psuLog[static_cast<int>(item)];
@@ -49,11 +49,11 @@ PsuLog *PsuLogger::getLog(PsuLogEnum item) {
     return result;
 }
 
-size_t PsuLogger::getSize(PsuLogEnum item) { 
+size_t MemoryPsuLogger::getSize(PsuLogEnum item) { 
     return getLog(item)? getLog(item)->count(): 0;
 }
 
-bool PsuLogger::getValues(PsuLogEnum item, float *dest, size_t &size) {
+bool MemoryPsuLogger::getValues(PsuLogEnum item, float *dest, size_t &size) {
     PsuLog *log = getLog(item);
     if (log) {
         size = log->count();
@@ -63,7 +63,7 @@ bool PsuLogger::getValues(PsuLogEnum item, float *dest, size_t &size) {
     return size;
 }
 
-void PsuLogger::clear() {
+void MemoryPsuLogger::clear() {
     for (uint8_t i = 0; i < 4; ++i) {
         PsuLog *log = getLog(PsuLogEnum(i));
         log->clear();
@@ -71,9 +71,9 @@ void PsuLogger::clear() {
     lastRecord = startTime = 0;
 }
 
-void PsuLogger::print(PsuLogEnum item, Print *p) { getLog(item)->printTo(p); }
+void MemoryPsuLogger::print(PsuLogEnum item, Print *p) { getLog(item)->printTo(p); }
 
-void PsuLogger::printDiag(Print *p) {
+void MemoryPsuLogger::printDiag(Print *p) {
     if (!lastRecord) {
         p->println(FPSTR(str_empty));
         return;
