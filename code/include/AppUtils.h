@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Config.h"
 #include "Strings.h"
+#include "Config.h"
 #include "PrintUtils.h"
 #include "StoreUtils.h"
 
@@ -46,4 +46,5 @@ inline String getNetworkConfig(Config *cfg) {
     res += cfg->getValueAsString(DNS);
     return res;
 }
-}  // namespace AppUtils
+
+}

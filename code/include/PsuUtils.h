@@ -2,14 +2,12 @@
 
 #include "CommonTypes.h"
 
+int quadratic_regression(double value, bool alterRange = false);
+
 String getStatusStr(PsuStatus status);
 
 String getStateStr(PsuState state);
 
-PGM_P getStateStrP(PsuState state);
+String getErrorStr(PsuError value);
 
-PGM_P getStatusStrP(PsuStatus status);
-
-PGM_P getErrorStrP(PsuError value);
-
-PGM_P getAlertStrP(PsuAlert value);
+String getAlertStr(PsuAlert value);

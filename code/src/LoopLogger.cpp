@@ -1,24 +1,22 @@
-#include "LoopLogger.h"
+#include "LoopWatcher.h"
 
-#include "TimeUtils.h"
-
-LoopLogger::LoopLogger() {
+LoopWatcher::LoopWatcher() {
     state = CAPTURE_IDLE;
     captureStarted = 0;
 }
 
-void LoopLogger::setIdle() { state = CAPTURE_IDLE; }
+void LoopWatcher::setIdle() { state = CAPTURE_IDLE; }
 
-LoopLoggerState LoopLogger::getState() { return state; }
+LoopWatcherState LoopWatcher::getState() { return state; }
 
-void LoopLogger::logTime(AppModuleEnum module, unsigned long duration) {
+void LoopWatcher::logTime(AppModuleEnum module, unsigned long duration) {
     if (state == CAPTURE_IN_PROGRESS)
         cap.module[module] += duration;
 }
 
-LoopCapture *LoopLogger::getCapture() { return &cap; }
+LoopCapture *LoopWatcher::getCapture() { return &cap; }
 
-unsigned long LoopLogger::getDuration() {
+unsigned long LoopWatcher::getDuration() {
     switch (state) {
     case CAPTURE_IN_PROGRESS:
         return captureTimeleft;
@@ -31,14 +29,14 @@ unsigned long LoopLogger::getDuration() {
     }
 }
 
-void LoopLogger::start() {
+void LoopWatcher::start() {
     cap.reset();
     captureTimeleft = LOOP_CAPTURE_INTERVAL;
     state = CAPTURE_IN_PROGRESS;
     loopStarted = 0;
 }
 
-void LoopLogger::loop() {
+void LoopWatcher::loop() {
     if (state != CAPTURE_IN_PROGRESS)
         return;
 
@@ -75,7 +73,7 @@ void LoopLogger::loop() {
     loopStarted = millis();
 }
 
-LiveTimer LoopLogger::onExecute(AppModuleEnum module) {
+LiveTimer LoopWatcher::onExecute(AppModuleEnum module) {
     return LiveTimer(this, module);
 }
 

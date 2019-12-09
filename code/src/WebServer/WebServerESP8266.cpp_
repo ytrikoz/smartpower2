@@ -79,6 +79,7 @@ WebServerESP8266::WebServerESP8266(uint16_t http, uint16_t websocket) {
     }
 }
 
+#define FS_WEB_CONFIG FS_WEB_ROOT "js/settings.js"
 bool WebServerESP8266::start() {
     char buf[64];
     sprintf(buf, "ipaddr=\"%s\"\r\n", Wireless::hostIP().toString().c_str());

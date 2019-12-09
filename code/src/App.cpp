@@ -3,15 +3,12 @@
 #include "AppUtils.h"
 #include "Cli.h"
 #include "CrashReport.h"
-#include "Global.h"
-
-#include "PsuLogger.h"
 
 using namespace AppUtils;
 using namespace PrintUtils;
 using namespace StrUtils;
 
-void App::log(PsuInfo &item) {
+void App::log(PsuData &item) {
     psuLog->log(item);
 
     if (Wireless::hasNetwork()) {
@@ -29,20 +26,19 @@ void App::log(PsuInfo &item) {
 }
 
 App::App() {
-    memset(&appMod, 0, sizeof(appMod[0]) * APP_MODULES);
+    memset(appMod, 0, sizeof(appMod[0]) * APP_MODULES);
 }
 
 void App::init(Print *p) {
+    loopLogger = new LoopWatcher();
+    configHelper = new ConfigHelper();
     out = dbg = err = p;
     restartCountdown_ = 0;
     restartFlag_ = false;
-    loopLogger = new LoopLogger();
-    configHelper = new ConfigHelper();
 }
 
 void App::startSafe() {
-    print_welcome(out, " SAFE MODE ", APP_NAME " v" APP_VERSION,
-                  " " BUILD_DATE " ");
+    start(MOD_SHELL);
     shell()->init();
     shell()->setSerial();
 }
@@ -62,17 +58,16 @@ void App::loop() {
             delay(0);
         }
     }
-    yield();
-
+    
     handleRestart();
-    yield();
+    delay(0);
 
     if (networkChanged) {
         restartNetworkDependedModules(Wireless::getMode(), Wireless::hasNetwork());
         refresh_wifi_led();
         networkChanged = false;
     }
-    yield();
+    delay(0);
 
     loopLogger->loop();
 }
@@ -211,7 +206,7 @@ void App::start() {
 
     lcd()->refresh();
 
-    psu()->setOnPsuInfo([this](PsuInfo info) {
+    psu()->setOnData([this](PsuData data) {
         if (lcd())
             lcd()->refresh();
     });
@@ -313,8 +308,8 @@ AppModule *App::getModule(const AppModuleEnum mod) {
                 break;
             }
             case MOD_PSU: {
-                appMod[mod] = new Psu(this);
-                psuLog = new MemoryPsuLogger();
+                appMod[mod] = new PsuModule(this);
+                psuLog = new PsuLogHelper();
                 break;
             }
             case MOD_DISPLAY: {
@@ -420,7 +415,7 @@ ButtonMod *App::btn() { return (ButtonMod *)appMod[MOD_BTN]; }
 
 TelnetServer *App::telnet() { return (TelnetServer *)appMod[MOD_TELNET]; }
 
-Psu *App::psu() { return (Psu *)appMod[MOD_PSU]; }
+PsuModule *App::psu() { return (PsuModule *)appMod[MOD_PSU]; }
 
 ClockMod *App::clock() { return (ClockMod *)appMod[MOD_CLOCK]; }
 
@@ -434,8 +429,6 @@ Display *App::lcd() { return (Display *)appMod[MOD_DISPLAY]; }
 
 WebMod *App::web() { return (WebMod *)appMod[MOD_WEB]; }
 
-LoopLogger *App::getLoopLogger() { return loopLogger; }
-
-MemoryPsuLogger *App::getPsuLog() { return psuLog; }
+PsuLogHelper *App::getPsuLog() { return psuLog; }
 
 

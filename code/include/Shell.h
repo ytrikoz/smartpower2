@@ -1,7 +1,8 @@
 #pragma once
 
+#include <Arduino.h>
+
 #include <SimpleCLI.h>
-#include <Stream.h>
 
 #include "Termul.h"
 

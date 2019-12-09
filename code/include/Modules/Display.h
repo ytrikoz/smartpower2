@@ -15,6 +15,7 @@ class Display : public AppModule {
     void updateScreen(void);
     void enableBacklight(bool value = true);
 
+    void load_message(Screen *obj, String header, String message);
     void load_message(Screen *obj, const char *header, const char *message);
     void load_wifi_sta(Screen *obj);
     void load_wifi_ap(Screen *obj);

@@ -1,10 +1,8 @@
 #include "Modules/Display.h"
 
-#include "App.h"
-#include "PsuUtils.h"
+#include "Modules/PsuModule.h"
 
-using namespace StrUtils;
-
+#include "main.h"
 
 bool Display::isEnabled() {
     return lcd && lcd->isEnabled();
@@ -87,7 +85,7 @@ void Display::refresh(void) {
 #ifdef DEBUG_DISPLAY
     DEBUG.println("refresh()");
 #endif
-    Psu *psu = app.psu();
+    PsuModule *psu = app.psu();
     if (psu->checkState(POWER_ON)) {
         setScreen(SCREEN_PSU);
         PsuStatus status = psu->getStatus();
@@ -95,13 +93,11 @@ void Display::refresh(void) {
         case PSU_OK:
             load_psu_info(&screen);
             return;
-        case PSU_ALERT:
-            load_message(&screen, getStrP(str_alert).c_str(),
-                         getStrP(getAlertStrP(psu->getAlert())).c_str());
+        case PSU_ALERT:            
+            load_message(&screen, FPSTR(str_alert), getAlertStr(psu->getAlert()));
             return;
         case PSU_ERROR:
-            load_message(&screen, getStrP(str_error).c_str(),
-                         getStrP(getErrorStrP(psu->getError())).c_str());
+            load_message(&screen, FPSTR(str_error), getErrorStr(psu->getError()));
             return;
         }
     }
@@ -158,7 +154,7 @@ void Display::load_wifi_ap_sta(Screen *obj) {
 };
 
 void Display::load_psu_info(Screen *obj) {
-    Psu *psu = app.psu();
+    PsuModule *psu = app.psu();
     String str = String(psu->getV(), 3);
     if (str.length() == 5)
         str += " ";
@@ -196,6 +192,11 @@ void Display::load_psu_stat(Screen *obj) {
     obj->setCount(2);
     obj->moveFirst();
 }
+
+void Display::load_message(Screen *obj, String header, String message) {
+    load_message(obj, header.c_str(), message.c_str());
+}
+
 
 void Display::load_message(Screen *obj, const char *header,
                            const char *message) {

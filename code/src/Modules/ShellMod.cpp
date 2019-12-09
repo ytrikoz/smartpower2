@@ -1,6 +1,7 @@
 #include "Modules/ShellMod.h"
 
-#include "Global.h"
+#include "Cli.h"
+#include <main.h>
 
 bool ShellMod::onInit() {
     Cli::init();

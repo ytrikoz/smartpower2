@@ -3,8 +3,7 @@
 #include <Arduino.h>
 #include <FS.h>
 
-#include "App.h"
-#include "BootWatcher.h"
+#include "Global.h"
 #include "BuildConfig.h"
 #include "CrashReport.h"
 #include "FSUtils.h"
@@ -13,21 +12,22 @@
 
 using namespace PrintUtils;
 
-bool crashEnabled = false;
-uint8_t crashNum = 0;
+BootWatcher boot;
+LoopWatcher* loopWatcher;
+Logger logger;
+SimpleCLI* cli;
+App app;
+bool crashReportEnabled = false;
+uint8_t crashReportNumber = 0;
 
-bool setupDone;
-
-BootWatcher *bw;
 
 extern "C" void custom_crash_callback(struct rst_info *rst_info,
                                       uint32_t stack_start,
                                       uint32_t stack_end) {
-    if (!isCrashReportEnabled())
-        return;
-
-    String name = getCrashName();
-    if (File f = SPIFFS.open(name, "w")) {
+    if (!crashReportEnabled) return;
+    char buf[32];
+    sprintf(buf, "%s%d_%lu", CRASH_ROOT, crashReportNumber + 1, millis());
+    if (File f = SPIFFS.open(buf, "w")) {
         CrashHeader h;
         h.reason = rst_info->reason;
         h.exccause = rst_info->exccause;
@@ -42,7 +42,7 @@ extern "C" void custom_crash_callback(struct rst_info *rst_info,
         for (uint32_t addr = stack_start; addr < stack_end; ++addr) {
             uint8_t *value = (uint8_t *)addr;
             file_size += f.write(*value);
-            if (file_size >= CRASH_MAX_SIZE - 2)
+            if (file_size >= CRASH_SIZE - 2)
                 break;
         }
         f.println();
@@ -51,6 +51,21 @@ extern "C" void custom_crash_callback(struct rst_info *rst_info,
     }
 }
 
+void initCrashReport() {
+    crashReportNumber = FSUtils::getFilesCount(CRASH_ROOT);
+    crashReportEnabled = crashReportNumber < CRASH_NUM;
+
+    if (crashReportNumber) {
+        PrintUtils::print_ident(&Serial, FPSTR(str_crash_report));
+        PrintUtils::print(&Serial, crashReportNumber);
+
+        if (!crashReportEnabled) PrintUtils::print(&Serial, FPSTR(str_disabled));
+
+        PrintUtils::print_ln(&Serial);
+    }
+}
+
+bool setupDone;
 void preinit() {
     system_update_cpu_freq(SYS_CPU_160MHZ);
     WiFi.persistent(false);
@@ -59,44 +74,24 @@ void preinit() {
 }
 
 void setup() {
-    initSerial();
-
-    initWire();
-
-    if (!initFS()) {
-        println(&Serial, FPSTR(str_spiffs), FPSTR(str_error));
-        return;
-    };
-
-    bw = new BootWatcher();
-
+    boot.init();
+    
     initCrashReport();
 
-    if (getCrashReportNum()) {
-        INFO.print(getIdentStrP(str_crash));
-        INFO.print(getStrP(str_stored));
-        INFO.print(' ');
-        INFO.println(crashNum);
-    }
+    PrintUtils::println(&logger, "[log] start");
 
-    if (!isCrashReportEnabled()) {
-        INFO.print(getIdentStrP(str_crash));
-        INFO.println(FPSTR(str_disabled));
-    }
+    app.init(&Serial);
 
-    initApp();
-    
-    if (bw->isSafeBootMode()) {
+    if (boot.isSafeMode()) {
         INFO.setDebugOutput(true);
         INFO.print(getIdentStrP(str_boot));
         INFO.println(FPSTR(str_safe));
         app.startSafe();
     } else {
-        beforeStart();
         app.start();
     }
 
-    afterStart();
+    boot.end();
 
     setupDone = true;
 }
@@ -104,51 +99,10 @@ void setup() {
 void loop() {
     if (!setupDone) return;
 
-    if (bw->isSafeBootMode())
+    if (boot.isSafeMode())
         app.loopSafe();
-    else
+    else {
         app.loop();
-}
-
-void beforeStart() {
-    File f = SPIFFS.open(FS_START_FLAG, "w");
-    f.print(APP_VERSION);
-    f.print(__DATE__);
-    f.print(__TIME__);
-    f.flush();
-    f.close();
-}
-
-void afterStart() { SPIFFS.remove(FS_START_FLAG); }
-
-void clearBootError() { SPIFFS.remove(FS_START_FLAG); }
-
-void initSerial() {
-    Serial.begin(115200);
-    Serial.println();
-    print_welcome(&INFO, " Welcome ", APP_NAME " v" APP_VERSION, " " BUILD_DATE " ");
-}
-
-void initWire() { Wire.begin(I2C_SDA, I2C_SCL); }
-
-bool initFS() { return SPIFFS.begin(); }
-
-void initApp() { app.init(&Serial); }
-
-/*
- * CRASH REPORT
- */
-void initCrashReport() {
-    crashNum = getFilesCount(FS_CRASH_ROOT);
-    crashEnabled = crashNum < CRASH_MAX_NUM;
-}
-
-bool isCrashReportEnabled() { return crashEnabled; }
-
-uint8_t getCrashReportNum() { return crashNum; };
-
-String getCrashName() {
-    char buf[32];
-    sprintf(buf, "%s%d_%lu", FS_CRASH_ROOT, crashNum + 1, millis());
-    return String(buf);
+    }
+    logger.loop();
 }

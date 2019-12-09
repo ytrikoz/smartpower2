@@ -2,24 +2,15 @@
 
 #include "AppModule.h"
 #include "CommonTypes.h"
-#include "ConfigHelper.h"
+#include "PsuUtils.h"
 #include "ina231.h"
 #include "mcp4652.h"
 
 #define POWER_SWITCH_PIN D6
 
-typedef std::function<void(PsuState, PsuStatus)> PsuStateChangeHandler;
-typedef std::function<void(PsuInfo)> PsuInfoHandler;
-    
-class PsuLogger {
-    public:
-    virtual void log(PsuInfo &item) { };
-};
-
-class Psu : public AppModule {
+class PsuModule : public AppModule {
    public:
-    Psu(PsuLogger* logger) : AppModule(MOD_PSU) {
-        logger_ = logger;
+    PsuModule(PsuListener* listener) : AppModule(MOD_PSU), listener_(listener) {         
         ina231_configure();
         mcp4652_init();
     };
@@ -35,7 +26,7 @@ class Psu : public AppModule {
     void powerOff();
     void powerOn();
     void setOnStateChange(PsuStateChangeHandler);
-    void setOnPsuInfo(PsuInfoHandler);
+    void setOnData(PsuDataHandler);
     PsuState getState(void);
     PsuStatus getStatus(void);
     PsuAlert getAlert(void);
@@ -44,7 +35,7 @@ class Psu : public AppModule {
     bool checkStatus(PsuStatus);
 
    public:
-    const PsuInfo getInfo();
+    const PsuData getInfo();
     void setVoltage(const double voltage);
     bool checkVoltageRange(const double value);
     const float getVoltage();
@@ -69,20 +60,21 @@ class Psu : public AppModule {
     bool restoreState(PsuState &);
 
    private:
-    int quadratic_regression(double value);
+    PsuListener* listener_;
+    PsuDataHandler dataHandler_;
 
     PsuState state;
     PsuStatus status;
     PsuError error;
     PsuAlert alert;
-    PsuLogger *logger_;
-    PsuStateChangeHandler stateChangeHandler;
-    PsuInfoHandler psuInfoHandler;
 
-    unsigned long startTime, infoUpdated, powerInfoUpdated, loggerUpdated,
+    PsuStateChangeHandler stateChangeHandler;
+
+
+    unsigned long startTime, infoUpdated, powerInfoUpdated, listenerUpdate_,
         lastCheck, lastStore;
     double outputVoltage;
     bool wh_store;
-    PsuInfo info;
+    PsuData info;
     bool alterRange;
 };

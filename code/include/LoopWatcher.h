@@ -3,6 +3,7 @@
 #include <Arduino.h>
 
 #include "Strings.h"
+#include "TimeUtils.h"
 
 #define LOOP_COUNTERS 10
 #define LOOP_CAPTURE_INTERVAL 10000
@@ -29,7 +30,7 @@ struct LoopCapture {
     }
 };
 
-enum LoopLoggerState { CAPTURE_IDLE, CAPTURE_IN_PROGRESS, CAPTURE_DONE };
+enum LoopWatcherState { CAPTURE_IDLE, CAPTURE_IN_PROGRESS, CAPTURE_DONE };
 
 class LiveTimerLogger {
    public:
@@ -47,22 +48,22 @@ class LiveTimer {
     LiveTimerLogger* logger;
 };
 
-class LoopLogger : public LiveTimerLogger {
+class LoopWatcher : public LiveTimerLogger {
    public:
     void logTime(AppModuleEnum, unsigned long);
 
    public:
-    LoopLogger();
+    LoopWatcher();
     void loop();
     void start();
 
-    LoopLoggerState getState();
+    LoopWatcherState getState();
     unsigned long getDuration();
     LoopCapture* getCapture();
     void setIdle();
     LiveTimer onExecute(AppModuleEnum);
 
-    LoopLoggerState state;
+    LoopWatcherState state;
 
    private:
     LoopCapture cap;

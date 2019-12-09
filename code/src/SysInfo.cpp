@@ -202,7 +202,7 @@ String getNetworkJson() {
 }
 
 const String getFSStats() {
-    return getFSUsed() + " / " + getFSTotal();
+    return FSUtils::getFSUsed() + " / " + FSUtils::getFSTotal();
 }
 
 const String getHeapStats() {

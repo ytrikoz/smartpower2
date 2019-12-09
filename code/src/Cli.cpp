@@ -1,11 +1,12 @@
 #include "Cli.h"
-#include "Global.h"
+
+#include <SimpleCLI.h>
 
 #include "Actions/PowerAvg.h"
 #include "Actions/WakeOnLan.h"
-#include "BootWatcher.h"
+
+#include "main.h"
 #include "CrashReport.h"
-#include "FSUtils.h"
 
 using namespace PrintUtils;
 using namespace StrUtils;
@@ -250,28 +251,20 @@ void onLog(cmd *c) {
     Command cmd(c);
     CommandAction action = getAction(cmd);
     String paramStr = getParamStr(cmd);
-    MemoryPsuLogger *logger = app.getPsuLog();
+    PsuLogHelper *logger = app.getPsuLog();
     bool handled = false;
     if (action == ACTION_PRINT) {
         String paramStr = getParamStr(cmd);
         if (!paramStr.length()) {
-            logger->printDiag(out);
+            logger->print(out);
             return;
         }
-        if (paramStr.indexOf("p") != -1) {
-            logger->print(PsuLogEnum::POWER, out);
-            handled = true;
-        }
         if (paramStr.indexOf("v") != -1) {
-            logger->print(PsuLogEnum::VOLTAGE, out);
+            logger->print(out, VOLTAGE);
             handled = true;
         }
         if (paramStr.indexOf("i") != -1) {
-            logger->print(PsuLogEnum::CURRENT, out);
-            handled = true;
-        }
-        if (paramStr.indexOf("w") != -1) {
-            logger->print(PsuLogEnum::WATTSHOURS, out);
+            logger->print(out, CURRENT);
             handled = true;
         }
         if (!handled)
@@ -458,23 +451,22 @@ void onShow(cmd *c) {
     Command cmd(c);
     String modStr = getModStr(cmd);
     if (modStr == "loop") {
-        LoopLogger *logger = app.getLoopLogger();
-        LoopLoggerState state = logger->getState();
+        LoopWatcherState state = loopWatcher->getState();
         switch (state) {
             case CAPTURE_IDLE:
                 print(out, FPSTR(str_capture));
-                print(out, logger->getDuration());
+                print(out, loopWatcher->getDuration());
                 println(out, FPSTR(str_ms));
-                app.getLoopLogger()->start();
+                loopWatcher->start();
                 return;
             case CAPTURE_IN_PROGRESS:
                 print(out, FPSTR(str_capturing));
-                print(out, logger->getDuration());
+                print(out, loopWatcher->getDuration());
                 println(out, FPSTR(str_ms));
                 return;
             case CAPTURE_DONE:
                 app.printLoopCapture(out);
-                logger->setIdle();
+                loopWatcher->setIdle();
                 return;
         };
         return;
@@ -508,12 +500,12 @@ void onPrint(cmd *c) {
 void onLs(cmd *c) {
     Command cmd(c);
     String str = getPathStr(cmd);
-    String path = asDir(str);
-    uint8_t max_level = getNestedLevel(path);
+    String path = FSUtils::asDir(str);
+    uint8_t max_level = FSUtils::getNestedLevel(path);
     auto dir = SPIFFS.openDir(path);
     while (dir.next()) {
         String name = dir.fileName();
-        if (getNestedLevel(name) > max_level)
+        if (FSUtils::getNestedLevel(name) > max_level)
             continue;
         println(out, dir.fileName(), '\t', prettyBytes(dir.fileSize()));
     }
@@ -556,7 +548,7 @@ void onCrash(cmd *c) {
     String item = getItemStr(cmd);
     switch (getAction(cmd)) {
         case ACTION_LIST: {
-            printDir(out, FS_CRASH_ROOT);
+            FSUtils::printDir(out, CRASH_ROOT);
             break;
         }
         case ACTION_PRINT: {
@@ -568,7 +560,7 @@ void onCrash(cmd *c) {
             break;
         }
         case ACTION_CLEAR:
-            rmDir(out, FS_CRASH_ROOT);
+            FSUtils::clearDir(out, CRASH_ROOT);
             break;
         case ACTION_TEST: {
             int val = 0;

@@ -1,40 +1,23 @@
 #include "Modules/PsuModule.h"
 
-#include <FS.h>
-
-#include "PrintUtils.h"
-#include "PsuUtils.h"
-#include "StoreUtils.h"
-#include "TimeUtils.h"
-
+#include "ina231.h"
+#include "mcp4652.h"
 
 using namespace PrintUtils;
 using namespace StrUtils;
 using namespace StoreUtils;
 
-int Psu::quadratic_regression(double value) {
-    double a = 0.0000006562;
-    double b = 0.0022084236;
-    float c = alterRange ? 11.83 : 4.08;
-    double d = b * b - a * (c - value);
-    double root = (-b + sqrt(d)) / a;
-    if (root < 0)
-        root = 0;
-    else if (root > 255)
-        root = 255;
-    return root;
-}
 
-bool Psu::onInit() {
+bool PsuModule::onInit() {
     setVoltage(config_->getValueAsFloat(OUTPUT_VOLTAGE));
     enableWhStore(config_->getValueAsBool(WH_STORE_ENABLED));
-    startTime = infoUpdated = powerInfoUpdated = loggerUpdated = lastStore = 0;
+    startTime = infoUpdated = powerInfoUpdated = listenerUpdate_ = lastStore = 0;
     pinMode(POWER_SWITCH_PIN, OUTPUT);
     clearErrorsAndAlerts();
     return true;
 }
 
-void Psu::powerOn() {
+void PsuModule::powerOn() {
     startTime = infoUpdated = powerInfoUpdated = lastCheck = millis();
     info.mWh = 0;
     if (isWhStoreEnabled())
@@ -42,13 +25,13 @@ void Psu::powerOn() {
     setState(POWER_ON);
 }
 
-void Psu::powerOff() {
+void PsuModule::powerOff() {
     if (wh_store)
         storeWh(info.mWh);
     setState(POWER_OFF);
 }
 
-void Psu::setState(PsuState value) {
+void PsuModule::setState(PsuState value) {
     if (state == value)
         return;
     state = value;
@@ -59,9 +42,9 @@ void Psu::setState(PsuState value) {
         stateChangeHandler(state, status);
 }
 
-bool Psu::checkVoltageRange(double value) { return alterRange = value > 7; }
+bool PsuModule::checkVoltageRange(double value) { return alterRange = value > 7; }
 
-void Psu::setVoltage(double value) {
+void PsuModule::setVoltage(double value) {
     if (checkVoltageRange(value))
         outputVoltage = constrain(value, 11.8, 12.9);
     else
@@ -70,7 +53,7 @@ void Psu::setVoltage(double value) {
     mcp4652_write(WRITE_WIPER0_ADDR, quadratic_regression(value));
 }
 
-bool Psu::onStart() {
+bool PsuModule::onStart() {
     PsuState ps;
     switch (config_->getValueAsByte(POWER)) {
     case BOOT_POWER_OFF:
@@ -96,7 +79,7 @@ bool Psu::onStart() {
     return true;
 }
 
-void Psu::onLoop() {
+void PsuModule::onLoop() {
     if (!checkState(POWER_ON))
         return;
 
@@ -112,19 +95,19 @@ void Psu::onLoop() {
     unsigned long sincePowerReaded = millis_passed(powerInfoUpdated, now);
     if (sincePowerReaded >= ONE_SECOND_ms) {
         info.P = ina231_read_power();
-        powerInfoUpdated = now;
+        powerInfoUpdated = now;        
         info.mWh +=
-            (float)sincePowerReaded / ONE_SECOND_ms * info.P / ONE_HOUR_ms;
+            info.P * (sincePowerReaded / ONE_SECOND_ms) / ONE_HOUR_ms;
+        
         info.time = now;
-
-        if (psuInfoHandler)
-            psuInfoHandler(info);
     }
 
-    if (millis_passed(loggerUpdated, now) >= PSU_LOG_INTERVAL_ms) {
-        PsuInfo pi = getInfo();
-        logger_->log(pi);
-        loggerUpdated = now;
+    if (millis_passed(listenerUpdate_, now) >= PSU_LOG_INTERVAL_ms) {
+        PsuData pi = getInfo();
+        listener_->log(pi);
+        listenerUpdate_ = now;
+        // TODO
+        if (dataHandler_) dataHandler_(pi);
     }
 
     if (millis_passed(lastCheck, now) > PSU_CHECK_INTERVAL_s * ONE_SECOND_ms) {
@@ -145,18 +128,17 @@ void Psu::onLoop() {
     }
 }
 
-void Psu::setWh(double value) {
-    info.mWh = value * ONE_WATT_mW;
-    if (wh_store)
-        storeWh(info.mWh);
+void PsuModule::setWh(double value) {
+    info.mWh = value;;
+    if (wh_store) storeWh(info.mWh);
 }
 
-bool Psu::storeWh(double value) {
+bool PsuModule::storeWh(double value) {
     bool res = storeDouble(FS_WH_VAR, value);
     return res;
 }
 
-bool Psu::enableWhStore(bool new_value) {
+bool PsuModule::enableWhStore(bool new_value) {
     if (wh_store == new_value)
         return true;
     wh_store = new_value ? restoreWh(info.mWh) : false;
@@ -165,7 +147,7 @@ bool Psu::enableWhStore(bool new_value) {
     return wh_store == new_value;
 }
 
-bool Psu::restoreWh(double &value) {
+bool PsuModule::restoreWh(double &value) {
     bool res = false;
     if (restoreDouble(FS_WH_VAR, value)) {
         print_ident(out, FPSTR(str_psu));
@@ -175,79 +157,82 @@ bool Psu::restoreWh(double &value) {
     return res;
 }
 
-const float Psu::getP() { return info.P; }
+const float PsuModule::getP() { return info.P; }
 
-const float Psu::getV() { return info.V; }
+const float PsuModule::getV() { return info.V; }
 
-const float Psu::getI() { return info.I; }
+const float PsuModule::getI() { return info.I; }
 
-const double Psu::getWh() { return info.mWh / ONE_WATT_mW; }
+const double PsuModule::getWh() { return info.mWh / ONE_WATT_mW; }
 
-const unsigned long Psu::getUptime() {
+const unsigned long PsuModule::getUptime() {
     return millis_passed(startTime, infoUpdated) / ONE_SECOND_ms;
 }
 
-bool Psu::isWhStoreEnabled(void) {
+bool PsuModule::isWhStoreEnabled(void) {
     wh_store = config_->getValueAsBool(WH_STORE_ENABLED);
     return wh_store;
 }
 
-bool Psu::storeState(PsuState value) {
+bool PsuModule::storeState(PsuState value) {
     return StoreUtils::storeInt(FS_POWER_STATE_VAR, (byte) value);
 }
 
-bool Psu::restoreState(PsuState &value) {
+bool PsuModule::restoreState(PsuState &value) {
     byte buf;
     bool res = StoreUtils::restoreByte(FS_POWER_STATE_VAR, buf);
     if (res) value = (PsuState) buf;
     return res;
 }
 
-size_t Psu::onDiag(Print *p) {
-    size_t n = println_nameP_value(p, str_power, getStateStr(state));
-    n += println_nameP_value(p, str_status, getStatusStr(status));
-    n += println_nameP_value(p, str_output, outputVoltage);
-    n += println_nameP_value(p, str_store, getBoolStr(wh_store));
-    n += println_nameP_value(p, str_mod, getBoolStr(alterRange));
-    if (checkState(POWER_ON))
-        n += println_nameP_value(p, str_uptime, getUptime());
-    return n;
+size_t PsuModule::onDiag(Print *p) {
+    DynamicJsonDocument doc(256);
+
+    doc[FPSTR(str_power)] = getStateStr(state);
+    doc[FPSTR(str_status)] = getStatusStr(status);
+    doc[FPSTR(str_output)] = outputVoltage;
+    doc[FPSTR(str_store)] = getBoolStr(wh_store);
+    doc[FPSTR(str_mod)] =  getBoolStr(alterRange);
+    doc[FPSTR(str_uptime)] = getUptime();
+    doc[FPSTR(str_data)] = info.toString();
+    
+    return serializeJsonPretty(doc, *p);
 }
 
-void Psu::togglePower() {
+void PsuModule::togglePower() {
     if (checkState(POWER_ON))
         powerOff();
     else
         powerOn();
 }
 
-PsuStatus Psu::getStatus(void) { return status; }
+PsuStatus PsuModule::getStatus(void) { return status; }
 
-PsuState Psu::getState(void) { return state; }
+PsuState PsuModule::getState(void) { return state; }
 
-PsuError Psu::getError(void) { return error; }
+PsuError PsuModule::getError(void) { return error; }
 
-PsuAlert Psu::getAlert(void) { return alert; }
+PsuAlert PsuModule::getAlert(void) { return alert; }
 
-bool Psu::checkState(PsuState value) { return state == value; }
+bool PsuModule::checkState(PsuState value) { return state == value; }
 
-bool Psu::checkStatus(PsuStatus value) { return status == value; }
+bool PsuModule::checkStatus(PsuStatus value) { return status == value; }
 
-void Psu::setOnStateChange(PsuStateChangeHandler h) { stateChangeHandler = h; };
+void PsuModule::setOnStateChange(PsuStateChangeHandler h) { stateChangeHandler = h; };
 
-void Psu::setOnPsuInfo(PsuInfoHandler h) { psuInfoHandler = h; };
+void PsuModule::setOnData(PsuDataHandler h) { dataHandler_ = h; };
 
-void Psu::setError(PsuError value) {
+void PsuModule::setError(PsuError value) {
     error = value;
     setStatus(PSU_ERROR);
 }
 
-void Psu::setAlert(PsuAlert value) {
+void PsuModule::setAlert(PsuAlert value) {
     alert = value;
     setStatus(PSU_ALERT);
 }
 
-void Psu::setStatus(PsuStatus value) {
+void PsuModule::setStatus(PsuStatus value) {
     if (status == value)
         return;
     status = value;
@@ -255,11 +240,11 @@ void Psu::setStatus(PsuStatus value) {
         stateChangeHandler(state, status);
 }
 
-const PsuInfo Psu::getInfo() { return info; }
+const PsuData PsuModule::getInfo() { return info; }
 
-const float Psu::getVoltage() { return outputVoltage; }
+const float PsuModule::getVoltage() { return outputVoltage; }
 
-void Psu::clearErrorsAndAlerts() {
+void PsuModule::clearErrorsAndAlerts() {
     alert = PSU_ALERT_NONE;
     error = PSU_ERROR_NONE;
     setStatus(PSU_OK);

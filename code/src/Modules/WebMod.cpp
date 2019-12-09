@@ -1,10 +1,7 @@
 #include "Modules/WebMod.h"
 
-#include "App.h"
-#include "AppUtils.h"
-#include "Wireless.h"
-#include "StoreUtils.h"
-#include "WebServer/WebServerAsync.h"
+#include "main.h"
+#include "Modules/PsuModule.h"
 
 bool WebMod::onInit() {
     memset(clients_, 0, sizeof(WebClient) * WEB_SERVER_CLIENT_MAX);
@@ -57,7 +54,7 @@ void WebMod::onHttpClientData(uint8_t num, String data) {
         }
         case SET_POWER_ON_OFF: {
             PsuState state = PsuState(data.substring(1).toInt());
-            Psu *psu = app.psu();
+            PsuModule *psu = app.psu();
             if (!psu->checkState(state))
                 psu->togglePower();
             String payload = String(SET_POWER_ON_OFF);

@@ -3,8 +3,10 @@
 #include <Arduino.h>
 
 #include "AppModule.h"
-#include "Cli.h"
+
+#include "Global.h"
 #include "Shell.h"
+#include "Termul.h"
 
 class ShellMod : public AppModule {
   public:

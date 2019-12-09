@@ -5,6 +5,7 @@
 #include "CommonTypes.h"
 #include "Container.h"
 #include "Storable.h"
+#include "FSUtils.h"
 
 template <typename T>
 class Storage : public Storable<T> {

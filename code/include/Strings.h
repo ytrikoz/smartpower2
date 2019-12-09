@@ -105,8 +105,10 @@ static const char str_item[] PROGMEM = "item";
 static const char str_false[] PROGMEM = "false";
 static const char str_free[] PROGMEM = "free";
 static const char str_freq[] PROGMEM = "freq";
+static const char str_full[] PROGMEM = "full";
 static const char str_file[] PROGMEM = "file";
 static const char str_for[] PROGMEM = "for";
+static const char str_format[] PROGMEM = "format";
 static const char str_fw[] PROGMEM = "fw";
 static const char str_sdk[] PROGMEM = "sdk";
 static const char str_invalid[] PROGMEM = "invalid";
@@ -253,3 +255,5 @@ static const char str_wrong_password[] PROGMEM = "wrong password";
 static const char str_wol[] PROGMEM = "wol";
 static const char str_yes[] PROGMEM = "yes";
 static const char str_web[] PROGMEM = "web";
+
+static const char str_wire[] PROGMEM = "wire";

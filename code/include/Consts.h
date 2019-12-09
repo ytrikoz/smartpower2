@@ -2,6 +2,9 @@
 
 #include "BuildConfig.h"
 
+#define CRASH_SIZE 32 + 512 + 1
+#define CRASH_NUM 10
+
 #define PG_HOME 1
 #define PG_SETTINGS 2
 #define PG_STATUS 3
@@ -21,24 +24,23 @@
 #define TAG_NETWORK_INFO 'N'
 
 #define BOOT_WAIT_s 5
-#define BUILD_TIMEOFFSET_s 3 * 60 
+#define BUILD_TIMEOFFSET_s 3 * 60
 #define BUILD_DATE __DATE__
 #define BUILD_TIME __TIME__
 
 #define ONE_MILLISECOND_mi 1000
 #define ONE_SECOND_ms 1000
 #define ONE_MINUTE_s 60
-#define ONE_MINUTE_ms ONE_MINUTE_s *ONE_SECOND_ms
+#define ONE_MINUTE_ms ONE_MINUTE_s* ONE_SECOND_ms
 #define ONE_HOUR_m 60
 #define ONE_DAY_s 86400L
 #define ONE_WEEK_days 7
-#define ONE_HOUR_s ONE_HOUR_m * ONE_MINUTE_s
+#define ONE_HOUR_s ONE_HOUR_m* ONE_MINUTE_s
 #define ONE_YEAR_days 365
 
-
 #define ONE_DAY_h 24
-#define ONE_HOUR_ms ONE_HOUR_s *ONE_SECOND_ms;
-#define ONE_WATT_mW 1000
+#define ONE_HOUR_ms ONE_HOUR_s* ONE_SECOND_ms
+#define ONE_WATT_mW 1000.0
 #define SEVENTY_YEARS_ms 2208988800UL
 #define MILLENIUM_s 946684800UL
 
@@ -53,18 +55,15 @@
 #define FS_CONFIG_ROOT "/etc/"
 #define FS_LOG_ROOT "/log/"
 #define FS_WEB_ROOT "/www/"
-#define FS_CRASH_ROOT "/err/"
+#define CRASH_ROOT "/err/"
 #define FS_VAR_ROOT "/var/"
+#define BOOT_FLAG "/var/boot"
 
-#define FS_WEB_CONFIG FS_WEB_ROOT "js/settings.js"
 #define FS_MAIN_CONFIG FS_CONFIG_ROOT "main"
-
 #define FS_POWER_STATE_VAR FS_VAR_ROOT "ps"
 #define FS_UTC_VAR FS_VAR_ROOT "utc"
 #define FS_WH_VAR FS_VAR_ROOT "wh"
 
-#define FS_BOOT_LOG FS_LOG_ROOT "boot"
-#define FS_START_FLAG "_boot"
 
 #define CONFIG_CHAR 1
 #define CONFIG_STR 31
@@ -110,10 +109,6 @@
 #define SHELL_HISTORY_SIZE 4
 
 #define ONE_MHz_hz 1000000UL
-
-#define CRASH_MAX_SIZE 32 + 512 + 1
-#define CRASH_MAX_NUM 10
-
 #define HOLD_TIME_TO_RESET_s 5
 
 static const char TIME_FORMAT[] PROGMEM = "%02d:%02d:%02d";

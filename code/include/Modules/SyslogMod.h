@@ -1,11 +1,11 @@
 #pragma once
 
 #include <Arduino.h>
+
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 
 #include "AppModule.h"
-#include "MemoryBuffer.h"
 
 /* Syslog Facility
 0	kernel messages

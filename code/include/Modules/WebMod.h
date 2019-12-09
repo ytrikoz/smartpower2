@@ -4,6 +4,7 @@
 
 #include "AppModule.h"
 #include "WebServer/WebServer.h"
+#include "WebServer/WebServerAsync.h"
 
 class WebMod : public AppModule {
    public:

@@ -2,7 +2,6 @@
 
 #include "CommonTypes.h"
 #include "EditLine.h"
-#include "Strings.h"
 
 #define A_NORMAL 0x0000     // normal
 #define A_UNDERLINE 0x0001  // underline
@@ -107,7 +106,7 @@ class Termul : public Print {
     void setOnTabKey(TermulEventHandler);
 
     bool setLine(const uint8_t *bytes, size_t size);
-    EditLine& getLine();
+    CharBuffer& getLine();
     
     void backsp();
     void clear();

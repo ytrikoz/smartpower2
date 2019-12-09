@@ -1,13 +1,6 @@
 #include "Wireless.h"
 
-#include <Arduino.h>
-#include <ESP8266WiFi.h>
-#include <user_interface.h>
-
-#include "BuildConfig.h"
-#include "ConfigHelper.h"
-#include "Global.h"
-#include "SysInfo.h"
+#include "main.h"
 
 using namespace PrintUtils;
 using namespace StrUtils;
@@ -90,7 +83,7 @@ String hostMac() {
     return str;
 }
 
-const String hostName() {
+String hostName() {
     String str;
     switch (getMode()) {
         case NETWORK_STA:
@@ -141,7 +134,7 @@ IPAddress hostGateway() {
     return res;
 }
 
-const IPAddress hostIP() {
+IPAddress hostIP() {
     IPAddress res;
     switch (getMode()) {
         case NETWORK_AP:

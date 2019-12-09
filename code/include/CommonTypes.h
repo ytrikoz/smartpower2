@@ -8,7 +8,20 @@
 #include "Strings.h"
 #include "TimeUtils.h"
 
+typedef std::function<void(bool has, unsigned long time)>
+    NetworkStatusChangeEventHandler;
+
 typedef std::function<void(const time_t local, double drift)> TimeChangeEvent;
+    
+struct AppLogItem {
+    String str;   
+};
+
+
+enum PsuLogEnum {
+    VOLTAGE = 0,
+    CURRENT = 1,
+};
 
 enum LogLevel { LEVEL_ERROR,
                 LEVEL_WARN,
@@ -56,7 +69,7 @@ enum StoreError {
     SE_ERROR_WRITE,
 };
 
-struct PsuInfo : Printable {
+struct PsuData : Printable {
     unsigned long time;
     float V;
     float I;
@@ -64,9 +77,9 @@ struct PsuInfo : Printable {
     double mWh;
 
    public:
-    PsuInfo() { time = V = I = P = mWh = 0; }
+    PsuData() { time = V = I = P = mWh = 0; }
 
-    PsuInfo(unsigned long time_ms, float V, float I, float P, double mWh)
+    PsuData(unsigned long time_ms, float V, float I, float P, double mWh)
         : time(time_ms), V(V), I(I), P(P), mWh(mWh){};
 
     void reset(void) { time = V = I = P = mWh = 0; }
@@ -97,6 +110,16 @@ struct PsuInfo : Printable {
         return n;
     }
 };
+
+class PsuListener {
+    public:
+    virtual void log(PsuData &item) { };
+};
+
+typedef std::function<void(PsuState, PsuStatus)> PsuStateChangeHandler;
+
+typedef std::function<void(PsuData)> PsuDataHandler;
+
 
 enum BootPowerState {
     BOOT_POWER_OFF = 0,

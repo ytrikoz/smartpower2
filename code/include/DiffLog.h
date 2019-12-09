@@ -1,8 +1,8 @@
 #pragma once
 
-#include "PsuLog.h"
+#include "DeduplicationLog.h"
 
-class DiffLog : public PsuLog {
+class DiffLog : public DeduplicationLog {
    public:
     DiffLog(const char* label, size_t size, float base);
     // PsuLog

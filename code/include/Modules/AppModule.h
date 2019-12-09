@@ -3,9 +3,9 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 
+#include "CommonTypes.h"
 #include "AppUtils.h"
 #include "Config.h"
-#include "PrintUtils.h"
 #include "Wireless.h"
 
 using namespace AppUtils;
@@ -19,32 +19,6 @@ enum ModState {
     STATE_START_FAILED,
     STATE_ACTIVE
 };
-
-namespace {
-const String getModStateStr(ModState state) {
-    String str;
-    switch (state) {
-        case STATE_INIT:
-            str = F("Not initialized");
-            break;
-        case STATE_INIT_FAILED:
-            str = F("Initialize failed");
-            break;
-        case STATE_INIT_COMPLETE:
-            str = F("Intialized");
-            break;
-        case STATE_START_FAILED:
-            str = F("Start failed");
-            break;
-        case STATE_ACTIVE:
-            str = F("Active");
-            break;
-        default:
-            str = FPSTR(str_unknown);
-    }
-    return str;
-}
-}  // namespace
 
 class AppModule {
    public:
@@ -111,8 +85,10 @@ class AppModule {
     };
 
     size_t printDiag(Print *p) {
-        size_t n = println_nameP_value(out, str_state, getModStateStr(state_));
-        return n += onDiag(out);
+        size_t n = print(p, FPSTR(str_state), state_);        
+        n += onDiag(p);
+        n += print_ln(p);
+        return n;
     }
 
     virtual size_t onDiag(Print *p) {

@@ -1,4 +1,4 @@
-#include "PsuLog.h"
+#include "DeduplicationLog.h"
 
 #include "StrUtils.h"
 #include "Strings.h"
@@ -8,46 +8,49 @@
 
 using namespace StrUtils;
 
-PsuLog::PsuLog(const char *label, size_t size) {
+DeduplicationLog::DeduplicationLog(const char *label, size_t size) {
     strcpy(this->name, label);
     items = new LogItem[size]();
     capacity = size;
     clear();
 }
 
-void PsuLog::log(const unsigned long time, const float value) {
+void DeduplicationLog::log(const unsigned long time, const float value) {
     if (time > lastTime) {
         lastTime = time;
         counter++;
+
         updateStats(value, counter);
 
-        uint16_t converted = value;
         if (counter == 1) {
-            getEntry()->n = 1;
-            getEntry()->v = converted;
+            entry()->number = 1;
+            entry()->value = value;
             writePos++;
         }
 
-        getEntry()->n = counter;
-        getEntry()->v = converted;
+        entry()->number = counter;
+        entry()->value = value;
 
-        if (converted != getPrevEntry()->v) {
+        if (value != getPrevEntry()->value) {
             writePos++;
-            getEntry()->n = counter;
-            getEntry()->v = converted;
+            entry()->number = counter;
+            entry()->value = value;
         }
     }
 }
 
-void PsuLog::clear() {
-    lastTime = counter = writePos = 0;
-    items[0].n = 0;
+void DeduplicationLog::clear() {
+    lastTime = 0;
+    counter = 0;
+    writePos = 0;
+
+    items[0].number = 0;
     max = UNSET_MAX;
     min = UNSET_MIN;
     avg = 0;
 }
 
-void PsuLog::updateStats(const float val, const size_t count) {
+void DeduplicationLog::updateStats(const float val, const size_t count) {
     if (max < val)
         max = val;
     if (min > val)
@@ -55,75 +58,74 @@ void PsuLog::updateStats(const float val, const size_t count) {
     avg = ((avg * (count - 1)) + val) / count;
 }
 
-LogItem *PsuLog::getEntry() { return getEntry(writePos); }
+LogItem *DeduplicationLog::entry() { return getEntry(writePos); }
 
-LogItem *PsuLog::getEntry(size_t pos) { return &items[getEntryIndex(pos)]; }
+LogItem *DeduplicationLog::getEntry(size_t pos) { return &items[getEntryIndex(pos)]; }
 
-size_t PsuLog::getEntryIndex(size_t pos) { return pos % capacity; }
+size_t DeduplicationLog::getEntryIndex(size_t pos) { return pos % capacity; }
 
-LogItem *PsuLog::getPrevEntry() { return &items[getPrevEntryIndex(writePos)]; }
+LogItem *DeduplicationLog::getPrevEntry() { return &items[getPrevEntryIndex(writePos)]; }
 
-LogItem *PsuLog::getPrevEntry(size_t pos) {
+LogItem *DeduplicationLog::getPrevEntry(size_t pos) {
     return &items[getPrevEntryIndex(pos)];
 }
 
-size_t PsuLog::getPrevEntryIndex(size_t pos) {
+size_t DeduplicationLog::getPrevEntryIndex(size_t pos) {
     bool overlaped = pos >= capacity;
     if (overlaped)
         pos = pos % capacity;
     return pos > 0 ? --pos : overlaped ? capacity - 1 : 0;
 }
 
-LogItem *PsuLog::getFirstEntry() { return &items[getFirstEntryIndex()]; }
+LogItem *DeduplicationLog::getFirstEntry() { return &items[getFirstEntryIndex()]; }
 
-size_t PsuLog::getFirstEntryIndex() {
+size_t DeduplicationLog::getFirstEntryIndex() {
     return writePos > capacity ? getNextEntryIndex(writePos) : 0;
 }
 
-LogItem *PsuLog::getNextEntry(size_t pos) {
+LogItem *DeduplicationLog::getNextEntry(size_t pos) {
     return &items[getNextEntryIndex(pos)];
 }
 
-size_t PsuLog::getNextEntryIndex(size_t pos) { return ++pos % capacity; }
+size_t DeduplicationLog::getNextEntryIndex(size_t pos) { return ++pos % capacity; }
 
-LogItem *PsuLog::getLastEntry() { return &items[getLastEntryIndex()]; }
+LogItem *DeduplicationLog::getLastEntry() { return &items[getLastEntryIndex()]; }
 
-size_t PsuLog::getLastEntryIndex() { return writePos % capacity; }
+size_t DeduplicationLog::getLastEntryIndex() { return writePos % capacity; }
 
-size_t PsuLog::count() {
-    return (writePos > 0) ? getLastEntry()->n - getFirstEntry()->n + 1
-                          : items[0].n;
+size_t DeduplicationLog::count() {
+    return writePos ? getLastEntry()->number - getFirstEntry()->number + 1: items[0].number;
 }
 
-void PsuLog::values(float array[], size_t &size) {
-    if (size > counter)
-        size = counter;
+void DeduplicationLog::values(float array[], size_t &size) {
+    if (size > counter) size = counter;
+
     size_t pos = getFirstEntryIndex();
+
     for (size_t i = 0; i < size; ++i) {
-        LogItem *log = &items[pos];
-        array[i] = log->v;
-        if (i >= log->n)
-            pos = getEntryIndex(pos);
+        LogItem li = items[pos];
+        array[i] = li.value;
+        if (i >= li.number) pos = getEntryIndex(pos);
     };
 }
 
-void PsuLog::printTo(Print *p) {
-    size_t readPos = getFirstEntryIndex();
-    size_t first_n = getFirstEntry()->n;
-    size_t last_n = getLastEntry()->n;
-    if (first_n == last_n)
-        first_n = 1;
-    for (size_t n = first_n; n <= last_n; ++n) {
-        float value = getEntry(readPos)->v;
-        if (n >= getEntry(readPos)->n)
-            readPos++;
+void DeduplicationLog::printTo(Print *p) {
+    size_t readPos = getFirstEntryIndex();    
+    size_t first = getFirstEntry()->number;
+    size_t last = getLastEntry()->number;
+
+    if (first == last) first = 1;
+
+    for (size_t n = first; n <= last; ++n) {
+        float value = getEntry(readPos)->value;
+        if (n >= getEntry(readPos)->number) readPos++;
         p->print(n);
         p->print('\t');
         p->println(value, 4);
     }
 }
 
-void PsuLog::printDiag(Print *p) {
+void DeduplicationLog::printDiag(Print *p) {
     p->print(name);
     p->print('\t');
     if (!count()) {

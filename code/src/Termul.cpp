@@ -172,7 +172,7 @@ bool Termul::setLine(const uint8_t *ptr, size_t size) {
     return line.write(ptr, size);
 }
 
-EditLine& Termul::getLine() { return this->line; }
+CharBuffer& Termul::getLine() { return this->line; }
 
 void Termul::start() {
     if (controlCodesEnabled)

@@ -7,6 +7,8 @@
 using namespace PrintUtils;
 using namespace StrUtils;
 
+namespace FSUtils {
+
 const String getFSUsed() {
     FSInfo fsi;
     SPIFFS.info(fsi);    
@@ -70,7 +72,7 @@ size_t printDir(Print *p, const char *path) {
     return n;
 }
 
-size_t rmDir(Print *p, const char *path) {
+size_t clearDir(Print *p, const char *path) {
     String dir_path = asDir(path);
     uint8_t max_level = getNestedLevel(dir_path);
     Dir dir = SPIFFS.openDir(dir_path);
@@ -83,4 +85,5 @@ size_t rmDir(Print *p, const char *path) {
         SPIFFS.remove(dir.fileName());
     }
     return n;
+}
 }

@@ -2,11 +2,11 @@
 
 #include <Arduino.h>
 
+#include "CommonTypes.h"
 #include "ConfigHelper.h"
-#include "LoopLogger.h"
+#include "LoopWatcher.h"
 #include "Plot.h"
-#include "PsuLogger.h"
-#include "Strings.h"
+#include "PsuLogHelper.h"
 
 #include "Modules/ButtonMod.h"
 #include "Modules/Display.h"
@@ -14,15 +14,15 @@
 #include "Modules/NetworkService.h"
 #include "Modules/OTAUpdate.h"
 #include "Modules/PsuModule.h"
-#include "Modules/ShellMod.h"
 #include "Modules/SyslogMod.h"
 #include "Modules/ClockMod.h"
 #include "Modules/TelnetServer.h"
 #include "Modules/WebMod.h"
+#include "Modules/ShellMod.h"
 
-class App : PsuLogger {
+class App : PsuListener {
    public:
-    void log(PsuInfo &item) override;
+    void log(PsuData &item) override;
 
    public:
     App();
@@ -48,11 +48,10 @@ class App : PsuLogger {
     Config *params();
     ClockMod *clock();
     Display *lcd();
-    LoopLogger *getLoopLogger();
-    MemoryPsuLogger *getPsuLog();
+    PsuLogHelper *getPsuLog();
     ConfigHelper *config();
     WebMod *web();
-    Psu *psu();
+    PsuModule *psu();
     LedMod *led();
     ShellMod *shell();
     ButtonMod *btn();
@@ -114,11 +113,12 @@ class App : PsuLogger {
    private:
     bool networkChanged;
     bool safemode = false;
+
     AppModule *appMod[APP_MODULES];
-    LoopLogger *loopLogger;
+    LoopWatcher *loopLogger;
     ConfigHelper *configHelper;
 
-    MemoryPsuLogger *psuLog;
+    PsuLogHelper *psuLog;
 
     WiFiEventHandler onDisconnected, onGotIp;
 
@@ -129,5 +129,3 @@ class App : PsuLogger {
     uint8_t boot_per;
     Print *out, *dbg, *err = NULL;
 };
-
-extern App app;
