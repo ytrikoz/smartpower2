@@ -3,14 +3,13 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 
-
 #include "Core/CircularBuffer.h"
 #include "Core/CharBuffer.h"
 #include "Strings.h"
 
 class Logger : public Print {
    public:
-    Logger() {};
+    Logger(){};
 
     void loop() {
         AppLogItem buf;
@@ -41,7 +40,6 @@ class Logger : public Print {
         return serializeJsonPretty(doc, *p);
     }
 
-
    private:
     void push(const char* str) {
         AppLogItem item;
@@ -57,6 +55,3 @@ class Logger : public Print {
     CharBuffer buffer_;
     CircularBuffer<AppLogItem, 128> pool_;
 };
-
-
-

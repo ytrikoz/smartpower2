@@ -46,19 +46,17 @@ void App::startSafe() {
 void App::loopSafe() { shell()->loop(); }
 
 void App::loop() {
-    for (uint8_t i = 0; i < APP_MODULES; ++i) {
+    for (size_t i = 0; i < APP_MODULES; ++i) {
         AppModule *mod = getModule(AppModuleEnum(i));
         if (mod) {
-            if (mod->isNetworkDepended() &&
-                (!Wireless::hasNetwork() ||
-                 !mod->isCompatible(Wireless::getMode())))
+            if (mod->isNetworkDepended() && (!Wireless::hasNetwork() ||!mod->isCompatible(Wireless::getMode())))
                 continue;
             LiveTimer timer = loopLogger->onExecute(AppModuleEnum(i));
             mod->loop();
             delay(0);
         }
     }
-    
+
     handleRestart();
     delay(0);
 
@@ -72,20 +70,25 @@ void App::loop() {
     loopLogger->loop();
 }
 
-size_t App::printDiag(Print *out) {
-    size_t n = println(out, SysInfo::getHeapStats());
-    n += println(out, FPSTR(str_ap), Wireless::getAPClients());
-    n += println(out, FPSTR(str_http), web()->getClients());
-    n += println(out, FPSTR(str_telnet), getBoolStr(telnet()->hasClient()));
-    return n;
+size_t App::printDiag(Print *p) {
+    DynamicJsonDocument doc(256);
+
+    doc[FPSTR(str_heap)] = SysInfo::getHeapStats();
+    doc[FPSTR(str_ap)] = Wireless::AP_Clients();
+    doc[FPSTR(str_http)] = web()->getClients();
+    doc[FPSTR(str_telnet)] = getBoolStr(telnet()->hasClient());
+
+    size_t n = serializeJsonPretty(doc, *p);
+    return n += print_ln(p);
 }
 
 size_t App::printDiag(Print *p, const AppModuleEnum module) {
     AppModule *mod = appMod[module];
-    if (mod)
+    if (mod) {
         return mod->printDiag(p);
-    else
+    } else {
         return print(p, FPSTR(str_disabled));
+    }
 }
 
 void App::printLoopCapture(Print *p) {
@@ -169,7 +172,6 @@ void App::handleRestart() {
             system_restart();
     }
 }
-
 
 void App::displayProgress(uint8_t progress, const char *message) {
     if (lcd()->isEnabled()) lcd()->showProgress(progress, message);
@@ -297,7 +299,7 @@ AppModule *App::getModule(const AppModuleEnum mod) {
             case MOD_CLOCK: {
                 appMod[mod] = new ClockMod();
                 clock()->setOnChange([this](const time_t local, double drift) {
-                    print_ident(out, FPSTR(str_clock));                                   
+                    print_ident(out, FPSTR(str_clock));
                     println(out, TimeUtils::format_time(local), "(", TimeUtils::format_elapsed(drift), ")");
                 });
 
@@ -430,5 +432,3 @@ Display *App::lcd() { return (Display *)appMod[MOD_DISPLAY]; }
 WebMod *App::web() { return (WebMod *)appMod[MOD_WEB]; }
 
 PsuLogHelper *App::getPsuLog() { return psuLog; }
-
-

@@ -23,11 +23,22 @@ WiFiEventHandler stationConnectedHandler, stationDisconnectedHandler,
 
 NetworkStatusChangeEventHandler statusChangeHandler;
 
-String hostAP_SSID() { return WiFi.softAPSSID(); }
+String AP_Name() {
+    return String("smartpower2");
+}
 
-String hostAP_Password() { return WiFi.softAPPSK(); }
+String AP_SSID() { return WiFi.softAPSSID(); }
 
-IPAddress hostAP_IP() { return WiFi.softAPIP(); }
+String AP_Password() { return WiFi.softAPPSK(); }
+
+IPAddress AP_IP() { return WiFi.softAPIP(); }
+
+uint8_t AP_Clients() {
+    return (networkMode == Wireless::NETWORK_AP ||
+            networkMode == Wireless::NETWORK_AP_STA)
+               ? wifi_softap_get_station_num()
+               : 0;
+}
 
 String hostSTA_RSSI() { return fmt_rssi(WiFi.RSSI()); }
 
@@ -57,7 +68,7 @@ String hostSSID() {
         case NETWORK_OFF:
             break;
         case NETWORK_AP:
-            res = hostAP_SSID();
+            res = Wireless::AP_SSID();
             break;
         case NETWORK_STA:
         case NETWORK_AP_STA:
@@ -92,7 +103,7 @@ String hostName() {
             break;
         case NETWORK_OFF:
         case NETWORK_AP:
-            str += hostAP_Name();
+            str += Wireless::AP_Name();
             break;
     }
     return str;
@@ -138,7 +149,7 @@ IPAddress hostIP() {
     IPAddress res;
     switch (getMode()) {
         case NETWORK_AP:
-            res = hostAP_IP();
+            res = Wireless::AP_IP();
             break;
         case NETWORK_STA:
         case NETWORK_AP_STA:
@@ -189,7 +200,7 @@ bool startSTA(const char *ssid, const char *passwd) {
     uint8_t result = WiFi.waitForConnectResult();
     print_wifi_sta(&DEBUG);
     print_nameP_value(&DEBUG, str_ssid, ssid);
-    println_nameP_value(&DEBUG, str_status, hostSTA_StatusStr());
+    println_nameP_value(&DEBUG, str_status, getSTAStatus());
     return result;
 }
 
@@ -218,7 +229,7 @@ void start_safe_wifi_ap() {
 }
 
 void start() {
-    String host = hostAP_Name();
+    String host = AP_Name();
     print_ident(&DEBUG, FPSTR(str_wifi));
     println_nameP_value(&DEBUG, str_host, host.c_str());
 
@@ -299,9 +310,9 @@ void start() {
     }
 
     if (mode == NETWORK_AP || mode == NETWORK_AP_STA) {
-        const char *ap_ssid = app.params()->getValueAsString(AP_SSID);
-        const char *ap_passwd = app.params()->getValueAsString(AP_PASSWORD);
-        IPAddress ap_ipaddr = app.params()->getValueAsIPAddress(AP_IPADDR);
+        const char *ap_ssid = app.params()->getValueAsString(ConfigItem::AP_SSID);
+        const char *ap_passwd = app.params()->getValueAsString(ConfigItem::AP_PASSWORD);
+        IPAddress ap_ipaddr = app.params()->getValueAsIPAddress(ConfigItem::AP_IPADDR);
 
         setupAP(ap_ipaddr);
 
@@ -359,7 +370,7 @@ void onNetworkUp() { lastUp = millis(); }
 void onNetworkDown() { lastDown = millis(); }
 
 NetworkMode getMode() {
-    networkMode = (NetworkMode) WiFi.getMode();
+    networkMode = (NetworkMode)WiFi.getMode();
     return networkMode;
 }
 
@@ -375,7 +386,7 @@ void setOnNetworkStatusChange(NetworkStatusChangeEventHandler h) {
         statusChangeHandler(hasNetwork(), millis());
 }
 
-String networkStateInfo() {
+String getNetworkState() {
     bool has = hasNetwork();
     String str = FPSTR(str_network);
     str += getUpDownStr(has);
@@ -402,11 +413,7 @@ String getModeStr(NetworkMode mode) {
     return FPSTR(strP);
 }
 
-String hostAP_Name() {
-    return String("smartpower2");
-}
-
-String hostSTA_StatusStr() {
+String getSTAStatus() {
     PGM_P strP;
     switch (wifi_station_get_connect_status()) {
         case STATION_CONNECTING:
@@ -453,12 +460,6 @@ bool scanWiFi(const char *ssid) {
     delay(100);
 
     return discovered;
-}
-
-
-uint8_t getAPClients() {
-    return (networkMode == Wireless::NETWORK_AP ||
-        networkMode == Wireless::NETWORK_AP_STA) ? wifi_softap_get_station_num(): 0;
 }
 
 String getWifiChannel() { return String(WiFi.channel()); }

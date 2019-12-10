@@ -51,16 +51,6 @@ int hex2byte(const char *hex) {
     return (a << 4) | b;
 }
 
-String asJsonObj(const char *key, const char *value) {
-    char buf[128];
-    sprintf(buf, "{\"%s\":\"%s\"}", key, value);
-    return String(buf);
-}
-
-String asJsonObj(const char *key, String value) {
-    return asJsonObj(key, value.c_str());
-}
-
 String getTimeStr(const unsigned long epoch_s, bool fmtLong) {
     // seconds since 1970-01-01 00:00:00
     unsigned long passed = epoch_s;
@@ -81,38 +71,6 @@ String getTimeStr(const unsigned long epoch_s, bool fmtLong) {
     return String(buf);
 }
 
-String getDateTimeFormated(const unsigned long epoch_s) {
-    // seconds since 1970-01-01 00:00:00
-    unsigned long passed = epoch_s;
-    uint8_t second = passed % ONE_MINUTE_s;
-    passed = passed / ONE_MINUTE_s;
-
-    uint8_t minute = passed % ONE_HOUR_m;
-    passed = passed / ONE_HOUR_m;
-
-    uint8_t hour = passed % ONE_DAY_h;
-    passed = passed / ONE_DAY_h;
-
-    uint16_t year = 0;
-    unsigned long days = 0;
-    while ((days += TimeUtils::daysInYear(year)) <= passed)
-        year++;
-    year = TimeUtils::encodeYear(year);
-
-    passed -= days - TimeUtils::daysInYear(year);
-    uint8_t month;
-    for (month = 1; month <= 12; ++month) {
-        uint8_t daysInMonth = TimeUtils::daysInMonth(month, year);
-        if (passed >= daysInMonth)
-            passed -= daysInMonth;
-        else
-            break;
-    }
-    uint8_t day = passed + 1;
-    char buf[32];
-    sprintf_P(buf, DATETIME_FORMAT, day, month, year, hour, minute, second);
-    return String(buf);
-}
 
 void strfill(char *str, char chr, size_t len) {
     memset(&str[0], chr, sizeof(char) * len);
@@ -135,8 +93,6 @@ IPAddress atoip(const char *str) {
     }
     return IPAddress(parts[0], parts[1], parts[2], parts[3]);
 } // namespace StrUtils
-
-String iptos(IPAddress &ip) { return ip.toString(); }
 
 void setnnstr(char *dest, const char *src) {
     if (src == NULL) {

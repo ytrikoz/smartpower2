@@ -10,18 +10,12 @@ namespace StrUtils {
 
 typedef enum { LEFT, CENTER, RIGHT } Align;
 
-String asJsonObj(const char *key, const char *value);
-
-String asJsonObj(const char *key, String value);
-
 String getTimeStr(const unsigned long epoch_s, bool fmtLong = false);
 
 String getDateTimeStr(const unsigned long epoch_s);
 
 void stringToBytes(const char *str, char sep, uint8_t *bytes, int len,
                    int base);
-
-String iptos(IPAddress &ip);
 
 const char *iptoa(IPAddress &ip);
 
@@ -36,10 +30,6 @@ void strfill(char *str, char chr, size_t size);
 bool isip(const char *);
 
 bool isip(const String &);
-
-bool strpositiv(String &);
-
-bool strnegativ(String &);
 
 const String fmt_ip_port(const IPAddress &ip, const uint16_t port);
 
