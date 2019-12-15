@@ -5,7 +5,7 @@
 
 #include "main.h"
 #include "CrashReport.h"
-#include "Cli/CommandRunner.h"
+#include "Cli/CliRunner.h"
 
 using namespace PrintUtils;
 using namespace StrUtils;
@@ -54,7 +54,7 @@ Print* setOutput(Print *out) {
 }
 
 Runner* get() {  
-    if (runner_ == nullptr) runner_ = new CommandRunner(cli_);
+    if (runner_ == nullptr) runner_ = new CliRunner(cli_);
     return runner_;
 }
 

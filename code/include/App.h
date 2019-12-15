@@ -17,7 +17,7 @@
 #include "Modules/NetworkService.h"
 #include "Modules/OTAUpdate.h"
 #include "Modules/PsuModule.h"
-#include "Modules/SyslogModule.h"
+#include "Modules/Syslog.h"
 #include "Modules/Shell.h"
 #include "Modules/Telnet.h"
 #include "Modules/Web.h"
@@ -47,21 +47,19 @@ class App : public ModuleHost, PsuListener {
     void printPlot(PlotData *data, Print *p);
     void printCapture(Print *);
 
+    Display *lcd() { return (Display *)appMod[MOD_DISPLAY]; }
     Modules::Button *btn() { return (Modules::Button *)appMod[MOD_BTN]; }
     Modules::Clock *clock() { return (Modules::Clock *)appMod[MOD_CLOCK]; }    
     Modules::Led *led() { return (Modules::Led *)appMod[MOD_LED]; }
     Modules::Shell *shell() { return (Modules::Shell *)appMod[MOD_SHELL]; }
     Modules::Telnet *telnet() { return (Modules::Telnet *)appMod[MOD_TELNET]; }  
-    Modules::Web *web() { return (Modules::Web *)appMod[MOD_WEB]; }
-    
+    Modules::Web *web() { return (Modules::Web *)appMod[MOD_WEB]; }    
     PsuModule *psu() { return (PsuModule *)appMod[MOD_PSU]; }
-    
+
     ConfigHelper *config() { return configHelper; }
-    Config *params() { return configHelper->get(); }
-    Display *lcd() { return (Display *)appMod[MOD_DISPLAY]; }
-    
+    Config *params() { return configHelper->get(); }    
     PsuLogHelper *getPsuLog() { return psuLog; }
-    LoopWatcher* watcher() {return loopLogger;}
+    LoopWatcher* watcher() {return loopLogger;}    
 
     bool setBootPowerState(BootPowerState state);
     bool setOutputVoltageAsDefault();
@@ -112,12 +110,12 @@ class App : public ModuleHost, PsuListener {
 
    private:
     void displayProgress(uint8_t progress, const char *message);
-    void restartNetworkDependedModules(NetworkMode mode, bool hasNetwork);
     void restart();
-    void send_psu_data_to_clients();
 
    private:
     bool networkChanged;
+    NetworkMode networkMode;
+    bool hasNetwork;
     LoopWatcher *loopLogger;
     ConfigHelper *configHelper;
     PsuLogHelper *psuLog;
@@ -130,7 +128,7 @@ class App : public ModuleHost, PsuListener {
    private:
     Module *appMod[APP_MODULES];
 
-    ModuleDefine define[APP_MODULES] = {
+    ModuleDefinition define[APP_MODULES] = {
         {str_btn, 0, false, false},
         {str_clock, 0, false, false},
         {str_web, 0, false, false},

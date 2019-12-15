@@ -12,13 +12,13 @@ typedef std::function<void(time_t)> ButtonHoldReleaseEventHandler;
 namespace Modules {
 
 class Button : public Module {
+    public:
+    Button(uint8_t pin);
+
    public:
     void setOnClick(ButtonClickEventHandler handler);
     void setOnHold(ButtonHoldEventHandler handler);
     void setOnRelease(ButtonHoldReleaseEventHandler handler);
-
-   public:
-    Button(uint8_t pin);
 
    protected:
     void onLoop() override;

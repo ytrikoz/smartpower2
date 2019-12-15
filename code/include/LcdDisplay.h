@@ -25,12 +25,12 @@ enum CharBank {
 };
 
 class LcdDisplay {
-  public:
+   public:
     LcdDisplay();
     bool begin();
     void loop();
 
-  public:
+   public:
     bool isEnabled();
     void loadBank(CharBank bank, bool force = false);
     bool connect();
@@ -47,10 +47,10 @@ class LcdDisplay {
     void drawFloat(uint8_t col, uint8_t row, float value);
     void drawText(uint8_t col, uint8_t row, const char *str);
 
-  private:
+   private:
     void drawScreenItem(uint8_t row, ScreenItem *l);
 
-  private:
+   private:
     uint8_t addr;
     LiquidCrystal_I2C *lcd;
     bool active;

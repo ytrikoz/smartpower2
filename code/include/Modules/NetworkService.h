@@ -9,19 +9,10 @@
 #include "SysInfo.h"
 #include "Wireless.h"
 
-class NetworkService : public Module {
+class NetworkService : public NetworkModule {
    public:
-    NetworkService() : Module(){};
-    
+    NetworkService() : NetworkModule(NetworkMode::NETWORK_AP){};  
     void onDiag(const JsonObject&) override;
-
-    bool isCompatible(NetworkMode value) override {
-        return (value != NetworkMode::NETWORK_OFF);
-    }
-
-    bool isNetworkDepended() override { return true; }
-
-
    protected:
     bool onInit() override;
     void onStop() override;

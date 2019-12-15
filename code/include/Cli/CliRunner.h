@@ -6,9 +6,9 @@
 
 namespace Cli {
 
-class CommandRunner : public Runner {
+class CliRunner : public Runner {
    public:
-    CommandRunner(SimpleCLI* cli) : cli_(cli){};
+    CliRunner(SimpleCLI* cli) : cli_(cli){};
 
     void run(const char* command, Print* output) override {
         Print* prev = Cli::setOutput(output);

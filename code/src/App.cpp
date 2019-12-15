@@ -47,7 +47,7 @@ Module *App::instance(ModuleEnum module) {
                 break;
             }
             case MOD_SYSLOG: {
-                appMod[module] = new SyslogModule();
+                appMod[module] = new Modules::Syslog();
                 break;
             }
             case MOD_PSU: {
@@ -73,20 +73,19 @@ Module *App::instance(ModuleEnum module) {
             }
             case MOD_TELNET: {
                 appMod[module] = new Modules::Telnet();
-                telnet()->setShell(new CommandShell(Cli::get()));
                 telnet()->setEventHandler([this](TelnetEventType et, WiFiClient *client) {
                     PrintUtils::print_ident(out_, FPSTR(str_telnet));
                     switch (et) {
-                        case CLIENT_CONNECTED:                        
+                        case CLIENT_CONNECTED:
                             PrintUtils::println(out_, FPSTR(str_connected), prettyIpAddress(client->remoteIP(), client->remotePort()));
                             break;
                         case CLIENT_DISCONNECTED:
                             PrintUtils::println(out_, FPSTR(str_disconnected));
                             break;
-                    }    
+                    }
                     refresh_wifi_led();
                     return true;
-                });        
+                });
                 break;
             }
             case MOD_UPDATE: {
@@ -118,11 +117,11 @@ void App::log(PsuData &item) {
     }
 }
 
-App::App():networkChanged(false), restartFlag_(false), restartCountdown_(0) {
+App::App() : networkChanged(false), restartFlag_(false), restartCountdown_(0) {
     memset(appMod, 0, sizeof(appMod[0]) * APP_MODULES);
 }
 
-void App::init() {    
+void App::init() {
     loopLogger = new LoopWatcher();
     configHelper = new ConfigHelper();
     Cli::init();
@@ -139,26 +138,28 @@ void App::loopSafe() { shell()->loop(); }
 void App::loop() {
     for (size_t i = 0; i < APP_MODULES; ++i) {
         auto *obj = module(i);
-        if (obj) {
-            if (obj->isNetworkDepended() && (!Wireless::hasNetwork() || !obj->isCompatible(Wireless::getMode())))
-                continue;
-            LiveTimer timer = loopLogger->onExecute(ModuleEnum(i));
-            obj->loop();
-            delay(0);
-        }
+        // if (obj == nullptr) continue;
+        // if (obj->networkRequired()) {
+        //     if (obj->isCompatible(networkMode)) {
+        //         if (networkChanged) {
+        //             if (hasNetwork) {
+        //                 obj->start();
+        //             } else {
+        //                 obj->stop();
+        //             }
+        //         }
+        //     } else {
+        //         continue;
+        //     }
+        // }
+        LiveTimer timer = loopLogger->onExecute(ModuleEnum(i));
+        obj->loop();
+        delay(0);
     }
-
+    if (networkChanged) refresh_wifi_led();
     handleRestart();
-    delay(0);
-
-    if (networkChanged) {
-        restartNetworkDependedModules(Wireless::getMode(), Wireless::hasNetwork());
-        refresh_wifi_led();
-        networkChanged = false;
-    }
-    delay(0);
-
     loopLogger->loop();
+    networkChanged = false;
 }
 
 size_t App::printDiag(Print *p) {
@@ -184,7 +185,6 @@ size_t App::printDiag(Print *p, const ModuleEnum mod) {
 }
 
 void App::printLoopCapture(Print *p) {
-   
 }
 
 void App::restart(time_t time) {
@@ -228,6 +228,7 @@ void App::begin() {
     instance(MOD_CLOCK);
     instance(MOD_PSU);
     instance(MOD_SHELL);
+
     displayProgress(40, "<WIFI>");
 
     Wireless::start();
@@ -241,6 +242,8 @@ void App::begin() {
             out_->printf("network %s (%.2f sec)\n",
                          StrUtils::getUpDownStr(buf, hasNetwork),
                          (float)time / ONE_SECOND_ms);
+            networkMode = Wireless::getMode();
+            hasNetwork = hasNetwork;
             networkChanged = true;
         });
 
@@ -249,16 +252,13 @@ void App::begin() {
     lcd()->refresh();
 
     psu()->setOnData([this](PsuData data) {
-        if (lcd())
-            lcd()->refresh();
+        if (lcd()) lcd()->refresh();
     });
-
     psu()->setOnStateChange([this](PsuState state, PsuStatus status) {
         web()->sendPageState(PG_HOME);
         switch (status) {
             case PSU_OK: {
-                led()->set(RED_LED,
-                           psu()->checkState(POWER_ON) ? BLINK : LIGHT_ON);
+                led()->set(RED_LED, psu()->checkState(POWER_ON) ? BLINK : LIGHT_ON);
                 break;
             }
             case PSU_ALERT: {
@@ -268,37 +268,9 @@ void App::begin() {
             case PSU_ERROR: {
                 led()->set(RED_LED, BLINK_ERROR);
             }
-            default: {
-                break;
-            }
         }
-        // if (state == POWER_OFF) {
-        //     size_t size = constrain(
-        //         logger->getSize(PsuLogEnum::VOLTAGE), 0, 1024);
-        //     if (size > 0) {
-        //         PlotData data;
-        //         float tmp[size];
-        //         logger->getValues(PsuLogEnum::VOLTAGE, tmp, size);
-        //         size_t cols = group(&data, tmp, size);
-        //         display->showPlot(&data, cols);
-        //     };
-        // }
         lcd()->refresh();
     });
-}
-
-void App::restartNetworkDependedModules(NetworkMode networkMode, bool hasNetwork) {
-    for (size_t i = 0; i < APP_MODULES; ++i) {
-        auto obj = module(i);
-        if (!obj->isNetworkDepended())
-            continue;
-        if (obj->isCompatible(networkMode)) {
-            if (hasNetwork)
-                obj->start();
-            else
-                obj->stop();
-        }
-    }
 }
 
 bool App::setOutputVoltageAsDefault() {
@@ -349,4 +321,15 @@ void App::printPlot(PlotData *data, Print *p) {
         p->print(tmp);
         p->println();
     }
+    // if (state == POWER_OFF) {
+    //     size_t size = constrain(
+    //         logger->getSize(PsuLogEnum::VOLTAGE), 0, 1024);
+    //     if (size > 0) {
+    //         PlotData data;
+    //         float tmp[size];
+    //         logger->getValues(PsuLogEnum::VOLTAGE, tmp, size);
+    //         size_t cols = group(&data, tmp, size);
+    //         display->showPlot(&data, cols);
+    //     };
+    // }
 }

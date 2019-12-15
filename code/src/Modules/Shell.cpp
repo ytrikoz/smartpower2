@@ -1,21 +1,21 @@
 #include "Modules/Shell.h"
 
-#include "Cli/CommandRunner.h"
+#include "Cli/Cli.h"
 
 namespace Modules {
 
 Shell::Shell(): Module() {};
 
-void Shell::setShell(CommandShell* shell) {
+void Shell::setShell(Cli::CommandShell* shell) {
     shell_ = shell;
     shell_->setTerm(term_);
 }
 
 bool Shell::onInit() {    
-    Terminal* term = new Terminal();
+    Cli::Terminal* term = new Cli::Terminal();
     term->enableControlCodes(false);
     term->enableEcho();       
-    shell_ = new CommandShell(Cli::get());
+    shell_ = new Cli::CommandShell(Cli::get());
     shell_->enableWelcome();    
     shell_->setTerm(term);
     return true;

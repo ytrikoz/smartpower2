@@ -1,9 +1,11 @@
-#include "CommandShell.h"
+#include "Cli/CommandShell.h"
 
 using namespace StrUtils;
 using namespace TimeUtils;
 
-CommandShell::CommandShell(Cli::Runner *runner) {
+namespace Cli {
+
+CommandShell::CommandShell(Cli::Runner *runner) : term_(nullptr) {
     runner_ = runner;
 }
 
@@ -11,10 +13,10 @@ Terminal *CommandShell::term() {
     return term_;
 }
 
-void CommandShell::setTerm(Terminal* term) {
+void CommandShell::setTerm(Cli::Terminal *term) {
     term_ = term;
-    if (term != nullptr) {
-        term->setOnEvent([this](TerminalEventEnum event, Print *out) {
+    if (term_ != nullptr) {
+        term_->setOnEvent([this](TerminalEventEnum event, Print *out) {
             switch (event) {
                 case EVENT_OPEN: {
                     if (welcome_) {
@@ -34,7 +36,7 @@ void CommandShell::setTerm(Terminal* term) {
                     break;
             }
         });
-        term->setOnReadLine([this](const char *str) { onData(str); });
+        term_->setOnReadLine([this](const char *str) { onData(str); });
     }
 }
 
@@ -43,6 +45,7 @@ bool CommandShell::isOpen() { return open_; }
 void CommandShell::enableWelcome(bool enabled) { welcome_ = enabled; }
 
 void CommandShell::onOpen(Print *out) {
+    open_ = true;
 }
 
 void CommandShell::onClose(Print *out) {
@@ -115,3 +118,5 @@ size_t CommandShell::print_shell_exit(Print *p) {
 size_t CommandShell::print_prompt(Print *p) {
     return p->print("/> ");
 }
+
+}  // namespace Cli

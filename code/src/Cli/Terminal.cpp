@@ -1,15 +1,19 @@
-#include "Terminal.h"
+#include "Cli/Terminal.h"
 
 #include "PrintUtils.h"
 #include "SysInfo.h"
 
 using namespace PrintUtils;
 
+namespace Cli {
+
 Terminal::Terminal(Stream *stream) : stream_(stream){};
 
-void Terminal::setStream(Stream* stream) {
+void Terminal::setStream(Stream *stream) {
     stream_ = stream;
 }
+
+Terminal::~Terminal() {}
 
 void Terminal::setOnReadLine(TerminalInputEventHandler h) { inputHandler_ = h; }
 
@@ -116,9 +120,9 @@ void Terminal::loop() {
 
         switch (c) {
             case CHAR_CR:
-                println();         
+                println();
                 if (inputHandler_)
-                    inputHandler_(line.c_str());                
+                    inputHandler_(line.c_str());
                 line.clear();
                 moveY++;
                 break;
@@ -309,3 +313,5 @@ size_t Terminal::write(const uint8_t *buf, size_t size) {
     }
     return n;
 }
+
+}  // namespace Cli

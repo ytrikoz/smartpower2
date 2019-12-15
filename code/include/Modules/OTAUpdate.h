@@ -7,13 +7,11 @@
 #include "Module.h"
 #include "Strings.h"
 
-class OTAUpdate : public Module {
+class OTAUpdate : public NetworkModule {
    public:
     OTAUpdate(uint16_t port);
     
    protected:
-    bool isCompatible(NetworkMode value) override { return value != NetworkMode::NETWORK_OFF; }
-    bool isNetworkDepended() override { return true; }
     bool onInit() override;
     bool onStart() override;
     void onStop() override;

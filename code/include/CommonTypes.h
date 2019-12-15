@@ -23,11 +23,10 @@ enum NetworkStatus { NETWORK_DOWN = 0,
                      NETWORK_UP = 1 };
 
 typedef std::function<void(const time_t local, double diff)> TimeChangeEvent;
-    
-struct AppLogItem {
-    String str;   
-};
 
+struct AppLogItem {
+    String str;
+};
 
 enum PsuLogEnum {
     VOLTAGE = 0,
@@ -109,14 +108,13 @@ struct PsuData : Printable {
 };
 
 class PsuListener {
-    public:
-    virtual void log(PsuData &item) { };
+   public:
+    virtual void log(PsuData &item){};
 };
 
 typedef std::function<void(PsuState, PsuStatus)> PsuStateChangeHandler;
 
 typedef std::function<void(PsuData)> PsuDataHandler;
-
 
 enum BootPowerState {
     BOOT_POWER_OFF = 0,

@@ -7,7 +7,7 @@
 #define OTA_FLASH 0
 #define OTA_FS 100
 
-OTAUpdate::OTAUpdate(uint16_t port) : Module(), port_(port){};
+OTAUpdate::OTAUpdate(uint16_t port) : NetworkModule(NetworkMode::NETWORK_AP), port_(port){};
 
 bool OTAUpdate::onInit() {
     return true;

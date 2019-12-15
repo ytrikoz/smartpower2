@@ -1,7 +1,10 @@
 #pragma once
 
+#include <Arduino.h>
+
 #include "CommonTypes.h"
-#include "EditLine.h"
+
+#include "Cli/EditLine.h"
 
 #define A_NORMAL 0x0000     // normal
 #define A_UNDERLINE 0x0001  // underline
@@ -96,9 +99,11 @@ typedef std::function<void(TerminalEventEnum, Stream*)> TerminalEventHandler;
 
 typedef std::function<void(const char *)> TerminalInputEventHandler;
 
+namespace Cli { 
 class Terminal : public Print {
    public:
     Terminal(Stream *stream = nullptr);
+    ~Terminal();
     void setStream(Stream* stream);
     void setEOL(EOLType code);
     void enableControlCodes(bool enabled = true);
@@ -165,3 +170,5 @@ class Terminal : public Print {
         {"S", KEY_DEL},        // 83 Delete
     };
 };
+
+}

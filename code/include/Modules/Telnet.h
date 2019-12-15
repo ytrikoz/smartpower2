@@ -6,37 +6,30 @@
 #include "BuildConfig.h"
 #include "Consts.h"
 #include "StrUtils.h"
-#include "Terminal.h"
 #include "Wireless.h"
+#include "Cli/CommandShell.h"
 
-#include "CommandShell.h"
+enum TelnetEventType {
+    CLIENT_CONNECTED,
+    CLIENT_DISCONNECTED
+};
 
-enum TelnetEventType { 
-                       CLIENT_CONNECTED,
-                       CLIENT_DISCONNECTED
-                    };
-
-typedef std::function<bool(TelnetEventType, WiFiClient *)> TelnetEventHandler;
+typedef std::function<bool(TelnetEventType, WiFiClient*)> TelnetEventHandler;
 
 namespace Modules {
 
-class Telnet : public Module {
-    public:
-    Telnet() : Module(), lastConnected_(false), port_(TELNET_PORT){};
-    void setShell(CommandShell* shell);
+class Telnet : public NetworkModule {
+   public:
+    Telnet(): NetworkModule(NETWORK_STA), lastConnected_(false), port_(TELNET_PORT){};
    public:
     void setEventHandler(TelnetEventHandler);
     void sendData(const String&);
     bool hasClient();
-
-    bool isCompatible(NetworkMode value) {
-        return value != NetworkMode::NETWORK_OFF;
-    }
-    bool isNetworkDepended() { return true; }
-    
     void onDiag(const JsonObject& doc) override;
+
    protected:
     bool onInit() override;
+    void onDeinit() override;
     bool onStart() override;
     void onStop() override;
     void onLoop() override;
@@ -46,16 +39,17 @@ class Telnet : public Module {
     void onDisconnect();
     void onData();
     void onOpen();
-    void onClose();    
+    void onClose();
+
    private:
     TelnetEventHandler eventHandler_;
-    TerminalEventHandler terminalHandler_;
     bool lastConnected_;
     uint16_t port_;
     WiFiClient client_;
-    Terminal term_;
-    CommandShell* shell_;
-    WiFiServer *server_;
+    WiFiServer* server_;
+    Cli::Terminal* term_;
+    Cli::CommandShell* shell_;
+
 };
 
-}
+}  // namespace Modules

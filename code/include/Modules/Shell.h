@@ -3,7 +3,7 @@
 #include <Arduino.h>
 
 #include "Module.h"
-#include "CommandShell.h"
+#include "Cli/CommandShell.h"
 
 namespace Modules { 
 
@@ -11,7 +11,7 @@ class Shell : public Module {
   public:
     Shell();
   public:
-    void setShell(CommandShell* shell);
+    void setShell(Cli::CommandShell* shell);
     bool isOpen();
   protected:
     bool onInit() override;
@@ -20,8 +20,8 @@ class Shell : public Module {
     void onLoop() override;
   
   private:
-    CommandShell* shell_;     
-    Terminal* term_;
+    Cli::CommandShell* shell_;     
+    Cli::Terminal* term_;
 };
 
 }

@@ -8,20 +8,16 @@
 
 namespace Modules {
 
-class Web : public Module {
+class Web : public NetworkModule {
+   public:
+    Web() : NetworkModule(NETWORK_STA) {}
+
    public:
     void sendToClients(const String&, const uint8_t);
     void sendToClients(const String&, const uint8_t, const uint8_t);
     void sendPageState(const uint8_t page);
     void sendPageState(const uint8_t n, const uint8_t page);
-    uint8_t getClients(); 
-
-   public:
-    Web() : Module() {}
-
-    bool isCompatible(NetworkMode value) override { return value != NetworkMode::NETWORK_OFF; }
-
-    bool isNetworkDepended() { return true; }
+    uint8_t getClients();
 
    protected:
     bool onInit() override;
@@ -36,7 +32,7 @@ class Web : public Module {
 
    private:
     WebClient clients_[WEB_SERVER_CLIENT_MAX];
-    WebServer *web_;
+    WebServer* web_;
 };
 
-}
+}  // namespace Modules

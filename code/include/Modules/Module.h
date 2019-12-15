@@ -20,16 +20,18 @@ enum ModuleState {
 };
 
 class Module {
-   public:
-    Module(): state_(STATE_INIT) {}
-    
+public:
+    Module():Module(NetworkMode::NETWORK_OFF) {}
+
+    Module(NetworkMode minimal) : minimal_(minimal), state_(STATE_INIT) {}
+
     void setOutput(Print *p) { out_ = p; }
 
     void setConfig(Config *c) { config_ = c; }
 
-    bool execute(const String& param, const String& value) {        
+    bool execute(const String &param, const String &value) {
         Error res = onExecute(param, value);
-        if(!res) PrintUtils::println(out_, res.code(), res.message());
+        if (!res) PrintUtils::println(out_, res.code(), res.message());
         return res;
     }
 
@@ -57,7 +59,7 @@ class Module {
     };
 
     void loop() {
-        if (state_ == STATE_START_FAILED) 
+        if (state_ == STATE_START_FAILED)
             return;
 
         if (state_ == STATE_ACTIVE || start()) onLoop();
@@ -69,30 +71,30 @@ class Module {
 
     size_t printDiag(Print *p) {
         StaticJsonDocument<256> doc;
-        doc[FPSTR(str_state)] = state_;   
+        doc[FPSTR(str_state)] = state_;
         JsonVariant obj = doc.as<JsonObject>();
         onDiag(obj);
         return serializeJsonPretty(doc, *p);
     };
 
-    virtual bool isCompatible(NetworkMode value) { return true; };
+    virtual bool isCompatible(NetworkMode value) { return value >= minimal_; };
 
-    virtual bool isNetworkDepended() { return false; }
+    virtual bool networkRequired() { return minimal_ > NetworkMode::NETWORK_OFF; }
 
-    virtual void onDiag(const JsonObject& obj) { }
+    virtual void onDiag(const JsonObject &obj) {}
 
    protected:
     virtual bool onInit() { return true; };
-    
+
     virtual void onDeinit(){};
-    
+
     virtual bool onStart() { return true; }
-    
+
     virtual void onStop(){};
-    
+
     virtual void onLoop() = 0;
 
-    virtual Error onExecute(const String& paramStr, const String& valueStr) {         
+    virtual Error onExecute(const String &paramStr, const String &valueStr) {
         Error err = Error(ERROR_EXECUTE, FPSTR(str_unsupported));
         return err;
     }
@@ -100,8 +102,14 @@ class Module {
     void setError(const String &str);
 
    protected:
+    NetworkMode minimal_;
     ModuleState state_;
     Error error_;
     Print *out_;
     Config *config_;
+};
+
+class NetworkModule : public Module {
+    public:    
+    NetworkModule(NetworkMode minimal): Module(minimal){}
 };

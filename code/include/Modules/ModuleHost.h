@@ -2,11 +2,14 @@
 
 #include "Module.h"
 
-struct ModuleDefine {
+
+
+
+struct ModuleDefinition {
     PGM_P name;
     Module* obj;
-    bool AP_mode;
-    bool STA_mode;
+    uint8_t network;
+    uint8_t some;
 };
 
 class ModuleHost {

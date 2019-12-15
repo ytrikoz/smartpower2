@@ -8,14 +8,11 @@
 class PsuModule : public Module {
    public:
     PsuModule(PsuListener* listener) : Module(), listener_(listener) {};
-
     void onDiag(const JsonObject&) override;
-
    protected:
     bool onInit() override;
     bool onStart() override;
     void onLoop() override;
-
    public:
     void togglePower();
     void powerOff();

@@ -1,6 +1,6 @@
 #include "Modules/Telnet.h"
 
-#include "CommandShell.h"
+#include "Cli/Cli.h"
 
 using namespace PrintUtils;
 using namespace StrUtils;
@@ -8,17 +8,19 @@ using namespace StrUtils;
 namespace Modules {
 
 bool Telnet::onInit() {
-    server_ = new WiFiServer(port_);
-    
-    term_.enableControlCodes();
-    term_.enableEcho(false);
+    server_ = new WiFiServer(port_);       
+    term_ = new Cli::Terminal();
+    term_->enableControlCodes();
+    term_->enableEcho(false);
+    term_->setStream(&client_);
 
+    shell_ = new Cli::CommandShell(Cli::get());
+    shell_->setTerm(term_);
     return true;
 }
 
-void Telnet::setShell(CommandShell* shell) {
-    shell_ = shell;
-    shell_->setTerm(&term_);
+void Telnet::onDeinit(){
+    delete server_;
 }
 
 bool Telnet::onStart() {
@@ -68,23 +70,22 @@ void Telnet::onLoop() {
         }
     }
     
-     if(shell_) shell_->loop();
+    if(hasClient() && shell_ != nullptr) shell_->loop();
 }
 
 void Telnet::onConnect() {    
-    shell_->term()->setStream(&client_);
     if (eventHandler_)
         eventHandler_(CLIENT_CONNECTED, &client_);
 }
 
 void Telnet::onDisconnect() {
-    shell_->term()->setStream(nullptr);
     if (eventHandler_)
         eventHandler_(CLIENT_DISCONNECTED, nullptr);
 }
 
 void Telnet::onDiag(const JsonObject& doc) {
     doc[FPSTR(str_connected)] = hasClient();
+    doc[FPSTR(str_min)] = minimal_;
     if (hasClient()) {
         doc[FPSTR(str_client)] = prettyIpAddress(client_.remoteIP(), client_.remotePort());
         doc[FPSTR(str_shell)] = shell_->isOpen();

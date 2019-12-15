@@ -48,29 +48,23 @@ developers for debugging, not useful during operations.
 enum SysLogSeverity { SYSLOG_ALERT = 1,
                       SYSLOG_INFO = 6,
                       SYSLOG_DEBUG = 7 };
-
-class SyslogModule : public Module {
+namespace Modules {   
+class Syslog : public NetworkModule {
    public:
-    void alert(const String&, const String &);
-    void info(const String&, const String &);
-    void debug(const String&, const String &);
+    Syslog(): NetworkModule(NETWORK_STA) {}
 
    public:
-    SyslogModule();
-    SyslogModule(WiFiUDP* udp);    
-
-    bool isCompatible(NetworkMode value) override {
-        return (value == NetworkMode::NETWORK_STA) ||
-               (value == NetworkMode::NETWORK_AP_STA);
-    }
-    bool isNetworkDepended() override { return true; }
+    void alert(const String &, const String &);
+    void info(const String &, const String &);
+    void debug(const String &, const String &);
+    void onDiag(const JsonObject &doc) override;
 
    protected:
     bool onInit() override;
     bool onStart() override;
     void onStop() override;
     void onLoop() override;
-    void onDiag(const JsonObject& doc) override; 
+
    private:
     const char *getHostname();
     const char *getSyslogServer();
@@ -87,3 +81,5 @@ class SyslogModule : public Module {
     IPAddress serverIp = IPADDR_NONE;
     uint16_t port;
 };
+
+}
