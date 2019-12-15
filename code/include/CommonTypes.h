@@ -7,11 +7,22 @@
 #include "StrUtils.h"
 #include "Strings.h"
 #include "TimeUtils.h"
+#include "Core/Error.h"
 
 typedef std::function<void(bool has, unsigned long time)>
     NetworkStatusChangeEventHandler;
 
-typedef std::function<void(const time_t local, double drift)> TimeChangeEvent;
+enum NetworkMode {
+    NETWORK_OFF = 0,
+    NETWORK_STA = 1,
+    NETWORK_AP = 2,
+    NETWORK_AP_STA = 3
+};
+
+enum NetworkStatus { NETWORK_DOWN = 0,
+                     NETWORK_UP = 1 };
+
+typedef std::function<void(const time_t local, double diff)> TimeChangeEvent;
     
 struct AppLogItem {
     String str;   
@@ -26,20 +37,6 @@ enum PsuLogEnum {
 enum LogLevel { LEVEL_ERROR,
                 LEVEL_WARN,
                 LEVEL_INFO };
-
-enum AppModuleEnum {
-    MOD_BTN,
-    MOD_CLOCK,
-    MOD_WEB,
-    MOD_DISPLAY,
-    MOD_LED,
-    MOD_NETSVC,
-    MOD_PSU,
-    MOD_SHELL,
-    MOD_TELNET,
-    MOD_UPDATE,
-    MOD_SYSLOG
-};
 
 enum PsuState { POWER_ON = 0,
                 POWER_OFF = 1 };
@@ -74,15 +71,15 @@ struct PsuData : Printable {
     float V;
     float I;
     float P;
-    double mWh;
+    double Wh;
 
    public:
-    PsuData() { time = V = I = P = mWh = 0; }
+    PsuData() { time = V = I = P = Wh = 0; }
 
-    PsuData(unsigned long time_ms, float V, float I, float P, double mWh)
-        : time(time_ms), V(V), I(I), P(P), mWh(mWh){};
+    PsuData(unsigned long time_ms, float V, float I, float P, double Wh)
+        : time(time_ms), V(V), I(I), P(P), Wh(Wh){};
 
-    void reset(void) { time = V = I = P = mWh = 0; }
+    void reset(void) { time = V = I = P = Wh = 0; }
 
     String toString() const {
         String res = "";
@@ -92,7 +89,7 @@ struct PsuData : Printable {
         res += "A, ";
         res += String(P, 3);
         res += "W, ";
-        res += String(mWh / ONE_WATT_mW, 3);
+        res += String(Wh, 3);
         res += "Wh";
         return res;
     }
@@ -105,7 +102,7 @@ struct PsuData : Printable {
         n += p.print("A, ");
         n += p.print(P, 3);
         n += p.print("W, ");
-        n += p.print(mWh / ONE_WATT_mW, 3);
+        n += p.print(Wh, 3);
         n += p.print("Wh");
         return n;
     }
@@ -148,6 +145,21 @@ struct WebClient {
 };
 
 #define CONFIG_ITEMS 23
+#define APP_MODULES 11
+
+enum ModuleEnum {
+    MOD_BTN,
+    MOD_CLOCK,
+    MOD_WEB,
+    MOD_DISPLAY,
+    MOD_LED,
+    MOD_NETSVC,
+    MOD_PSU,
+    MOD_SHELL,
+    MOD_TELNET,
+    MOD_UPDATE,
+    MOD_SYSLOG
+};
 
 enum ConfigItem {
     WIFI,

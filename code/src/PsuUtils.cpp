@@ -1,6 +1,6 @@
 #include "PsuUtils.h"
 
-int quadratic_regression(double value, bool alterRange) {
+int quadratic_regression(const double value, const bool alterRange) {
     double a = 0.0000006562;
     double b = 0.0022084236;
     float c = alterRange ? 11.83 : 4.08;

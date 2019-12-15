@@ -15,7 +15,7 @@ bool NetworkService::onInit() {
 }
 
 bool NetworkService::onStart() {
-    host_ = Wireless::hostName();
+    host_ = APP_NAME;
     dns_name_ = host_ + "." + HOST_DOMAIN;            
     ip_ = Wireless::hostIP();
     dns_port_ = DNS_PORT;
@@ -41,8 +41,8 @@ void NetworkService::onStop() {
 bool NetworkService::start_mdns() {
     bool result = mdns->begin(host_);
     if (result) {
-        mdns->addService(NULL, "telnet", "tcp", TELNET_PORT);
-        mdns->addService(NULL, "http", "tcp", HTTP_PORT);
+        mdns->addService(APP_NAME, "telnet", "tcp", TELNET_PORT);
+        mdns->addService(APP_NAME, "http", "tcp", HTTP_PORT);
         mdns->enableArduino(OTA_PORT);
     }
     return result;

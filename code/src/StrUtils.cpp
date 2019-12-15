@@ -1,5 +1,8 @@
 #include "StrUtils.h"
 
+#include <pgmspace.h>
+
+#include "CommonTypes.h"
 #include "TimeUtils.h"
 
 namespace StrUtils {
@@ -121,27 +124,6 @@ bool setstr(char *dest, const char *src, size_t size) {
     return false;
 }
 
-const String fmt_ip_port(const IPAddress &ip, const uint16_t port) {
-    return fmt_ip_port(ip.toString().c_str(), port);
-}
-
-const String fmt_ip_port(const char *ip, const uint16_t port) {
-    char buf[32];
-    sprintf(buf, "%s:%d", ip, port);
-    return String(buf);
-}
-
-const String prettyBytes(size_t size) {
-    if (size < 1024)
-        return String(size) + "b";
-    else if (size < (1024 * 1024))
-        return String(size / 1024.0) + "kB";
-    else if (size < (1024 * 1024 * 1024))
-        return String(size / 1024.0 / 1024.0) + "MB";
-    else
-        return String(size / 1024.0 / 1024.0 / 1024.0) + "GB";
-}
-
 String fmt_rssi(int db) {
     char buf[32];
     sprintf(buf, "%d dB", db);
@@ -227,7 +209,6 @@ bool isip(const char *str) {
 }
 
 bool isip(const String &str) { return isip(str.c_str()); }
-
 
 String getBoolStr(bool value, bool space) {
     return String(value ? F("true") : F("false"));
@@ -325,6 +306,23 @@ const String long2str(long value) {
     char buf[64];
     sprintf(buf, "%ld", value);
     return String(buf);
+}
+
+const String prettyIpAddress(IPAddress ip, uint16_t port) {
+    char buf[32];
+    sprintf(buf, "%s:%d", ip.toString().c_str(), port);
+    return String(buf);
+}
+
+const String prettyBytes(size_t size) {
+    if (size < 1024)
+        return String(size) + "b";
+    else if (size < (1024 * 1024))
+        return String(size / 1024.0) + "kB";
+    else if (size < (1024 * 1024 * 1024))
+        return String(size / 1024.0 / 1024.0) + "MB";
+    else
+        return String(size / 1024.0 / 1024.0 / 1024.0) + "GB";
 }
 
 } // namespace StrUtils

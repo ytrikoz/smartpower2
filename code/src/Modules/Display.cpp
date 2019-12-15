@@ -44,11 +44,11 @@ void Display::setScreen(ScreenEnum value) {
 bool Display::onInit() {
     lcd = new LcdDisplay();
     lastUpdated = lockTimeout = lockUpdated = 0;
-    backlight = config_->getValueAsBool(BACKLIGHT);
+    backlight_ = config_->getValueAsBool(BACKLIGHT);
+    backlightTime_ = 0;
     bool result = lcd->connect();
     if (result) {
-        lcd->turnOn();
-        enableBacklight(backlight);
+        enableBacklight(backlight_);
     }
     return result;
 }
@@ -69,14 +69,16 @@ void Display::showProgress(uint8_t per, const char *str) {
     last = per;
 }
 
-void Display::enableBacklight(bool value) {
-    if (!lcd->connect())
-        return;
-    if (value)
+bool Display::enableBacklight(const bool enabled, const time_t time) {
+    if (!isEnabled()) return false;
+    
+    if (enabled)
         lcd->turnOn();
     else
-        lcd->turnOff();
-    backlight = value;
+        lcd->turnOff();        
+    backlight_ = enabled;
+    backlightTime_ = time;
+    return true;
 }
 
 void Display::clear(void) { activeScreen = SCREEN_CLEAR; }
@@ -102,21 +104,21 @@ void Display::refresh(void) {
         }
     }
 
-    Wireless::NetworkMode mode = Wireless::getMode();
+    NetworkMode mode = Wireless::getMode();
     switch (mode) {
-    case Wireless::NETWORK_OFF:
+    case NetworkMode::NETWORK_OFF:
         setScreen(SCREEN_READY);
         load_ready(&screen);
         return;
-    case Wireless::NETWORK_STA:
+    case NetworkMode::NETWORK_STA:
         setScreen(SCREEN_STA);
         load_wifi_sta(&screen);
         return;
-    case Wireless::NETWORK_AP:
+    case NetworkMode::NETWORK_AP:
         setScreen(SCREEN_AP);
         load_wifi_ap(&screen);
         return;
-    case Wireless::NETWORK_AP_STA:
+    case NetworkMode::NETWORK_AP_STA:
         setScreen(SCREEN_AP_STA);
         load_wifi_ap_sta(&screen);
         return;
@@ -288,3 +290,12 @@ bool Display::locked(unsigned long now) {
 }
 
 void Display::unlock(void) { lockTimeout = 0; }
+
+Error Display::onExecute(const String &param, const String &value) {
+    if (param.equalsIgnoreCase(FPSTR(str_backlight))) {
+        enableBacklight(value.toInt());
+        return Error();
+    } else {
+       return Error(ERROR_EXECUTE, FPSTR(str_unknown));
+    }
+}

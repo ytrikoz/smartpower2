@@ -4,8 +4,6 @@ using namespace StrUtils;
 
 namespace PrintUtils {
 
-size_t print_shell_exit(Print *p) { return p->println(FPSTR(msg_shell_exit)); }
-
 size_t print_shell_interrupted(Print *p) {
     return p->println(FPSTR(msg_shell_interrupted));
 }
@@ -78,7 +76,7 @@ void print_delay(Print *p, const char *message, uint8_t wait_s) {
     p->println();
 }
 
-size_t print_unknown_item(Print *p, const String &name) {
+size_t println_unknown_item(Print *p, const String &name) {
     size_t n = print(p, FPSTR(str_unknown));
     n += print(p, FPSTR(str_item));
     n += println(p, getQuotedStr(name));
@@ -95,6 +93,14 @@ size_t print_unknown_param(Print *p, const String &name) {
 size_t print_unknown_action(Print *p, const String &name) {
     size_t n = print(p, FPSTR(str_unknown));
     n += print(p, FPSTR(str_action));
+    n += println(p, getQuotedStr(name));
+    return n;
+}
+
+
+size_t println_unknown_module(Print *p, const String &name) {
+    size_t n = print(p, FPSTR(str_unknown));
+    n += print(p, FPSTR(str_module));
     n += println(p, getQuotedStr(name));
     return n;
 }

@@ -8,7 +8,7 @@
 #define APP_SHORT "SP2"
 #define APP_VERSION "0.6.9"
 #define APP_BUILD_COMMIT ""
-#define APP_MODULES 11
+
 
 // address are 0x27 or 0x3f
 #define NONE_ADDRESS 0x00
@@ -24,8 +24,7 @@
 #define I2C_DELAY 10
 #define I2C_SDA D2
 #define I2C_SCL D5
-#define POWER_LED_PIN D1
-#define WIFI_LED_PIN D4
+
 #define POWER_BTN_PIN D7
 #define INA231_ALERT_PIN 16
 #define INA231_I2C_ADDR 0x40

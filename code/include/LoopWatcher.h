@@ -34,23 +34,23 @@ enum LoopWatcherState { CAPTURE_IDLE, CAPTURE_IN_PROGRESS, CAPTURE_DONE };
 
 class LiveTimerLogger {
    public:
-    virtual void logTime(AppModuleEnum, unsigned long);
+    virtual void logTime(ModuleEnum, unsigned long);
 };
 
 class LiveTimer {
    public:
-    LiveTimer(LiveTimerLogger*, AppModuleEnum);
+    LiveTimer(LiveTimerLogger*, ModuleEnum);
     ~LiveTimer();
 
    private:
     unsigned long createTime;
-    AppModuleEnum module;
+    ModuleEnum module;
     LiveTimerLogger* logger;
 };
 
 class LoopWatcher : public LiveTimerLogger {
    public:
-    void logTime(AppModuleEnum, unsigned long);
+    void logTime(ModuleEnum, unsigned long);
 
    public:
     LoopWatcher();
@@ -61,7 +61,7 @@ class LoopWatcher : public LiveTimerLogger {
     unsigned long getDuration();
     LoopCapture* getCapture();
     void setIdle();
-    LiveTimer onExecute(AppModuleEnum);
+    LiveTimer onExecute(ModuleEnum);
 
     LoopWatcherState state;
 

@@ -20,9 +20,10 @@ class Logger : public Print {
     size_t write(uint8_t ch) override {
         if (ch == '\n') ch = '\x00';
         buffer_.write(ch);
-        if (ch == '\x00')
+        if (ch == '\x00') {
             push(buffer_.c_str());
-        buffer_.clear();
+            buffer_.clear();
+        }
         return 1;
     }
 

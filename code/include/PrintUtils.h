@@ -83,8 +83,6 @@ size_t println(Print *p, T first, Args... args) {
     return n;
 }
 
-size_t print_shell_exit(Print *p);
-
 size_t print_shell_interrupted(Print *p);
 
 void print_welcome(Print *p, const char *title, const char *message,
@@ -92,7 +90,9 @@ void print_welcome(Print *p, const char *title, const char *message,
 
 void print_delay(Print *p, const char *message, uint8_t wait_s);
 
-size_t print_unknown_item(Print *p, const String &name);
+size_t println_unknown_module(Print *p, const String &name);
+
+size_t println_unknown_item(Print *p, const String &name);
 
 size_t print_unknown_param(Print *p, const String &name);
 

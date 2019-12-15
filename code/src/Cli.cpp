@@ -1,7 +1,5 @@
 #include "Cli.h"
 
-#include <SimpleCLI.h>
-
 #include "Actions/PowerAvg.h"
 #include "Actions/WakeOnLan.h"
 
@@ -34,6 +32,7 @@ void onRestart(cmd *c);
 void onRun(cmd *c);
 void onLs(cmd *c);
 void onCrash(cmd *c);
+void onLed(cmd *c);
 
 enum CommandAction {
     ACTION_UNKNOWN,
@@ -54,55 +53,71 @@ enum CommandAction {
     ACTION_WOL,
     ACTION_LIST,
     ACTION_CLEAR,
-    ACTION_TEST
+    ACTION_TEST,
+    ACTION_SET,
+    ACTION_CONTROL,
+    ACTION_CONFIG,
+    ACTION_SHOW
 };
 
 Command cmdConfig, cmdPower, cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet,
     cmdGet, cmdRm, cmdClock, cmdPlot, cmdLog, cmdWol, cmdRestart, cmdRun, cmdLs,
-    cmdCrash;
+    cmdCrash, cmdLed;
 
-Print *out = NULL;
+SimpleCLI* cli_;
 
-Print *getOutput() {
-    if (!out)
-        out = &Serial;
-    return out;
-}
+Print *out_ = nullptr;
 
 const String getActionStr(Command &command) {
-    return command.getArgument("action").getValue();
+    return command.getArgument(FPSTR(str_action)).getValue();
 }
 
 const String getParamStr(Command &command) {
-    return command.getArgument("param").getValue();
+    return command.getArgument(FPSTR(str_param)).getValue();
 }
 
 const String getIpStr(Command &command) {
-    return command.getArgument("ip").getValue();
+    return command.getArgument(FPSTR(str_ip)).getValue();
 }
 
 const String getMacStr(Command &command) {
-    return command.getArgument("mac").getValue();
+    return command.getArgument(FPSTR(str_mac)).getValue();
 }
 
 const String getModStr(Command &command) {
-    return command.getArgument("mod").getValue();
+    return command.getArgument(FPSTR(str_mod)).getValue();
 }
 
 const String getFileStr(Command &command) {
-    return command.getArgument("file").getValue();
+    return command.getArgument(FPSTR(str_file)).getValue();
 }
 
 const String getPathStr(Command &command) {
-    return command.getArgument("path").getValue();
+    return command.getArgument(FPSTR(str_path)).getValue();
 }
 
 const String getItemStr(Command &command) {
-    return command.getArgument("item").getValue();
+    return command.getArgument(FPSTR(str_item)).getValue();
 }
 
 const String getValueStr(Command &command) {
     return command.getArgument(FPSTR(str_value)).getValue();
+}
+
+void onSystem(cmd *c) {
+    Command cmd(c);
+    String modStr = getModStr(cmd);
+    String paramStr = getParamStr(cmd);
+    String valueStr = getValueStr(cmd);
+
+    Module *mod = app.module(modStr);
+    if (mod) {
+        if (mod->execute(paramStr, valueStr)) {
+            println_done(out_);
+        }
+    } else {
+        println_unknown_module(out_, modStr);
+    }
 }
 
 CommandAction getAction(Command &cmd) {
@@ -143,108 +158,145 @@ CommandAction getAction(Command &cmd) {
         return ACTION_CLEAR;
     } else if (strcasecmp_P(str.c_str(), str_test) == 0) {
         return ACTION_TEST;
+    } else if (strcasecmp_P(str.c_str(), str_config) == 0) {
+        return ACTION_CONFIG;
+    } else if (strcasecmp_P(str.c_str(), str_set) == 0) {
+        return ACTION_SET;
+    } else if (strcasecmp_P(str.c_str(), str_show) == 0) {
+        return ACTION_SHOW;
     }
     return ACTION_UNKNOWN;
 }  // namespace Cli
 
-bool active() { return out != NULL; }
+bool active() { return out_ != nullptr; }
 
-void setOutput(Print *p) {
-    if (out != NULL) {
-        print_shell_interrupted(out);
-        out = NULL;
-    }
-    out = p;
+Print* setOutput(Print *out) {
+    Print* prev = out_;
+    out_ = out;
+    return prev;
 }
 
-void close() {
-    if (out != NULL) {
-        print_shell_exit(out);
-        out = NULL;
-    }
+Print* getOutput(Print *p) {
+    return out_;
+}
+
+
+SimpleCLI* get() {
+    return cli_;
 }
 
 void init() {
     // if (BootWatcher::isSafeBooMode())
+    cli_ = new SimpleCLI();
 
-    cli = new SimpleCLI();
-    cli->setErrorCallback(onCommandError);
+    cli_->setErrorCallback(onCommandError);
 
-    cmdPower = cli->addCommand("power");
+    cmdPower = cli_->addCommand("power");
     cmdPower.addPositionalArgument("action", "status");
     cmdPower.addPositionalArgument("param", "0");
     cmdPower.setCallback(Cli::onPower);
 
-    cmdConfig = cli->addCommand("config");
+    cmdConfig = cli_->addCommand("config");
     cmdConfig.addPositionalArgument("action", "print");
     cmdConfig.addPositionalArgument("param", "");
     cmdConfig.setCallback(Cli::onConfig);
 
-    cmdHelp = cli->addCommand("help");
+    cmdHelp = cli_->addCommand("help");
     cmdHelp.setCallback(Cli::onHelp);
 
-    cmdPrint = cli->addCommand("print");
+    cmdPrint = cli_->addCommand("print");
     cmdPrint.addPositionalArgument("file");
     cmdPrint.setCallback(Cli::onPrint);
 
-    cmdSystem = cli->addCommand("system");
-    cmdSystem.addPositionalArgument("action", "uptime");
-    cmdSystem.addPositionalArgument("value", "0");
+    cmdSystem = cli_->addCommand("system");
+    cmdSystem.addPositionalArgument("mod", "");
+    cmdSystem.addPositionalArgument("param", "");
+    cmdSystem.addPositionalArgument("value", "");
     cmdSystem.setCallback(Cli::onSystem);
 
-    cmdShow = cli->addCommand("show");
+    cmdShow = cli_->addCommand("show");
     cmdShow.addPositionalArgument("mod", "app");
     cmdShow.setCallback(Cli::onShow);
 
-    cmdSet = cli->addCommand("set");
+    cmdSet = cli_->addCommand("set");
     cmdSet.addPositionalArgument("param");
     cmdSet.addPositionalArgument("value");
     cmdSet.setCallback(Cli::onSet);
 
-    cmdGet = cli->addCommand("get");
+    cmdGet = cli_->addCommand("get");
     cmdGet.addPositionalArgument("param");
     cmdGet.setCallback(Cli::onGet);
 
-    cmdRm = cli->addCommand("rm");
+    cmdRm = cli_->addCommand("rm");
     cmdRm.addPositionalArgument("file");
     cmdRm.setCallback(Cli::onRemove);
 
-    cmdClock = cli->addCommand("clock");
+    cmdClock = cli_->addCommand("clock");
     cmdClock.addPositionalArgument("action", "time");
     cmdClock.addPositionalArgument("param", "");
     cmdClock.setCallback(Cli::onClock);
 
-    cmdPlot = cli->addCommand("plot");
+    cmdPlot = cli_->addCommand("plot");
     cmdPlot.addPositionalArgument("action", "print");
     cmdPlot.addPositionalArgument("param", "");
     cmdPlot.setCallback(Cli::onPlot);
 
-    cmdLog = cli->addCommand("log");
+    cmdLog = cli_->addCommand("log");
     cmdLog.addPositionalArgument("action", "print");
     cmdLog.addPositionalArgument("param", "");
     cmdLog.setCallback(Cli::onLog);
 
-    cmdWol = cli->addCommand("wol");
+    cmdWol = cli_->addCommand("wol");
     cmdWol.addArgument("ip", "");
     cmdWol.addArgument("mac", "");
     cmdWol.setCallback(Cli::onWol);
 
-    cmdRestart = cli->addCommand("restart");
+    cmdRestart = cli_->addCommand("restart");
     cmdRestart.addArgument("value", "");
     cmdRestart.setCallback(Cli::onRestart);
 
-    cmdRun = cli->addCommand("run");
+    cmdRun = cli_->addCommand("run");
     cmdRun.addPositionalArgument("file");
     cmdRun.setCallback(Cli::onRun);
 
-    cmdLs = cli->addCommand("ls");
+    cmdLs = cli_->addCommand("ls");
     cmdLs.addPositionalArgument("path");
     cmdLs.setCallback(Cli::onLs);
 
-    cmdCrash = cli->addCommand("crash");
+    cmdCrash = cli_->addCommand("crash");
     cmdCrash.addPositionalArgument("action", "list");
     cmdCrash.addPositionalArgument("item", "*");
     cmdCrash.setCallback(Cli::onCrash);
+
+    cmdLed = cli_->addCommand("led");
+    cmdLed.addPositionalArgument("action", "show");
+    cmdLed.addPositionalArgument("item", "");
+    cmdLed.addPositionalArgument("param", "");
+    cmdLed.addPositionalArgument("value", "");
+    cmdLed.setCallback(Cli::onLed);
+}
+
+void onLed(cmd *c) {
+    Command cmd(c);
+    String actionStr = getActionStr(cmd);
+    String itemStr = getItemStr(cmd);
+    String paramStr = getParamStr(cmd);
+    String valueStr = getValueStr(cmd);
+
+    switch (getAction(cmd)) {
+        case ACTION_SHOW:
+            app.led()->onDiag(out_);
+            break;
+        case ACTION_CONFIG:
+            app.led()->config(LedEnum(itemStr.toInt()), LedParamEnum(paramStr.toInt()), valueStr.toInt());
+            break;
+        case ACTION_SET:
+            app.led()->set(LedEnum(itemStr.toInt()), LedSignal(paramStr.toInt()));
+            break;
+        default:
+            print_unknown_action(out_, actionStr);
+            break;
+    }
 }
 
 void onLog(cmd *c) {
@@ -256,26 +308,26 @@ void onLog(cmd *c) {
     if (action == ACTION_PRINT) {
         String paramStr = getParamStr(cmd);
         if (!paramStr.length()) {
-            logger->print(out);
+            logger->print(out_);
             return;
         }
         if (paramStr.indexOf("v") != -1) {
-            logger->print(out, VOLTAGE);
+            logger->print(out_, VOLTAGE);
             handled = true;
         }
         if (paramStr.indexOf("i") != -1) {
-            logger->print(out, CURRENT);
+            logger->print(out_, CURRENT);
             handled = true;
         }
         if (!handled)
-            print_unknown_action(out, paramStr);
+            print_unknown_action(out_, paramStr);
     }
-    out->println();
+    out_->println();
 }
 
 void onHelp(cmd *c) {
     Command cmd(c);
-    println(out, cli->toString().c_str());
+    println(out_, cli_->toString().c_str());
 }
 
 void onConfig(cmd *c) {
@@ -283,7 +335,7 @@ void onConfig(cmd *c) {
     CommandAction action = getAction(cmd);
     switch (action) {
         case ACTION_PRINT:
-            app.config()->printTo(*out);
+            app.config()->printTo(*out_);
             return;
         case ACTION_RESET:
             app.config()->setDefault();
@@ -300,10 +352,10 @@ void onConfig(cmd *c) {
             return;
         default:
             String actionStr = getActionStr(cmd);
-            PrintUtils::print_unknown_action(out, actionStr);
+            PrintUtils::print_unknown_action(out_, actionStr);
             return;
     }
-    println_done(out);
+    println_done(out_);
 }
 
 void onPower(cmd *c) {
@@ -312,7 +364,7 @@ void onPower(cmd *c) {
     switch (action) {
         case ACTION_AVG: {
             String paramStr = getParamStr(cmd);
-            Actions::PowerAvg(paramStr.toInt()).exec(out);
+            Actions::PowerAvg(paramStr.toInt()).exec(out_);
             break;
         }
         case ACTION_ON: {
@@ -325,7 +377,7 @@ void onPower(cmd *c) {
         }
         default: {
             String actionStr = getActionStr(cmd);
-            print_unknown_action(out, actionStr);
+            print_unknown_action(out_, actionStr);
             return;
         }
     }
@@ -335,7 +387,7 @@ void onWol(cmd *c) {
     Command cmd(c);
     String ipStr = getIpStr(cmd);
     String macStr = getMacStr(cmd);
-    Actions::WakeOnLan(out).exec(ipStr, macStr);
+    Actions::WakeOnLan(out_).exec(ipStr, macStr);
 }
 
 void onRestart(cmd *c) {
@@ -345,24 +397,6 @@ void onRestart(cmd *c) {
     app.restart(delay);
 }
 
-void onSystem(cmd *c) {
-    Command cmd(c);
-    CommandAction action = getAction(cmd);
-    String value = getValueStr(cmd);
-    switch (action) {
-        case ACTION_BACKLIGHT: {
-            bool enabled = value.toInt();
-            println_nameP_value(out, str_backlight, getOnOffStr(enabled));
-            app.lcd()->enableBacklight(enabled);
-            break;
-        }
-        default:
-            String actionStr = getActionStr(cmd);
-            print_unknown_action(out, actionStr);
-            return;
-    }
-}
-
 void onClock(cmd *c) {
     Command cmd(c);
     CommandAction action = getAction(cmd);
@@ -370,17 +404,17 @@ void onClock(cmd *c) {
     switch (action) {
         case ACTION_UPTIME: {
             char buf[16];
-            TimeUtils::format_elapsed_time(buf, app.clock()->getUptime());
-            println(out, buf);
+            TimeUtils::format_elapsed_full(app.clock()->getUptime());
+            println(out_, buf);
             break;
         }
         case ACTION_TIME: {
             time_t local = app.clock()->getLocal();
-            println(out, TimeUtils::format_time(local));
+            println(out_, TimeUtils::format_time(local));
             break;
         }
         default: {
-            print_unknown_action(out, getActionStr(cmd));
+            print_unknown_action(out_, getActionStr(cmd));
             return;
         }
     }
@@ -388,32 +422,32 @@ void onClock(cmd *c) {
     // tm tm;
     // if (TimeUtils::encodeTime(paramStr.c_str(), tm)) {
     //     DateTime dt = DateTime(tm);
-    //     out->println(dt);
+    //     out_->println(dt);
     // } else {
-    //     out->print(StrUtils::getStrP(str_invalid));
-    //     out->print(' ');
-    //     out->print(StrUtils::getStrP(str_time));
-    //     out->print(' ');
-    //     out->println(paramStr);
+    //     out_->print(StrUtils::getStrP(str_invalid));
+    //     out_->print(' ');
+    //     out_->print(StrUtils::getStrP(str_time));
+    //     out_->print(' ');
+    //     out_->println(paramStr);
     // }
 }
 
 void onWifiScan(cmd *c) {
     Command cmd(c);
-    out->print(StrUtils::getIdentStrP(str_wifi));
-    out->print(StrUtils::getStrP(str_scanning));
+    out_->print(StrUtils::getIdentStrP(str_wifi));
+    out_->print(StrUtils::getStrP(str_scanning));
     int8_t n = WiFi.scanNetworks();
     if (n == 0) {
-        out->print(StrUtils::getStrP(str_network));
-        out->print(StrUtils::getStrP(str_not));
-        out->print(StrUtils::getStrP(str_found));
+        out_->print(StrUtils::getStrP(str_network));
+        out_->print(StrUtils::getStrP(str_not));
+        out_->print(StrUtils::getStrP(str_found));
     }
-    out->println();
+    out_->println();
     for (int i = 0; i < n; ++i) {
-        out->print(StrUtils::getIdentStrP(str_wifi));
-        out->printf("#%d %s %d", i + 1, WiFi.SSID(i).c_str(), WiFi.RSSI(i));
+        out_->print(StrUtils::getIdentStrP(str_wifi));
+        out_->printf("#%d %s %d", i + 1, WiFi.SSID(i).c_str(), WiFi.RSSI(i));
     }
-    out->println();
+    out_->println();
 }
 
 void onSet(cmd *c) {
@@ -425,10 +459,10 @@ void onSet(cmd *c) {
     Config *cfg = app.params();
     if (cfg->getConfig(paramStr.c_str(), param, size)) {
         if (cfg->setValueAsString(param, valueStr)) {
-            PrintUtils::println_done(out);
+            PrintUtils::println_done(out_);
         }
     } else {
-        PrintUtils::print_unknown_param(out, paramStr);
+        PrintUtils::print_unknown_param(out_, paramStr);
     }
 }
 
@@ -441,9 +475,9 @@ void onGet(cmd *c) {
     if (cfg->getConfig(paramStr.c_str(), param, size)) {
         char buf[size + 1];
         setstr(buf, cfg->getValueAsString(param), size + 1);
-        print_param_value(out, paramStr.c_str(), buf);
+        print_param_value(out_, paramStr.c_str(), buf);
     } else {
-        print_unknown_param(out, paramStr);
+        print_unknown_param(out_, paramStr);
     }
 }
 
@@ -451,36 +485,56 @@ void onShow(cmd *c) {
     Command cmd(c);
     String modStr = getModStr(cmd);
     if (modStr == "loop") {
+        LoopWatcher *loopWatcher = app.watcher();
         LoopWatcherState state = loopWatcher->getState();
         switch (state) {
             case CAPTURE_IDLE:
-                print(out, FPSTR(str_capture));
-                print(out, loopWatcher->getDuration());
-                println(out, FPSTR(str_ms));
+                print(out_, FPSTR(str_capture));
+                print(out_, loopWatcher->getDuration());
+                println(out_, FPSTR(str_ms));
                 loopWatcher->start();
                 return;
             case CAPTURE_IN_PROGRESS:
-                print(out, FPSTR(str_capturing));
-                print(out, loopWatcher->getDuration());
-                println(out, FPSTR(str_ms));
+                print(out_, FPSTR(str_capturing));
+                print(out_, loopWatcher->getDuration());
+                println(out_, FPSTR(str_ms));
                 return;
-            case CAPTURE_DONE:
-                app.printLoopCapture(out);
+            case CAPTURE_DONE: {
+                LoopCapture *cap = loopWatcher->getCapture();
+                print(out_, FPSTR(str_duration), cap->duration);
+                size_t time_range = 2;
+                for (size_t i = 0; i < cap->counters_size; ++i) {
+                    if (cap->counter[i])
+                        println(out_, time_range > cap->longest ? time_range : cap->longest, '\t', cap->counter[i]);
+                    time_range *= 2;
+                }
+
+                if (cap->overrange)
+                    println(out_, FPSTR(str_over), time_range / 2, '\t', cap->overrange, '\t', strf_lu_ms, cap->longest);
+
+                println(out_, FPSTR(str_total), '\t', cap->total, '\t', (float)cap->duration / cap->total);
+
+                float total_modules_time = 0;
+                for (uint8_t i = 0; i < cap->modules_size; ++i)
+                    total_modules_time += floor((float)cap->module[i] / ONE_MILLISECOND_mi);
+
+                for (uint8_t i = 0; i < cap->modules_size; ++i) {
+                    float load = (float)cap->module[i] / ONE_MILLISECOND_mi / total_modules_time;
+                    println(out_, app.name(ModuleEnum(i)), '\t', load);
+                }
+
+                float system_time = cap->duration - total_modules_time;
+                println(out_, FPSTR(str_other), '\t', (float)system_time / cap->duration * 100);
+
                 loopWatcher->setIdle();
                 return;
-        };
-        return;
+            }
+        }
     } else if (modStr == "app") {
-        app.printDiag(out);
+        app.printDiag(out_);
         return;
     }
-
-    auto mod = app.getModuleByName(modStr.c_str());
-    if (mod)
-        mod->printDiag(out);
-    else
-        print_not_found(out, modStr);
-}  // namespace Cli
+}
 
 void onPlot(cmd *c) { Command cmd(c); }
 
@@ -490,10 +544,10 @@ void onPrint(cmd *c) {
     if (SPIFFS.exists(file)) {
         auto f = SPIFFS.open(file, "r");
         while (f.available())
-            print(out, f.readString());
+            print(out_, f.readString());
         f.close();
     } else {
-        print_file_not_found(out, file);
+        print_file_not_found(out_, file);
     }
 }
 
@@ -507,7 +561,7 @@ void onLs(cmd *c) {
         String name = dir.fileName();
         if (FSUtils::getNestedLevel(name) > max_level)
             continue;
-        println(out, dir.fileName(), '\t', prettyBytes(dir.fileSize()));
+        println(out_, dir.fileName(), '\t', prettyBytes(dir.fileSize()));
     }
 }
 
@@ -515,14 +569,14 @@ void onRemove(cmd *c) {
     Command cmd(c);
     String name = getFileStr(cmd);
     if (SPIFFS.exists(name)) {
-        print(out, FPSTR(str_file));
+        print(out_, FPSTR(str_file));
         if (SPIFFS.remove(name)) {
-            println(out, FPSTR(str_deleted));
+            println(out_, FPSTR(str_deleted));
         } else {
-            println(out, FPSTR(str_failed));
+            println(out_, FPSTR(str_failed));
         }
     } else {
-        print_file_not_found(out, name);
+        print_file_not_found(out_, name);
     }
 }
 
@@ -535,11 +589,11 @@ void onRun(cmd *c) {
         if (data->available()) {
             String buf;
             while (data->pop(buf)) {
-                app.shell()->run(buf);
+                app.shell()->run(buf.c_str());
             }
         }
     } else {
-        println(out, FPSTR(str_failed));
+        println(out_, FPSTR(str_failed));
     }
 }
 
@@ -548,35 +602,37 @@ void onCrash(cmd *c) {
     String item = getItemStr(cmd);
     switch (getAction(cmd)) {
         case ACTION_LIST: {
-            FSUtils::printDir(out, CRASH_ROOT);
+            FSUtils::printDir(out_, CRASH_ROOT);
             break;
         }
         case ACTION_PRINT: {
             File f = SPIFFS.open(item, "r");
             if (!f)
-                print_not_found(out, item);
+                print_not_found(out_, item);
             else
-                CrashReport(f).printTo(*out);
+                CrashReport(f).printTo(*out_);
             break;
         }
-        case ACTION_CLEAR:
-            FSUtils::clearDir(out, CRASH_ROOT);
+        case ACTION_CLEAR: {
+            FSUtils::clearDir(out_, CRASH_ROOT);
             break;
+        }
         case ACTION_TEST: {
             int val = 0;
             int res = 1 / val;
-            println(out, res);
-        } break;
+            println(out_, res);
+            break;
+        }
         case ACTION_UNKNOWN:
         default:
-            print_unknown_action(out, getActionStr(cmd));
+            print_unknown_action(out_, getActionStr(cmd));
             break;
     }
 }
 
 void onCommandError(cmd_error *e) {
     CommandError cmdError(e);
-    out->println(cmdError.toString());
+    out_->println(cmdError.toString());
 }
 
 }  // namespace Cli

@@ -131,16 +131,13 @@ String getChipId() {
 
 const String getVersionJson() {
     DynamicJsonDocument doc(256);
-
-    JsonObject doc_0 = doc.createNestedObject();
-    doc_0[FPSTR(str_fw)] = APP_VERSION APP_BUILD_COMMIT;
-
-    JsonObject doc_1 = doc.createNestedObject();
-    doc_1[FPSTR(str_sdk)] = system_get_sdk_version();
-
-    JsonObject doc_2 = doc.createNestedObject();
-    doc_2[FPSTR(str_core)] = ESP.getCoreVersion();
-   
+    JsonObject jo;
+    jo = doc.createNestedObject();
+    jo[FPSTR(str_fw)] = APP_VERSION APP_BUILD_COMMIT;
+    jo = doc.createNestedObject();
+    jo[FPSTR(str_sdk)] = system_get_sdk_version();
+    jo = doc.createNestedObject();
+    jo[FPSTR(str_core)] = ESP.getCoreVersion();
     String json;
     serializeJson(doc, json);
     return json;
@@ -148,19 +145,15 @@ const String getVersionJson() {
 
 String getSystemJson() {
     DynamicJsonDocument doc(256);
-
-    JsonObject doc_0 = doc.createNestedObject();
-    doc_0[FPSTR(str_cpu)] = getCpuFreq();
-
-    JsonObject doc_1 = doc.createNestedObject();
-    doc_1[FPSTR(str_chip)] = getChipId();
-
-    JsonObject doc_2 = doc.createNestedObject();
-    doc_2[FPSTR(str_file)] = getFSStats();
-
-    JsonObject doc_3 = doc.createNestedObject();
-    doc_3[FPSTR(str_heap)] = getHeapStats();
-
+    JsonObject jo;
+    jo = doc.createNestedObject();
+    jo[FPSTR(str_cpu)] = getCpuFreq();
+    jo = doc.createNestedObject();
+    jo[FPSTR(str_chip)] = getChipId();
+    jo = doc.createNestedObject();
+    jo[FPSTR(str_file)] = getFSStats();
+    jo = doc.createNestedObject();
+    jo[FPSTR(str_heap)] = getHeapStats();
     String json;
     serializeJson(doc, json);
     return json;
@@ -168,34 +161,25 @@ String getSystemJson() {
 
 String getNetworkJson() {
     DynamicJsonDocument doc(512);
-
-    JsonObject doc_0 = doc.createNestedObject();
-    doc_0[FPSTR(str_ssid)] = Wireless::hostSSID();
-
-    JsonObject doc_1 = doc.createNestedObject();
-    doc_1[FPSTR(str_phy)] = Wireless::getWiFiPhyMode();
-
-    JsonObject doc_2 = doc.createNestedObject();
-    doc_2[FPSTR(str_ch)] = Wireless::getWifiChannel();
-
-    JsonObject doc_3 = doc.createNestedObject();
-    doc_3[FPSTR(str_mac)] = Wireless::hostMac();
-
-    JsonObject doc_4 = doc.createNestedObject();
-    doc_4[FPSTR(str_host)] = Wireless::hostName();
-
-    JsonObject doc_5 = doc.createNestedObject();
-    doc_5[FPSTR(str_ip)] = Wireless::hostIP().toString();
-
-    JsonObject doc_6 = doc.createNestedObject();
-    doc_6[FPSTR(str_subnet)] =  Wireless::hostSubnet().toString();
-    
-    JsonObject doc_7 = doc.createNestedObject();
-    doc_7[FPSTR(str_gateway)] =  Wireless::hostGateway().toString();
-    
-    JsonObject doc_8 = doc.createNestedObject();
-    doc_8[FPSTR(str_dns)] = Wireless::hostDNS().toString();
-    
+    JsonObject jo;
+    jo = doc.createNestedObject();
+    jo[FPSTR(str_ssid)] = Wireless::hostSSID();
+    jo = doc.createNestedObject();
+    jo[FPSTR(str_phy)] = Wireless::wifiPhyMode();
+    jo = doc.createNestedObject();
+    jo[FPSTR(str_ch)] = Wireless::wifiChannel();
+    jo = doc.createNestedObject();
+    jo[FPSTR(str_mac)] = Wireless::hostMac();
+    jo = doc.createNestedObject();
+    jo[FPSTR(str_host)] = Wireless::hostName();
+    jo = doc.createNestedObject();
+    jo[FPSTR(str_ip)] = Wireless::hostIP().toString();
+    jo = doc.createNestedObject();
+    jo[FPSTR(str_subnet)] = Wireless::hostSubnet().toString();
+    jo = doc.createNestedObject();
+    jo[FPSTR(str_gateway)] = Wireless::hostGateway().toString();
+    jo = doc.createNestedObject();
+    jo[FPSTR(str_dns)] = Wireless::hostDNS().toString();
     String json;
     serializeJson(doc, json);
     return json;

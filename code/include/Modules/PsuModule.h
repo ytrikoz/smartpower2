@@ -1,19 +1,14 @@
 #pragma once
 
-#include "AppModule.h"
-#include "CommonTypes.h"
+#include "Module.h"
 #include "PsuUtils.h"
-#include "ina231.h"
-#include "mcp4652.h"
 
 #define POWER_SWITCH_PIN D6
 
-class PsuModule : public AppModule {
+class PsuModule : public Module {
    public:
-    PsuModule(PsuListener* listener) : AppModule(MOD_PSU), listener_(listener) {         
-        ina231_configure();
-        mcp4652_init();
-    };
+    PsuModule(PsuListener* listener) : Module(), listener_(listener) {};
+
     size_t onDiag(Print *p) override;
 
    protected:
@@ -69,7 +64,6 @@ class PsuModule : public AppModule {
     PsuAlert alert;
 
     PsuStateChangeHandler stateChangeHandler;
-
 
     unsigned long startTime, infoUpdated, powerInfoUpdated, listenerUpdate_,
         lastCheck, lastStore;

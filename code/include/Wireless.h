@@ -13,16 +13,6 @@
 
 namespace Wireless {
 
-enum NetworkMode {
-    NETWORK_OFF = 0,
-    NETWORK_STA = 1,
-    NETWORK_AP = 2,
-    NETWORK_AP_STA = 3
-};
-
-enum NetworkStatus { NETWORK_DOWN = 0,
-                     NETWORK_UP = 1 };
-
 size_t printDiag(Print *p);
 
 void start();
@@ -38,8 +28,8 @@ bool hasNetwork();
 NetworkMode getMode();
 String getModeStr(NetworkMode mode);
 
-String getWiFiPhyMode();
-String getWifiChannel();
+String wifiPhyMode();
+String wifiChannel();
 String getSTAStatus();
 String getNetworkState();
 

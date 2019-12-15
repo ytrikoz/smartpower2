@@ -1,8 +1,7 @@
 #pragma once
 
 #include "Actions.h"
-
-#include "ina231.h"
+#include "Hardware/ina231.h"
 
 namespace Actions {
 

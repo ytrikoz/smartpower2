@@ -13,9 +13,9 @@ class ConfigHelper : public Printable {
   public:
     void setDefault();
     void load();
-    bool load(Config *src, Container<String>& data);
+    bool load(Config *src, Queue<String>& data);
     bool save();
-    bool save(Config &src, Container<String>& data);
+    bool save(Config &src, Queue<String>& data);
     bool setBootPowerState(BootPowerState);
     bool setBootPowerState(uint8_t);
     BootPowerState getBootPowerState();

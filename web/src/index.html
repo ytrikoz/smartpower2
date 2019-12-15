@@ -1,0 +1,207 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=320, initial-scale=1" />
+    <meta name="MobileOptimized" content="320" />
+    <meta name="HandheldFriendly" content="true" />
+    <title>SmartPower 2</title>
+    <!-- shortcut::favicon.png -->
+    <script src="js/jquery.js"></script>
+    <script type="text/javascript">
+        $(document).bind("mobileinit", function () {
+            $.mobile.hashListeningEnabled = false;
+            $.mobile.pushStateEnabled = false;
+            $.mobile.page.prototype.options.domCache = true;
+            $.mobile.loader.prototype.options.text = "loading";
+            $.mobile.loader.prototype.options.textVisible = true;
+            $.mobile.loader.prototype.options.theme = "a";
+        });
+    </script>
+    <script src="js/jquery.mobile.js"></script>
+    <link rel="stylesheet" href="css/jquery.mobile.css" />
+    <link rel="stylesheet" href="css/index.css" />
+
+    <script src="js/sevenSeg.js"></script>
+    <script src="js/json2html.js"></script>
+    <script src="js/jquery.json2html.js"></script>
+
+    <script src="js/measurement.js"></script>
+    <script src="js/index.js"></script>
+</head>
+
+<body onload="onload();" onunload="onunload();">
+    <div data-role="toolbar" data-type="header" data-position="fixed" data-theme="b">
+        <h1>SmartPower2</h1>
+    </div>
+
+    <div id="home" data-role="page" data-title="Home" data-theme="a">
+        <div role="main" class="ui-content ui-corner-all custom-corners">
+            <div id="mainswitch" data-role="collapsible" data-inset="false" data-collapsed="false" data-iconpos="right"
+                data-collapsed-icon="power" data-expanded-icon="power" data-theme="a" data-content-theme="a">
+                <h2>Main switch</h2>
+                <div class="mainswitch_cont">
+                    <div id="hold">
+                        <select id="chk_hold" name="chk_hold" data-role="flipswitch" data-theme="a">
+                            <option value="off"></option>
+                            <option value="on">Hold</option>
+                        </select>
+                    </div>
+                    <div id="onoff">
+                        <select id="chk_onoff" name="chk_onoff" data-role="flipswitch" data-theme="a">
+                            <option value="off">Off</option>
+                            <option value="on">On</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div id="livedata" data-iconpos="right" data-role="collapsible" data-inset="false" data-theme="a"
+                data-content-theme="b">
+                <h2>Live data</h2>
+                <div id="volt_ss" class="ss_cont">
+                    <h3>V</h3>
+                </div>
+                <div id="watt_ss" class="ss_cont">
+                    <h3>P</h3>
+                </div>
+                <div id="amp_ss" class="ss_cont">
+                    <h3>I</h3>
+                </div>
+            </div>
+
+            <div id="logstat" data-iconpos="right" data-role="collapsible" data-inset="false" data-theme="a"
+                data-content-theme="b">
+                <h2>Log and stats</h2>
+                <div class="logstat_cont">
+                    <div id="enable_log">
+                        <label>Consumption</label>
+                        <select id="chk_enable_log" data-mini="true" name="chk_enable_log" data-role="flipswitch">
+                            <option value="off">Off</option>
+                            <option value="on">On</option>
+                        </select>
+                    </div>
+
+                    <div id="watth_ss" class="ss_cont">
+                        <h3>Wh</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="options" data-role="page" data-title="Options" data-theme="a">
+        <div role="main" class="ui-content ui-corner-all custom-corners">
+
+            <div data-role="collapsible" data-iconpos="right" data-inset="false" data-theme="a" data-content-theme="a">
+                <h3>On startup</h3>
+                <label>Power
+                    <div id="power_mode_selector" data-mini="true" data-role="controlgroup" data-type="horizontal">
+                        <label for="power_mode_off">Off<input id="power_mode_off" type="radio" name="power_mode"
+                                value="0" /></label>
+                        <label for="power_mode_on">On<input id="power_mode_on" type="radio" name="power_mode"
+                                value="1" /></label>
+                        <label for="power_mode_state">Last state<input id="power_mode_state" type="radio"
+                                name="power_mode" value="2" /></label>
+                    </div>
+                </label>
+            </div>
+
+            <div data-role="collapsible" data-inset="false" data-iconpos="right" data-theme="a" data-content-theme="a">
+                <h3 for="slider_voltage">Output voltage</h3>
+                <input id="slider_voltage" name="slider_voltage" type="range" min="4" max="13" step="0.1" value="5"
+                    data-popup-enabled="true">
+                <div>
+                    <button id="btn_reset_voltage" data-mini="true" data-inline="true">Reset</button>
+                    <button id="btn_save_voltage" data-mini="true" data-inline="true">Save</button>
+                </div>
+            </div>
+
+            <div data-role="collapsible" data-iconpos="right" data-inset="false" data-theme="a" data-content-theme="a">
+                <h3>Live data</h3>
+                <div>
+                    <label>Averaging</label>
+                    <input id="slider_averaging" name="slider_averaging" type="range" min="1" max="1024" step="4" value="3">
+                </div>
+            </div>
+
+            <div data-role="collapsible" data-iconpos="right" data-inset="false" data-theme="a" data-content-theme="a">
+                <h3>Wifi</h3>
+                <label>Mode
+                    <div data-role="controlgroup" data-type="horizontal">
+                        <label for="wifi_sta">STA<input id="wifi_sta" type="radio" name="wifi_mode" value="1" /></label>
+                        <label for="wifi_ap">AP<input id="wifi_ap" type="radio" name="wifi_mode" value="2" /></label>
+                        <label for="wifi_ap_sta">AP + STA<input id="wifi_ap_sta" type="radio" name="wifi_mode"
+                                value="3" /></label>
+                    </div>
+                </label>
+                <label>SSID<input id="tf_ssid" autocomplete="off" type="text" maxlength="32" /></label>
+                <label>Password<input id="tf_passwd" type="password" name="tf_passwd" value="" autocomplete="off"
+                        maxlength="32"></label>
+            </div>
+
+            <div data-role="collapsible" data-iconpos="right" data-inset="false" data-theme="a" data-content-theme="a">
+                <h3>IP address</h3>
+
+                <label for="chk_dhcp">DHCP</label>
+                <select id="chk_dhcp" name="chk_dhcp" data-role="flipswitch">
+                    <option value="off">Off</option>
+                    <option value="on">On</option>
+                </select>
+
+                <div id="ipaddr_cont">
+                    <label>IP<input id="tf_ipaddr" name="ipaddr_field" type="text" maxlength="16"></label>
+                    <label>Mask<input id="tf_netmask" name="ipaddr_field" type="text" maxlength="16"></label>
+                    <label>Gateway<input id="tf_gateway" name="ipaddr_field" type="text" maxlength="16"></label>
+                    <label>DNS<input id="tf_dns" name="ipaddr_field" type="text" maxlength="16"></label>
+                </div>
+                <div>
+                    <button id="btn_reset_network" data-mini="true" data-inline="true">Reset</button>
+                    <button id="btn_save_network" data-mini="true" data-inline="true">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="info" data-role="page" data-title="Info" data-theme="a">
+        <div role="main" class="ui-content ui-corner-all custom-corners">
+            <div data-role="accordion" data-icons="" data-height-style="content">
+                <h3>Version</h3>
+                <ul class="keyvaluepairs">
+                    <div id="version_info_cont"></div>
+                </ul>
+                <h3>Network</h3>
+                <ul class="keyvaluepairs">
+                    <div id="network_info_cont"></div>
+                </ul>
+                <h3>System</h3>
+                <ul class="keyvaluepairs">
+                    <div id="system_info_cont"></div>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="dlg_restart" data-role="dialog" data-title="Restart" data-theme="a">
+        <div data-role="header">
+            <h3>Restart?</h3>
+        </div>
+        <div>
+            <a id="dlg_restart_yes" data-role="button" href="#" data-inline="true">Yes</a>
+            <a id="dlg_restart_no" data-role="button" href="#" data-rel="back" data-inline="true">No</a>
+        </div>
+    </div>
+
+    <div id="footer" data-role="toolbar" data-type="footer" data-position="fixed" data-theme="b">
+        <div data-role="navbar">
+            <ul>
+                <li><a href="#home" data-icon="ui-icon-grid">Home</a></li>
+                <li><a href="#options" data-icon="ui-icon-gear">Options</a></li>
+                <li><a href="#info" data-icon="ui-icon-info">Info</a></li>
+            </ul>
+        </div>
+    </div>
+</body>
+
+</html>

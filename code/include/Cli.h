@@ -1,12 +1,14 @@
 #pragma once
 
-#include <Arduino.h> 
+#include <Arduino.h>
+
+#include <SimpleCLI.h>
 
 namespace Cli {
 
-void setOutput(Print *);
 void init();
-void close();
-bool active();
+SimpleCLI* get();
+Print* setOutput(Print*);
+Print* getOutput();
 
 }  // namespace Cli

@@ -4,6 +4,9 @@
 #include "PrintUtils.h"
 #include "FSUtils.h"
 
+#include "Hardware/ina231.h"
+#include "Hardware/mcp4652.h"
+
 enum BootMode { BT_STOP,
                 BT_SAFE,
                 BT_NORMAL };
@@ -38,9 +41,7 @@ class BootWatcher {
                 mode_ = BT_STOP;
                 break;
         }
-        SPIFFS.remove(BOOT_FLAG);
-
-        PrintUtils::print_welcome(&Serial, getBootModeStr(mode_).c_str(), APP_NAME " v" APP_VERSION, " " BUILD_DATE " ");
+        SPIFFS.remove(BOOT_FLAG);        
     }
 
     bool isSafeMode() { return mode_ == BT_SAFE; }
@@ -49,9 +50,11 @@ class BootWatcher {
 
     void start() {
         File f = SPIFFS.open(BOOT_FLAG, "w");
-        f.println(APP_VERSION __DATE__ __TIME__);
+        f.println(APP_VERSION);
         f.flush();
         f.close();
+
+        PrintUtils::println(&Serial, FPSTR(str_boot), getBootModeStr(mode_));
     }
 
     bool end() {
@@ -79,7 +82,7 @@ class BootWatcher {
             fs_ = FS_NORMAL;
         } else {
             PrintUtils::print(&Serial, FPSTR(str_format));
-            if (formatFS()) {
+            if (FSUtils::formatFS()) {
                 fs_ = FS_EMPTY;
             } else {
                 PrintUtils::print(&Serial, FPSTR(str_error));
@@ -88,22 +91,18 @@ class BootWatcher {
         PrintUtils::println(&Serial, FPSTR(str_done));
     }
 
-    bool formatFS() {
-        bool res = SPIFFS.format();
-        return res;
-    }
-
     String getBootModeStr(BootMode mode) const {
         String str;
         switch (mode_) {
             case BT_STOP:
-                str = F(" FATAL ERROR ");
+                str = F("FATAL ERROR");
                 break;
             case BT_SAFE:
-                str = F(" SAFE MODE ");
-                break;
+                str = F("SAFE MODE");
+                break;             
             case BT_NORMAL:
-                str = F(" Welcome ");
+                str = F("COMPLETE");                   
+            default:
                 break;
         }
         return str;

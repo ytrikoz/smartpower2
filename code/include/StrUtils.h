@@ -8,7 +8,9 @@
 
 namespace StrUtils {
 
-typedef enum { LEFT, CENTER, RIGHT } Align;
+typedef enum { LEFT,
+               CENTER,
+               RIGHT } Align;
 
 String getTimeStr(const unsigned long epoch_s, bool fmtLong = false);
 
@@ -17,23 +19,15 @@ String getDateTimeStr(const unsigned long epoch_s);
 void stringToBytes(const char *str, char sep, uint8_t *bytes, int len,
                    int base);
 
-const char *iptoa(IPAddress &ip);
-
 IPAddress atoip(const char *);
-
-void setnnstr(char *dest, const char *src);
-
-bool setstr(char *dest, const char *src, size_t size);
-
-void strfill(char *str, char chr, size_t size);
 
 bool isip(const char *);
 
 bool isip(const String &);
 
-const String fmt_ip_port(const IPAddress &ip, const uint16_t port);
+bool setstr(char *dest, const char *src, size_t size);
 
-const String fmt_ip_port(const char *ip, const uint16_t port);
+void strfill(char *str, char chr, size_t size);
 
 String fmt_network(const IPAddress ipddr, const IPAddress subnet,
                    const IPAddress gateway);
@@ -42,6 +36,8 @@ String fmt_network(const IPAddress ipaddr, const IPAddress subnet,
                    const IPAddress gateway, const IPAddress dns);
 
 const String prettyBytes(size_t bytes);
+
+const String prettyIpAddress(IPAddress ip, uint16_t port);
 
 String fmt_mhz(uint32_t);
 
@@ -85,14 +81,16 @@ int hex2num(char c);
 
 int hex2byte(const char *hex);
 
-const String long2str(long value); 
+const String long2str(long value);
 
 const String double2str(double value);
 
-template <typename T> T concat(T v) { return v; }
+template <typename T>
+T concat(T v) { return v; }
 
-template <typename T, typename... Args> String concat(T first, Args... args) {
+template <typename T, typename... Args>
+String concat(T first, Args... args) {
     return first + " " + concat(args...);
 }
 
-} // namespace StrUtils
+}  // namespace StrUtils

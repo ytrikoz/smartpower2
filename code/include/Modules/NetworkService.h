@@ -4,23 +4,23 @@
 #include <ESP8266NetBIOS.h>
 #include <ESP8266mDNS.h>
 
-#include "AppModule.h"
+#include "Module.h"
 #include "StrUtils.h"
 #include "SysInfo.h"
 #include "Wireless.h"
 
-class NetworkService : public AppModule {
+class NetworkService : public Module {
    public:
+    NetworkService() : Module(){};
+    
     size_t onDiag(Print *p) override;
 
-    bool isCompatible(Wireless::NetworkMode value) override {
-        return (value != Wireless::NETWORK_OFF);
+    bool isCompatible(NetworkMode value) override {
+        return (value != NetworkMode::NETWORK_OFF);
     }
 
     bool isNetworkDepended() override { return true; }
 
-   public:
-    NetworkService() : AppModule(MOD_NETSVC){};
 
    protected:
     bool onInit() override;

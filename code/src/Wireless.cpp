@@ -34,8 +34,8 @@ String AP_Password() { return WiFi.softAPPSK(); }
 IPAddress AP_IP() { return WiFi.softAPIP(); }
 
 uint8_t AP_Clients() {
-    return (networkMode == Wireless::NETWORK_AP ||
-            networkMode == Wireless::NETWORK_AP_STA)
+    return (networkMode == NetworkMode::NETWORK_AP ||
+            networkMode == NetworkMode::NETWORK_AP_STA)
                ? wifi_softap_get_station_num()
                : 0;
 }
@@ -462,9 +462,9 @@ bool scanWiFi(const char *ssid) {
     return discovered;
 }
 
-String getWifiChannel() { return String(WiFi.channel()); }
+String wifiChannel() { return String(WiFi.channel()); }
 
-String getWiFiPhyMode() {
+String wifiPhyMode() {
     char ch;
     switch (WiFi.getPhyMode()) {
         case WIFI_PHY_MODE_11B:

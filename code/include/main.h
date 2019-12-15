@@ -12,7 +12,6 @@
 #include "CrashReport.h"
 
 extern BootWatcher boot;
-extern LoopWatcher* loopWatcher;
 extern SimpleCLI* cli;
 extern Logger Log;
 extern App app;

@@ -7,7 +7,7 @@
 #include <Wire.h>
 
 #include "BuildConfig.h"
-#include "Modules/AppModule.h"
+#include "Modules/Module.h"
 #include "Plot.h"
 #include "Screen.h"
 #include "StrUtils.h"

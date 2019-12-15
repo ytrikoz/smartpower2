@@ -3,7 +3,7 @@
 #include <FS.h>
 
 #include "CommonTypes.h"
-#include "Container.h"
+#include "Core/Queue.h"
 #include "Storable.h"
 #include "FSUtils.h"
 
@@ -13,8 +13,8 @@ class Storage : public Storable<T> {
     Storage(const char* name) : Storable<T>() {
         strncpy(name_, name, FILENAME_SIZE);
     }
-    
-    Container<T>* data() {
+
+    Queue<T>* data() {
         return &this->data_;
     }
 
@@ -40,7 +40,7 @@ class Storage : public Storable<T> {
         bool res = false;
         if (data()->available()) {
             while (data()->available()) {
-                T buf;            
+                T buf;
                 data()->pop(buf);
                 file_.println(buf);
             }
@@ -66,7 +66,7 @@ class Storage : public Storable<T> {
     };
 
    private:
-    char name_[FILENAME_SIZE] = {0};  
+    char name_[FILENAME_SIZE] = {0};
     File file_;
 };
 

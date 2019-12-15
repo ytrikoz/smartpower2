@@ -1,6 +1,7 @@
 #include "FSUtils.h"
 
 #include "FS.h"
+#include "Storage.h"
 #include "PrintUtils.h"
 #include "StrUtils.h"
 
@@ -86,4 +87,64 @@ size_t clearDir(Print *p, const char *path) {
     }
     return n;
 }
+
+bool formatFS() {
+    bool res = SPIFFS.format();
+    return res;
+}
+
+
+bool writeString(const char *name, const String &value) {
+    auto file = StringFile(name);
+    auto data = file.get();
+    data->push(value);        
+    return file.write();
+}
+
+bool writeTime(const char *file, const time_t value) {
+    String buf = String((unsigned long) value);
+    return writeString(file, StrUtils::long2str(value));
+}
+
+bool writeInt(const char *file, long value) {
+    return writeString(file, StrUtils::long2str(value));
+}
+
+bool writeDouble(const char *file, double value) {
+    return writeString(file, StrUtils::double2str(value));
+}
+
+bool readString(const char *name, String &value) {
+    auto file = StringFile(name);
+    auto data = file.get();
+    return file.read() && data->pop(value);
+}
+
+bool readTime(const char *file, time_t &value) {
+    String buf;
+    if (readString(file, buf)) {
+        value = buf.toInt();
+        return true;
+    }
+    return false;
+}
+
+bool readDouble(const char *name, double &value) {
+    String buf;
+    if (readString(name, buf)) {
+        value = buf.toDouble();
+        return true;
+    }
+    return false;
+}
+
+bool readInt(const char *name, long &value) {
+    String buf;
+    if (readString(name, buf)) {
+        value = buf.toInt();
+        return true;
+    }
+    return false;
+}
+
 }

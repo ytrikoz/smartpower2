@@ -1,10 +1,11 @@
 #pragma once
 
-#include "AppModule.h"
+#include "Module.h"
+
 #include "LcdDisplay.h"
 #include "Screen.h"
 
-class Display : public AppModule {
+class Display : public Module {
    public:
     bool isEnabled();
     void showProgress(uint8_t per, const char *str);
@@ -13,7 +14,7 @@ class Display : public AppModule {
     void clear(void);
     void refresh(void);
     void updateScreen(void);
-    void enableBacklight(bool value = true);
+    bool enableBacklight(const bool value = true, const time_t time = 0);
 
     void load_message(Screen *obj, String header, String message);
     void load_message(Screen *obj, const char *header, const char *message);
@@ -25,10 +26,11 @@ class Display : public AppModule {
     void load_psu_stat(Screen *obj);
 
    public:
-    Display() : AppModule(MOD_DISPLAY){};
+    Display() : Module(){};
 
    protected:
     bool onInit() override;
+    Error onExecute(const String &param, const String &value) override;
     void onLoop() override;
 
    private:
@@ -42,7 +44,8 @@ class Display : public AppModule {
 
    private:
     LcdDisplay *lcd;
-    bool backlight;
+    bool backlight_;
+    time_t backlightTime_;
     unsigned long lockUpdated, lockTimeout;
     unsigned long screenUpdated;
     unsigned long screenRedraw;

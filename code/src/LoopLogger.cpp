@@ -9,7 +9,7 @@ void LoopWatcher::setIdle() { state = CAPTURE_IDLE; }
 
 LoopWatcherState LoopWatcher::getState() { return state; }
 
-void LoopWatcher::logTime(AppModuleEnum module, unsigned long duration) {
+void LoopWatcher::logTime(ModuleEnum module, unsigned long duration) {
     if (state == CAPTURE_IN_PROGRESS)
         cap.module[module] += duration;
 }
@@ -73,11 +73,11 @@ void LoopWatcher::loop() {
     loopStarted = millis();
 }
 
-LiveTimer LoopWatcher::onExecute(AppModuleEnum module) {
+LiveTimer LoopWatcher::onExecute(ModuleEnum module) {
     return LiveTimer(this, module);
 }
 
-LiveTimer::LiveTimer(LiveTimerLogger *logger, AppModuleEnum module) {
+LiveTimer::LiveTimer(LiveTimerLogger *logger, ModuleEnum module) {
     this->logger = logger;
     this->module = module;
     createTime = micros();

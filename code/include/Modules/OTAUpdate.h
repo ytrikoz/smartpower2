@@ -4,23 +4,16 @@
 #include <FS.h>
 #include <Updater.h>
 
-#include "AppModule.h"
+#include "Module.h"
 #include "Strings.h"
 
-class OTAUpdate : public AppModule {
+class OTAUpdate : public Module {
    public:
-    bool isCompatible(Wireless::NetworkMode value) override {
-        return value != Wireless::NETWORK_OFF;
-    }
-
-    bool isNetworkDepended() override { return true; }
-
-   public:
-    OTAUpdate() : AppModule(MOD_UPDATE) {
-        port_ = OTA_PORT;
-    };
-
+    OTAUpdate(uint16_t port);
+    
    protected:
+    bool isCompatible(NetworkMode value) override { return value != NetworkMode::NETWORK_OFF; }
+    bool isNetworkDepended() override { return true; }
     bool onInit() override;
     bool onStart() override;
     void onStop() override;

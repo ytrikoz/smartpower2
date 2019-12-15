@@ -1,4 +1,4 @@
-#include "Modules/SyslogMod.h"
+#include "Modules/SyslogModule.h"
 
 #include "Wireless.h"
 
@@ -6,82 +6,76 @@ using namespace AppUtils;
 using namespace StrUtils;
 using namespace PrintUtils;
 
-void SyslogMod::alert(String &str) { send(SYSLOG_ALERT, str); }
+void SyslogModule::alert(const String& src, const String &str) { send(SYSLOG_ALERT, src, str); }
 
-void SyslogMod::info(String &str) { send(SYSLOG_INFO, str); }
+void SyslogModule::info(const String& src, const String &str) { send(SYSLOG_INFO, src, str); }
 
-void SyslogMod::debug(String &str) { send(SYSLOG_DEBUG, str); }
+void SyslogModule::debug(const String& src, const String &str) { send(SYSLOG_DEBUG, src, str); }
 
-bool SyslogMod::onInit() {
-    setServer(config_->getValueAsString(SYSLOG_SERVER));
-    setPort(SYSLOG_PORT);
-    setHost(Wireless::hostName().c_str());
 
-    udp = new WiFiUDP();
+SyslogModule::SyslogModule(): Module() {}
 
+SyslogModule::SyslogModule(WiFiUDP* udp):SyslogModule() {
+    udp_ = udp;
+}
+
+bool SyslogModule::onInit() {
+  if (udp_ == nullptr) udp_ = new WiFiUDP();
+  return udp_;
+}
+
+bool SyslogModule::onStart() {
+    if (String(getSyslogServer()).isEmpty()) {        
+        serverIp = IPADDR_NONE;
+        error_ = Error(ERROR_PARAM, str_server);
+        return false;
+    }
+
+    if (!WiFi.hostByName(server, serverIp)) {
+        error_= Error(ERROR_NETWORK, FPSTR(str_dns));
+        return false;
+    }    
     return true;
 }
 
-bool SyslogMod::onStart() {
-    if (String(server).length() == 0) {
-        say_strP(str_disabled);
-        serverIp = IPADDR_NONE;
-        return false;
-    }
-    if (!WiFi.hostByName(server, serverIp)) {
-        say_strP(str_dns, getStrP(str_error).c_str());
-        return false;
-    }
-    String msg = FPSTR(str_start);
+void SyslogModule::onLoop() {}
 
-    send(SYSLOG_INFO, msg);
-    char buf[32];
-    sprintf(buf, "%s:%d", serverIp.toString().c_str(), port);
-    say_strP(server, buf);
-    return active = true;
+void SyslogModule::onStop() { udp_->stop(); }
+
+const char* SyslogModule::getSyslogServer() {
+     return config_->getValueAsString(SYSLOG_SERVER);
 }
 
-void SyslogMod::onLoop() {}
+const char* SyslogModule::getHostname() {
+     return APP_NAME;
+}
 
-void SyslogMod::onStop() { udp->stop(); }
-
-void SyslogMod::setHost(const char *value) { setstr(host, value, 16); }
-
-void SyslogMod::setServer(const char *value) { setstr(server, value, 16); }
-
-void SyslogMod::setPort(const uint16_t value) { port = value; }
-
-void SyslogMod::send(SysLogSeverity level, String &message) {
-    if (!active)
-        return;
+void SyslogModule::send(SysLogSeverity level, const String &routine, const String &message) {
     // String payload = getPayload(level, time, host.c_str(), message.c_str());
     // say_strP(str_log, payload.c_str());
-    if (udp->beginPacket(serverIp, port)) {
-        printPacket(udp, level, MOD_SYSLOG, message);
-        udp->endPacket();
+    if (udp_->beginPacket(serverIp, SYSLOG_PORT)) {
+        printPacket(level, routine, message);
+        udp_->endPacket();
     }
 }
 
-void SyslogMod::printPacket(Print *p, const SysLogSeverity level,
-                            AppModuleEnum mod, String &message) {
-    p->print('<');
-    p->print(SYSLOG_FACILITY * 8 + (int)level);
-    p->print('>');
-    p->print(host);
-    p->print(' ');
-    p->print('[');
-    p->print(AppUtils::getModuleName(mod));
-    p->print(']');
-    p->print(' ');
-    p->print(message);
+void SyslogModule::printPacket(const SysLogSeverity level, const String &routine, const String &message) {
+    udp_->print('<');
+    udp_->print(SYSLOG_FACILITY * 8 + (int)level);
+    udp_->print('>');
+    udp_->print(host);
+    udp_->print(' ');
+    udp_->print('[');
+    udp_->print(routine);
+    udp_->print(']');
+    udp_->print(' ');
+    udp_->print(message);
 }
 
-size_t SyslogMod::onDiag(Print *p) {
-    size_t n = println_nameP_value(p, str_active, boolStr(active).c_str());
-    n += println_nameP_value(p, str_server, server);
-    n += println_nameP_value(p, str_port, port);
-    n += println_nameP_value(p, str_ip, serverIp);
-    return n;
+size_t SyslogModule::onDiag(Print *p) {
+    DynamicJsonDocument doc(64);
+    doc[FPSTR(str_server)] = getSyslogServer();
+    return serializeJsonPretty(doc, *p);
 }
 
 String getLevelStr(SysLogSeverity level) {

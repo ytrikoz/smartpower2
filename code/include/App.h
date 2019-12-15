@@ -8,19 +8,26 @@
 #include "Plot.h"
 #include "PsuLogHelper.h"
 
-#include "Modules/ButtonMod.h"
+#include "Modules/ModuleHost.h"
+
+#include "Modules/Clock.h"
+#include "Modules/Button.h"
+#include "Modules/Led.h"
 #include "Modules/Display.h"
-#include "Modules/Leds.h"
 #include "Modules/NetworkService.h"
 #include "Modules/OTAUpdate.h"
 #include "Modules/PsuModule.h"
-#include "Modules/SyslogMod.h"
-#include "Modules/ClockMod.h"
-#include "Modules/TelnetServer.h"
-#include "Modules/WebMod.h"
-#include "Modules/ShellMod.h"
+#include "Modules/SyslogModule.h"
+#include "Modules/Shell.h"
+#include "Modules/Telnet.h"
+#include "Modules/Web.h"
 
-class App : PsuListener {
+class App : public ModuleHost, PsuListener {
+   public:
+    Module *instance(ModuleEnum) override;
+    String name(ModuleEnum) const override;
+    bool get(const char *, ModuleEnum &) const override;
+
    public:
     void log(PsuData &item) override;
 
@@ -28,34 +35,33 @@ class App : PsuListener {
     App();
     void restart(time_t delay = 0);
     void handleRestart();
-    void init(Print *p);
-    void start();
+    void init();
+    void begin();
     void startSafe();
-    bool start(const AppModuleEnum);
-    void stop(const AppModuleEnum);
     void loop();
     void loopSafe();
 
     size_t printDiag(Print *p);
-    size_t printDiag(Print *p, const AppModuleEnum module);
+    size_t printDiag(Print *p, const ModuleEnum module);
     void printLoopCapture(Print *p);
     void printPlot(PlotData *data, Print *p);
     void printCapture(Print *);
 
-    AppModule *getModuleByName(const char *);
-    AppModule *getModule(const AppModuleEnum);
-
-    Config *params();
-    ClockMod *clock();
-    Display *lcd();
-    PsuLogHelper *getPsuLog();
-    ConfigHelper *config();
-    WebMod *web();
-    PsuModule *psu();
-    LedMod *led();
-    ShellMod *shell();
-    ButtonMod *btn();
-    TelnetServer *telnet();
+    Modules::Button *btn() { return (Modules::Button *)appMod[MOD_BTN]; }
+    Modules::Clock *clock() { return (Modules::Clock *)appMod[MOD_CLOCK]; }    
+    Modules::Led *led() { return (Modules::Led *)appMod[MOD_LED]; }
+    Modules::Shell *shell() { return (Modules::Shell *)appMod[MOD_SHELL]; }
+    Modules::Telnet *telnet() { return (Modules::Telnet *)appMod[MOD_TELNET]; }  
+    Modules::Web *web() { return (Modules::Web *)appMod[MOD_WEB]; }
+    
+    PsuModule *psu() { return (PsuModule *)appMod[MOD_PSU]; }
+    
+    ConfigHelper *config() { return configHelper; }
+    Config *params() { return configHelper->get(); }
+    Display *lcd() { return (Display *)appMod[MOD_DISPLAY]; }
+    
+    PsuLogHelper *getPsuLog() { return psuLog; }
+    LoopWatcher* watcher() {return loopLogger;}
 
     bool setBootPowerState(BootPowerState state);
     bool setOutputVoltageAsDefault();
@@ -72,12 +78,12 @@ class App : PsuListener {
 
     void logMessage(const LogLevel level, const String &msg) {
         char buf[16];
-        out->print(millis() / ONE_SECOND_ms);
-        out->print(' ');
-        out->print(getLogLevel(buf, level));
-        out->print(' ');
-        out->println(msg);
-        out->flush();
+        out_->print(millis() / ONE_SECOND_ms);
+        out_->print(' ');
+        out_->print(getLogLevel(buf, level));
+        out_->print(' ');
+        out_->println(msg);
+        out_->flush();
     }
 
     char *getLogLevel(char *buf, LogLevel level) {
@@ -106,26 +112,34 @@ class App : PsuListener {
 
    private:
     void displayProgress(uint8_t progress, const char *message);
-    void restartNetworkDependedModules(Wireless::NetworkMode mode, bool hasNetwork);
+    void restartNetworkDependedModules(NetworkMode mode, bool hasNetwork);
     void restart();
     void send_psu_data_to_clients();
 
    private:
     bool networkChanged;
-    bool safemode = false;
-
-    AppModule *appMod[APP_MODULES];
     LoopWatcher *loopLogger;
     ConfigHelper *configHelper;
-
     PsuLogHelper *psuLog;
-
     WiFiEventHandler onDisconnected, onGotIp;
-
     unsigned long restartUpdated_;
-    time_t restartCountdown_;
     bool restartFlag_;
-
+    time_t restartCountdown_;
     uint8_t boot_per;
-    Print *out, *dbg, *err = NULL;
+
+   private:
+    Module *appMod[APP_MODULES];
+
+    ModuleDefine define[APP_MODULES] = {
+        {str_btn, 0, false, false},
+        {str_clock, 0, false, false},
+        {str_web, 0, false, false},
+        {str_display, 0, false, false},
+        {str_led, 0, false, false},
+        {str_netsvc, 0, false, false},
+        {str_psu, 0, false, false},
+        {str_shell, 0, false, false},
+        {str_telnet, 0, false, false},
+        {str_update, 0, false, false},
+        {str_syslog, 0, false, false}};
 };

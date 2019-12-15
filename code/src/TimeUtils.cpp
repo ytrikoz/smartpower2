@@ -31,7 +31,7 @@ unsigned long millis_passed(unsigned long start, unsigned long finish) {
 
 namespace TimeUtils {
 
-void format_elapsed_time(char *buf, time_t elapsed) {
+void format_elapsed_short(char *buf, time_t elapsed) {
     int h, m;
     h = m = 0;
     h = elapsed / 3600;
@@ -42,7 +42,7 @@ void format_elapsed_time(char *buf, time_t elapsed) {
 }
 
 char elapsed_buf[32] = {0};
-char* format_elapsed(const double elapsed) {
+char* format_elapsed_full(const double elapsed) {
     int h, m, s, ms;
     h = m = s = ms = 0;
     ms = elapsed * 1000;

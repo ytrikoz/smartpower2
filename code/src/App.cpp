@@ -8,14 +8,108 @@ using namespace AppUtils;
 using namespace PrintUtils;
 using namespace StrUtils;
 
+String App::name(ModuleEnum module) const {
+    char buf[16];
+    PGM_P strP = (char *)pgm_read_ptr(&(define[module].name));
+    strncpy_P(buf, strP, sizeof(buf) - 1);
+    buf[sizeof(buf) - 1] = '\x00';
+    return String(buf);
+}
+
+bool App::get(const char *str, ModuleEnum &module) const {
+    for (uint8_t i = 0; i < APP_MODULES; ++i)
+        if (name(ModuleEnum(i)) == str) {
+            module = ModuleEnum(i);
+            return true;
+        }
+    return false;
+}
+
+Module *App::instance(ModuleEnum module) {
+    if (!appMod[module]) {
+        switch (module) {
+            case MOD_CLOCK: {
+                appMod[module] = new Modules::Clock();
+                clock()->setOnChange([this](const time_t local, double diff) {
+                    print_ident(out_, FPSTR(str_clock));
+                    println(out_, FPSTR(str_updated), TimeUtils::format_elapsed_full(diff));
+                });
+                break;
+            }
+            case MOD_BTN: {
+                appMod[module] = new Modules::Button(POWER_BTN_PIN);
+                btn()->setOnClick([this]() { if (psu()) psu()->togglePower(); });
+                btn()->setOnHold([this](time_t time) {if (time >= HOLD_TIME_TO_RESET_s) restart(3); });
+                break;
+            }
+            case MOD_LED: {
+                appMod[module] = new Modules::Led();
+                break;
+            }
+            case MOD_SYSLOG: {
+                appMod[module] = new SyslogModule();
+                break;
+            }
+            case MOD_PSU: {
+                appMod[module] = new PsuModule(this);
+                psuLog = new PsuLogHelper();
+                break;
+            }
+            case MOD_DISPLAY: {
+                appMod[module] = new Display();
+                break;
+            }
+            case MOD_WEB: {
+                appMod[module] = new Modules::Web();
+                break;
+            }
+            case MOD_SHELL: {
+                appMod[module] = new Modules::Shell(Cli::get());
+                break;
+            }
+            case MOD_NETSVC: {
+                appMod[module] = new NetworkService();
+                break;
+            }
+            case MOD_TELNET: {
+                appMod[module] = new Modules::Telnet();
+                telnet()->setEventHandler([this](TelnetEventType et, WiFiClient *client) {
+                    PrintUtils::print_ident(out_, FPSTR(str_telnet));
+                    switch (et) {
+                        case CLIENT_CONNECTED:                        
+                            PrintUtils::println(out_, FPSTR(str_connected), prettyIpAddress(client->remoteIP(), client->remotePort()));
+                            shell()->setRemote(telnet()->getTerminal());
+                            break;
+                        case CLIENT_DISCONNECTED:
+                            shell()->setRemote(nullptr);
+                            PrintUtils::println(out_, FPSTR(str_disconnected));
+                            break;
+                    }    
+                    refresh_wifi_led();
+                    return true;
+                });        
+                break;
+            }
+            case MOD_UPDATE: {
+                appMod[module] = new OTAUpdate(OTA_PORT);
+                break;
+            }
+        }
+        appMod[module]->setOutput(out_);
+        appMod[module]->setConfig(params());
+    }
+
+    return appMod[module];
+}
+
 void App::log(PsuData &item) {
     psuLog->log(item);
 
     if (Wireless::hasNetwork()) {
-        if ((telnet() && telnet()->hasClient()) && !shell()->isActive()) {
+        if (telnet() && telnet()->hasClient()) {
             String data = item.toString();
             data += '\r';
-            telnet()->write(data.c_str());
+            telnet()->sendData(data.c_str());
         }
         if (web()->getClients()) {
             String data = String(TAG_PVI);
@@ -25,34 +119,32 @@ void App::log(PsuData &item) {
     }
 }
 
-App::App() {
+App::App():networkChanged(false), restartFlag_(false), restartCountdown_(0) {
     memset(appMod, 0, sizeof(appMod[0]) * APP_MODULES);
 }
 
-void App::init(Print *p) {
+void App::init() {    
     loopLogger = new LoopWatcher();
     configHelper = new ConfigHelper();
-    out = dbg = err = p;
-    restartCountdown_ = 0;
-    restartFlag_ = false;
+    Cli::init();
+    initModules();
 }
 
 void App::startSafe() {
     start(MOD_SHELL);
     shell()->init();
-    shell()->setSerial();
 }
 
 void App::loopSafe() { shell()->loop(); }
 
 void App::loop() {
     for (size_t i = 0; i < APP_MODULES; ++i) {
-        AppModule *mod = getModule(AppModuleEnum(i));
-        if (mod) {
-            if (mod->isNetworkDepended() && (!Wireless::hasNetwork() ||!mod->isCompatible(Wireless::getMode())))
+        auto *obj = module(i);
+        if (obj) {
+            if (obj->isNetworkDepended() && (!Wireless::hasNetwork() || !obj->isCompatible(Wireless::getMode())))
                 continue;
-            LiveTimer timer = loopLogger->onExecute(AppModuleEnum(i));
-            mod->loop();
+            LiveTimer timer = loopLogger->onExecute(ModuleEnum(i));
+            obj->loop();
             delay(0);
         }
     }
@@ -82,68 +174,17 @@ size_t App::printDiag(Print *p) {
     return n += print_ln(p);
 }
 
-size_t App::printDiag(Print *p, const AppModuleEnum module) {
-    AppModule *mod = appMod[module];
-    if (mod) {
-        return mod->printDiag(p);
+size_t App::printDiag(Print *p, const ModuleEnum mod) {
+    Module *obj = appMod[mod];
+    if (obj) {
+        return obj->printDiag(p);
     } else {
         return print(p, FPSTR(str_disabled));
     }
 }
 
 void App::printLoopCapture(Print *p) {
-    LoopCapture *cap = loopLogger->getCapture();
-    print(out, FPSTR(str_capture));
-    print(out, cap->duration);
-    println(out, FPSTR(str_ms));
-
-    unsigned long time_range = 2;
-    for (uint8_t i = 0; i < cap->counters_size; ++i) {
-        if (cap->counter[i] > 0) {
-            if (time_range > cap->longest)
-                p->printf_P(strf_lu_ms, cap->longest);
-            else
-                p->printf_P(strf_lu_ms, time_range);
-            p->print('\t');
-            p->println(cap->counter[i]);
-        }
-        time_range *= 2;
-    }
-
-    if (cap->overrange > 0) {
-        p->print(StrUtils::getStrP(str_over));
-        p->printf_P(strf_lu_ms, time_range / 2);
-        p->print('\t');
-        p->println(cap->overrange);
-        p->print('\t');
-        p->printf_P(strf_lu_ms, cap->longest);
-        p->println();
-    }
-
-    p->print(StrUtils::getStrP(str_total));
-    p->print('\t');
-    p->print(cap->total);
-    p->print('\t');
-    p->println((float)cap->duration / cap->total);
-
-    float total_modules_time = 0;
-    for (uint8_t i = 0; i < cap->modules_size; ++i)
-        total_modules_time += floor((float)cap->module[i] / ONE_MILLISECOND_mi);
-
-    float system_time = cap->duration - total_modules_time;
-
-    for (uint8_t i = 0; i < cap->modules_size; ++i) {
-        p->print(appMod[i]->getName());
-        p->print('\t');
-        float load =
-            (float)cap->module[i] / ONE_MILLISECOND_mi / total_modules_time;
-        p->printf_P(strf_per, load * 100);
-        p->println();
-    }
-    p->print(StrUtils::getStrP(str_system));
-    p->print('\t');
-    p->printf_P(strf_per, ((float)(system_time / cap->duration) * 100));
-    p->println();
+   
 }
 
 void App::restart(time_t time) {
@@ -153,7 +194,7 @@ void App::restart(time_t time) {
     if (restartCountdown_) {
         char buf[32];
         sprintf_P(buf, msg_restart_countdown, restartCountdown_);
-        PrintUtils::println(out, buf);
+        PrintUtils::println(out_, buf);
     }
 }
 
@@ -177,18 +218,16 @@ void App::displayProgress(uint8_t progress, const char *message) {
     if (lcd()->isEnabled()) lcd()->showProgress(progress, message);
 }
 
-void App::start() {
-    //print_delay(&INFO, getIdentStrP(str_wait, false).c_str(), 5);
-
-    start(MOD_DISPLAY);
+void App::begin() {
+    instance(MOD_DISPLAY);
 
     displayProgress(0, BUILD_DATE);
 
-    start(MOD_BTN);
-    start(MOD_LED);
-    start(MOD_CLOCK);
-    start(MOD_PSU);
-    start(MOD_SHELL);
+    instance(MOD_BTN);
+    instance(MOD_LED);
+    instance(MOD_CLOCK);
+    instance(MOD_PSU);
+    instance(MOD_SHELL);
     displayProgress(40, "<WIFI>");
 
     Wireless::start();
@@ -198,12 +237,13 @@ void App::start() {
     Wireless::setOnNetworkStatusChange(
         [this](bool hasNetwork, unsigned long time) {
             char buf[8];
-            out->print(StrUtils::getIdentStrP(str_app));
-            out->printf("network %s (%.2f sec)\n",
-                        StrUtils::getUpDownStr(buf, hasNetwork),
-                        (float)time / ONE_SECOND_ms);
+            out_->print(StrUtils::getIdentStrP(str_app));
+            out_->printf("network %s (%.2f sec)\n",
+                         StrUtils::getUpDownStr(buf, hasNetwork),
+                         (float)time / ONE_SECOND_ms);
             networkChanged = true;
         });
+
     displayProgress(100, "<COMPLETE>");
 
     lcd()->refresh();
@@ -217,16 +257,16 @@ void App::start() {
         web()->sendPageState(PG_HOME);
         switch (status) {
             case PSU_OK: {
-                led()->set(POWER_LED,
-                           psu()->checkState(POWER_ON) ? BLINK : STAY_ON);
+                led()->set(RED_LED,
+                           psu()->checkState(POWER_ON) ? BLINK : LIGHT_ON);
                 break;
             }
             case PSU_ALERT: {
-                led()->set(POWER_LED, BLINK_ALERT);
+                led()->set(RED_LED, BLINK_ALERT);
                 break;
             }
             case PSU_ERROR: {
-                led()->set(POWER_LED, BLINK_ERROR);
+                led()->set(RED_LED, BLINK_ERROR);
             }
             default: {
                 break;
@@ -247,16 +287,16 @@ void App::start() {
     });
 }
 
-void App::restartNetworkDependedModules(Wireless::NetworkMode networkMode, bool hasNetwork) {
+void App::restartNetworkDependedModules(NetworkMode networkMode, bool hasNetwork) {
     for (size_t i = 0; i < APP_MODULES; ++i) {
-        auto mod = getModule(AppModuleEnum(i));
-        if (!mod->isNetworkDepended())
+        auto obj = module(i);
+        if (!obj->isNetworkDepended())
             continue;
-        if (mod->isCompatible(networkMode)) {
+        if (obj->isCompatible(networkMode)) {
             if (hasNetwork)
-                mod->start();
+                obj->start();
             else
-                mod->stop();
+                obj->stop();
         }
     }
 }
@@ -275,129 +315,29 @@ bool App::setBootPowerState(BootPowerState value) {
     return res;
 }
 
-AppModule *App::getModuleByName(const char *name) {
-    for (uint8_t i = 0; i < APP_MODULES; ++i)
-        if (strcmp_P(name, (char *)pgm_read_ptr(&(mod_name[i]))) == 0) {
-            return getModule(AppModuleEnum(i));
-        }
-    return 0;
-}
-
-AppModule *App::getModule(const AppModuleEnum mod) {
-    if (!appMod[mod]) {
-        switch (mod) {
-            case MOD_BTN: {
-                appMod[mod] = new ButtonMod();
-                btn()->setOnClick([this]() { if (psu()) psu()->togglePower(); });
-                btn()->setOnHold([this](time_t time) {if (time >= HOLD_TIME_TO_RESET_s) restart(3); });
-                break;
-            }
-            case MOD_SYSLOG: {
-                appMod[mod] = new SyslogMod();
-                break;
-            }
-            case MOD_CLOCK: {
-                appMod[mod] = new ClockMod();
-                clock()->setOnChange([this](const time_t local, double drift) {
-                    print_ident(out, FPSTR(str_clock));
-                    println(out, TimeUtils::format_time(local), "(", TimeUtils::format_elapsed(drift), ")");
-                });
-
-                break;
-            }
-            case MOD_LED: {
-                appMod[mod] = new LedMod();
-                break;
-            }
-            case MOD_PSU: {
-                appMod[mod] = new PsuModule(this);
-                psuLog = new PsuLogHelper();
-                break;
-            }
-            case MOD_DISPLAY: {
-                appMod[mod] = new Display();
-                break;
-            }
-            case MOD_WEB: {
-                appMod[mod] = new WebMod();
-                break;
-            }
-            case MOD_SHELL: {
-                appMod[mod] = new ShellMod();
-                break;
-            }
-            case MOD_NETSVC: {
-                appMod[mod] = new NetworkService();
-                break;
-            }
-            case MOD_TELNET: {
-                appMod[mod] = new TelnetServer();
-                telnet()->setEventHandler([this](TelnetEventType et, Stream *client) {
-                    switch (et) {
-                        case CLIENT_DATA:
-                            println(out, FPSTR(str_unhandled));
-                            return true;
-                        case CLIENT_CONNECTED:
-                            shell()->setRemote(client);
-                            break;
-                        case CLIENT_DISCONNECTED:
-                            shell()->setSerial();
-                            break;
-                        default:
-                            println(out, FPSTR(str_unhandled));
-                            break;
-                    }
-                    refresh_wifi_led();
-                    return true;
-                });
-                break;
-            }
-            case MOD_UPDATE: {
-                appMod[mod] = new OTAUpdate();
-                break;
-            }
-        }
-        appMod[mod]->setOutput(out);
-        appMod[mod]->setConfig(params());
-        appMod[mod]->init();
-    }
-
-    return appMod[mod];
-}
-
-bool App::start(const AppModuleEnum mod) {
-    auto obj = getModule(mod);
-    return obj && obj->start();
-}
-
-void App::stop(AppModuleEnum mod) {
-    auto obj = getModule(mod);
-    if (obj) obj->stop();
-}
-
 void App::refresh_wifi_led() {
-    LedMode mode = STAY_OFF;
+    LedSignal mode = LIGHT_OFF;
     if (restartFlag_ && restartCountdown_ <= 3)
         mode = BLINK_ERROR;
     else if (Wireless::hasNetwork()) {
-        mode = STAY_ON;
+        mode = LIGHT_ON;
         if (web()->getClients() || (telnet() && telnet()->hasClient()))
             mode = BLINK;
     }
-    led()->set(WIFI_LED, mode);
+    led()->set(BLUE_LED, mode);
 }
 
 void App::refresh_power_led() {
-    LedMode mode = STAY_OFF;
+    LedSignal mode = LIGHT_ON;
     if (restartFlag_ && restartCountdown_ <= 3)
         mode = BLINK_ERROR;
     else if (psu()) {
         if (psu()->checkStatus(PSU_OK))
-            mode = psu()->checkState(POWER_ON) ? BLINK : STAY_ON;
+            mode = psu()->checkState(POWER_ON) ? BLINK : LIGHT_ON;
         else
             mode = BLINK_ALERT;
     }
-    led()->set(POWER_LED, mode);
+    led()->set(RED_LED, mode);
 }
 
 void App::printPlot(PlotData *data, Print *p) {
@@ -410,25 +350,3 @@ void App::printPlot(PlotData *data, Print *p) {
         p->println();
     }
 }
-
-LedMod *App::led() { return (LedMod *)appMod[MOD_LED]; }
-
-ButtonMod *App::btn() { return (ButtonMod *)appMod[MOD_BTN]; }
-
-TelnetServer *App::telnet() { return (TelnetServer *)appMod[MOD_TELNET]; }
-
-PsuModule *App::psu() { return (PsuModule *)appMod[MOD_PSU]; }
-
-ClockMod *App::clock() { return (ClockMod *)appMod[MOD_CLOCK]; }
-
-ShellMod *App::shell() { return (ShellMod *)appMod[MOD_SHELL]; }
-
-ConfigHelper *App::config() { return configHelper; }
-
-Config *App::params() { return configHelper->get(); }
-
-Display *App::lcd() { return (Display *)appMod[MOD_DISPLAY]; }
-
-WebMod *App::web() { return (WebMod *)appMod[MOD_WEB]; }
-
-PsuLogHelper *App::getPsuLog() { return psuLog; }

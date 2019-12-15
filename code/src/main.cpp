@@ -3,7 +3,6 @@
 #include <Arduino.h>
 #include <FS.h>
 
-#include "Global.h"
 #include "BuildConfig.h"
 #include "CrashReport.h"
 #include "FSUtils.h"
@@ -13,10 +12,9 @@
 using namespace PrintUtils;
 
 BootWatcher boot;
-LoopWatcher* loopWatcher;
 Logger logger;
-SimpleCLI* cli;
 App app;
+
 bool crashReportEnabled = false;
 uint8_t crashReportNumber = 0;
 
@@ -56,7 +54,7 @@ void initCrashReport() {
     crashReportEnabled = crashReportNumber < CRASH_NUM;
 
     if (crashReportNumber) {
-        PrintUtils::print_ident(&Serial, FPSTR(str_crash_report));
+        PrintUtils::print_ident(&Serial, FPSTR(str_crash));
         PrintUtils::print(&Serial, crashReportNumber);
 
         if (!crashReportEnabled) PrintUtils::print(&Serial, FPSTR(str_disabled));
@@ -70,6 +68,7 @@ void preinit() {
     system_update_cpu_freq(SYS_CPU_160MHZ);
     WiFi.persistent(false);
     WiFi.setAutoConnect(false);
+    wifi_station_set_hostname(APP_NAME);
     setupDone = false;
 }
 
@@ -80,7 +79,9 @@ void setup() {
 
     PrintUtils::println(&logger, "[log] start");
 
-    app.init(&Serial);
+
+    app.setOutput(&logger);    
+    app.init();
 
     if (boot.isSafeMode()) {
         INFO.setDebugOutput(true);
@@ -88,7 +89,7 @@ void setup() {
         INFO.println(FPSTR(str_safe));
         app.startSafe();
     } else {
-        app.start();
+        app.begin();
     }
 
     boot.end();
@@ -98,11 +99,11 @@ void setup() {
 
 void loop() {
     if (!setupDone) return;
-
+    logger.loop();
     if (boot.isSafeMode())
         app.loopSafe();
     else {
         app.loop();
     }
-    logger.loop();
+
 }

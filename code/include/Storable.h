@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CommonTypes.h"
-#include "Container.h"
+#include "Core/Queue.h"
 
 using namespace StrUtils;
 
@@ -87,11 +87,11 @@ class Storable {
 
     void clearError() { error_ = StoreError::SE_NONE; }
 
-    void set(const Container<T>& data) {
+    void set(const Queue<T>& data) {
         data_ = data;
     }
 
-    Container<T>* get() {
+    Queue<T>* get() {
         return &data_;
     }
 
@@ -205,7 +205,7 @@ class Storable {
         }
     }
    protected:
-    Container<T> data_;
+    Queue<T> data_;
     StoreState state_;
     StoreError error_;
 };

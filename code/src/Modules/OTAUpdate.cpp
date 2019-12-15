@@ -7,6 +7,8 @@
 #define OTA_FLASH 0
 #define OTA_FS 100
 
+OTAUpdate::OTAUpdate(uint16_t port) : Module(), port_(port){};
+
 bool OTAUpdate::onInit() {
     return true;
 }
@@ -23,7 +25,7 @@ bool OTAUpdate::onStart() {
     ota->setPassword("admin");
     // arduinoOTA->setPasswordHash("21232f297a57a5a743894a0e4a801fc3"); //
     // MD5(admin)
-        return true;
+    return true;
     // ota->setHostname(Wireless::hostName().c_str());
     ota->setPort(port_);
     ota->begin(false);
@@ -35,59 +37,58 @@ void OTAUpdate::onStop() {
 }
 
 void OTAUpdate::handleArduinoOTAClassOnStart(void) {
-    print_ident(out, FPSTR(str_update));
+    PrintUtils::print_ident(out_, FPSTR(str_update));
     update_progress = 0;
     PGM_P strP;
     switch (this->ota->getCommand()) {
-    case OTA_FLASH:
-        strP = str_firmware;
-        break;
-    case OTA_FS:
-        strP = str_spiffs;
-        break;
-    default:
-        strP = str_unknown;
-        break;
+        case OTA_FLASH:
+            strP = str_firmware;
+            break;
+        case OTA_FS:
+            strP = str_spiffs;
+            break;
+        default:
+            strP = str_unknown;
+            break;
     }
-    println(out, FPSTR(str_update), FPSTR(strP));
+    PrintUtils::println(out_, FPSTR(str_update), FPSTR(strP));
 }
 
 void OTAUpdate::handleEnd() {
-    print_ident(out, FPSTR(str_update));
-    println(out, FPSTR(str_complete));
+    PrintUtils::print_ident(out_, FPSTR(str_update));
+    PrintUtils::println(out_, FPSTR(str_complete));
 }
 
 void OTAUpdate::handleProgress(unsigned int progress, unsigned int total) {
     if (progress % 5 == 0) {
-        print_ident(out, FPSTR(str_update));        
-        println(out, FPSTR(strf_progress), progress, '%');
+        PrintUtils::print_ident(out_, FPSTR(str_update));
+        PrintUtils::println(out_, FPSTR(strf_progress), progress, '%');
     }
 }
 
 void OTAUpdate::handleError(ota_error_t error) {
-    print_ident(out, FPSTR(str_update));     
+    PrintUtils::print_ident(out_, FPSTR(str_update));
     PGM_P strP = str_unknown;
-    switch (error)
-    {
-    case OTA_AUTH_ERROR:
-        strP = str_auth;
-        break;
-    case OTA_BEGIN_ERROR:
-        strP = str_begin;
-        break;
-    case OTA_CONNECT_ERROR:
-        strP = str_connect;
-        break;
-    case OTA_RECEIVE_ERROR:
-        strP = str_receive;
-        break;
-    case OTA_END_ERROR:
-        strP = str_end;
-        break;                            
-    default:
-        break;
+    switch (error) {
+        case OTA_AUTH_ERROR:
+            strP = str_auth;
+            break;
+        case OTA_BEGIN_ERROR:
+            strP = str_begin;
+            break;
+        case OTA_CONNECT_ERROR:
+            strP = str_connect;
+            break;
+        case OTA_RECEIVE_ERROR:
+            strP = str_receive;
+            break;
+        case OTA_END_ERROR:
+            strP = str_end;
+            break;
+        default:
+            break;
     }
-    println(out, FPSTR(strP), FPSTR(str_error));     
+    PrintUtils::println(out_, FPSTR(strP), FPSTR(str_error));
 }
 
 void OTAUpdate::onLoop() { ota->handle(); }

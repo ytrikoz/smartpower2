@@ -2,10 +2,11 @@
 
 #include <Arduino.h>
 
-#include "static/index.html.gz.h"
+#include "graph.html.gz.h"
+#include "index.html.gz.h"
 
 typedef std::function<void(uint8_t)> WebConnectionEventHandler;
-typedef std::function<void(uint8_t, String)> WebDataEventHendler;
+typedef std::function<void(uint8_t, String)> WebReceiveDataEventHandler;
 
 class WebServer {
    public:
@@ -16,5 +17,5 @@ class WebServer {
     virtual void sendData(const uint8_t, const String &) = 0;
     virtual void setOnConnection(WebConnectionEventHandler) = 0;
     virtual void setOnDisconnection(WebConnectionEventHandler) = 0;
-    virtual void setOnReceiveData(WebDataEventHendler) = 0;    
+    virtual void setOnReceiveData(WebReceiveDataEventHandler) = 0;    
 };
