@@ -25,22 +25,6 @@ void Led::config(LedEnum led, LedParamEnum param, int value) {
     }
 }
 
-size_t Led::onDiag(Print* p) {
-    size_t n = 0;
-    n += onDiag(p, RED_LED);
-    n += onDiag(p, BLUE_LED);
-    return n;
-}
-
-size_t Led::onDiag(Print* p, LedEnum led) {
-    size_t n = 0;
-    n += p->print(led);
-    n += p->print(':');
-    n += getLed(led)->diag(p);
-    n += p->println();
-    return n;
-}
-
 void Led::onLoop() {
     getLed(RED_LED)->loop();
     getLed(BLUE_LED)->loop();

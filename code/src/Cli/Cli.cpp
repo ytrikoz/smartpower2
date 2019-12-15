@@ -1,38 +1,17 @@
-#include "Cli.h"
+#include "Cli/Cli.h"
 
 #include "Actions/PowerAvg.h"
 #include "Actions/WakeOnLan.h"
 
 #include "main.h"
 #include "CrashReport.h"
+#include "Cli/CommandRunner.h"
 
 using namespace PrintUtils;
 using namespace StrUtils;
 using namespace TimeUtils;
 
 namespace Cli {
-
-void onCommandError(cmd_error *e);
-void onConfig(cmd *c);
-void onPower(cmd *c);
-void onShow(cmd *c);
-void onHelp(cmd *c);
-void onPrint(cmd *c);
-void onPlot(cmd *c);
-void onRemove(cmd *c);
-void onSet(cmd *c);
-void onGet(cmd *c);
-void onSystem(cmd *c);
-void onWifiScan(cmd *c);
-void onWifiDiag(cmd *c);
-void onClock(cmd *c);
-void onLog(cmd *c);
-void onWol(cmd *c);
-void onRestart(cmd *c);
-void onRun(cmd *c);
-void onLs(cmd *c);
-void onCrash(cmd *c);
-void onLed(cmd *c);
 
 enum CommandAction {
     ACTION_UNKNOWN,
@@ -64,9 +43,42 @@ Command cmdConfig, cmdPower, cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet,
     cmdGet, cmdRm, cmdClock, cmdPlot, cmdLog, cmdWol, cmdRestart, cmdRun, cmdLs,
     cmdCrash, cmdLed;
 
-SimpleCLI* cli_;
-
+SimpleCLI* cli_ = nullptr;
+Runner* runner_ = nullptr;
 Print *out_ = nullptr;
+
+Print* setOutput(Print *out) {
+    Print* prev = out_;
+    out_ = out;
+    return prev;
+}
+
+Runner* get() {  
+    if (runner_ == nullptr) runner_ = new CommandRunner(cli_);
+    return runner_;
+}
+
+void onCommandError(cmd_error *e);
+void onConfig(cmd *c);
+void onPower(cmd *c);
+void onShow(cmd *c);
+void onHelp(cmd *c);
+void onPrint(cmd *c);
+void onPlot(cmd *c);
+void onRemove(cmd *c);
+void onSet(cmd *c);
+void onGet(cmd *c);
+void onSystem(cmd *c);
+void onWifiScan(cmd *c);
+void onWifiDiag(cmd *c);
+void onClock(cmd *c);
+void onLog(cmd *c);
+void onWol(cmd *c);
+void onRestart(cmd *c);
+void onRun(cmd *c);
+void onLs(cmd *c);
+void onCrash(cmd *c);
+void onLed(cmd *c);
 
 const String getActionStr(Command &command) {
     return command.getArgument(FPSTR(str_action)).getValue();
@@ -168,23 +180,6 @@ CommandAction getAction(Command &cmd) {
     return ACTION_UNKNOWN;
 }  // namespace Cli
 
-bool active() { return out_ != nullptr; }
-
-Print* setOutput(Print *out) {
-    Print* prev = out_;
-    out_ = out;
-    return prev;
-}
-
-Print* getOutput(Print *p) {
-    return out_;
-}
-
-
-SimpleCLI* get() {
-    return cli_;
-}
-
 void init() {
     // if (BootWatcher::isSafeBooMode())
     cli_ = new SimpleCLI();
@@ -285,7 +280,7 @@ void onLed(cmd *c) {
 
     switch (getAction(cmd)) {
         case ACTION_SHOW:
-            app.led()->onDiag(out_);
+            app.led()->printDiag(out_);
             break;
         case ACTION_CONFIG:
             app.led()->config(LedEnum(itemStr.toInt()), LedParamEnum(paramStr.toInt()), valueStr.toInt());
@@ -589,7 +584,7 @@ void onRun(cmd *c) {
         if (data->available()) {
             String buf;
             while (data->pop(buf)) {
-                app.shell()->run(buf.c_str());
+                Cli::get()->run(buf.c_str(), out_);
             }
         }
     } else {

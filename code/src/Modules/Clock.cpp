@@ -12,14 +12,12 @@ Clock::Clock() : Module(){};
 
 Clock::~Clock() {}
 
-size_t Clock::onDiag(Print* p) {
-    DynamicJsonDocument doc(128);
+void Clock::onDiag(const JsonObject& doc) {
     doc[FPSTR(str_uptime)] = getUptime();
     doc[FPSTR(str_local)] = getLocal();
     doc[FPSTR(str_offset)] = getBiasInMinutes();
     doc[FPSTR(str_interval)] = getStoreInterval();
     doc[FPSTR(str_stored)] = lastKnown_;
-    return serializeJson(doc, *p);
 }
 
 bool Clock::isTimeSet() {

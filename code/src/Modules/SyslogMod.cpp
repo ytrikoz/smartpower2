@@ -72,10 +72,8 @@ void SyslogModule::printPacket(const SysLogSeverity level, const String &routine
     udp_->print(message);
 }
 
-size_t SyslogModule::onDiag(Print *p) {
-    DynamicJsonDocument doc(64);
+void SyslogModule::onDiag(const JsonObject& doc) {    
     doc[FPSTR(str_server)] = getSyslogServer();
-    return serializeJsonPretty(doc, *p);
 }
 
 String getLevelStr(SysLogSeverity level) {

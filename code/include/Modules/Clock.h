@@ -21,7 +21,7 @@ class Clock : public Module {
     time_t getUptime();
 
    public:
-    size_t onDiag(Print *p) override;
+    void onDiag(const JsonObject& doc) override;
 
    protected:
     bool onInit() override;

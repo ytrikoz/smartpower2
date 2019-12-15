@@ -1,5 +1,7 @@
 #include "Modules/Telnet.h"
 
+#include "CommandShell.h"
+
 using namespace PrintUtils;
 using namespace StrUtils;
 
@@ -8,14 +10,15 @@ namespace Modules {
 bool Telnet::onInit() {
     server_ = new WiFiServer(port_);
     
-    terminal_ = new Terminal(&client_);
-    terminal_->enableControlCodes();
-    terminal_->enableEcho(false);
-    terminal_->setOnEvent([this](TerminalEventEnum event, Stream* console) {
-        if (terminalHandler_) terminalHandler_(event, console); 
-    });
+    term_.enableControlCodes();
+    term_.enableEcho(false);
 
     return true;
+}
+
+void Telnet::setShell(CommandShell* shell) {
+    shell_ = shell;
+    shell_->setTerm(&term_);
 }
 
 bool Telnet::onStart() {
@@ -29,11 +32,6 @@ void Telnet::onStop() {
         client_.stop();
     server_->stop();
 }
-
-Terminal* Telnet::getTerminal() {
-    return terminal_;
-}
-
 
 bool Telnet::hasClient() { return client_.connected(); }
 
@@ -69,29 +67,28 @@ void Telnet::onLoop() {
             onDisconnect();
         }
     }
-
-    if(client_.connected()) {
-        terminal_->loop();
-    }
+    
+     if(shell_) shell_->loop();
 }
 
 void Telnet::onConnect() {    
+    shell_->term()->setStream(&client_);
     if (eventHandler_)
         eventHandler_(CLIENT_CONNECTED, &client_);
 }
 
 void Telnet::onDisconnect() {
+    shell_->term()->setStream(nullptr);
     if (eventHandler_)
         eventHandler_(CLIENT_DISCONNECTED, nullptr);
 }
 
-size_t Telnet::onDiag(Print* p) {
-    DynamicJsonDocument doc(128);
-    doc[FPSTR(str_port)] = port_;
+void Telnet::onDiag(const JsonObject& doc) {
     doc[FPSTR(str_connected)] = hasClient();
-    if (hasClient())
+    if (hasClient()) {
         doc[FPSTR(str_client)] = prettyIpAddress(client_.remoteIP(), client_.remotePort());
-    return serializeJson(doc, *p);
+        doc[FPSTR(str_shell)] = shell_->isOpen();
+    }
 }
 
 }

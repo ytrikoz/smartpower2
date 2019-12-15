@@ -70,7 +70,7 @@ class SyslogModule : public Module {
     bool onStart() override;
     void onStop() override;
     void onLoop() override;
-    size_t onDiag(Print *) override;
+    void onDiag(const JsonObject& doc) override; 
    private:
     const char *getHostname();
     const char *getSyslogServer();

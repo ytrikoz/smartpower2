@@ -9,6 +9,8 @@
 #include "Terminal.h"
 #include "Wireless.h"
 
+#include "CommandShell.h"
+
 enum TelnetEventType { 
                        CLIENT_CONNECTED,
                        CLIENT_DISCONNECTED
@@ -21,25 +23,23 @@ namespace Modules {
 class Telnet : public Module {
     public:
     Telnet() : Module(), lastConnected_(false), port_(TELNET_PORT){};
-
+    void setShell(CommandShell* shell);
    public:
     void setEventHandler(TelnetEventHandler);
-    Terminal* getTerminal();    
     void sendData(const String&);
     bool hasClient();
 
     bool isCompatible(NetworkMode value) {
         return value != NetworkMode::NETWORK_OFF;
     }
-
     bool isNetworkDepended() { return true; }
-
+    
+    void onDiag(const JsonObject& doc) override;
    protected:
     bool onInit() override;
     bool onStart() override;
     void onStop() override;
     void onLoop() override;
-    size_t onDiag(Print *p) override;
 
    private:
     void onConnect();
@@ -53,7 +53,8 @@ class Telnet : public Module {
     bool lastConnected_;
     uint16_t port_;
     WiFiClient client_;
-    Terminal* terminal_;
+    Terminal term_;
+    CommandShell* shell_;
     WiFiServer *server_;
 };
 

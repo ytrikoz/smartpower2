@@ -185,8 +185,7 @@ bool PsuModule::restoreState(PsuState &value) {
     return res;
 }
 
-size_t PsuModule::onDiag(Print *p) {
-    DynamicJsonDocument doc(256);
+void PsuModule::onDiag(const JsonObject& doc) {
     doc[FPSTR(str_power)] = getStateStr(state);
     doc[FPSTR(str_status)] = getStatusStr(status);
     doc[FPSTR(str_output)] = outputVoltage;
@@ -194,7 +193,6 @@ size_t PsuModule::onDiag(Print *p) {
     doc[FPSTR(str_mod)] =  getBoolStr(alterRange);
     doc[FPSTR(str_uptime)] = getUptime();
     doc[FPSTR(str_data)] = info.toString();   
-    return serializeJsonPretty(doc, *p);
 }
 
 void PsuModule::togglePower() {

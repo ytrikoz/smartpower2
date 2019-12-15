@@ -2,18 +2,15 @@
 
 #include <Arduino.h>
 #include <SimpleCLI.h>
-
 #include "Terminal.h"
-
-class CommandRunner {
-  public:
-  virtual void run(const char*, Print*) = 0;
-};
+#include "Cli/Cli.h"
+#include "Cli/Runner.h"
 
 class CommandShell {
   public:
-    CommandShell(CommandRunner*);
-    void setTerminal(Terminal *);
+    CommandShell(Cli::Runner* runner);    
+    void setTerm(Terminal* term);
+    Terminal* term();
     void enableWelcome(bool = true);
 
     void clearHistory();
@@ -37,7 +34,7 @@ class CommandShell {
   private:
     bool open_;
     bool welcome_;
-    CommandRunner *runner_;
+    Cli::Runner *runner_;
     Terminal *term_;
     std::vector<String> history;
     uint8_t history_size;

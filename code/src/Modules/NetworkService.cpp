@@ -48,16 +48,10 @@ bool NetworkService::start_mdns() {
     return result;
 }
 
-size_t NetworkService::onDiag(Print *p) {
-    size_t n = 0;
-    if (has_dns)
-        n += println_nameP_value(p, str_dns, dns_name_.c_str());        
-         
-    if (has_netbios)
-        n += println_nameP_value(p, str_netbios, host_.c_str());
-    
-    n += println_nameP_value(p, str_mdns, getBoolStr(has_mdns).c_str());           
-    return n;
+void NetworkService::onDiag(const JsonObject& doc) {
+    doc[FPSTR(str_dns)] = has_dns;
+    doc[FPSTR(str_netbios)] = has_netbios;
+    doc[FPSTR(str_mdns)] = has_mdns;
 }
 
 void NetworkService::onLoop() {

@@ -13,7 +13,7 @@ class NetworkService : public Module {
    public:
     NetworkService() : Module(){};
     
-    size_t onDiag(Print *p) override;
+    void onDiag(const JsonObject&) override;
 
     bool isCompatible(NetworkMode value) override {
         return (value != NetworkMode::NETWORK_OFF);

@@ -1,69 +1,41 @@
 #include "Modules/Shell.h"
 
-#include "Cli.h"
-#include <main.h>
+#include "Cli/CommandRunner.h"
 
 namespace Modules {
 
-Shell::Shell(SimpleCLI* cli_): Module(), cli_(cli_) {};
+Shell::Shell(): Module() {};
 
-void Shell::setTerminal(Terminal* term, CommandShell* shell) {
-    if (shell == nullptr)
-        shell = new CommandShell(this);
-    shell->setTerminal(term);
-}
-
-void Shell::setRemote(Terminal* term) {
-    setTerminal(term, remoteShell_);
-}
-
-void Shell::setLocal(Terminal* term) {
-    setTerminal(term, localShell_);
+void Shell::setShell(CommandShell* shell) {
+    shell_ = shell;
+    shell_->setTerm(term_);
 }
 
 bool Shell::onInit() {    
-    localShell_ = new CommandShell(this);
-    localShell_->enableWelcome();    
-
-    localTerm_ = new Terminal(&Serial);
-    localTerm_->enableControlCodes(false);
-    localTerm_->enableEcho();       
-
+    Terminal* term = new Terminal();
+    term->enableControlCodes(false);
+    term->enableEcho();       
+    shell_ = new CommandShell(Cli::get());
+    shell_->enableWelcome();    
+    shell_->setTerm(term);
     return true;
 }
 
 bool Shell::onStart() {
-    setTerminal(localTerm_, localShell_);    
+    shell_->term()->setStream(&Serial);
     return true;
 }
 
 void Shell::onStop() {
-    setRemote(nullptr);
-    setLocal(nullptr);
+    shell_->term()->setStream(nullptr);
 }
 
 void Shell::onLoop() {      
-    if (localShell_ != nullptr) localShell_->loop(); 
-}
-
-void Shell::run(const char *cmdStr) { return run(cmdStr, localTerm_); }
-
-void Shell::run(const char *cmdStr, Print* output) { 
-    Print* prev = Cli::setOutput(output);
-
-    cli_->parse(cmdStr);
-    while (cli_->available()) {
-        cli_->getCmd().run();
-        if (cli_->getError()) {
-            break;
-        }
-    }
-
-    Cli::setOutput(prev);
+    if (shell_ != nullptr) shell_->loop(); 
 }
 
 bool Shell::isOpen() { 
-    return  localShell_ != nullptr && localShell_->isOpen();
+    return  shell_ != nullptr && shell_->isOpen();
 }
 
 }

@@ -45,9 +45,6 @@ class Led : public Module {
     void set(LedEnum, LedSignal);
     void config(LedEnum led, LedParamEnum param, int value);
     LedBlinker *getLed(const LedEnum led) const;
-    size_t onDiag(Print *) override;
-    size_t onDiag(Print *, LedEnum);
-
    protected:
     void onLoop() override;
 

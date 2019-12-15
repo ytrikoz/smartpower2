@@ -62,31 +62,34 @@ class Module {
 
         if (state_ == STATE_ACTIVE || start()) onLoop();
     };
-    
-    virtual size_t onDiag(Print *p) {
-        return 0;
-    }
-
-    virtual bool isCompatible(NetworkMode value) { return true; };
-
-    virtual bool isNetworkDepended() { return false; }
 
     size_t printDiag() {
         return printDiag(out_);
     };
 
     size_t printDiag(Print *p) {
-        size_t n = PrintUtils::println(p, FPSTR(str_state), state_);
-        n += onDiag(p);
-        n += PrintUtils::print_ln(p);
-        return n;
-    }
+        StaticJsonDocument<256> doc;
+        doc[FPSTR(str_state)] = state_;   
+        JsonVariant obj = doc.as<JsonObject>();
+        onDiag(obj);
+        return serializeJsonPretty(doc, *p);
+    };
+
+    virtual bool isCompatible(NetworkMode value) { return true; };
+
+    virtual bool isNetworkDepended() { return false; }
+
+    virtual void onDiag(const JsonObject& obj) { }
 
    protected:
     virtual bool onInit() { return true; };
+    
     virtual void onDeinit(){};
+    
     virtual bool onStart() { return true; }
+    
     virtual void onStop(){};
+    
     virtual void onLoop() = 0;
 
     virtual Error onExecute(const String& paramStr, const String& valueStr) {         

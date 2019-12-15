@@ -1,7 +1,7 @@
 #include "App.h"
 
 #include "AppUtils.h"
-#include "Cli.h"
+#include "Cli/Cli.h"
 #include "CrashReport.h"
 
 using namespace AppUtils;
@@ -64,7 +64,7 @@ Module *App::instance(ModuleEnum module) {
                 break;
             }
             case MOD_SHELL: {
-                appMod[module] = new Modules::Shell(Cli::get());
+                appMod[module] = new Modules::Shell();
                 break;
             }
             case MOD_NETSVC: {
@@ -73,15 +73,14 @@ Module *App::instance(ModuleEnum module) {
             }
             case MOD_TELNET: {
                 appMod[module] = new Modules::Telnet();
+                telnet()->setShell(new CommandShell(Cli::get()));
                 telnet()->setEventHandler([this](TelnetEventType et, WiFiClient *client) {
                     PrintUtils::print_ident(out_, FPSTR(str_telnet));
                     switch (et) {
                         case CLIENT_CONNECTED:                        
                             PrintUtils::println(out_, FPSTR(str_connected), prettyIpAddress(client->remoteIP(), client->remotePort()));
-                            shell()->setRemote(telnet()->getTerminal());
                             break;
                         case CLIENT_DISCONNECTED:
-                            shell()->setRemote(nullptr);
                             PrintUtils::println(out_, FPSTR(str_disconnected));
                             break;
                     }    
@@ -163,13 +162,14 @@ void App::loop() {
 }
 
 size_t App::printDiag(Print *p) {
-    DynamicJsonDocument doc(256);
-
+    StaticJsonDocument<256> doc;
     doc[FPSTR(str_heap)] = SysInfo::getHeapStats();
     doc[FPSTR(str_ap)] = Wireless::AP_Clients();
     doc[FPSTR(str_http)] = web()->getClients();
-    doc[FPSTR(str_telnet)] = getBoolStr(telnet()->hasClient());
-
+    if (telnet() && telnet()->hasClient()) {
+        JsonVariant obj = doc.createNestedObject(FPSTR(str_telnet));
+        telnet()->onDiag(obj);
+    }
     size_t n = serializeJsonPretty(doc, *p);
     return n += print_ln(p);
 }

@@ -11,6 +11,7 @@ static const char msg_dns_resolve_error[] PROGMEM = "dsn resolve error";
 static const char str_build_date[] PROGMEM = BUILD_DATE;
 static const char msg_shell_interrupted[] PROGMEM = "interrupted!";
 static const char msg_shell_exit[] PROGMEM = "exit, bye!";
+static const char msg_welcome[] PROGMEM = "Welcome!";
 static const char msg_restart_countdown[] PROGMEM = "restart in %lu seconds";
 
 static const char strf_ip[] PROGMEM = "ip %s";

@@ -9,7 +9,7 @@ class PsuModule : public Module {
    public:
     PsuModule(PsuListener* listener) : Module(), listener_(listener) {};
 
-    size_t onDiag(Print *p) override;
+    void onDiag(const JsonObject&) override;
 
    protected:
     bool onInit() override;
