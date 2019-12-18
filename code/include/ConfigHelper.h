@@ -4,14 +4,19 @@
 
 #include "CommonTypes.h"
 #include "Config.h"
-#include "Storage.h"
+#include "Core/Storage.h"
 
 class ConfigHelper : public Printable {
   public:
-    ConfigHelper();
+    ConfigHelper(const char* name);
+    ~ConfigHelper();
     size_t printTo(Print &p) const;
   public:
-    void setDefault();
+    void setName(const char* name);
+    bool check();
+    const char* name();
+    void setOutput(Print* p);
+    void setDefaultParams();
     void load();
     bool load(Config *src, Queue<String>& data);
     bool save();
@@ -45,15 +50,15 @@ class ConfigHelper : public Printable {
                              const char *);
     bool setPowerConfig(BootPowerState state, float outputVoltage);
     bool setNtpConfig(sint8_t timeZone_h, uint16_t updateInterval_s);
-
+    
+    void setOnConfigChange(ConfigItem param);
     Config *get();
   private:
-    String extractName(String &str);
-    String extractValue(String &str);    
-    void onConfigChanged(ConfigItem param);
-    
+    String extractName(const String &str);
+    String extractValue(const String &str);    
+
     Config obj_;
-    char name_[FILENAME_SIZE + 1];
-    bool stored_;
-    Print *out = &Serial;
+    char* name_;
+    bool changed_;
+    Print *out_;
 };

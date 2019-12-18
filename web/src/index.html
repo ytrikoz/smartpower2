@@ -40,7 +40,7 @@
         <div role="main" class="ui-content ui-corner-all custom-corners">
             <div id="mainswitch" data-role="collapsible" data-inset="false" data-collapsed="false" data-iconpos="right"
                 data-collapsed-icon="power" data-expanded-icon="power" data-theme="a" data-content-theme="a">
-                <h2>Main switch</h2>
+                <h2>Switch</h2>
                 <div class="mainswitch_cont">
                     <div id="hold">
                         <select id="chk_hold" name="chk_hold" data-role="flipswitch" data-theme="a">
@@ -81,8 +81,8 @@
                             <option value="off">Off</option>
                             <option value="on">On</option>
                         </select>
+                        <button id="btn_reset_total" data-mini="true" data-inline="true">Reset</button>
                     </div>
-
                     <div id="watth_ss" class="ss_cont">
                         <h3>Wh</h3>
                     </div>
@@ -122,7 +122,8 @@
                 <h3>Live data</h3>
                 <div>
                     <label>Averaging</label>
-                    <input id="slider_averaging" name="slider_averaging" type="range" min="1" max="1024" step="4" value="3">
+                    <input id="slider_averaging" name="slider_averaging" type="range" min="1" max="1024" step="4"
+                        value="3">
                 </div>
             </div>
 

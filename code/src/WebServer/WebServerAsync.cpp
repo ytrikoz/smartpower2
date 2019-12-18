@@ -8,10 +8,10 @@ WebServerAsync::WebServerAsync(uint16_t port) {
     sprintf(last_modified, "%s %s GMT", __DATE__, __TIME__);
 
     web_ = new AsyncWebServer(port);
-    web_->rewrite("/settings.json", "/settings.json");
     web_->rewrite("/", "/index.html");
+    web_->rewrite("/system.json", "/system.json");
 
-    web_->on("/settings.json", HTTP_GET, [this](AsyncWebServerRequest *request) {
+    web_->on("/system.json", HTTP_GET, [this](AsyncWebServerRequest *request) {
         DynamicJsonDocument doc(64);
         doc[FPSTR(str_ipaddr)] = Wireless::hostIP().toString();
         String json;
@@ -25,9 +25,9 @@ WebServerAsync::WebServerAsync(uint16_t port) {
             request->send(304);
         } else {
             AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", (uint8_t *)index_html_gz, index_html_gz_len);
-            response->addHeader("Content-Encoding", "gzip");
-            response->addHeader("Last-Modified", last_modified);
-            request->send(response);
+             response->addHeader("Content-Encoding", "gzip");
+             response->addHeader("Last-Modified", last_modified);
+             request->send(response);
         };
     });
 
@@ -39,8 +39,11 @@ WebServerAsync::WebServerAsync(uint16_t port) {
     ws_->onEvent([this](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
         onWSEvent(server, client, type, arg, data, len);
     });
-
     web_->addHandler(ws_);
+}
+
+void WebServerAsync::sendEvent(const String &event, const String &content) {
+    //events_->send(event.c_str(), content.c_str(), millis());
 }
 
 bool WebServerAsync::start() {
@@ -54,10 +57,6 @@ void WebServerAsync::stop() {
 
 void WebServerAsync::loop() {
     ws_->cleanupClients();
-}
-
-void WebServerAsync::sendData(const uint8_t num, const String &payload) {
-    ws_->text(num, payload);
 }
 
 void WebServerAsync::onNotFound(AsyncWebServerRequest *r) {
@@ -78,8 +77,8 @@ void WebServerAsync::onWSEvent(AsyncWebSocket *server, AsyncWebSocketClient *cli
             AwsFrameInfo *info = (AwsFrameInfo *)arg;
             if (info->final && info->index == 0 && info->len == len) {
                 if (info->opcode == WS_TEXT) {
-                    if (receiveDataHandler)
-                        receiveDataHandler(client->id(), (char *)&data[0]);
+                    if (dataHandler)
+                        dataHandler(client->id(), (char *)&data[0]);
                     return;
                 }
             }
@@ -90,8 +89,16 @@ void WebServerAsync::onWSEvent(AsyncWebSocket *server, AsyncWebSocketClient *cli
     }
 }
 
-void WebServerAsync::setOnConnection(WebConnectionEventHandler h) { connectionHandler = h; }
+void WebServerAsync::sendData(uint8_t num, const char *payload) {
+    ws_->text(num, payload);
+}
 
-void WebServerAsync::setOnDisconnection(WebConnectionEventHandler h) { disconnectionHandler = h; }
+void WebServerAsync::sendData(uint8_t num, const String &payload) {
+    ws_->text(num, payload);
+}
 
-void WebServerAsync::setOnReceiveData(WebReceiveDataEventHandler h) { receiveDataHandler = h; }
+void WebServerAsync::setOnConnection(WebServerConnectionEventHandler h) { connectionHandler = h; }
+
+void WebServerAsync::setOnDisconnection(WebServerConnectionEventHandler h) { disconnectionHandler = h; }
+
+void WebServerAsync::setOnReceiveData(WebServerDataEventHandler h) { dataHandler = h; }

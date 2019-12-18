@@ -4,15 +4,16 @@
 #include <ESP8266NetBIOS.h>
 #include <ESP8266mDNS.h>
 
-#include "Module.h"
-#include "StrUtils.h"
+#include "Core/Module.h"
+#include "Utils/StrUtils.h"
 #include "SysInfo.h"
 #include "Wireless.h"
 
-class NetworkService : public NetworkModule {
+class NetworkService : public Module {
    public:
-    NetworkService() : NetworkModule(NetworkMode::NETWORK_AP){};  
-    void onDiag(const JsonObject&) override;
+    NetworkService(){};
+    void onDiag(const JsonObject &) override;
+
    protected:
     bool onInit() override;
     void onStop() override;

@@ -13,8 +13,12 @@
 	border-bottom-right-radius: inherit;
 }
 
+.mainswitch_cont {
+	display: flex;	
+}
+
 .ss_cont {
-	display: inline-block;	
+	display: flex;	
 	background-color: RGBa(0,0,0,.8);	
 	max-width: 320px;	
 }

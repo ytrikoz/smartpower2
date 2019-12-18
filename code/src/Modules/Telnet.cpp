@@ -84,8 +84,7 @@ void Telnet::onDisconnect() {
 }
 
 void Telnet::onDiag(const JsonObject& doc) {
-    doc[FPSTR(str_connected)] = hasClient();
-    doc[FPSTR(str_min)] = minimal_;
+    doc[FPSTR(str_connected)] = hasClient();    
     if (hasClient()) {
         doc[FPSTR(str_client)] = prettyIpAddress(client_.remoteIP(), client_.remotePort());
         doc[FPSTR(str_shell)] = shell_->isOpen();

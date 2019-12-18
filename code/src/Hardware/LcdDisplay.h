@@ -7,12 +7,12 @@
 #include <Wire.h>
 
 #include "BuildConfig.h"
-#include "Modules/Module.h"
+#include "Core/Module.h"
+#include "Utils/StrUtils.h"
+#include "Utils/TimeUtils.h"
 #include "Plot.h"
 #include "Screen.h"
-#include "StrUtils.h"
 #include "Strings.h"
-#include "TimeUtils.h"
 
 enum CharBank {
     BANK_NONE,

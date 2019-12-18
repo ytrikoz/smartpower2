@@ -1,21 +1,21 @@
 #include "DeduplicationLog.h"
 
-#include "StrUtils.h"
 #include "Strings.h"
+#include "Utils/StrUtils.h"
 
 #define UNSET_MAX -16364
 #define UNSET_MIN 16364
 
 using namespace StrUtils;
 
-DeduplicationLog::DeduplicationLog(const char *label, size_t size) {
+DedupLog::DedupLog(const char *label, size_t size) {
     strcpy(this->name, label);
     items = new LogItem[size]();
     capacity = size;
     clear();
 }
 
-void DeduplicationLog::log(const unsigned long time, const float value) {
+void DedupLog::log(const unsigned long time, const float value) {
     if (time > lastTime) {
         lastTime = time;
         counter++;
@@ -39,7 +39,7 @@ void DeduplicationLog::log(const unsigned long time, const float value) {
     }
 }
 
-void DeduplicationLog::clear() {
+void DedupLog::clear() {
     lastTime = 0;
     counter = 0;
     writePos = 0;
@@ -50,7 +50,7 @@ void DeduplicationLog::clear() {
     avg = 0;
 }
 
-void DeduplicationLog::updateStats(const float val, const size_t count) {
+void DedupLog::updateStats(const float val, const size_t count) {
     if (max < val)
         max = val;
     if (min > val)
@@ -58,46 +58,46 @@ void DeduplicationLog::updateStats(const float val, const size_t count) {
     avg = ((avg * (count - 1)) + val) / count;
 }
 
-LogItem *DeduplicationLog::entry() { return getEntry(writePos); }
+LogItem *DedupLog::entry() { return getEntry(writePos); }
 
-LogItem *DeduplicationLog::getEntry(size_t pos) { return &items[getEntryIndex(pos)]; }
+LogItem *DedupLog::getEntry(size_t pos) { return &items[getEntryIndex(pos)]; }
 
-size_t DeduplicationLog::getEntryIndex(size_t pos) { return pos % capacity; }
+size_t DedupLog::getEntryIndex(size_t pos) { return pos % capacity; }
 
-LogItem *DeduplicationLog::getPrevEntry() { return &items[getPrevEntryIndex(writePos)]; }
+LogItem *DedupLog::getPrevEntry() { return &items[getPrevEntryIndex(writePos)]; }
 
-LogItem *DeduplicationLog::getPrevEntry(size_t pos) {
+LogItem *DedupLog::getPrevEntry(size_t pos) {
     return &items[getPrevEntryIndex(pos)];
 }
 
-size_t DeduplicationLog::getPrevEntryIndex(size_t pos) {
+size_t DedupLog::getPrevEntryIndex(size_t pos) {
     bool overlaped = pos >= capacity;
     if (overlaped)
         pos = pos % capacity;
     return pos > 0 ? --pos : overlaped ? capacity - 1 : 0;
 }
 
-LogItem *DeduplicationLog::getFirstEntry() { return &items[getFirstEntryIndex()]; }
+LogItem *DedupLog::getFirstEntry() { return &items[getFirstEntryIndex()]; }
 
-size_t DeduplicationLog::getFirstEntryIndex() {
+size_t DedupLog::getFirstEntryIndex() {
     return writePos > capacity ? getNextEntryIndex(writePos) : 0;
 }
 
-LogItem *DeduplicationLog::getNextEntry(size_t pos) {
+LogItem *DedupLog::getNextEntry(size_t pos) {
     return &items[getNextEntryIndex(pos)];
 }
 
-size_t DeduplicationLog::getNextEntryIndex(size_t pos) { return ++pos % capacity; }
+size_t DedupLog::getNextEntryIndex(size_t pos) { return ++pos % capacity; }
 
-LogItem *DeduplicationLog::getLastEntry() { return &items[getLastEntryIndex()]; }
+LogItem *DedupLog::getLastEntry() { return &items[getLastEntryIndex()]; }
 
-size_t DeduplicationLog::getLastEntryIndex() { return writePos % capacity; }
+size_t DedupLog::getLastEntryIndex() { return writePos % capacity; }
 
-size_t DeduplicationLog::count() {
+size_t DedupLog::count() {
     return writePos ? getLastEntry()->number - getFirstEntry()->number + 1: items[0].number;
 }
 
-void DeduplicationLog::values(float array[], size_t &size) {
+void DedupLog::values(float array[], size_t &size) {
     if (size > counter) size = counter;
 
     size_t pos = getFirstEntryIndex();
@@ -109,7 +109,7 @@ void DeduplicationLog::values(float array[], size_t &size) {
     };
 }
 
-void DeduplicationLog::printTo(Print *p) {
+void DedupLog::printTo(Print *p) {
     size_t readPos = getFirstEntryIndex();    
     size_t first = getFirstEntry()->number;
     size_t last = getLastEntry()->number;
@@ -125,7 +125,7 @@ void DeduplicationLog::printTo(Print *p) {
     }
 }
 
-void DeduplicationLog::printDiag(Print *p) {
+void DedupLog::printDiag(Print *p) {
     p->print(name);
     p->print('\t');
     if (!count()) {

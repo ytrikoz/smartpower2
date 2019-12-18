@@ -1,9 +1,9 @@
 #include "CrashReport.h"
 
 #include "BuildConfig.h"
-#include "FSUtils.h"
-#include "PrintUtils.h"
-#include "StrUtils.h"
+#include "Utils/FSUtils.h"
+#include "Utils/PrintUtils.h"
+#include "Utils/StrUtils.h"
 
 using namespace PrintUtils;
 using namespace StrUtils;

@@ -2,7 +2,7 @@
 
 #include "Arduino.h"
 #include "Consts.h"
-#include "StrUtils.h"
+#include "Utils/StrUtils.h"
 
 #define DISPLAY_VIRTUAL_COLS 63
 #define DISPLAY_VIRTUAL_ROWS 7

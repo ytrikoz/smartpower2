@@ -4,8 +4,8 @@
 #include <ESP8266WiFi.h>
 #include <FS.h>
 
-#include "StrUtils.h"
-#include "FSUtils.h"
+#include "Utils/StrUtils.h"
+#include "Utils/FSUtils.h"
 #include "Strings.h"
 #include "Wireless.h"
 
@@ -195,9 +195,8 @@ const String getHeapStats() {
     uint8_t frag;
     ESP.getHeapStats(&free, &max, &frag);
     String buf;
-    buf = "free: ";
     buf += prettyBytes(free);
-    buf += " frag: ";
+    buf += " ";
     buf += frag;
     buf += '%';
     return buf;

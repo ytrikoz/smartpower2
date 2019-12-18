@@ -1,10 +1,9 @@
 #pragma once
 
-#include <Arduino.h>
-
 #include "Strings.h"
 
 namespace Actions {
+
 
 class Action {
    public:

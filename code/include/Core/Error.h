@@ -6,9 +6,11 @@
 #include <Arduino.h>
 
 enum ErrorCode {
+    ERROR_INIT = -1,
+    ERROR_START = -2,
     ERROR_PARAM = -100,
     ERROR_NETWORK = -200,
-    ERROR_EXECUTE = -300,
+    ERROR_EXECUTE = -300
 };
 
 class Error {
@@ -16,11 +18,7 @@ class Error {
     static Error ok() { return Error(); }
 
    public:
-    Error() {
-        code_ = 0;
-        memset(message_, 0, sizeof(message_));
-    };
-
+   
     Error(const ErrorCode code, const __FlashStringHelper *pstr) {
         char buf[64]; 
         strcpy_P(buf, (PGM_P) pstr);
@@ -30,6 +28,11 @@ class Error {
     Error(const ErrorCode code, const char *desc = "") {
         set(code, "none");
     }
+
+    Error() {
+        code_ = 0;
+        memset(message_, 0, sizeof(message_));
+    };
 
     void set(const ErrorCode code, const char* desc) {
         switch (code) {

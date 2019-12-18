@@ -1,9 +1,10 @@
-#include "FSUtils.h"
+#include "Utils/FSUtils.h"
 
-#include "FS.h"
-#include "Storage.h"
-#include "PrintUtils.h"
-#include "StrUtils.h"
+#include "Utils/PrintUtils.h"
+#include "Utils/StrUtils.h"
+
+#include "Core/Storage.h"
+#include "Strings.h"
 
 using namespace PrintUtils;
 using namespace StrUtils;
@@ -48,10 +49,9 @@ size_t getFilesCount(const String &path) {
 size_t getFilesCount(const char *path) {
     size_t max_level = getNestedLevel(asDir(path));
     Dir dir = SPIFFS.openDir(path);
-    size_t res = 0;
-    String name;
+    size_t res = 0;    
     while (dir.next()) {
-        name = dir.fileName();
+        auto name = dir.fileName();
         if (getNestedLevel(name) > max_level)
             continue;
         res++;
@@ -59,40 +59,35 @@ size_t getFilesCount(const char *path) {
     return res;
 }
 
-size_t printDir(Print *p, const char *path) {
+void printDir(Print *p, const char *path) {
     String dir_path = asDir(path);
     uint8_t max_level = getNestedLevel(dir_path);
     Dir dir = SPIFFS.openDir(dir_path);
-    size_t n = 0;
     while (dir.next()) {
         auto name = dir.fileName();
         if (getNestedLevel(name) > max_level)
             continue;
-        n += println(p, name, '\t', prettyBytes(dir.fileSize()));
+        PrintUtils::print(p, name, '\t', prettyBytes(dir.fileSize()));
+        PrintUtils::println(p);
     }
-    return n;
 }
 
-size_t clearDir(Print *p, const char *path) {
+void clearDir(Print *p, const char *path) {
     String dir_path = asDir(path);
     uint8_t max_level = getNestedLevel(dir_path);
     Dir dir = SPIFFS.openDir(dir_path);
-    size_t n = 0;
     while (dir.next()) {
         auto name = dir.fileName();
         if (getNestedLevel(name) > max_level)
             continue;
-        n += println(p, name, '\t', prettyBytes(dir.fileSize()));
         SPIFFS.remove(dir.fileName());
     }
-    return n;
 }
 
 bool formatFS() {
     bool res = SPIFFS.format();
     return res;
 }
-
 
 bool writeString(const char *name, const String &value) {
     auto file = StringFile(name);

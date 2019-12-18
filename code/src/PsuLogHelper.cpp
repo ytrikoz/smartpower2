@@ -1,21 +1,21 @@
 #include "PsuLogHelper.h"
 
-#include "PrintUtils.h"
+#include "Utils/PrintUtils.h"
 
 using namespace StrUtils;
 
 PsuLogHelper::PsuLogHelper() {
-    log_[VOLTAGE] = new DeduplicationLog("V", PSU_LOG_VOLTAGE_SIZE);
-    log_[CURRENT] = new DeduplicationLog("I", PSU_LOG_CURRENT_SIZE);
+    log_[VOLTAGE] = new DedupLog("V", PSU_LOG_VOLTAGE_SIZE);
+    log_[CURRENT] = new DedupLog("I", PSU_LOG_CURRENT_SIZE);
 }
 
-void PsuLogHelper::log(PsuData &item) {
+void PsuLogHelper::onPsuData(PsuData &item) {
     log_[VOLTAGE]->log(item.time, item.V);
     log_[CURRENT]->log(item.time, item.I);
     lastRecord = millis();
 }
 
-DeduplicationLog *PsuLogHelper::getLog(PsuLogEnum item) {
+DedupLog *PsuLogHelper::getLog(PsuLogEnum item) {
     return log_[item];
 }
 

@@ -1,13 +1,13 @@
 #pragma once
 
 #include "Consts.h"
-#include "PrintUtils.h"
-#include "FSUtils.h"
+#include "Utils/PrintUtils.h"
+#include "Utils/FSUtils.h"
 
 #include "Hardware/ina231.h"
 #include "Hardware/mcp4652.h"
 
-enum BootMode { BT_STOP,
+enum BootMode { BT_ERROR,
                 BT_SAFE,
                 BT_NORMAL };
 
@@ -23,13 +23,18 @@ class BootWatcher {
    public:
     BootWatcher() {}
 
+    void setOutput(Print* p) {
+        out_ = p;
+    }
+
     void init() {
         initSerial();
 
+        PrintUtils::print_ident(out_, FPSTR(str_wire));
         initWire();
+        PrintUtils::println(out_, FPSTR(str_done));
 
-        initFS();
-
+        fs_ = initFS();
         switch (fs_) {
             case FS_NORMAL:
                 mode_ = SPIFFS.exists(BOOT_FLAG) ? BT_SAFE : BT_NORMAL;
@@ -38,10 +43,9 @@ class BootWatcher {
                 mode_ = BT_NORMAL;
                 break;
             case FS_ERROR:
-                mode_ = BT_STOP;
+                mode_ = BT_ERROR;
                 break;
         }
-        SPIFFS.remove(BOOT_FLAG);        
     }
 
     bool isSafeMode() { return mode_ == BT_SAFE; }
@@ -49,20 +53,27 @@ class BootWatcher {
     BootMode getMode() { return mode_; }
 
     void start() {
+        PrintUtils::print_ident(out_, FPSTR(str_boot));
+        PrintUtils::print(out_, getBootModeStr(mode_));
+        PrintUtils::println(out_);
+        setBootFlag();
+    }
+
+    void end() {
+        removeBootFlag();
+    }
+
+   private:
+    void setBootFlag() {
         File f = SPIFFS.open(BOOT_FLAG, "w");
         f.println(APP_VERSION);
         f.flush();
         f.close();
-
-        PrintUtils::println(&Serial, FPSTR(str_boot), getBootModeStr(mode_));
     }
 
-    bool end() {
+    void removeBootFlag() {
         SPIFFS.remove(BOOT_FLAG);
-        return true;
     }
-
-   private:
 
     void initSerial() {
         Serial.begin(115200);
@@ -70,38 +81,37 @@ class BootWatcher {
     }
 
     void initWire() {
-        PrintUtils::print_ident(&Serial, FPSTR(str_wire));
         Wire.begin(I2C_SDA, I2C_SCL);
-        PrintUtils::println(&Serial, FPSTR(str_done));
     }
 
-    void initFS() {
-        fs_ = FS_ERROR;
-        PrintUtils::print_ident(&Serial, FPSTR(str_spiffs));
+    FSState initFS() {
+        FSState res = FS_ERROR;
+        PrintUtils::print_ident(out_, FPSTR(str_spiffs));
         if (SPIFFS.begin()) {
-            fs_ = FS_NORMAL;
+            res = FS_NORMAL;
         } else {
-            PrintUtils::print(&Serial, FPSTR(str_format));
+            PrintUtils::print(out_, FPSTR(str_format));
             if (FSUtils::formatFS()) {
-                fs_ = FS_EMPTY;
+                res = FS_EMPTY;
             } else {
-                PrintUtils::print(&Serial, FPSTR(str_error));
+                PrintUtils::print(out_, FPSTR(str_error));
             }
         }
-        PrintUtils::println(&Serial, FPSTR(str_done));
+        out_->println(FPSTR(str_done));
+        return res;
     }
 
     String getBootModeStr(BootMode mode) const {
         String str;
         switch (mode_) {
-            case BT_STOP:
-                str = F("FATAL ERROR");
+            case BT_ERROR:
+                str = F("ERROR");
                 break;
             case BT_SAFE:
-                str = F("SAFE MODE");
-                break;             
+                str = F("SAFE");
+                break;
             case BT_NORMAL:
-                str = F("COMPLETE");                   
+                str = F("NORMAL");
             default:
                 break;
         }
@@ -109,6 +119,7 @@ class BootWatcher {
     }
 
    private:
+    Print* out_;
     BootMode mode_;
     FSState fs_;
     CrashRepState report_;

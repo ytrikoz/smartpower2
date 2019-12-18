@@ -1,9 +1,20 @@
 #pragma once
 
 #include "Print.h"
-#include "Strings.h"
+#include "time.h"
+#include "FS.h"
 
 namespace FSUtils {
+
+inline bool exists(const String &name) {
+    return SPIFFS.exists(name);
+}
+
+inline void print(Print *p, const String &name) {
+    auto f = SPIFFS.open(name, "r");
+    while (f.available()) p->print(f.readString());
+    f.close();
+}
 
 const String getFSTotal();
 
@@ -19,9 +30,9 @@ size_t getFilesCount(const char *path);
 
 size_t getFilesCount(String &path);
 
-size_t printDir(Print *p, const char *path);
+void printDir(Print *p, const char *path);
 
-size_t clearDir(Print *p, const char *path);
+void clearDir(Print *p, const char *path);
 
 bool formatFS();
 
@@ -38,5 +49,4 @@ bool readDouble(const char *name, double &value);
 bool writeDouble(const char *name, const double value);
 
 bool readTime(const char *name, time_t &value);
-
-}
+}  // namespace FSUtils

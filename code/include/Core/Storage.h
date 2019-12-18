@@ -4,16 +4,22 @@
 
 #include "CommonTypes.h"
 #include "Core/Queue.h"
-#include "Storable.h"
-#include "FSUtils.h"
+#include "Core/Storable.h"
+#include "Utils/FSUtils.h"
 
 template <typename T>
 class Storage : public Storable<T> {
    public:
     Storage(const char* name) : Storable<T>() {
-        strncpy(name_, name, FILENAME_SIZE);
+        size_t size = strlen(name);
+        name_ = new char[size + 1];
+        strncpy(name_, name, size);
+        name_[size] = '\x00';
     }
 
+    ~Storage() {
+        delete name_;
+    }
     Queue<T>* data() {
         return &this->data_;
     }
@@ -66,7 +72,7 @@ class Storage : public Storable<T> {
     };
 
    private:
-    char name_[FILENAME_SIZE] = {0};
+    char *name_;
     File file_;
 };
 

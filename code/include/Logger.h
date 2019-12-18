@@ -1,37 +1,40 @@
 #pragma once
 
 #include <Arduino.h>
-#include <ArduinoJson.h>
 
+#include "Strings.h"
 #include "Core/CircularBuffer.h"
 #include "Core/CharBuffer.h"
-#include "Strings.h"
 
 class Logger : public Print {
    public:
-    Logger(){};
+    Logger(){
+        out_ = nullptr;
+        buffer_ = new CharBuffer(128);
+    };
+
+    void setOutput(Print* p) {
+        out_ = p;
+    }
 
     void loop() {
-        AppLogItem buf;
-        if (pool_.pop(buf))
-            Serial.print(buf.str);
-    }
-
-    size_t write(uint8_t ch) override {
-        if (ch == '\n') ch = '\x00';
-        buffer_.write(ch);
-        if (ch == '\x00') {
-            push(buffer_.c_str());
-            buffer_.clear();
+        String buf;
+        if (pool_.pop(buf)) {
+            if (out_ != nullptr) 
+                out_->print(buf);           
         }
-        return 1;
     }
 
-    size_t write(const uint8_t* buffer, size_t size) override {
-        buffer_.write(buffer, size);
-        push(buffer_.c_str());
-        buffer_.clear();
-        return size;
+    size_t write(uint8_t ch) override {    
+        Serial.print((char)ch);
+        if (ch == '\n') {
+            push();      
+            return 1;
+        }        
+        if (!buffer_->free()) {
+            push();            
+        }
+        return buffer_->write(ch);        
     }
 
     size_t onDiag(Print* p) {
@@ -41,18 +44,18 @@ class Logger : public Print {
         return serializeJsonPretty(doc, *p);
     }
 
-   private:
-    void push(const char* str) {
-        AppLogItem item;
-        item.str = String(str);
-        push(item);
+private:
+    void push() {
+        push(buffer_->c_str());
+        buffer_->clear();        
     }
-
-    void push(const AppLogItem& item) {
+    
+    void push(const String& item) {
         pool_.push(item);
     }
-
+    
    private:
-    CharBuffer buffer_;
-    CircularBuffer<AppLogItem, 128> pool_;
+    Print* out_;
+    CharBuffer* buffer_;
+    CircularBuffer<String, 32> pool_;
 };

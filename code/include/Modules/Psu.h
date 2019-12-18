@@ -1,18 +1,24 @@
 #pragma once
 
-#include "Module.h"
-#include "PsuUtils.h"
+#include "Core/Module.h"
+
+#include "Utils/PsuUtils.h"
 
 #define POWER_SWITCH_PIN D6
 
-class PsuModule : public Module {
+namespace Modules {
+
+class Psu : public Module {
    public:
-    PsuModule(PsuListener* listener) : Module(), listener_(listener) {};
+    Psu(PsuListener* listener) : Module(), listener_(listener), startTime_(0), infoUpdated_(0), powerInfoUpdated_(0), listenerUpdate_(0), lastStore_(0){}
+
     void onDiag(const JsonObject&) override;
+
    protected:
     bool onInit() override;
     bool onStart() override;
     void onLoop() override;
+
    public:
     void togglePower();
     void powerOff();
@@ -35,7 +41,7 @@ class PsuModule : public Module {
     const float getV();
     const float getI();
     const double getWh();
-    const unsigned long getUptime();
+    const unsigned long getPsuUptime();
     bool enableWhStore(bool enabled = true);
     bool isWhStoreEnabled(void);
     void setWh(double value);
@@ -45,27 +51,28 @@ class PsuModule : public Module {
     void setStatus(PsuStatus value);
     void setError(PsuError value);
     void setAlert(PsuAlert value);
-    void setState(PsuState value);
+    void applyState(PsuState value);
     bool storeWh(double value);
-    bool restoreWh(double &value);
+    bool restoreWh(double& value);
     bool storeState(PsuState);
-    bool restoreState(PsuState &);
+    bool restoreState(PsuState&);
 
    private:
     PsuListener* listener_;
     PsuDataHandler dataHandler_;
+    PsuStateChangeHandler stateChangeHandler_;
 
-    PsuState state;
-    PsuStatus status;
-    PsuError error;
-    PsuAlert alert;
+    PsuState state_;
+    PsuStatus status_;
+    PsuError error_;
+    PsuAlert alert_;
+    double outputVoltage_;
+    bool wh_store_;
+    PsuData info_;
+    bool alterRange_;
 
-    PsuStateChangeHandler stateChangeHandler;
-
-    unsigned long startTime, infoUpdated, powerInfoUpdated, listenerUpdate_,
-        lastCheck, lastStore;
-    double outputVoltage;
-    bool wh_store;
-    PsuData info;
-    bool alterRange;
+    unsigned long startTime_, infoUpdated_, powerInfoUpdated_, listenerUpdate_,
+        lastCheck_, lastStore_;
 };
+
+}  // namespace Modules

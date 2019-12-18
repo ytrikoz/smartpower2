@@ -1,13 +1,14 @@
 #include "Cli/Terminal.h"
 
-#include "PrintUtils.h"
+#include "Utils/PrintUtils.h"
 #include "SysInfo.h"
 
 using namespace PrintUtils;
 
 namespace Cli {
 
-Terminal::Terminal(Stream *stream) : stream_(stream){};
+Terminal::Terminal(Stream *stream) : stream_(stream), line_(INPUT_MAX_LENGTH), 
+    cc_pos(0), color_(false), controlCodes_(false), echo_(false), eol_(CRLF) {};
 
 void Terminal::setStream(Stream *stream) {
     stream_ = stream;
@@ -23,14 +24,20 @@ bool Terminal::available() {
     return stream_ != nullptr ? stream_->available() : false;
 }
 
-void Terminal::setEOL(EOLType eol) { this->eol = eol; }
+void Terminal::setEOL(EOLType eol) { 
+    eol_ = eol; 
+}
 
-void Terminal::enableEcho(bool enabled) { this->echoEnabled = enabled; }
+void Terminal::enableEcho(bool enabled) { 
+    echo_= enabled;
+ }
 
-void Terminal::enableColors(bool enabled) { this->colorEnabled = enabled; }
+void Terminal::enableColors(bool enabled) { 
+    color_ = enabled; 
+}
 
 void Terminal::enableControlCodes(bool enabled) {
-    this->controlCodesEnabled = enabled;
+    controlCodes_ = enabled;
 }
 
 void Terminal::quit() {}
@@ -101,15 +108,15 @@ void Terminal::loop() {
     // WHEN NORMAL
     if (state == ST_NORMAL) {
         if (c == CHAR_ESC) {
-            if (!line.available()) {
+            if (!line_.available()) {
                 // QUIT
                 state = ST_INACTIVE;
                 if (eventHandler_)
                     eventHandler_(EVENT_CLOSE, stream_);
             } else {
                 // CLEAR
-                line.clear();
-                if (controlCodesEnabled) {
+                line_.clear();
+                if (controlCodes_) {
                     clear_line();
                 } else {
                     println();
@@ -122,8 +129,8 @@ void Terminal::loop() {
             case CHAR_CR:
                 println();
                 if (inputHandler_)
-                    inputHandler_(line.c_str());
-                line.clear();
+                    inputHandler_(line_.c_str());
+                line_.clear();
                 moveY++;
                 break;
             case CHAR_TAB:
@@ -131,22 +138,22 @@ void Terminal::loop() {
                     eventHandler_(EVENT_TAB, stream_);
                 return;
             case KEY_LEFT:
-                if (line.prev())
+                if (line_.prev())
                     moveX--;
                 break;
             case KEY_RIGHT:
-                if (line.next())
+                if (line_.next())
                     moveX++;
                 break;
             case KEY_HOME:
-                moveX = -1 * line.home();
+                moveX = -1 * line_.home();
                 break;
             case KEY_END:
-                moveX = line.end();
+                moveX = line_.end();
                 break;
             case CHAR_BS:
             case KEY_DEL:
-                if (line.backspace()) {
+                if (line_.backspace()) {
                     backsp();
                     moveX--;
                 }
@@ -154,9 +161,8 @@ void Terminal::loop() {
             default:
                 // printable ascii 7bit or printable 8bit ISO8859
                 if ((c & '\x7F') >= 32 && (c & '\x7F') < 127)
-                    if (line.write(c)) {
-                        if (echoEnabled)
-                            write(c);
+                    if (line_.write(c)) {
+                        if (echo_) write(c);
                         moveX++;
                     }
                 break;
@@ -168,15 +174,14 @@ void Terminal::loop() {
 }
 
 bool Terminal::setLine(const uint8_t *ptr, size_t size) {
-    line.clear();
-    return line.write(ptr, size);
+    line_.clear();
+    return line_.write(ptr, size);
 }
 
-CharBuffer &Terminal::getLine() { return this->line; }
+CharBuffer &Terminal::getLine() { return line_; }
 
 void Terminal::start() {
-    if (controlCodesEnabled)
-        initscr();
+    if (controlCodes_) initscr();
     println();
 }
 
@@ -267,7 +272,7 @@ size_t Terminal::println(const char *str) {
 
 size_t Terminal::println(void) {
     size_t n = 0;
-    switch (eol) {
+    switch (eol_) {
         case CRLF:
             n += write(CHAR_CR);
             n += write(CHAR_LF);

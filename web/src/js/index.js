@@ -13,6 +13,7 @@ const FW_VERSION = 'f';
 const TAG_PVI = 'd';
 const SYS_INFO = 'S';
 const NETWORK_INFO = 'N';
+const PAGE_OPTIONS_JSON = 'O';
 /*
 const SET_SSID = 's';
 const SET_IP_ADDR = 'i';
@@ -305,15 +306,55 @@ function updateUI(param, value) {
   }
 }
 
+function update(k, v) {
+  switch (k) {
+    case 'boot':
+      showPowerMode(parseInt(v, 10));
+      break;
+    case 'voltage':
+      showOutputVoltage(parseFloat(v));
+      break;
+    case 'wifi':
+      showWiFi(parseInt(v, 10));
+      break;
+    case 'ssid':
+      showSSID(v);
+      break;
+    case 'password':
+      showPassword(v);
+      break;
+    case 'dhcp':
+      showDHCP(v);
+      break;
+    case 'ipaddr':
+      showIPAddr(v);
+      break;
+    case 'netmask':
+      showNetmask(v);
+      break;
+    case 'dns':
+      showDns(v);
+      break;
+    default:
+      console.log('unknown', k);
+      break;
+  }
+}
+
+
 function parseMessage(message) {
   console.log('<<<', message);
-
   const param = message.charAt(0);
   const value = message.substring(1);
-
-  store(param, value);
-
-  updateUI(param, value);
+  if (param === PAGE_OPTIONS_JSON) {
+    JSON.parse(value, (k, v) => {
+      if (k === '') return;
+      update(k, v);
+    });
+  } else {
+    store(param, value);
+    updateUI(param, value);
+  }
 }
 
 // eslint-disable-next-line no-unused-vars
@@ -322,6 +363,7 @@ function onload() {
     const scheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
     const uri = `${scheme}${window.location.host}/ws`;
     console.log('connect', uri);
+    //ws = new WebSocket('ws://192.168.1.204/ws');
     ws = new WebSocket(uri);
     ws.onmessage = function onMessage(msg) {
       enableUI();
@@ -395,6 +437,10 @@ $(document).ready(() => {
     showOutputVoltage(5);
     sendPowermode(0);
     sendOutputVoltage(5, true);
+  });
+
+  $('#btn_reset_total').click(() => {
+    sendWh(0);
   });
 
   $('#btn_save_voltage').click(() => {

@@ -66,4 +66,8 @@ void Button::holdReleaseEvent(time_t time) {
     }
 }
 
+void Button::onDiag(const JsonObject& doc) {
+    doc[FPSTR(str_time)] = hold_;
+}
+
 }

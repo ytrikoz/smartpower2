@@ -11,7 +11,7 @@ Led::Led() : Module() {
     led_[BLUE_LED]->set(LIGHT_OFF, true);
 }
 
-void Led::config(LedEnum led, LedParamEnum param, int value) {
+void Led::config(LedEnum led, LedConfigItem param, int value) {
     LedBlinker* obj = getLed(led);
     if (obj) {
         switch (param) {
@@ -19,6 +19,10 @@ void Led::config(LedEnum led, LedParamEnum param, int value) {
                 obj->setDutyOff(value);
             case DUTY_ON:
                 obj->setDutyOn(value);
+            case MODE: 
+                obj->set(LedSignal(value), true);
+            case STATE:
+                obj->applyState((float) value / 100);
             default:
                 return;
         }
@@ -54,7 +58,7 @@ void LedBlinker::setDutyOn(uint8_t value) {
 }
 
 uint16_t LedBlinker::map2duty(const float k) const {
-    return dutyOff_ - (float)(dutyOff_ - dutyOn_) * k;
+    return dutyOff_ - (float) (dutyOff_ - dutyOn_) * k;
 }
 
 void LedBlinker::set(LedSignal mode, bool forced) {
@@ -62,7 +66,7 @@ void LedBlinker::set(LedSignal mode, bool forced) {
         return;
     switch (mode) {
         case LIGHT_OFF:
-            pattern_[0] = {FULL_OFF, INF_TIME};
+            pattern_[0] = {FULL_OFF, INF_TIME}; 
             size_ = 1;
             break;
         case LIGHT_ON:
@@ -70,8 +74,8 @@ void LedBlinker::set(LedSignal mode, bool forced) {
             size_ = 1;
             break;
         case BLINK:
-            pattern_[0] = {FULL_ON, 250};
-            pattern_[1] = {FULL_OFF, 500};
+            pattern_[0] = {1, 250};
+            pattern_[1] = {0.5, 250};
             size_ = 2;
             break;
         case BLINK_ALERT:
@@ -102,31 +106,46 @@ void LedBlinker::loop() {
 
     unsigned long now = millis();
     unsigned long passed = millis_passed(updated_, now);
+
     if (passed >= duration) {
         updated_ = now;
-        if (++step_ >= size_ - 1) step_ = 0;
+        if (++step_ > size_ - 1) step_ = 0;
         return;
     }
-    transition_ = (float)passed / duration;
+    transition_ = (float) passed / duration;
+    
     applyState(transition_);
 }
 
-void LedBlinker::applyState(float k) {
-    float f;
-    if (pattern_[step_].state == FULL_ON)
-        f = 1 - k;
-    else
-        f = k;
+float LedBlinker::getNext() {
+    return pattern_[step_].state;
+}
 
+float LedBlinker::getPrev() {
+    uint8_t pos;
+    if (step_ > 0) 
+        pos = step_ - 1;
+    else
+        pos = size_ - 1;
+    return pattern_[pos].state;
+}
+
+void LedBlinker::applyState(float k) {
+    float next = getNext();
+    float prev = getPrev();
+    float f;
+    if (next > prev) {
+        f = next - k * (next - prev);
+    } else {
+        f = next + k * (prev - next);
+    }
     analogWrite(pin_, map2duty(f));
 }
 
-size_t LedBlinker::diag(Print *p) {
-    DynamicJsonDocument doc(256);
-    doc[FPSTR(str_mode)] = (uint8_t)mode_;
+void LedBlinker::onDiag(JsonObject& doc) {
+    doc[FPSTR(str_mode)] = (uint8_t) mode_;
     doc[FPSTR(str_state)] = transition_;
-    doc[FPSTR(str_complete)] = String(step_ + 1) + '/' + String(size_);
-    return serializeJson(doc, *p);
+    doc[FPSTR(strf_progress)] = String(step_ + 1) + '/' + String(size_);
 }
 
 }  // namespace Modules

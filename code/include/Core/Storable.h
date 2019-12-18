@@ -1,48 +1,59 @@
 #pragma once
 
-#include "CommonTypes.h"
 #include "Core/Queue.h"
-
-using namespace StrUtils;
 
 template <typename T>
 class Storable {
    public:
+    virtual bool doExist() = 0;
+
+    virtual bool doClose() = 0;
+
+    virtual bool doOpenRead() = 0;
+
+    virtual bool doRead() = 0;
+
+    virtual bool doOpenWrite() = 0;
+
+    virtual bool doWrite() = 0;
+
+    virtual bool doValidate() = 0;
+
     Storable(size_t capacity = 0) {
         state_ = StoreState::SS_UNSET;
         clearError();
     }
 
     String getStoreErrorStr(const StoreError error) {
-        String str;
+        PGM_P strP;
         switch (error) {
             case SE_INVALID:
-                str = FPSTR(str_invalid);
+                strP = str_invalid;
                 break;
             case SE_NOT_EXIST:
-                str = FPSTR(str_not_exist);
+                strP = str_not_exist;
                 break;
             case SE_ERROR_READ:
-                str = FPSTR(str_read);
+                strP = str_read;
                 break;
             case SE_ERROR_WRITE:
-                str = FPSTR(str_write);
+                strP = str_write;
                 break;
             case SE_ERROR_CLOSE:
-                str = FPSTR(str_close);
+                strP = str_close;
                 break;
             case SE_NONE:
-                str = FPSTR(str_unset);
+                strP = str_unset;
                 break;
             default:
-                str = FPSTR(str_unknown);
+                strP = str_unknown;
                 break;
         }
-        return str;
+        return String(FPSTR(strP));
     }
 
     String getStateInfoStr(const StoreState state) {
-        PGM_P strP = str_unknown;
+        PGM_P strP;;
         switch (state) {
             case SS_UNSET:
                 strP = str_unset;
@@ -60,12 +71,12 @@ class Storable {
                 strP = str_eof;
                 break;
         };
-        return FPSTR(strP);
+        return String(FPSTR(strP));
     }
 
-    const String getStateInfo() { return getStateInfoStr(this->state_); }
+    String getStateInfo() { return getStateInfoStr(state_); }
 
-    const String getErrorInfo() { return getStoreErrorStr(this->error_); }
+    String getErrorInfo() { return getStoreErrorStr(error_); }
 
     bool read() {
         return set(SS_READING);
@@ -95,32 +106,18 @@ class Storable {
         return &data_;
     }
 
-    void setError(StoreError error) { this->error_ = error; }
+    void setError(StoreError error) { error_ = error; }
 
    protected:
-    bool set(const StoreState new_state) {
+    bool set(const StoreState state) {
         if (state_ == SS_UNSET)
             onValidate();
 
-        if (state_ != new_state)
-            onStateChange(state_, new_state);
+        if (state_ != state)
+            onStateChange(state_, state);
 
         return !getError();
     }
-
-    virtual bool doExist() = 0;
-
-    virtual bool doClose() = 0;
-
-    virtual bool doOpenRead() = 0;
-
-    virtual bool doRead() = 0;
-
-    virtual bool doOpenWrite() = 0;
-
-    virtual bool doWrite() = 0;
-
-    virtual bool doValidate() = 0;
 
     void onClose() {
         if (is(SS_CLOSED))

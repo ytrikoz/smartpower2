@@ -9,7 +9,6 @@
 #define APP_VERSION "0.6.9"
 #define APP_BUILD_COMMIT ""
 
-
 // address are 0x27 or 0x3f
 #define NONE_ADDRESS 0x00
 #define LCD_SLAVE_ADDRESS 0x3f

@@ -1,9 +1,10 @@
 #pragma once
 
-#include "Module.h"
+#include "Core/Module.h"
 
-#include "LcdDisplay.h"
-#include "Screen.h"
+#include "Hardware/LcdDisplay.h"
+
+namespace Modules {
 
 class Display : public Module {
    public:
@@ -54,3 +55,5 @@ class Display : public Module {
     Screen screen;
     ScreenEnum activeScreen;
 };
+
+}

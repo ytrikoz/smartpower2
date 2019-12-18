@@ -1,12 +1,10 @@
 #pragma once
 
-#include <Arduino.h>
-
 #include "Core/CharBuffer.h"
 
 class EditLine : public CharBuffer {
    public:
-    EditLine() {}
+    EditLine(size_t size):CharBuffer(size) {};
 
     char &operator[](size_t i) { return pool_[i]; }
 

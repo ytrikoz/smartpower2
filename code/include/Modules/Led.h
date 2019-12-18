@@ -2,8 +2,7 @@
 
 #include <Arduino.h>
 
-#include "Module.h"
-#include "LedBlinker.h"
+#include "Core/Module.h"
 
 #define RED_LED_PIN D1
 #define BLUE_LED_PIN D4
@@ -25,9 +24,11 @@ enum LedSignal { LIGHT_OFF,
                  BLINK_ALERT,
                  BLINK_ERROR };
 
-enum LedParamEnum {
+enum LedConfigItem {
     DUTY_OFF,
     DUTY_ON,
+    MODE,
+    STATE
 };
 
 struct SignalStep {
@@ -43,8 +44,9 @@ class Led : public Module {
    public:
     Led();
     void set(LedEnum, LedSignal);
-    void config(LedEnum led, LedParamEnum param, int value);
+    void config(LedEnum led, LedConfigItem param, int value);
     LedBlinker *getLed(const LedEnum led) const;
+
    protected:
     void onLoop() override;
 
@@ -59,14 +61,15 @@ class LedBlinker {
    public:
     LedBlinker(uint8_t pin, uint8_t dutyOff, uint8_t dutyOn, bool smooth);
     void set(LedSignal mode, bool forced = false);
-    void loop();
-    size_t diag(Print *p);
-    void setDutyOff(uint8_t value);
-    void setDutyOn(uint8_t value);    
-   private:
     void applyState(float state);
+    void setDutyOff(uint8_t value);
+    void setDutyOn(uint8_t value);
+    void loop();
+    void onDiag(JsonObject &doc);
 
    private:
+    float getNext();
+    float getPrev();
     uint16_t map2duty(const float k) const;
     uint8_t pin_;
     unsigned long updated_;

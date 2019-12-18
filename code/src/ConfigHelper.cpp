@@ -1,66 +1,78 @@
 #include "ConfigHelper.h"
 
-#include "Storage.h"
-#include "PrintUtils.h"
+#include "Core/Storage.h"
+#include "Utils/PrintUtils.h"
 
 using namespace PrintUtils;
 
-void ConfigHelper::onConfigChanged(ConfigItem param) { stored_ = false; }
+ConfigHelper::ConfigHelper(const char* name):name_(nullptr){
+    setName(name);
+ }
 
-ConfigHelper::ConfigHelper() {
-    strncpy(name_, FS_MAIN_CONFIG, FILENAME_SIZE);
-    if (!SPIFFS.exists(name_)) {
-        print_ident(&Serial, FPSTR(str_config));
-        println(&Serial, name_, FPSTR(str_not_exist), FPSTR(str_arrow_dest), FPSTR(str_save), FPSTR(str_default));
-        save();
-    }
-    load();
-    obj_.setOnChange([this](ConfigItem param) {
-        onConfigChanged(param);
-    });
+void ConfigHelper::setName(const char* name) {
+    if (name_ != nullptr) delete name_;    
+    size_t size = strlen(name);    
+    name_ = new char[size + 1];
+    strncpy(name_, name, size);
+    name_[size] = '\x00';
 }
 
+
+const char* ConfigHelper::name() {
+    return name_;
+}
+
+bool ConfigHelper::check() {
+    return SPIFFS.exists(name_);
+}
+
+ConfigHelper::~ConfigHelper() {
+    delete name_;
+}
+
+void ConfigHelper::setOutput(Print *p) { out_ = p; }
+
 void ConfigHelper::load() {
-    print_ident(&Serial, FPSTR(str_config));
-    print(&Serial, FPSTR(str_load), name_);
-    auto file = StringFile(name_);
-    auto data = file.get();
+    PrintUtils::print_ident(out_, FPSTR(str_config));
+    PrintUtils::print(out_, name_);
+    StringFile file(name_);
     if (file.read()) {
+        auto data = file.get();        
         if (data->available()) {
             while (data->available()) {
                 String buf;
                 data->pop(buf);
-                String param_str = extractName(buf);
-                String value_str = extractValue(buf);
-                if (param_str.length()) {
-                    obj_.setValueAsStringByName(param_str.c_str(), value_str.c_str());
-                } else {
-                    println(&Serial, FPSTR(str_load), FPSTR(str_error), ":", StrUtils::getQuotedStr(buf));
+                String paramStr = extractName(buf);
+                String valueStr = extractValue(buf);
+                int8_t res = obj_.setValueByName(paramStr, valueStr);
+                if (res == -1) {
+                    PrintUtils::print(out_, FPSTR(str_error));
+                    PrintUtils::print(out_, buf);
                 }
-            }
-            print_ln(&Serial);
+                else                         
+                    changed_ |= res;               
+            }         
         } else {
-            println(&Serial, FPSTR(str_failed), ":", FPSTR(str_empty));
+            PrintUtils::print(out_, FPSTR(str_failed));
+            PrintUtils::print(out_, file.getErrorInfo());
         }
-    } else {
-        println(&Serial, FPSTR(str_failed), ":", file.getErrorInfo());
     }
 }
 
-String ConfigHelper::extractName(String &str) {
+String ConfigHelper::extractName(const String &str) {
+    String res;
     int split_index = str.indexOf("=");
-    if (split_index == -1)
-        return String("");
-    else
-        return str.substring(0, split_index);
+    if (split_index != -1)
+        res = str.substring(0, split_index);
+    return res;
 }
 
-String ConfigHelper::extractValue(String &str) {
+String ConfigHelper::extractValue(const String &str) {
+    String res;
     int split_index = str.indexOf("=");
-    if (split_index == -1)
-        return String("");
-    else
-        return str.substring(split_index + 2, str.length() - 2);
+    if (split_index != -1)
+        res = str.substring(split_index + 2, str.length() - 2);
+    return res;
 }
 
 bool ConfigHelper::save() {
@@ -80,7 +92,7 @@ size_t ConfigHelper::printTo(Print &p) const {
     return n;
 }
 
-void ConfigHelper::setDefault() {
+void ConfigHelper::setDefaultParams() {
     for (size_t i = 0; i < CONFIG_ITEMS; ++i)
         obj_.resetDefault(ConfigItem(i));
 }
@@ -112,7 +124,7 @@ bool ConfigHelper::setNetworkSTAConfig(uint8_t wifi, const char *ssid,
                       setPassword(passwd) | setDHCP(dhcp) |
                       setIPAddress(ipaddr) | setNetmask(netmask) |
                       setGateway(gateway) | setDns(dns);
-    stored_ |= hasChanged;
+    changed_ |= hasChanged;
     return hasChanged;
 }
 
@@ -131,11 +143,11 @@ bool ConfigHelper::setWiFiMode(WiFiMode_t value) {
 }
 
 bool ConfigHelper::setSSID(const char *value) {
-    return obj_.setValueAsString(SSID, value);
+    return obj_.setValue(SSID, value);
 }
 
 bool ConfigHelper::setPassword(const char *value) {
-    return obj_.setValueAsString(PASSWORD, value);
+    return obj_.setValue(PASSWORD, value);
 }
 
 bool ConfigHelper::setIPAddress(IPAddress value) {
@@ -143,19 +155,19 @@ bool ConfigHelper::setIPAddress(IPAddress value) {
 }
 
 bool ConfigHelper::setIPAddress(const char *value) {
-    return obj_.setValueAsString(IPADDR, value);
+    return obj_.setValue(IPADDR, value);
 }
 
 bool ConfigHelper::setGateway(const char *value) {
-    return obj_.setValueAsString(GATEWAY, value);
+    return obj_.setValue(GATEWAY, value);
 }
 
 bool ConfigHelper::setNetmask(const char *value) {
-    return obj_.setValueAsString(NETMASK, value);
+    return obj_.setValue(NETMASK, value);
 }
 
 bool ConfigHelper::setDns(const char *value) {
-    return obj_.setValueAsString(DNS, value);
+    return obj_.setValue(DNS, value);
 }
 
 bool ConfigHelper::setDHCP(bool value) {
@@ -171,11 +183,11 @@ float ConfigHelper::getOutputVoltage() {
 }
 
 const char *ConfigHelper::getPassword() {
-    return obj_.getValueAsString(PASSWORD);
+    return obj_.getValue(PASSWORD);
 }
 
 const char *ConfigHelper::getPassword_AP() {
-    return obj_.getValueAsString(AP_PASSWORD);
+    return obj_.getValue(AP_PASSWORD);
 }
 
 // maximum value of RF Tx Power, unit: 0.25 dBm, range [0, 82]

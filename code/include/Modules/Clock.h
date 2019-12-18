@@ -1,12 +1,16 @@
 #pragma once
 
-#include "Module.h"
-#include "Config.h"
-#include "Storage.h"
-#include "TimeUtils.h"
+#include "Core/Module.h"
+
 #include <time.h>
 
+#include "Config.h"
+#include "Core/Storage.h"
+#include "Utils/TimeUtils.h"
+
 namespace Modules {
+
+typedef std::function<void(const time_t local, double diff)> TimeChangeEvent;
 
 class Clock : public Module {
    public:
@@ -37,11 +41,11 @@ class Clock : public Module {
     void setSntp();
     bool isTimeSet();
     const timezone getTimeZone();
-    const char *getSntpServer();
+    const char* getSntpServer();
     int getBiasInSeconds();
     int getBiasInMinutes();
     time_t getStoreInterval();
-    
+
     void updateLastKnown(const time_t epoch, bool forced = false);
 
    private:
@@ -51,4 +55,4 @@ class Clock : public Module {
     time_t lastKnown_;
 };
 
-}
+}  // namespace Modules

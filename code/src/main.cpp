@@ -3,28 +3,86 @@
 #include <Arduino.h>
 #include <FS.h>
 
+#include "Global.h"
 #include "BuildConfig.h"
 #include "CrashReport.h"
-#include "FSUtils.h"
-#include "PrintUtils.h"
-#include "StrUtils.h"
+#include "LoopTiming.h"
+#include "Utils/FSUtils.h"
+#include "Utils/PrintUtils.h"
+#include "Utils/StrUtils.h"
 
-using namespace PrintUtils;
+bool crashReportEnabled_ = false;
+uint8_t crashReportNumber_ = 0;
 
-BootWatcher boot;
-Logger logger;
-App app;
+bool setupDone = false;
+void preinit() {
+    system_update_cpu_freq(SYS_CPU_160MHZ);
+    WiFi.persistent(false);
+    WiFi.setAutoConnect(false);
+    wifi_station_set_hostname(APP_NAME);
+    setupDone = false;
+}
 
-bool crashReportEnabled = false;
-uint8_t crashReportNumber = 0;
+void setup() {
+    boot.setOutput(&syslog);
+    boot.init();
+    
+    initCrashReport();
+    
+    boot.start();
+    
+    config = new ConfigHelper(FS_MAIN_CONFIG);
+    config->setOutput(&syslog);
+    if (!config->check()) {
+        PrintUtils::print_ident(&syslog, FPSTR(str_config));
+        PrintUtils::print_file_not_found(&syslog, config->name());
+        config->setDefaultParams();
+        config->save();
+    }
+    config->load();
+
+    looptimer = new LoopTimer();
+    powerlog = new PsuLogHelper();
+
+    Cli::init();
+
+    app.setOutput(&syslog);    
+    app.setConfig(config);
+    app.setPowerlog(powerlog);
+
+    app.begin();
+
+    boot.end();
+
+    setupDone = true;
+}
+
+void loop() {
+    if (!setupDone) return;
+    syslog.loop();
+    app.loop(looptimer);
+    looptimer->loop();
+}
+
+void initCrashReport() {
+    crashReportNumber_ = FSUtils::getFilesCount(CRASH_ROOT);
+    crashReportEnabled_ = crashReportNumber_ < CRASH_NUM;
+    if (crashReportNumber_) {
+        PrintUtils::print_ident(&syslog, FPSTR(str_crash));
+        PrintUtils::print(&syslog, crashReportNumber_);
+        if (!crashReportEnabled_)         
+            PrintUtils::print(&syslog, FPSTR(str_off));
+         PrintUtils::println(&syslog);
+    }
+}
 
 
 extern "C" void custom_crash_callback(struct rst_info *rst_info,
                                       uint32_t stack_start,
                                       uint32_t stack_end) {
-    if (!crashReportEnabled) return;
+    if (!crashReportEnabled_) return;
     char buf[32];
-    sprintf(buf, "%s%d_%lu", CRASH_ROOT, crashReportNumber + 1, millis());
+    sprintf(buf, "%s%d_%lu", CRASH_ROOT, crashReportNumber_ + 1, millis());
     if (File f = SPIFFS.open(buf, "w")) {
         CrashHeader h;
         h.reason = rst_info->reason;
@@ -47,63 +105,4 @@ extern "C" void custom_crash_callback(struct rst_info *rst_info,
         f.flush();
         f.close();
     }
-}
-
-void initCrashReport() {
-    crashReportNumber = FSUtils::getFilesCount(CRASH_ROOT);
-    crashReportEnabled = crashReportNumber < CRASH_NUM;
-
-    if (crashReportNumber) {
-        PrintUtils::print_ident(&Serial, FPSTR(str_crash));
-        PrintUtils::print(&Serial, crashReportNumber);
-
-        if (!crashReportEnabled) PrintUtils::print(&Serial, FPSTR(str_disabled));
-
-        PrintUtils::print_ln(&Serial);
-    }
-}
-
-bool setupDone;
-void preinit() {
-    system_update_cpu_freq(SYS_CPU_160MHZ);
-    WiFi.persistent(false);
-    WiFi.setAutoConnect(false);
-    wifi_station_set_hostname(APP_NAME);
-    setupDone = false;
-}
-
-void setup() {
-    boot.init();
-    
-    initCrashReport();
-
-    PrintUtils::println(&logger, "[log] start");
-
-
-    app.setOutput(&logger);    
-    app.init();
-
-    if (boot.isSafeMode()) {
-        INFO.setDebugOutput(true);
-        INFO.print(getIdentStrP(str_boot));
-        INFO.println(FPSTR(str_safe));
-        app.startSafe();
-    } else {
-        app.begin();
-    }
-
-    boot.end();
-
-    setupDone = true;
-}
-
-void loop() {
-    if (!setupDone) return;
-    logger.loop();
-    if (boot.isSafeMode())
-        app.loopSafe();
-    else {
-        app.loop();
-    }
-
 }

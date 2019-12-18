@@ -1,8 +1,10 @@
 #include "Modules/Display.h"
 
-#include "Modules/PsuModule.h"
+#include "Modules/Psu.h"
 
-#include "main.h"
+#include "Global.h"
+
+namespace Modules {
 
 bool Display::isEnabled() {
     return lcd && lcd->isEnabled();
@@ -87,7 +89,7 @@ void Display::refresh(void) {
 #ifdef DEBUG_DISPLAY
     DEBUG.println("refresh()");
 #endif
-    PsuModule *psu = app.psu();
+    Modules::Psu *psu = app.psu();
     if (psu->checkState(POWER_ON)) {
         setScreen(SCREEN_PSU);
         PsuStatus status = psu->getStatus();
@@ -156,7 +158,7 @@ void Display::load_wifi_ap_sta(Screen *obj) {
 };
 
 void Display::load_psu_info(Screen *obj) {
-    PsuModule *psu = app.psu();
+    Modules::Psu *psu = app.psu();
     String str = String(psu->getV(), 3);
     if (str.length() == 5)
         str += " ";
@@ -298,4 +300,6 @@ Error Display::onExecute(const String &param, const String &value) {
     } else {
        return Error(ERROR_EXECUTE, FPSTR(str_unknown));
     }
+}
+
 }

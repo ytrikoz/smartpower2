@@ -2,13 +2,8 @@
 
 #include "Wireless.h"
 
-using namespace AppUtils;
-using namespace StrUtils;
-using namespace PrintUtils;
+namespace Modules {
 
-namespace Modules
-{
-    
 void Syslog::alert(const String& src, const String& str) { send(SYSLOG_ALERT, src, str); }
 
 void Syslog::info(const String& src, const String& str) { send(SYSLOG_INFO, src, str); }
@@ -16,31 +11,27 @@ void Syslog::info(const String& src, const String& str) { send(SYSLOG_INFO, src,
 void Syslog::debug(const String& src, const String& str) { send(SYSLOG_DEBUG, src, str); }
 
 bool Syslog::onInit() {
-    if (udp_ == nullptr) udp_ = new WiFiUDP();
+    udp_ = new WiFiUDP();
     return udp_;
 }
 
 bool Syslog::onStart() {
-    if (String(getSyslogServer()).isEmpty()) {
-        serverIp = IPADDR_NONE;
+    if (!strlen(config_->getValue(SYSLOG_SERVER))) {
         error_ = Error(ERROR_PARAM, str_server);
         return false;
     }
 
-    if (!WiFi.hostByName(server, serverIp)) {
+    if (!WiFi.hostByName(config_->getValue(SYSLOG_SERVER), ip_)) {
         error_ = Error(ERROR_NETWORK, FPSTR(str_dns));
         return false;
     }
+
     return true;
 }
 
 void Syslog::onLoop() {}
 
 void Syslog::onStop() { udp_->stop(); }
-
-const char* Syslog::getSyslogServer() {
-    return config_->getValueAsString(SYSLOG_SERVER);
-}
 
 const char* Syslog::getHostname() {
     return APP_NAME;
@@ -49,7 +40,7 @@ const char* Syslog::getHostname() {
 void Syslog::send(SysLogSeverity level, const String& routine, const String& message) {
     // String payload = getPayload(level, time, host.c_str(), message.c_str());
     // say_strP(str_log, payload.c_str());
-    if (udp_->beginPacket(serverIp, SYSLOG_PORT)) {
+    if (udp_->beginPacket(ip_, port_)) {
         printPacket(level, routine, message);
         udp_->endPacket();
     }
@@ -59,7 +50,7 @@ void Syslog::printPacket(const SysLogSeverity level, const String& routine, cons
     udp_->print('<');
     udp_->print(SYSLOG_FACILITY * 8 + (int)level);
     udp_->print('>');
-    udp_->print(host);
+    udp_->print(APP_NAME);
     udp_->print(' ');
     udp_->print('[');
     udp_->print(routine);
@@ -69,7 +60,7 @@ void Syslog::printPacket(const SysLogSeverity level, const String& routine, cons
 }
 
 void Syslog::onDiag(const JsonObject& doc) {
-    doc[FPSTR(str_server)] = getSyslogServer();
+    doc[FPSTR(str_server)] = StrUtils::prettyIpAddress(ip_, port_);
 }
 
 String getLevelStr(SysLogSeverity level) {
@@ -88,6 +79,4 @@ String getLevelStr(SysLogSeverity level) {
     return String(FPSTR(strP));
 }
 
-} // namespace 
-
-
+}  // namespace Modules

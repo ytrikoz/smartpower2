@@ -48,10 +48,10 @@ bool NetworkService::start_mdns() {
     return result;
 }
 
-void NetworkService::onDiag(const JsonObject& doc) {
-    doc[FPSTR(str_dns)] = has_dns;
-    doc[FPSTR(str_netbios)] = has_netbios;
-    doc[FPSTR(str_mdns)] = has_mdns;
+void NetworkService::onDiag(const JsonObject& obj) {
+    obj[FPSTR(str_dns)] = has_dns;
+    obj[FPSTR(str_netbios)] = has_netbios;
+    obj[FPSTR(str_mdns)] = has_mdns;
 }
 
 void NetworkService::onLoop() {

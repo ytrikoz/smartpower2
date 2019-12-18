@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 
-#include "Module.h"
+#include "Core/Module.h"
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 
@@ -48,10 +48,12 @@ developers for debugging, not useful during operations.
 enum SysLogSeverity { SYSLOG_ALERT = 1,
                       SYSLOG_INFO = 6,
                       SYSLOG_DEBUG = 7 };
-namespace Modules {   
-class Syslog : public NetworkModule {
+namespace Modules {
+
+
+class Syslog : public Module {
    public:
-    Syslog(): NetworkModule(NETWORK_STA) {}
+    Syslog(uint16_t port):Module(), udp_(nullptr), ip_(IPADDR_NONE), port_(port) {};
 
    public:
     void alert(const String &, const String &);
@@ -67,7 +69,6 @@ class Syslog : public NetworkModule {
 
    private:
     const char *getHostname();
-    const char *getSyslogServer();
 
    private:
     void send(const SysLogSeverity level, const String &routine, const String &message);
@@ -75,11 +76,9 @@ class Syslog : public NetworkModule {
                      const String &message);
 
    private:
-    WiFiUDP *udp_ = nullptr;
-    char server[16];
-    char host[16];
-    IPAddress serverIp = IPADDR_NONE;
-    uint16_t port;
+    WiFiUDP *udp_;
+    IPAddress ip_;
+    uint16_t port_;
 };
 
-}
+}  // namespace Modules

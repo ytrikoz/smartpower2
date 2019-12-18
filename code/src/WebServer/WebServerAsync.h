@@ -14,18 +14,21 @@ class WebServerAsync : public WebServer {
     void stop() override;
     void loop() override;
     
-    void sendData(const uint8_t, const String &) override;
-    void setOnConnection(WebConnectionEventHandler) override;
-    void setOnDisconnection(WebConnectionEventHandler) override;
-    void setOnReceiveData(WebReceiveDataEventHandler) override;
+    void sendData(uint8_t num, const char* payload) override;
+    void sendData(uint8_t, const String &) override;
+    void sendEvent(const String& content, const String& name) override;
+    void setOnConnection(WebServerConnectionEventHandler) override;
+    void setOnDisconnection(WebServerConnectionEventHandler) override;
+    void setOnReceiveData(WebServerDataEventHandler) override;
 
   private:
     void onNotFound(AsyncWebServerRequest *r);
     void onWSEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len);
 
-    WebReceiveDataEventHandler receiveDataHandler;
-    WebConnectionEventHandler connectionHandler;
-    WebConnectionEventHandler disconnectionHandler;
+private:
+    WebServerDataEventHandler dataHandler;
+    WebServerConnectionEventHandler connectionHandler;
+    WebServerConnectionEventHandler disconnectionHandler;
 
     AsyncWebServer *web_;
     AsyncWebSocket *ws_;

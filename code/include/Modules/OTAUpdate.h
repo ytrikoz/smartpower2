@@ -4,10 +4,12 @@
 #include <FS.h>
 #include <Updater.h>
 
-#include "Module.h"
+#include "Core/Module.h"
 #include "Strings.h"
 
-class OTAUpdate : public NetworkModule {
+namespace Modules {
+
+class OTAUpdate : public Module {
    public:
     OTAUpdate(uint16_t port);
     
@@ -29,3 +31,5 @@ class OTAUpdate : public NetworkModule {
     ArduinoOTAClass *ota;
     unsigned int update_progress;
 };
+
+}

@@ -2,7 +2,7 @@
 
 #include "DeduplicationLog.h"
 
-class DiffLog : public DeduplicationLog {
+class DiffLog : public DedupLog {
    public:
     DiffLog(const char* label, size_t size, float base);
     // PsuLog

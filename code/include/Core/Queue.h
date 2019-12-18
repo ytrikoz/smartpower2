@@ -6,7 +6,7 @@
 template <typename T>
 class Queue : public Printable {
     enum QueueState { WRITE,
-                          READ };
+                      READ };
 
    public:
     Queue(){};
@@ -34,8 +34,7 @@ class Queue : public Printable {
 
     bool pop(T& item) {
         prepare(QueueState::READ);        
-        if (!available()) return false;
-        item = items_.back();
+        item = T(items_.back());
         items_.pop_back();
         return true;
     }
@@ -57,6 +56,7 @@ class Queue : public Printable {
     std::vector<T> items_;
     QueueState state_;
 
+private:
     void prepare(QueueState state) {
         if (state_ == state) return;
         switch (state) {

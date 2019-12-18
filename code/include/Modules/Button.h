@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Module.h"
+#include "Core/Module.h"
 
 enum ButtonState { BTN_PRESSED,
                    BTN_RELEASED };
@@ -12,13 +12,16 @@ typedef std::function<void(time_t)> ButtonHoldReleaseEventHandler;
 namespace Modules {
 
 class Button : public Module {
-    public:
+   public:
     Button(uint8_t pin);
 
    public:
     void setOnClick(ButtonClickEventHandler handler);
     void setOnHold(ButtonHoldEventHandler handler);
     void setOnRelease(ButtonHoldReleaseEventHandler handler);
+
+   public:
+    void onDiag(const JsonObject& doc) override;
 
    protected:
     void onLoop() override;
@@ -40,4 +43,4 @@ class Button : public Module {
     ButtonState last_;
 };
 
-}
+}  // namespace Modules

@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 
-#include "Module.h"
+#include "Core/Module.h"
 #include "Cli/CommandShell.h"
 
 namespace Modules { 

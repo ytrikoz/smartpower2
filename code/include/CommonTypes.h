@@ -1,28 +1,24 @@
 #pragma once
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <time.h>
 
 #include "Consts.h"
-#include "StrUtils.h"
 #include "Strings.h"
-#include "TimeUtils.h"
 #include "Core/Error.h"
 
-typedef std::function<void(bool has, unsigned long time)>
-    NetworkStatusChangeEventHandler;
+#include "Utils/TimeUtils.h"
 
 enum NetworkMode {
-    NETWORK_OFF = 0,
-    NETWORK_STA = 1,
-    NETWORK_AP = 2,
-    NETWORK_AP_STA = 3
+    NETWORK_OFF,
+    NETWORK_STA,
+    NETWORK_AP,
+    NETWORK_AP_STA
 };
 
 enum NetworkStatus { NETWORK_DOWN = 0,
                      NETWORK_UP = 1 };
-
-typedef std::function<void(const time_t local, double diff)> TimeChangeEvent;
 
 struct AppLogItem {
     String str;
@@ -109,7 +105,7 @@ struct PsuData : Printable {
 
 class PsuListener {
    public:
-    virtual void log(PsuData &item){};
+    virtual void onPsuData(PsuData &item){};
 };
 
 typedef std::function<void(PsuState, PsuStatus)> PsuStateChangeHandler;
@@ -157,6 +153,14 @@ enum ModuleEnum {
     MOD_TELNET,
     MOD_UPDATE,
     MOD_SYSLOG
+};
+
+enum ModuleState {
+    STATE_INIT,
+    STATE_INIT_FAILED,
+    STATE_INIT_COMPLETE,
+    STATE_START_FAILED,
+    STATE_ACTIVE
 };
 
 enum ConfigItem {

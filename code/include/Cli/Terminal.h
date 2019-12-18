@@ -143,14 +143,13 @@ class Terminal : public Print {
     unsigned long lastReceived = 0;
     State state = ST_INACTIVE;
     Stream *stream_;
-    EditLine line;
+    EditLine line_;
     char cc_buf[32] = {0};
     size_t cc_pos = 0;
-    bool colorEnabled = false;
-    bool controlCodesEnabled = false;
-    bool echoEnabled = false;
-
-    EOLType eol = CRLF;
+    bool color_ = false;
+    bool controlCodes_= false;
+    bool echo_ = false;
+    EOLType eol_ = CRLF;
 
     struct ControlCode {
         const char *cc;

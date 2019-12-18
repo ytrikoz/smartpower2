@@ -1,5 +1,7 @@
 #include "Cli/CommandShell.h"
 
+#include "Utils/StrUtils.h"
+
 using namespace StrUtils;
 using namespace TimeUtils;
 

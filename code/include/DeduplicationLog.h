@@ -7,13 +7,13 @@ struct LogItem {
     double value;
 };
 
-class DeduplicationLog {
+class DedupLog {
    public:
     void log(unsigned long time, float value);
     void values(float array[], size_t &size);
 
    public:
-    DeduplicationLog(const char *label, size_t size);
+    DedupLog(const char *label, size_t size);
 
     void printTo(Print *p);
     void printFirst(Print *p, size_t n);

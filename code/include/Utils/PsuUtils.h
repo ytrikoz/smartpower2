@@ -1,6 +1,10 @@
-#include "PsuUtils.h"
+#pragma once
 
-int quadratic_regression(const double value, const bool alterRange) {
+#include "CommonTypes.h"
+
+#include "Utils/PsuUtils.h"
+
+inline int quadratic_regression(const double value, const bool alterRange) {
     double a = 0.0000006562;
     double b = 0.0022084236;
     float c = alterRange ? 11.83 : 4.08;
@@ -13,11 +17,12 @@ int quadratic_regression(const double value, const bool alterRange) {
     return root;
 }
 
-String getStateStr(const PsuState state) {
-    return FPSTR(state == POWER_ON ? str_on : str_off);
+inline String getPsuStateStr(const PsuState state) {
+    PGM_P str = state == POWER_ON ? str_on : str_off;
+    return String(FPSTR(str));
 }
 
-String getStatusStr(const PsuStatus status) {
+inline String getStatusStr(const PsuStatus status) {
     PGM_P strP;
     switch (status) {
         case PSU_OK:
@@ -35,7 +40,7 @@ String getStatusStr(const PsuStatus status) {
     return FPSTR(strP);
 }
 
-String getErrorStr(const PsuError value) {
+inline String getErrorStr(const PsuError value) {
     PGM_P strP;
     switch (value) {
         case PSU_ERROR_LOW_VOLTAGE:
@@ -47,7 +52,7 @@ String getErrorStr(const PsuError value) {
     return FPSTR(strP);
 }
 
-String getAlertStr(const PsuAlert value) {
+inline String getAlertStr(const PsuAlert value) {
     PGM_P strP;
     switch (value) {
         case PSU_ALERT_LOAD_LOW:

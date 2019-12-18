@@ -1,9 +1,4 @@
-#include "StrUtils.h"
-
-#include <pgmspace.h>
-
-#include "CommonTypes.h"
-#include "TimeUtils.h"
+#include "Utils/StrUtils.h"
 
 namespace StrUtils {
 
@@ -15,43 +10,23 @@ static const char str_up[] PROGMEM = "up";
 static const char *weekdays[] = {"sun", "mon", "tue", "wed",
                                  "thu", "fri", "sat"};
 
-bool atomac(const char *txt, uint8_t *addr) {
-    for (uint8_t i = 0; i < 6; i++) {
-        int a, b;
-        a = hex2num(*txt++);
-        if (a < 0)
-            return false;
-        b = hex2num(*txt++);
-        if (b < 0)
-            return false;
-        *addr++ = (a << 4) | b;
-        if (i < 5 && *txt++ != ':')
-            return false;
+String getNetworkModeStr(NetworkMode mode) {
+    PGM_P strP = str_unknown;
+    switch (mode) {
+        case NETWORK_OFF:
+            strP = str_off;
+            break;
+        case NETWORK_AP:
+            strP = str_ap;
+            break;
+        case NETWORK_STA:
+            strP = str_sta;
+            break;
+        case NETWORK_AP_STA:
+            strP = str_ap_sta;
+            break;
     }
-    return true;
-}
-
-int hex2num(char c) {
-    if (c >= '0' && c <= '9')
-        return c - '0';
-    if (c >= 'a' && c <= 'f')
-        return c - 'a' + 10;
-    if (c >= 'A' && c <= 'F')
-        return c - 'A' + 10;
-    return -1;
-}
-
-bool atomac(const char *txt, uint8_t *addr);
-
-int hex2byte(const char *hex) {
-    int a, b;
-    a = hex2num(*hex++);
-    if (a < 0)
-        return -1;
-    b = hex2num(*hex++);
-    if (b < 0)
-        return -1;
-    return (a << 4) | b;
+    return String(FPSTR(strP));
 }
 
 String getTimeStr(const unsigned long epoch_s, bool fmtLong) {
@@ -73,7 +48,6 @@ String getTimeStr(const unsigned long epoch_s, bool fmtLong) {
     }
     return String(buf);
 }
-
 
 void strfill(char *str, char chr, size_t len) {
     memset(&str[0], chr, sizeof(char) * len);
@@ -124,18 +98,6 @@ bool setstr(char *dest, const char *src, size_t size) {
     return false;
 }
 
-String fmt_rssi(int db) {
-    char buf[32];
-    sprintf(buf, "%d dB", db);
-    return String(buf);
-}
-
-String fmt_mac(const uint8_t *mac) {
-    char buf[32];
-    sprintf(buf, MACSTR, MAC2STR(mac));
-    return String(buf);
-}
-
 String fmt_network(const IPAddress ipaddr, const IPAddress subnet,
                    const IPAddress gateway) {
     char buf[128];
@@ -153,12 +115,6 @@ String fmt_network(const IPAddress ipaddr, const IPAddress subnet,
     return String(buf);
 }
 
-String fmt_mhz(uint32_t value) {
-    char buf[8];
-    itoa(value / ONE_MHz_hz, buf, DEC);
-    strcat(buf, "MHz");
-    return String(buf);
-}
 
 void strpadd(char *str, Align align, size_t size, const char ch) {
     uint8_t str_len = strlen(str);
@@ -224,34 +180,13 @@ String getEnabledStr(bool value, bool space) {
     return res;
 }
 
-char *getUpDownStr(char *buf, bool value, bool space) {
-    PGM_P strP = value ? str_up : str_down;
-    strcpy_P(buf, strP);
-    return buf;
-}
-
 String getUpDownStr(bool value) {
-    PGM_P strP = value ? str_up : str_down;
-    return String(FPSTR(strP));
+    return String(FPSTR(value ? str_up : str_down));
 }
 
 String getIdentStrP(PGM_P strP, bool with_space) {
     String str = getStrP(strP, false);
     return getIdentStr(str, with_space);
-}
-
-String getQuotedStrP(PGM_P strP, bool with_space, char ch) {
-    char buf[64];
-    strcpy_P(buf, strP);
-    return getQuotedStr(buf, with_space);
-}
-
-String getQuotedStr(const char *str, bool with_space, char ch) {
-    return getIdentStr(str, with_space, ch, ch);
-}
-
-String getQuotedStr(const String &str, bool with_space) {
-    return getQuotedStr(str.c_str(), with_space, '\'');
 }
 
 size_t getStrP(PGM_P strP, char *buf) {
@@ -287,42 +222,6 @@ String getIdentStr(const char *str, bool with_space, char left, char right) {
     if (with_space)
         buf[++x] = ' ';
     return String(buf);
-}
-
-template <typename... Args> void sayArgsP(Print *p, Args... args) {
-    char buf[128];
-    for (size_t n = 0; n < sizeof...(args); ++n) {
-        strcpy(buf, (char *)pgm_read_ptr(&args[n]...));
-        p->print(buf);
-    }
-}
-
-const String double2str(double value) {    
-    char buf[64];
-    sprintf(buf, "%.6f", value);
-    return String(buf);
-}
-const String long2str(long value) {
-    char buf[64];
-    sprintf(buf, "%ld", value);
-    return String(buf);
-}
-
-const String prettyIpAddress(IPAddress ip, uint16_t port) {
-    char buf[32];
-    sprintf(buf, "%s:%d", ip.toString().c_str(), port);
-    return String(buf);
-}
-
-const String prettyBytes(size_t size) {
-    if (size < 1024)
-        return String(size) + "b";
-    else if (size < (1024 * 1024))
-        return String(size / 1024.0) + "kB";
-    else if (size < (1024 * 1024 * 1024))
-        return String(size / 1024.0 / 1024.0) + "MB";
-    else
-        return String(size / 1024.0 / 1024.0 / 1024.0) + "GB";
 }
 
 } // namespace StrUtils

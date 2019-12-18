@@ -2,10 +2,10 @@
 
 #include <ESP8266WiFi.h>
 
-#include "Module.h"
+#include "Core/Module.h"
 #include "BuildConfig.h"
 #include "Consts.h"
-#include "StrUtils.h"
+#include "Utils/StrUtils.h"
 #include "Wireless.h"
 #include "Cli/CommandShell.h"
 
@@ -14,13 +14,13 @@ enum TelnetEventType {
     CLIENT_DISCONNECTED
 };
 
-typedef std::function<bool(TelnetEventType, WiFiClient*)> TelnetEventHandler;
+typedef std::function<void(TelnetEventType, WiFiClient*)> TelnetEventHandler;
 
 namespace Modules {
 
-class Telnet : public NetworkModule {
+class Telnet : public Module {
    public:
-    Telnet(): NetworkModule(NETWORK_STA), lastConnected_(false), port_(TELNET_PORT){};
+    Telnet(uint16_t port): lastConnected_(false), port_(port){};
    public:
     void setEventHandler(TelnetEventHandler);
     void sendData(const String&);

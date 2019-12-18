@@ -64,7 +64,7 @@
 #define FS_UTC_VAR FS_VAR_ROOT "utc"
 #define FS_WH_VAR FS_VAR_ROOT "wh"
 
-#define CONFIG_CHAR 1
+#define CONFIG_CHAR 2
 #define CONFIG_STR 31
 #define CONFIG_IPADDR 16
 #define CONFIG_FLOAT 8

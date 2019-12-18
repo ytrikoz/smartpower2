@@ -6,14 +6,15 @@
 #include <ESP8266WiFi.h>
 #include <user_interface.h>
 
-#include "AppUtils.h"
 #include "BuildConfig.h"
 #include "ConfigHelper.h"
 #include "SysInfo.h"
 
 namespace Wireless {
 
-size_t printDiag(Print *p);
+typedef std::function<void(bool has, unsigned long time)> NetworkStatusChangeEventHandler;
+
+size_t Diag(Print *p);
 
 void start();
 void init(NetworkMode mode, const char *host, uint8_t tpw);

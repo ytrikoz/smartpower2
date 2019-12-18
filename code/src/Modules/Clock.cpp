@@ -1,7 +1,7 @@
 #include "Modules/Clock.h"
 
 #include "BuildConfig.h"
-#include "TimeUtils.h"
+#include "Utils/TimeUtils.h"
 #include "Wireless.h"
 
 namespace Modules {
@@ -15,8 +15,6 @@ Clock::~Clock() {}
 void Clock::onDiag(const JsonObject& doc) {
     doc[FPSTR(str_uptime)] = getUptime();
     doc[FPSTR(str_local)] = getLocal();
-    doc[FPSTR(str_offset)] = getBiasInMinutes();
-    doc[FPSTR(str_interval)] = getStoreInterval();
     doc[FPSTR(str_stored)] = lastKnown_;
 }
 
@@ -35,11 +33,12 @@ bool Clock::onStart() {
     if (!isTimeSet()) {
         PrintUtils::print_ident(out_, FPSTR(str_clock));
         if (restoreState()) {
-            PrintUtils::println(out_, FPSTR(str_restored), TimeUtils::format_time(getLocal()));
+            PrintUtils::print(out_, FPSTR(str_restored), TimeUtils::format_time(getLocal()));
             setSystemTime(epoch_);
         } else {
-            PrintUtils::println(out_, FPSTR(str_not), FPSTR(str_stored));
+            PrintUtils::print(out_, FPSTR(str_not), FPSTR(str_stored));
         }
+        PrintUtils::println(out_);
     }
     setSntp();
     return true;
@@ -85,7 +84,7 @@ time_t Clock::getUtc() { return epoch_; };
 time_t Clock::getLocal() { return epoch_ + getBiasInSeconds(); };
 
 const char* Clock::getSntpServer() {
-    return config_->getValueAsString(NTP_POOL_SERVER);
+    return config_->getValue(NTP_POOL_SERVER);
 }
 
 int Clock::getBiasInMinutes() {

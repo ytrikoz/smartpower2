@@ -1,19 +1,12 @@
 #pragma once
 
 #include <Arduino.h>
-#include "Consts.h"
 
 class CharBuffer : Print {
    public:
-    CharBuffer() : CharBuffer(INPUT_MAX_LENGTH) {}
-
     CharBuffer(size_t size) : capacity_(size < 2 ? 2 : size), write_(0), read_(0) {
-        pool_ = new char[capacity_];
-        memset(pool_, 0, capacity_);
-    }
-
-    ~CharBuffer() {
-        delete[] pool_;
+        pool_ = new char[capacity_ + 1];
+        memset(pool_, 0, capacity_ + 1);
     }
 
     CharBuffer(const CharBuffer &src) {
@@ -26,6 +19,9 @@ class CharBuffer : Print {
         write((const uint8_t *)str, strlen(str));
     }
 
+    ~CharBuffer() {
+        delete pool_;
+    }
 
     void clear() {
         memset(pool_, 0, capacity_);
@@ -39,7 +35,10 @@ class CharBuffer : Print {
 
     size_t available() const { return write_; }
 
-    const char *c_str() const { return pool_; }
+    const char *c_str() {         
+        if (pool_[write_] != '\x00') pool_[++write_] = '\x00';
+        return pool_; 
+    }
 
     size_t write(char ch) {
         return write((uint8_t)ch);
@@ -61,12 +60,11 @@ class CharBuffer : Print {
             if (!write(ch))
                 break;
         }
-        if (pool_[write_] != '\x00')
-            pool_[++write_] = '\x00';
         return n;
     }
 
    protected:
+
     char *pool_;
     size_t capacity_;
     size_t write_;

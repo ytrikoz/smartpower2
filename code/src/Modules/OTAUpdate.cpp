@@ -1,13 +1,18 @@
 #include "Modules/OTAUpdate.h"
 
-#include "PrintUtils.h"
-#include "StrUtils.h"
+#include "Utils/PrintUtils.h"
+
+#include "Utils/StrUtils.h"
+
 #include "Wireless.h"
 
 #define OTA_FLASH 0
 #define OTA_FS 100
 
-OTAUpdate::OTAUpdate(uint16_t port) : NetworkModule(NetworkMode::NETWORK_AP), port_(port){};
+
+namespace Modules {
+
+OTAUpdate::OTAUpdate(uint16_t port): port_(port){};
 
 bool OTAUpdate::onInit() {
     return true;
@@ -51,18 +56,21 @@ void OTAUpdate::handleArduinoOTAClassOnStart(void) {
             strP = str_unknown;
             break;
     }
-    PrintUtils::println(out_, FPSTR(str_update), FPSTR(strP));
+    PrintUtils::print(out_, FPSTR(str_update), FPSTR(strP));
+    PrintUtils::println(out_);
 }
 
 void OTAUpdate::handleEnd() {
     PrintUtils::print_ident(out_, FPSTR(str_update));
-    PrintUtils::println(out_, FPSTR(str_complete));
+    PrintUtils::print(out_, FPSTR(str_complete));
+    PrintUtils::println(out_);
 }
 
 void OTAUpdate::handleProgress(unsigned int progress, unsigned int total) {
     if (progress % 5 == 0) {
         PrintUtils::print_ident(out_, FPSTR(str_update));
-        PrintUtils::println(out_, FPSTR(strf_progress), progress, '%');
+        PrintUtils::print(out_, FPSTR(strf_progress), progress, '%');
+        PrintUtils::println(out_);
     }
 }
 
@@ -88,7 +96,10 @@ void OTAUpdate::handleError(ota_error_t error) {
         default:
             break;
     }
-    PrintUtils::println(out_, FPSTR(strP), FPSTR(str_error));
+    PrintUtils::print(out_, FPSTR(strP), FPSTR(str_error));
+    PrintUtils::println(out_);
 }
 
 void OTAUpdate::onLoop() { ota->handle(); }
+
+}

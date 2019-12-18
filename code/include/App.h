@@ -1,78 +1,81 @@
 #pragma once
 
-#include <Arduino.h>
+#include "Core/ModuleHost.h"
 
-#include "CommonTypes.h"
-#include "ConfigHelper.h"
-#include "LoopWatcher.h"
-#include "Plot.h"
-#include "PsuLogHelper.h"
-
-#include "Modules/ModuleHost.h"
-
-#include "Modules/Clock.h"
 #include "Modules/Button.h"
+#include "Modules/Clock.h"
 #include "Modules/Led.h"
 #include "Modules/Display.h"
 #include "Modules/NetworkService.h"
 #include "Modules/OTAUpdate.h"
-#include "Modules/PsuModule.h"
+#include "Modules/Psu.h"
 #include "Modules/Syslog.h"
 #include "Modules/Shell.h"
 #include "Modules/Telnet.h"
 #include "Modules/Web.h"
 
+#include "CommonTypes.h"
+#include "ConfigHelper.h"
+#include "Looptiming.h"
+#include "Plot.h"
+#include "PsuLogHelper.h"
+
 class App : public ModuleHost, PsuListener {
    public:
-    Module *instance(ModuleEnum) override;
-    String name(ModuleEnum) const override;
-    bool get(const char *, ModuleEnum &) const override;
-
-   public:
-    void log(PsuData &item) override;
-
-   public:
     App();
+
+   public:
+    void onPsuData(PsuData &item) override;
+
+    private:
+    void onConfigParamChange(ConfigItem param, const char* value);
+
+   public:
+    String getName(uint8_t index) const override;
+    Module *getInstance(uint8_t index) const override;
+
+   public:
+    bool getByName(const char *str, ModuleEnum &module) const;
+    Module *getInstanceByName(const String &name);
+    void instanceMods();
+    void initMods();
+    void setupMods();
+
+   public:
     void restart(time_t delay = 0);
     void handleRestart();
-    void init();
+    void setConfig(ConfigHelper* config);
+    void setPowerlog(PsuLogHelper *powerlog);
+
     void begin();
     void startSafe();
-    void loop();
+    void loop(LoopTimer *looptimer = nullptr);
     void loopSafe();
 
     size_t printDiag(Print *p);
-    size_t printDiag(Print *p, const ModuleEnum module);
-    void printLoopCapture(Print *p);
+
     void printPlot(PlotData *data, Print *p);
-    void printCapture(Print *);
 
-    Display *lcd() { return (Display *)appMod[MOD_DISPLAY]; }
-    Modules::Button *btn() { return (Modules::Button *)appMod[MOD_BTN]; }
-    Modules::Clock *clock() { return (Modules::Clock *)appMod[MOD_CLOCK]; }    
-    Modules::Led *led() { return (Modules::Led *)appMod[MOD_LED]; }
-    Modules::Shell *shell() { return (Modules::Shell *)appMod[MOD_SHELL]; }
-    Modules::Telnet *telnet() { return (Modules::Telnet *)appMod[MOD_TELNET]; }  
-    Modules::Web *web() { return (Modules::Web *)appMod[MOD_WEB]; }    
-    PsuModule *psu() { return (PsuModule *)appMod[MOD_PSU]; }
+    Modules::Display *display();
+    Modules::Button *btn();
+    Modules::Clock *clock();
+    Modules::Led *led();
+    Modules::Shell *shell();
+    Modules::Telnet *telnet();
+    Modules::Web *web();
+    Modules::Psu *psu();
 
-    ConfigHelper *config() { return configHelper; }
-    Config *params() { return configHelper->get(); }    
-    PsuLogHelper *getPsuLog() { return psuLog; }
-    LoopWatcher* watcher() {return loopLogger;}    
-
+    Config *params() { return config_->get(); }
+    
     bool setBootPowerState(BootPowerState state);
-    bool setOutputVoltageAsDefault();
-    uint8_t getTPW();
-    void refresh_power_led();
-    void refresh_wifi_led();
 
-    void logInfo(const String &routine, const String &msg) {
-        String message = routine;
-        message += " : ";
-        message += msg;
-        logMessage(LEVEL_INFO, message);
-    }
+    bool setOutputVoltageAsDefault();
+
+    uint8_t getTPW();
+
+    void refresh_power_led();
+
+    void refresh_wifi_led();
 
     void logMessage(const LogLevel level, const String &msg) {
         char buf[16];
@@ -113,12 +116,14 @@ class App : public ModuleHost, PsuListener {
     void restart();
 
    private:
-    bool networkChanged;
-    NetworkMode networkMode;
-    bool hasNetwork;
-    LoopWatcher *loopLogger;
-    ConfigHelper *configHelper;
-    PsuLogHelper *psuLog;
+    bool networkChanged_;
+    NetworkMode networkMode_;
+    bool hasNetwork_;
+    bool hasNetworkActivty_;
+    
+    ConfigHelper *config_;
+    PsuLogHelper *powerlog_;
+    LoopTimer *looptimer_;
     WiFiEventHandler onDisconnected, onGotIp;
     unsigned long restartUpdated_;
     bool restartFlag_;
@@ -126,18 +131,16 @@ class App : public ModuleHost, PsuListener {
     uint8_t boot_per;
 
    private:
-    Module *appMod[APP_MODULES];
-
     ModuleDefinition define[APP_MODULES] = {
-        {str_btn, 0, false, false},
-        {str_clock, 0, false, false},
-        {str_web, 0, false, false},
-        {str_display, 0, false, false},
-        {str_led, 0, false, false},
-        {str_netsvc, 0, false, false},
-        {str_psu, 0, false, false},
-        {str_shell, 0, false, false},
-        {str_telnet, 0, false, false},
-        {str_update, 0, false, false},
-        {str_syslog, 0, false, false}};
+        {str_btn, 0, false, NETWORK_OFF},
+        {str_clock, 0, false, NETWORK_OFF},
+        {str_web, 0, false, NETWORK_STA},
+        {str_display, 0, false, NETWORK_OFF},
+        {str_led, 0, false, NETWORK_OFF},
+        {str_netsvc, 0, false, NETWORK_STA},
+        {str_psu, 0, false, NETWORK_OFF},
+        {str_shell, 0, false, NETWORK_OFF},
+        {str_telnet, 0, false, NETWORK_STA},
+        {str_update, 0, false, NETWORK_STA},
+        {str_syslog, 0, false, NETWORK_STA}};
 };
