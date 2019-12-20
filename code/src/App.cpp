@@ -15,7 +15,7 @@ void App::instanceMods() {
     modules[MOD_CLOCK].obj = new Modules::Clock();
     modules[MOD_PSU].obj = new Modules::Psu();
     modules[MOD_DISPLAY].obj = new Modules ::Display();
-    modules[MOD_SHELL].obj = new Modules ::Shell();
+    modules[MOD_CONSOLE].obj = new Modules ::Console();
     modules[MOD_NETSVC].obj = new NetworkService();
     modules[MOD_TELNET].obj = new Modules ::Telnet(TELNET_PORT);
     modules[MOD_UPDATE].obj = new Modules::OTAUpdate(OTA_PORT);
@@ -60,14 +60,15 @@ void App::setupMods() {
         PrintUtils::println(out_);
         onPsuStatusChange(status);
     });
-
     psu()->setOnStateChange([this](PsuState state) {
         PrintUtils::print_ident(out_, FPSTR(str_power));
         PrintUtils::print(out_, getPsuStateStr(state));
         PrintUtils::println(out_);
         onPsuStateChange(state);
     });
-
+    /*
+    * Telnet
+    */
     telnet()->setEventHandler([this](TelnetEventType et, WiFiClient *client) {
         PrintUtils::print_ident(out_, FPSTR(str_telnet));
         bool conn = (et == CLIENT_CONNECTED);
@@ -99,8 +100,10 @@ void App::onPsuData(PsuData &item) {
 
     if (powerlog_) powerlog_->onPsuData(item);
 
-    if (!shell() || !shell()->isOpen()) {
-                
+    if (!console() || !console()->isOpen()) {
+        String data = item.toString();
+        data += '\r';
+        console()->sendData(data);
     }
 
     if (hasNetwork_) {
@@ -169,11 +172,11 @@ void App::begin() {
 }
 
 void App::startSafe() {
-    start(MOD_SHELL);
-    shell()->init();
+    start(MOD_CONSOLE);
+    console()->init();
 }
 
-void App::loopSafe() { shell()->loop(); }
+void App::loopSafe() { console()->loop(); }
 
 void App::loop(LoopTimer* looper) {
     if (restartFlag_) {
@@ -351,8 +354,8 @@ Modules::Led *App::led() {
     return (Modules::Led *)modules[MOD_LED].obj;
 }
 
-Modules::Shell *App::shell() {
-    return (Modules::Shell *)modules[MOD_SHELL].obj;
+Modules::Console *App::console() {
+    return (Modules::Console *)modules[MOD_CONSOLE].obj;
 }
 
 Modules::Telnet *App::telnet() {

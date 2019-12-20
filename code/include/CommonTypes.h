@@ -146,7 +146,7 @@ enum ModuleEnum {
     MOD_CLOCK,
     MOD_PSU,
     MOD_DISPLAY,
-    MOD_SHELL,
+    MOD_CONSOLE,
     MOD_NETSVC,
     MOD_TELNET,
     MOD_UPDATE,

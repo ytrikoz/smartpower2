@@ -64,7 +64,7 @@ class App : public Host, PsuDataListener {
     Modules::Button *btn();
     Modules::Clock *clock();
     Modules::Led *led();
-    Modules::Shell *shell();
+    Modules::Console *console();
     Modules::Telnet *telnet();
     Modules::Web *web();
     Modules::Psu *psu();
@@ -148,7 +148,7 @@ class App : public Host, PsuDataListener {
         {0, str_clock, NETWORK_OFF},
         {0, str_psu, NETWORK_OFF},
         {0, str_display, NETWORK_OFF},
-        {0, str_shell, NETWORK_OFF},
+        {0, str_console, NETWORK_OFF},
         {0, str_netsvc, NETWORK_STA},
         {0, str_telnet, NETWORK_STA},
         {0, str_update, NETWORK_STA},

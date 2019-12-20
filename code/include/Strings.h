@@ -69,6 +69,7 @@ static const char str_connect[] PROGMEM = "connect";
 static const char str_connecting[] PROGMEM = "connecting";
 static const char str_connection[] PROGMEM = "connection";
 static const char str_connected[] PROGMEM = "connected";
+static const char str_console[] PROGMEM = "console";
 static const char str_clock[] PROGMEM = "clock";
 static const char str_close[] PROGMEM = "close";
 static const char str_closed[] PROGMEM = "closed";

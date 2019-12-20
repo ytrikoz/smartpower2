@@ -7,12 +7,13 @@
 
 namespace Modules { 
 
-class Shell : public Module {
+class Console : public Module {
   public:
-    Shell();
+    Console();
   public:
     void setShell(Cli::CommandShell* shell);
     bool isOpen();
+    void sendData(const String&);
   protected:
     bool onInit() override;
     bool onStart() override;

@@ -10,17 +10,16 @@ using namespace FSUtils;
 namespace Modules {
 
 bool Psu::onInit() {
-    pinMode(POWER_SWITCH_PIN, OUTPUT);
     ina231_configure();
     clearErrorsAndAlerts();
     return true;
 }
 
 bool Psu::onStart() {
-    state_ = POWER_OFF;
+    pinMode(POWER_SWITCH_PIN, OUTPUT);
     switch (getBootPowerState()) {
         case BOOT_POWER_OFF:
-            applyState(POWER_OFF);
+            powerOff();
             break;
         case BOOT_POWER_ON:
             powerOn();
@@ -31,7 +30,7 @@ bool Psu::onStart() {
             if (stored == POWER_ON)
                 powerOn();
              else
-                applyState(POWER_OFF);
+                powerOff();
             break;
         }
     return true;

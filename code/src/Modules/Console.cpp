@@ -4,14 +4,14 @@
 
 namespace Modules {
 
-Shell::Shell(): Module() {};
+Console::Console(): Module() {};
 
-void Shell::setShell(Cli::CommandShell* shell) {
+void Console::setShell(Cli::CommandShell* shell) {
     shell_ = shell;
     shell_->setTerm(term_);
 }
 
-bool Shell::onInit() {    
+bool Console::onInit() {    
     Cli::Terminal* term = new Cli::Terminal();
     term->enableControlCodes(false);
     term->enableEcho();       
@@ -21,21 +21,25 @@ bool Shell::onInit() {
     return true;
 }
 
-bool Shell::onStart() {
+bool Console::onStart() {
     shell_->term()->setStream(&Serial);
     return true;
 }
 
-void Shell::onStop() {
+void Console::onStop() {
     shell_->term()->setStream(nullptr);
 }
 
-void Shell::onLoop() {      
+void Console::onLoop() {      
     if (shell_ != nullptr) shell_->loop(); 
 }
 
-bool Shell::isOpen() { 
+bool Console::isOpen() { 
     return  shell_ != nullptr && shell_->active();
+}
+
+void Console::sendData(const String& data) {
+    shell_->term()->print(data);
 }
 
 }
