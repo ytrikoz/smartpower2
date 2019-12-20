@@ -131,13 +131,12 @@ String getChipId() {
 
 const String getVersionJson() {
     DynamicJsonDocument doc(256);
-    JsonObject jo;
-    jo = doc.createNestedObject();
-    jo[FPSTR(str_fw)] = APP_VERSION APP_BUILD_COMMIT;
-    jo = doc.createNestedObject();
-    jo[FPSTR(str_sdk)] = system_get_sdk_version();
-    jo = doc.createNestedObject();
-    jo[FPSTR(str_core)] = ESP.getCoreVersion();
+    JsonObject obj = doc.createNestedObject();
+    obj[FPSTR(str_fw)] = APP_VERSION APP_BUILD_COMMIT;
+    obj = doc.createNestedObject();
+    obj[FPSTR(str_sdk)] = system_get_sdk_version();
+    obj = doc.createNestedObject();
+    obj[FPSTR(str_core)] = ESP.getCoreVersion();
     String json;
     serializeJson(doc, json);
     return json;

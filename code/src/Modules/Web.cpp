@@ -133,7 +133,7 @@ void Web::sendPageState(uint8_t page) {
 void Web::sendPageState(uint8_t client, uint8_t page) {
     switch (page) {
         case PG_HOME: {
-            StaticJsonDocument<128> doc;
+            DynamicJsonDocument doc(512);
             // Switch
             doc[FPSTR(str_switch)] = app.psu()->isPowerOn();
             // Data
@@ -150,7 +150,7 @@ void Web::sendPageState(uint8_t client, uint8_t page) {
             break;
         }
         case PG_SETTINGS: {
-            StaticJsonDocument<512> doc;
+            DynamicJsonDocument doc(512);
             doc[FPSTR(str_boot)] = config_->getValueAsByte(POWER);
             doc[FPSTR(str_voltage)] = config_->getValueAsFloat(OUTPUT_VOLTAGE);
             doc[FPSTR(str_wifi)] = config_->getValueAsByte(WIFI);
