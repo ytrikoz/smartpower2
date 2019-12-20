@@ -35,7 +35,7 @@ void Console::onLoop() {
 }
 
 bool Console::isOpen() { 
-    return  shell_ != nullptr && shell_->active();
+    return shell_ != nullptr && shell_->active();
 }
 
 void Console::sendData(const String& data) {

@@ -9,6 +9,9 @@
 #define PG_SETTINGS 2
 #define PG_STATUS 3
 
+#define TAG_MAIN_PAGE "M"
+#define TAG_OPTIONS_PAGE "O"
+
 #define SET_POWER_ON_OFF 'o'
 #define SET_DEFAULT_VOLTAGE 'v'
 #define SET_VOLTAGE 'w'

@@ -28,7 +28,8 @@ class Psu : public Module {
     BootPowerState getBootPowerState() const;
     bool isWhStoreEnabled() const ;
     bool isStateStoreEnabled() const ;
-
+    bool isPowerOn() const;
+    
     PsuState getState(void) const;
     PsuStatus getStatus(void) const;
     PsuAlert getAlert(void) const ;

@@ -48,7 +48,7 @@ void Psu::onLoop() {
         info_.P = ina231_read_power();
         double sec = (double) passed / 1000;
         double ws = sec * info_.P;
-        info_.mWh += (ws / 3600);
+        info_.Wh += (ws / 3600);
         info_.time = now;
     }
 
@@ -69,14 +69,14 @@ void Psu::onLoop() {
     }
 
     if (millis_passed(lastStore_, now) > ONE_MINUTE_ms) {
-        if (isWhStoreEnabled()) storeWh(info_.mWh);
+        if (isWhStoreEnabled()) storeWh(info_.Wh);
         lastStore_ = now;
     }
 }
 
 void Psu::powerOn() {
     startTime_ = infoUpdated_ = powerInfoUpdated_ = lastCheck_ = millis();
-    if (isWhStoreEnabled()) restoreWh(info_.mWh);
+    if (isWhStoreEnabled()) restoreWh(info_.Wh);
     if (isStateStoreEnabled()) storeState(POWER_ON);
     float voltage = getOutputVoltage();
     setOutputVoltage(voltage);
@@ -85,7 +85,7 @@ void Psu::powerOn() {
 }
 
 void Psu::powerOff() {
-    if (isWhStoreEnabled()) storeWh(info_.mWh);
+    if (isWhStoreEnabled()) storeWh(info_.Wh);
     if (isStateStoreEnabled()) storeState(POWER_OFF);
     
     applyState(POWER_OFF);
@@ -112,6 +112,10 @@ int Psu::mapVoltage(const float value) {
     }
     v = constrain(value, min, max);
     return quadratic_regression(v, min);
+}
+
+bool Psu::isPowerOn() const {
+    return state_ == POWER_ON;
 }
 
 bool Psu::isWhStoreEnabled() const {
@@ -143,15 +147,15 @@ bool Psu::isStateStoreEnabled() const {
 }
 
 void Psu::setWh(double value) {
-    info_.mWh = value;
-    if (isWhStoreEnabled()) storeWh(info_.mWh);
+    info_.Wh = value;
+    if (isWhStoreEnabled()) storeWh(info_.Wh);
 }
 
 bool Psu::storeWh(double value) {
     PrintUtils::print_ident(out_, FPSTR(str_psu));
     bool res = FSUtils::writeDouble(FS_WH_VAR, value);
     if (res) {
-        PrintUtils::print(out_, FPSTR(str_store), FPSTR(str_total), value);
+        PrintUtils::print(out_, FPSTR(str_total), FPSTR(str_arrow_dest),  String(value, 6));
     } else {
         PrintUtils::print(out_, FPSTR(str_failed));
     }
@@ -163,7 +167,7 @@ bool Psu::restoreWh(double& value) {
     PrintUtils::print_ident(out_, FPSTR(str_psu));
     bool res = FSUtils::readDouble(FS_WH_VAR, value);
     if (res) {
-        PrintUtils::print(out_, FPSTR(str_restore), FPSTR(str_total), value);
+        PrintUtils::print(out_, FPSTR(str_total), FPSTR(str_arrow_src), String(value, 6));
     } else {
         PrintUtils::print(out_, FPSTR(str_failed));
     }

@@ -13,6 +13,8 @@ const FW_VERSION = 'f';
 const TAG_PVI = 'd';
 const SYS_INFO = 'S';
 const NETWORK_INFO = 'N';
+
+const PAGE_MAIN_JSON = 'M';
 const PAGE_OPTIONS_JSON = 'O';
 /*
 const SET_SSID = 's';
@@ -308,6 +310,24 @@ function updateUI(param, value) {
 
 function update(k, v) {
   switch (k) {
+    case 'switch':
+      showOnOff(v);
+      break;
+    case 'total':
+      showEnableLog(v);
+      break;
+    case 'V':
+      voltMeasurement.setValue(v);
+      break;
+    case 'I':
+      currentMeasurement.setValue(v);
+      break;
+    case 'P':
+      powerMeasurement.setValue(v);
+      break;
+    case 'Wh':
+      watthMeasurement.setValue(v);
+      break;
     case 'boot':
       showPowerMode(parseInt(v, 10));
       break;
@@ -346,13 +366,12 @@ function parseMessage(message) {
   console.log('<<<', message);
   const param = message.charAt(0);
   const value = message.substring(1);
-  if (param === PAGE_OPTIONS_JSON) {
+  if ((param === PAGE_MAIN_JSON) || (param === PAGE_OPTIONS_JSON)) {
     JSON.parse(value, (k, v) => {
       if (k === '') return;
       update(k, v);
     });
   } else {
-    store(param, value);
     updateUI(param, value);
   }
 }

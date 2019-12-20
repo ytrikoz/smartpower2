@@ -167,7 +167,7 @@ void Display::load_psu_info(Screen *obj) {
     str = String(p, p < 10 ? 3 : 2);
     str += " W ";
 
-    double total = data.mWh;
+    double total = data.Wh;
     if (total < 1000) {
         str += String(total, total < 10 ? 3 : total < 100 ? 2 : 1);
         str += " Wh";

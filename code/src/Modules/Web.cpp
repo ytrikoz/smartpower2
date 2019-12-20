@@ -67,8 +67,8 @@ void Web::onData(uint8_t num, const String &data) {
             String payload = String(SET_POWER_ON_OFF);
             payload += state;
             sendToClients(payload, PG_HOME, num);
-        } break;
-
+            break;
+        }
         case SET_VOLTAGE: {
             float value = data.substring(1).toFloat();
             app.setOutputVoltage(value);
@@ -103,17 +103,14 @@ void Web::onData(uint8_t num, const String &data) {
             break;
         }
         case SET_LOG_WATTHOURS: {
-            char ch = data.charAt(1);
-            if (isdigit(ch)) {
-                bool mode = (uint8_t)ch - CHR_ZERO;
-                config->get()->setValueBool(WH_STORE_ENABLED, mode);
-                config->save();
-                sendToClients(data, PG_HOME);
-            }
+            bool mode = data.substring(1).toInt();
+            config->get()->setValueBool(WH_STORE_ENABLED, mode);
+            config->save();
+            sendToClients(data, PG_HOME, num);
             break;
         }
     }
-}
+}  // namespace Modules
 
 void Web::sendToClients(const String &payload, uint8_t page, uint8_t except) {
     for (uint8_t i = 0; i < WEB_SERVER_CLIENT_MAX; ++i)
@@ -136,11 +133,20 @@ void Web::sendPageState(uint8_t page) {
 void Web::sendPageState(uint8_t client, uint8_t page) {
     switch (page) {
         case PG_HOME: {
-            char buf[8];
-            buf[0] = SET_POWER_ON_OFF;
-            buf[1] = app.psu()->getState() == POWER_ON ? '0' : '1';
-            buf[2] = '\x00';
-            web_->sendData(client, buf);
+            StaticJsonDocument<128> doc;
+            // Switch
+            doc[FPSTR(str_switch)] = app.psu()->isPowerOn();
+            // Data
+            doc["V"] = app.psu()->getInfo().V;
+            doc["I"] = app.psu()->getInfo().I;
+            doc["P"] = app.psu()->getInfo().P;
+            // Total    
+            doc[FPSTR(str_total)] = app.psu()->isWhStoreEnabled();            
+            doc["Wh"] = app.psu()->getInfo().Wh;        
+            String json;
+            serializeJson(doc, json);
+            json = TAG_MAIN_PAGE + json;
+            web_->sendData(client, json);
             break;
         }
         case PG_SETTINGS: {
@@ -156,7 +162,7 @@ void Web::sendPageState(uint8_t client, uint8_t page) {
             doc[FPSTR(str_dns)] = config_->getValue(DNS);
             String json;
             serializeJson(doc, json);
-            json = "O" + json;
+            json = TAG_OPTIONS_PAGE + json;
             web_->sendData(client, json);
             break;
         }

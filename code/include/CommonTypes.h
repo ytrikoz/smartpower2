@@ -66,15 +66,15 @@ struct PsuData : Printable {
     float V;
     float I;
     float P;
-    double mWh;
+    double Wh;
 
    public:
-    PsuData() { time = V = I = P = mWh = 0; }
+    PsuData() { time = V = I = P = Wh = 0; }
 
     PsuData(unsigned long time_ms, float V, float I, float P, double mWh)
-        : time(time_ms), V(V), I(I), P(P), mWh(mWh){};
+        : time(time_ms), V(V), I(I), P(P), Wh(mWh){};
 
-    void reset(void) { time = V = I = P = mWh = 0; }
+    void reset(void) { time = V = I = P = Wh = 0; }
 
     String toString() const {
         String res = "";
@@ -84,7 +84,7 @@ struct PsuData : Printable {
         res += "A, ";
         res += String(P, 3);
         res += "W, ";
-        res += String(mWh, 3);
+        res += String(Wh, 3);
         res += "mWh";
         return res;
     }
@@ -97,8 +97,8 @@ struct PsuData : Printable {
         n += p.print("A, ");
         n += p.print(P, 3);
         n += p.print("W, ");
-        n += p.print(mWh, 3);
-        n += p.print("mWh");
+        n += p.print(Wh, 3);
+        n += p.print("Wh");
         return n;
     }
 };
