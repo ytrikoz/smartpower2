@@ -39,7 +39,7 @@ bool Console::isOpen() {
 }
 
 void Console::sendData(const String& data) {
-    shell_->term()->print(data);
+    Serial.print(data);
 }
 
 }

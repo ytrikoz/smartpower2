@@ -49,7 +49,6 @@ void App::setupMods() {
     */
     btn()->setOnClick([this]() { if (psu()) psu()->togglePower(); });
     btn()->setOnHold([this](time_t time) {if (time >= HOLD_TIME_TO_RESET_s) restart(3); });
-    
     /*
     * Power
     */
@@ -100,7 +99,7 @@ void App::onPsuData(PsuData &item) {
 
     if (powerlog_) powerlog_->onPsuData(item);
 
-    if (!console() || !console()->isOpen()) {
+    if (console() && !console()->isOpen()) {
         String data = item.toString();
         data += '\r';
         console()->sendData(data);
