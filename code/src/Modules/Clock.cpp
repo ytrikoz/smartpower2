@@ -75,23 +75,26 @@ void Clock::setOnChange(TimeChangeEvent h) {
     timeChangeHandler = h;
 }
 
-time_t Clock::getUptime() {
+time_t Clock::getUptime() const {
     return uptime_ / ONE_SECOND_ms;
 }
 
-time_t Clock::getUtc() { return epoch_; };
+time_t Clock::getUtc() const{ 
+    return epoch_; 
+};
 
-time_t Clock::getLocal() { return epoch_ + getBiasInSeconds(); };
+time_t Clock::getLocal() const { 
+    return epoch_ + getBiasInSeconds(); };
 
 const char* Clock::getSntpServer() {
     return config_->getValue(NTP_POOL_SERVER);
 }
 
-int Clock::getBiasInMinutes() {
+int Clock::getBiasInMinutes() const {
     return getBiasInSeconds() / ONE_MINUTE_s;
 }
 
-int Clock::getBiasInSeconds() {
+int Clock::getBiasInSeconds() const {
     return TimeUtils::timeZoneInSeconds(config_->getValueAsByte(TIME_ZONE));
 }
 

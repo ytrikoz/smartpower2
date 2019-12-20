@@ -175,7 +175,9 @@ void Terminal::loop() {
 
 bool Terminal::setLine(const uint8_t *ptr, size_t size) {
     line_.clear();
-    return line_.write(ptr, size);
+    if (line_.write(ptr, size))
+        print(line_.c_str());
+    return true;
 }
 
 CharBuffer &Terminal::getLine() { return line_; }

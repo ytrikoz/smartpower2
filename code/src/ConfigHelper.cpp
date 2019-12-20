@@ -52,6 +52,7 @@ void ConfigHelper::load() {
                 else                         
                     changed_ |= res;               
             }         
+            PrintUtils::println(out_, FPSTR(str_done));
         } else {
             PrintUtils::print(out_, FPSTR(str_failed));
             PrintUtils::print(out_, file.getErrorInfo());
@@ -172,10 +173,6 @@ bool ConfigHelper::setDns(const char *value) {
 
 bool ConfigHelper::setDHCP(bool value) {
     return obj_.setValueBool(DHCP, value);
-}
-
-bool ConfigHelper::setOutputVoltage(float value) {
-    return obj_.setValueFloat(OUTPUT_VOLTAGE, value);
 }
 
 float ConfigHelper::getOutputVoltage() {

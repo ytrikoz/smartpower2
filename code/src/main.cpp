@@ -13,14 +13,13 @@
 
 bool crashReportEnabled_ = false;
 uint8_t crashReportNumber_ = 0;
-
 bool setupDone = false;
+
 void preinit() {
     system_update_cpu_freq(SYS_CPU_160MHZ);
     WiFi.persistent(false);
     WiFi.setAutoConnect(false);
     wifi_station_set_hostname(APP_NAME);
-    setupDone = false;
 }
 
 void setup() {
@@ -30,7 +29,7 @@ void setup() {
     initCrashReport();
     
     boot.start();
-    
+
     config = new ConfigHelper(FS_MAIN_CONFIG);
     config->setOutput(&syslog);
     if (!config->check()) {
@@ -40,16 +39,14 @@ void setup() {
         config->save();
     }
     config->load();
-
-    looptimer = new LoopTimer();
-    powerlog = new PsuLogHelper();
-
-    Cli::init();
-
-    app.setOutput(&syslog);    
     app.setConfig(config);
-    app.setPowerlog(powerlog);
+    app.setOutput(&syslog);    
 
+    powerlog = new PowerLog();
+    app.setPowerlog(powerlog);
+   
+    Cli::init();
+    
     app.begin();
 
     boot.end();
@@ -58,10 +55,12 @@ void setup() {
 }
 
 void loop() {
-    if (!setupDone) return;
+    if (!setupDone) {
+        return;
+    } 
     syslog.loop();
     app.loop(looptimer);
-    looptimer->loop();
+    if (looptimer != nullptr) looptimer->loop();
 }
 
 void initCrashReport() {
@@ -75,7 +74,6 @@ void initCrashReport() {
          PrintUtils::println(&syslog);
     }
 }
-
 
 extern "C" void custom_crash_callback(struct rst_info *rst_info,
                                       uint32_t stack_start,

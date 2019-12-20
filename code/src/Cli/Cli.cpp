@@ -274,9 +274,9 @@ void init() {
     cmdLed.setCallback(Cli::onLed);
 
     cmdSyslog = cli_->addCommand("syslog");
-    cmdLog.addPositionalArgument("action", "print");
-    cmdLog.addPositionalArgument("param", "");
-    cmdLog.setCallback(Cli::onSyslog);
+    cmdSyslog.addPositionalArgument("action", "print");
+    cmdSyslog.addPositionalArgument("param", "");
+    cmdSyslog.setCallback(Cli::onSyslog);
 }
 
 void onLed(cmd *c) {
@@ -480,7 +480,8 @@ void onGet(cmd *c) {
 
 void onLoop(cmd *c) {
     Command cmd(c);
-
+    if (!looptimer)
+        looptimer = new LoopTimer();
     switch (looptimer->getState()) {
         case CAPTURE_IDLE:
             PrintUtils::print(out_, FPSTR(str_start), FPSTR(str_capture));
@@ -488,48 +489,14 @@ void onLoop(cmd *c) {
             looptimer->start();
             break;
         case CAPTURE_PROGRESS:
-            PrintUtils::print(out_, FPSTR(str_capturing), looptimer->getData()->duration);
+            PrintUtils::print(out_, FPSTR(str_progress));
             PrintUtils::println(out_);
             break;
         case CAPTURE_DONE: {
             PrintUtils::println(out_, FPSTR(str_done));
-            LoopCapture *cap = looptimer->getData();
-            size_t time_range = 2;
-            for (size_t i = 0; i < cap->counters_size; ++i) {
-                if (cap->counter[i]) {
-                    PrintUtils::print(out_, time_range > cap->max_time ? time_range : cap->max_time, '\t');
-                    PrintUtils::print(out_, cap->counter[i]);
-                    PrintUtils::println(out_);
-                }
-                time_range *= 2;
-            }
-            if (cap->max_time_counter) {
-                PrintUtils::print(out_, FPSTR(str_over), time_range / 2, '\t');
-            }
-            PrintUtils::print(out_, cap->max_time_counter, '\t');
-            PrintUtils::print(out_, cap->max_time);
-            PrintUtils::println(out_);
-
-            PrintUtils::print(out_, FPSTR(str_total), '\t');
-            PrintUtils::print(out_, cap->total, '\t');
-            PrintUtils::print(out_, (float)cap->duration / cap->total);
-            PrintUtils::println(out_);
-
-            unsigned long total_modules_time = 0;
-            for (uint8_t i = 0; i < cap->modules_size; ++i)
-                total_modules_time += ((float)cap->module[i]);
-            for (uint8_t i = 0; i < cap->modules_size; ++i) {
-                float load = (float)cap->module[i] / total_modules_time * 100;
-                PrintUtils::print(out_, app.getName(i), '\t');
-                PrintUtils::print(out_, load);
-                PrintUtils::println(out_);
-            }
-
-            unsigned long system_time = cap->duration - total_modules_time;
-            PrintUtils::print(out_, FPSTR(str_other), '\t');
-            PrintUtils::print(out_, (float)system_time / cap->duration * 100);
-            PrintUtils::println(out_);
+            PrintUtils::print(out_, looptimer->getData());
             looptimer->idle();
+            looptimer = nullptr;
             break;
         }
     }
@@ -550,7 +517,29 @@ void onShow(cmd *c) {
     }
 }
 
-void onPlot(cmd *c) { Command cmd(c); }
+void onPlot(cmd *c) {
+    Command cmd(c);
+    if (app.psu()->getState() == POWER_OFF) {
+        size_t size = constrain(
+            powerlog->getSize(PsuLogEnum::VOLTAGE), 0, 1024);
+        if (size > 0) {
+            PlotData data;
+            float raw[size];
+            powerlog->getValues(PsuLogEnum::VOLTAGE, raw, size);
+            size_t cols = group(&data, raw, size);
+            app.display()->showPlot(&data, cols);
+
+            char tmp[PLOT_ROWS * 8 + 1];
+            for (uint8_t x = 0; x < data.size; ++x) {
+                uint8_t y = compress(&data, x);
+                StrUtils::strfill(tmp, '*', y);
+                out_->printf("#%d %2.4f ", x + 1, data.columns[x]);
+                out_->print(tmp);
+                out_->println();
+            }
+        };
+    }
+}
 
 void onPrint(cmd *c) {
     Command cmd(c);

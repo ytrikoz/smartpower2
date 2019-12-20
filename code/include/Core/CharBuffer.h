@@ -31,12 +31,13 @@ class CharBuffer : Print {
 
     size_t size() const { return capacity_; }
 
-    size_t free() const { return capacity_ - write_; }
+    size_t free() const { return capacity_ - write_ - 2; }
 
     size_t available() const { return write_; }
 
     const char *c_str() {         
-        if (pool_[write_] != '\x00') pool_[++write_] = '\x00';
+        if (pool_[write_] != '\x00') 
+            pool_[write_] = '\x00';            
         return pool_; 
     }
 
@@ -46,7 +47,7 @@ class CharBuffer : Print {
 
     size_t write(const uint8_t ch) {
         size_t n = 0;
-        if (write_ < (capacity_ - write_ - 1)) {
+        if (write_ < (capacity_ - 2)) {
             pool_[write_++] = ch;
             n = 1;
         }

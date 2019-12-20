@@ -14,8 +14,7 @@ namespace Wireless {
 
 typedef std::function<void(bool has, unsigned long time)> NetworkStatusChangeEventHandler;
 
-size_t Diag(Print *p);
-
+void setOutput(Print* p);
 void start();
 void init(NetworkMode mode, const char *host, uint8_t tpw);
 void setMode(NetworkMode mode);
@@ -62,9 +61,8 @@ void setupSTA(const IPAddress ipaddr, const IPAddress subnet,
 bool startSTA(const char *ssid, const char *password);
 
 bool scanNetworks(const char *ssid);
+void setBroadcast(uint8_t);
 bool disconnectWiFi();
-void setBroadcast(uint8_t _new);
-
 
 }  // namespace Wireless
 

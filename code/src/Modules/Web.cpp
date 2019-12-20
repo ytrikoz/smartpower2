@@ -5,7 +5,7 @@
 
 namespace Modules {
 
-Web::Web(): Module() {
+Web::Web() : Module() {
     memset(session_, 0, sizeof(WebClient) * WEB_SERVER_CLIENT_MAX);
 }
 
@@ -41,15 +41,15 @@ uint8_t Web::getClients() {
 
 void Web::onConnection(uint8_t n) {
     session_[n].connected = true;
-    app.refresh_wifi_led();
+    app.onWebStatusChange(true);
 }
 
 void Web::onDisconnection(uint8_t n) {
     session_[n].connected = false;
-    app.refresh_wifi_led();
+    app.onWebStatusChange(getClients());
 }
 
-void Web::onData(uint8_t num, const String& data) {
+void Web::onData(uint8_t num, const String &data) {
     switch (data.charAt(0)) {
         case GET_PAGE_STATE: {
             uint8_t page = data.charAt(1) - CHR_ZERO;
@@ -60,17 +60,19 @@ void Web::onData(uint8_t num, const String& data) {
         case SET_POWER_ON_OFF: {
             PsuState state = PsuState(data.substring(1).toInt());
             Modules::Psu *psu = app.psu();
-            if (!psu->checkState(state))
-                psu->togglePower();
+            if (state == POWER_ON)
+                psu->powerOn();
+            else
+                psu->powerOff();
             String payload = String(SET_POWER_ON_OFF);
-            payload += psu->getState();
+            payload += state;
             sendToClients(payload, PG_HOME, num);
         } break;
 
         case SET_VOLTAGE: {
             float value = data.substring(1).toFloat();
-            app.psu()->setVoltage(value);
-            sendToClients(String(SET_VOLTAGE) + data.substring(1), PG_HOME, num);
+            app.setOutputVoltage(value);
+            sendToClients(data, PG_SETTINGS, num);
             break;
         }
         case SET_DEFAULT_VOLTAGE: {
@@ -80,9 +82,8 @@ void Web::onData(uint8_t num, const String& data) {
         case SET_BOOT_POWER_MODE: {
             BootPowerState state = BootPowerState(data.substring(1).toInt());
             if (app.setBootPowerState(state)) {
-                String str = SET_BOOT_POWER_MODE + data.substring(1);
-                sendToClients(str,
-                              PG_SETTINGS, num);
+                String str = String(SET_BOOT_POWER_MODE) + String(state);
+                sendToClients(str, PG_SETTINGS, num);
             }
             break;
         }
@@ -95,7 +96,7 @@ void Web::onData(uint8_t num, const String& data) {
             size_t pos = 0;
             while (index < paramCount && (pos = data.indexOf(",", last))) {
                 app.params()->setValue(items[index++],
-                                               data.substring(last, pos).c_str());
+                                       data.substring(last, pos).c_str());
                 last = pos + 1;
             }
             config->save();
@@ -105,25 +106,18 @@ void Web::onData(uint8_t num, const String& data) {
             char ch = data.charAt(1);
             if (isdigit(ch)) {
                 bool mode = (uint8_t)ch - CHR_ZERO;
-                if (!app.psu()->enableWhStore(mode)) {
-                    // To all
-                    sendToClients(data, PG_HOME);
-                } else {
-                    // Except sender
-                    sendToClients(data, PG_HOME, num);
-                }
                 config->get()->setValueBool(WH_STORE_ENABLED, mode);
                 config->save();
+                sendToClients(data, PG_HOME);
             }
             break;
         }
     }
 }
 
-void Web::sendToClients(const String &payload, uint8_t page, uint8_t except_n) {
+void Web::sendToClients(const String &payload, uint8_t page, uint8_t except) {
     for (uint8_t i = 0; i < WEB_SERVER_CLIENT_MAX; ++i)
-        if (session_[i].connected && (session_[i].page == page) &&
-            (except_n != i))
+        if (session_[i].connected && (session_[i].page == page) && (i != except))
             web_->sendData(i, payload);
 }
 

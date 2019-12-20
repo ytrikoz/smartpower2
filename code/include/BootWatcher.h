@@ -4,9 +4,6 @@
 #include "Utils/PrintUtils.h"
 #include "Utils/FSUtils.h"
 
-#include "Hardware/ina231.h"
-#include "Hardware/mcp4652.h"
-
 enum BootMode { BT_ERROR,
                 BT_SAFE,
                 BT_NORMAL };

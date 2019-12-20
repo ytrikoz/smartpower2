@@ -2,16 +2,6 @@
 
 #include <user_interface.h>
 
-#include <SimpleCLI.h>
-
-#include "CommonTypes.h"
-#include "Consts.h"
-#include "App.h"
-#include "Logger.h"
-#include "LoopTiming.h"
-#include "BootWatcher.h"
-#include "CrashReport.h"
-
 extern bool crashReportEnabled_;
 
 extern uint8_t crashReportNumber_;

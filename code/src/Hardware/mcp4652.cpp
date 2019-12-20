@@ -2,11 +2,7 @@
 
 #include <Wire.h>
 
-void mcp4652_init() {
-    mcp4652_write(WRITE_TCON_ADDR, 0x0B);
-    mcp4652_write(WRITE_WIPER0_ADDR, 0xff);
-    mcp4652_write(WRITE_WIPER1_ADDR, 0x00);
-}
+bool initialized = false;
 
 void mcp4652_write(unsigned char addr, unsigned char value) {
     unsigned char cmd_byte = 0;
@@ -16,4 +12,19 @@ void mcp4652_write(unsigned char addr, unsigned char value) {
     Wire.write(cmd_byte);
     Wire.write(value);
     Wire.endTransmission();
+}
+
+void mcp4652_init(unsigned char value) {
+    mcp4652_write(WRITE_TCON_ADDR, 0x0B);
+    mcp4652_write(WRITE_WIPER0_ADDR, value);
+    mcp4652_write(WRITE_WIPER1_ADDR, 0x00);
+    initialized = true;
+}
+
+
+void mcp4652_set(unsigned char value) {
+    if (initialized)
+        mcp4652_write(WRITE_WIPER0_ADDR, value);
+    else
+        mcp4652_init(value);
 }

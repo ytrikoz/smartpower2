@@ -109,7 +109,7 @@ String fmt_network(const IPAddress ipaddr, const IPAddress subnet,
 String fmt_network(const IPAddress ipaddr, const IPAddress subnet,
                    const IPAddress gateway, const IPAddress dns) {
     char buf[128];
-    sprintf(buf, strf_network_dns, ipaddr.toString().c_str(),
+    sprintf_P(buf, strf_network_dns, ipaddr.toString().c_str(),
             subnet.toString().c_str(), gateway.toString().c_str(),
             dns.toString().c_str());
     return String(buf);

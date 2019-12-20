@@ -6,13 +6,12 @@
 // TODO refactor
 // now it's not for memory saving, but to collect literals in one place
 // and  code unification
-static const char msg_dns_resolve_error[] PROGMEM = "dsn resolve error";
+static const char str_dns_resolve[] PROGMEM = "dsn resolve";
+static const char str_interrupted[] PROGMEM = "interrupted";
+static const char str_exit_bye[] PROGMEM = "exit, bye!";
 
-static const char str_build_date[] PROGMEM = BUILD_DATE;
-static const char msg_shell_interrupted[] PROGMEM = "interrupted!";
-static const char msg_shell_exit[] PROGMEM = "exit, bye!";
-static const char msg_welcome[] PROGMEM = "Welcome!";
-static const char msg_restart_countdown[] PROGMEM = "restart in %lu seconds";
+static const char msg_greetings[] PROGMEM = "Welcome! To exit press ESC twice.";
+static const char msg_restart[] PROGMEM = "System restart!";
 
 static const char strf_ip[] PROGMEM = "ip %s";
 static const char strf_config_param_unchanged[] PROGMEM = "'%s' unchanged";
@@ -178,7 +177,6 @@ static const char str_print[] PROGMEM = "print";
 static const char str_progress[] PROGMEM = "progress";
 static const char str_reload[] PROGMEM = "reload";
 static const char str_reset[] PROGMEM = "reset";
-static const char str_probe[] PROGMEM = "probe";
 static const char str_psu[] PROGMEM = "psu";
 static const char str_psu_log[] PROGMEM = "log";
 static const char str_ping[] PROGMEM = "ping";
@@ -251,6 +249,7 @@ static const char str_used[] PROGMEM = "used";
 static const char str_valid[] PROGMEM = "valid";
 static const char str_voltage[] PROGMEM = "voltage";
 static const char str_wifi[] PROGMEM = "wifi";
+static const char str_probe[] PROGMEM = "probe";
 static const char str_wifi_ap[] PROGMEM = "wifi ap";
 static const char str_wifi_ap_sta[] PROGMEM = "wifi ap sta";
 static const char str_wifi_sta[] PROGMEM = "wifi sta";

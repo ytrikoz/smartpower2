@@ -73,6 +73,10 @@ void Telnet::onLoop() {
     if(hasClient() && shell_ != nullptr) shell_->loop();
 }
 
+bool Telnet::isShellActive() {
+    return shell_->active();
+}
+
 void Telnet::onConnect() {    
     if (eventHandler_)
         eventHandler_(CLIENT_CONNECTED, &client_);
@@ -87,7 +91,7 @@ void Telnet::onDiag(const JsonObject& doc) {
     doc[FPSTR(str_connected)] = hasClient();    
     if (hasClient()) {
         doc[FPSTR(str_client)] = prettyIpAddress(client_.remoteIP(), client_.remotePort());
-        doc[FPSTR(str_shell)] = shell_->isOpen();
+        doc[FPSTR(str_shell)] = shell_->active();
     }
 }
 

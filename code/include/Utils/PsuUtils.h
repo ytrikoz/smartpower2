@@ -4,10 +4,9 @@
 
 #include "Utils/PsuUtils.h"
 
-inline int quadratic_regression(const double value, const bool alterRange) {
+inline int quadratic_regression(const float value, float c) {
     double a = 0.0000006562;
     double b = 0.0022084236;
-    float c = alterRange ? 11.83 : 4.08;
     double d = b * b - a * (c - value);
     double root = (-b + sqrt(d)) / a;
     if (root < 0)

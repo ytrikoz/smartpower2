@@ -10,6 +10,4 @@
 #define CMD_DEC (0b10 << 2)
 #define CMD_READ (0b11 << 2)
 
-void mcp4652_init(void);
-
-void mcp4652_write(unsigned char, unsigned char);
+void mcp4652_set(unsigned char value);

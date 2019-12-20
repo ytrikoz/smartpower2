@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/ModuleHost.h"
+#include "Modules/Host.h"
 
 #include "Modules/Button.h"
 #include "Modules/Clock.h"
@@ -18,18 +18,22 @@
 #include "ConfigHelper.h"
 #include "Looptiming.h"
 #include "Plot.h"
-#include "PsuLogHelper.h"
+#include "Powerlog.h"
 
-class App : public ModuleHost, PsuListener {
+class App : public Host, PsuDataListener {
    public:
     App();
 
    public:
+    void onConfigChange(ConfigItem param, const char *value);
     void onPsuData(PsuData &item) override;
+    void onPsuStateChange(PsuState);
+    void onPsuStatusChange(PsuStatus);
+    void onWebStatusChange(bool connected);
+    void onTelnetStatusChange(bool connected);
 
-    private:
-    void onConfigParamChange(ConfigItem param, const char* value);
-
+    void onNetworkStatusChange(bool has, NetworkMode mode);
+    void setOutputVoltage(float value);
    public:
     String getName(uint8_t index) const override;
     Module *getInstance(uint8_t index) const override;
@@ -44,12 +48,12 @@ class App : public ModuleHost, PsuListener {
    public:
     void restart(time_t delay = 0);
     void handleRestart();
-    void setConfig(ConfigHelper* config);
-    void setPowerlog(PsuLogHelper *powerlog);
+    void setConfig(ConfigHelper *config);
+    void setPowerlog(PowerLog *powerlog);
 
     void begin();
     void startSafe();
-    void loop(LoopTimer *looptimer = nullptr);
+    void loop(LoopTimer* looper = nullptr);
     void loopSafe();
 
     size_t printDiag(Print *p);
@@ -66,16 +70,16 @@ class App : public ModuleHost, PsuListener {
     Modules::Psu *psu();
 
     Config *params() { return config_->get(); }
-    
+
     bool setBootPowerState(BootPowerState state);
 
     bool setOutputVoltageAsDefault();
 
     uint8_t getTPW();
 
-    void refresh_power_led();
+    void refreshRedLed();
 
-    void refresh_wifi_led();
+    void refreshBlueLed();
 
     void logMessage(const LogLevel level, const String &msg) {
         char buf[16];
@@ -116,31 +120,38 @@ class App : public ModuleHost, PsuListener {
     void restart();
 
    private:
-    bool networkChanged_;
-    NetworkMode networkMode_;
+    bool systemEvent_;
+    bool networkEvent_;
+    bool psuEvent_;
+
     bool hasNetwork_;
-    bool hasNetworkActivty_;
-    
+    NetworkMode networkMode_;
+    bool webClients_;
+    bool telnetClients_;
+    PsuStatus psuStatus_;
+    PsuState psuState_;
+
     ConfigHelper *config_;
-    PsuLogHelper *powerlog_;
-    LoopTimer *looptimer_;
+    PowerLog *powerlog_;
     WiFiEventHandler onDisconnected, onGotIp;
+
+    bool restartFlag_;    
     unsigned long restartUpdated_;
-    bool restartFlag_;
     time_t restartCountdown_;
+    
     uint8_t boot_per;
 
    private:
-    ModuleDefinition define[APP_MODULES] = {
-        {str_btn, 0, false, NETWORK_OFF},
-        {str_clock, 0, false, NETWORK_OFF},
-        {str_web, 0, false, NETWORK_STA},
-        {str_display, 0, false, NETWORK_OFF},
-        {str_led, 0, false, NETWORK_OFF},
-        {str_netsvc, 0, false, NETWORK_STA},
-        {str_psu, 0, false, NETWORK_OFF},
-        {str_shell, 0, false, NETWORK_OFF},
-        {str_telnet, 0, false, NETWORK_STA},
-        {str_update, 0, false, NETWORK_STA},
-        {str_syslog, 0, false, NETWORK_STA}};
+    ModuleDef modules[APP_MODULES] = {
+        {0, str_btn, NETWORK_OFF},
+        {0, str_led, NETWORK_OFF},
+        {0, str_clock, NETWORK_OFF},
+        {0, str_psu, NETWORK_OFF},
+        {0, str_display, NETWORK_OFF},
+        {0, str_shell, NETWORK_OFF},
+        {0, str_netsvc, NETWORK_STA},
+        {0, str_telnet, NETWORK_STA},
+        {0, str_update, NETWORK_STA},
+        {0, str_syslog, NETWORK_STA},
+        {0, str_web, NETWORK_STA}};
 };

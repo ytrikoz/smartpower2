@@ -11,33 +11,36 @@ namespace Cli {
 class CommandShell {
   public:
     CommandShell(Cli::Runner* runner);    
+    
     void setTerm(Cli::Terminal* term);
     Cli::Terminal* term();
-    void enableWelcome(bool = true);
-
+    
+    void showGreetings(bool = true);
+    void showFarewell(bool = true);
+    
     void clearHistory();
     void addHistory(const char *);
     bool getHistoryInput(String &);
-    void setEditBuffer(String &);
-    bool isOpen();
+    void setEditLine(const String &);
+    bool active();
     void loop();
   private:
+    size_t printGreetings(Print *);
+    size_t printFarewell(Print *);
+    size_t printPrompt(Print *);
+
     void onOpen(Print* out);
     void onClose(Print* out);
     void onData(const char *);
     void onHistory(Print* out);
     bool getLastInput(String &);
-    
-    size_t print_prompt(Print *);
-    size_t print_welcome(Print *);
-    size_t print_shell_exit(Print *);
-
   private:
-    bool open_;
-    bool welcome_;
-    Cli::Runner *runner_;
     Cli::Terminal *term_;
-
+    Cli::Runner *runner_;
+    String path_;
+    bool active_;
+    bool greetings_;
+    bool farewell_;    
     std::vector<String> history;
     uint8_t history_size;
     uint8_t history_pos;

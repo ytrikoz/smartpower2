@@ -2,7 +2,7 @@
 
 namespace Modules {
 
-Button::Button(uint8_t pin): Module(), hold_(0), update_(0),  pressed_(0), last_(BTN_PRESSED) {
+Button::Button(uint8_t pin): Module(), hold_(0), update_(0),  pressed_(0), last_(BTN_RELEASED) {
     pinMode(pin, INPUT);
 };
 
@@ -45,9 +45,7 @@ void Button::onLoop() {
 void Button::setOnClick(ButtonClickEventHandler handler) { clickEventHandler = handler; }
 
 void Button::clickEvent() {
-    if (clickEventHandler) {
-        clickEventHandler();
-    }
+    if (clickEventHandler) clickEventHandler();
 }
 
 void Button::setOnHold(ButtonHoldEventHandler handler) { holdEventHandler = handler; }

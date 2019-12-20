@@ -44,12 +44,12 @@ inline String prettyMhz(uint32_t value) {
 }
 
 inline String prettyRssi(int db) {
-    char buf[32];
-    sprintf(buf, "%d dB", db);
-    return String(buf);
+    String res = String(db);
+    res += " dB";
+    return res;
 }
 
-inline String prettyMac(const uint8_t *mac) {
+inline String prettyMac(const uint8_t mac[6]) {
     char buf[32];
     sprintf(buf, MACSTR, MAC2STR(mac));
     return String(buf);

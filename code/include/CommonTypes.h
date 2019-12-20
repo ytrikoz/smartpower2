@@ -66,15 +66,15 @@ struct PsuData : Printable {
     float V;
     float I;
     float P;
-    double Wh;
+    double mWh;
 
    public:
-    PsuData() { time = V = I = P = Wh = 0; }
+    PsuData() { time = V = I = P = mWh = 0; }
 
-    PsuData(unsigned long time_ms, float V, float I, float P, double Wh)
-        : time(time_ms), V(V), I(I), P(P), Wh(Wh){};
+    PsuData(unsigned long time_ms, float V, float I, float P, double mWh)
+        : time(time_ms), V(V), I(I), P(P), mWh(mWh){};
 
-    void reset(void) { time = V = I = P = Wh = 0; }
+    void reset(void) { time = V = I = P = mWh = 0; }
 
     String toString() const {
         String res = "";
@@ -84,8 +84,8 @@ struct PsuData : Printable {
         res += "A, ";
         res += String(P, 3);
         res += "W, ";
-        res += String(Wh, 3);
-        res += "Wh";
+        res += String(mWh, 3);
+        res += "mWh";
         return res;
     }
 
@@ -97,20 +97,19 @@ struct PsuData : Printable {
         n += p.print("A, ");
         n += p.print(P, 3);
         n += p.print("W, ");
-        n += p.print(Wh, 3);
-        n += p.print("Wh");
+        n += p.print(mWh, 3);
+        n += p.print("mWh");
         return n;
     }
 };
 
-class PsuListener {
+class PsuDataListener {
    public:
     virtual void onPsuData(PsuData &item){};
 };
 
-typedef std::function<void(PsuState, PsuStatus)> PsuStateChangeHandler;
-
-typedef std::function<void(PsuData)> PsuDataHandler;
+typedef std::function<void(PsuState)> PsuStateChangeHandler;
+typedef std::function<void(PsuStatus)> PsuStatusChangeHandler;
 
 enum BootPowerState {
     BOOT_POWER_OFF = 0,
@@ -142,17 +141,17 @@ struct WebClient {
 #define APP_MODULES 11
 
 enum ModuleEnum {
+    MOD_LED,
     MOD_BTN,
     MOD_CLOCK,
-    MOD_WEB,
-    MOD_DISPLAY,
-    MOD_LED,
-    MOD_NETSVC,
     MOD_PSU,
+    MOD_DISPLAY,
     MOD_SHELL,
+    MOD_NETSVC,
     MOD_TELNET,
     MOD_UPDATE,
-    MOD_SYSLOG
+    MOD_SYSLOG,
+    MOD_WEB
 };
 
 enum ModuleState {

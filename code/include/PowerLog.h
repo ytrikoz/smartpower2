@@ -2,9 +2,9 @@
 
 #include "CommonTypes.h"
 #include "Modules/Psu.h"
-#include "DeduplicationLog.h"
+#include "Core/DedupLog.h"
 
-class PsuLogHelper : public PsuListener {
+class PowerLog : public PsuDataListener {
    public:
     void onPsuData(PsuData &item) override;
 
@@ -14,7 +14,7 @@ class PsuLogHelper : public PsuListener {
     void print(Print *p, PsuLogEnum item);
 
    public:
-    PsuLogHelper();
+    PowerLog();
 
    public:
     DedupLog *getLog(PsuLogEnum item);

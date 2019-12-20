@@ -20,9 +20,9 @@ class Clock : public Module {
    public:
     void setOnChange(TimeChangeEvent);
 
-    time_t getLocal();
-    time_t getUtc();
-    time_t getUptime();
+    time_t getLocal() const;
+    time_t getUtc() const;
+    time_t getUptime() const;
 
    public:
     void onDiag(const JsonObject& doc) override;
@@ -42,8 +42,8 @@ class Clock : public Module {
     bool isTimeSet();
     const timezone getTimeZone();
     const char* getSntpServer();
-    int getBiasInSeconds();
-    int getBiasInMinutes();
+    int getBiasInSeconds() const;
+    int getBiasInMinutes() const;
     time_t getStoreInterval();
 
     void updateLastKnown(const time_t epoch, bool forced = false);

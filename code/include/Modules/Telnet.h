@@ -25,8 +25,9 @@ class Telnet : public Module {
     void setEventHandler(TelnetEventHandler);
     void sendData(const String&);
     bool hasClient();
+    bool isShellActive();
     void onDiag(const JsonObject& doc) override;
-
+    
    protected:
     bool onInit() override;
     void onDeinit() override;
@@ -49,7 +50,6 @@ class Telnet : public Module {
     WiFiServer* server_;
     Cli::Terminal* term_;
     Cli::CommandShell* shell_;
-
 };
 
 }  // namespace Modules

@@ -32,17 +32,18 @@ unsigned long millis_passed(unsigned long start, unsigned long finish) {
 
 namespace TimeUtils {
 
-void format_elapsed_short(char *buf, time_t elapsed) {
-    int h, m;
-    h = m = 0;
-    h = elapsed / 3600;
-    elapsed -= (h * 3600);
-    m = elapsed / 60;
-    elapsed -= (m * 60);
-    sprintf(buf, "%02i:%02i:%02lu", h, m, elapsed);
+char elapsed_buf[32] = {0};
+char* format_elapsed_short(const unsigned long elapsed) {
+    int h, m, s = 0;
+    s = elapsed / 1000;  
+    h = s / 3600;
+    s -= (h * 3600);
+    m = s / 60;
+    s -= (m * 60);
+    sprintf(elapsed_buf, "%02i:%02i:%02i", h, m, s);
+    return elapsed_buf;
 }
 
-char elapsed_buf[32] = {0};
 char* format_elapsed_full(const double elapsed) {
     int h, m, s, ms;
     h = m = s = ms = 0;

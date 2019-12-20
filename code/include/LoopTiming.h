@@ -5,59 +5,105 @@
 #include "Strings.h"
 #include "Utils/TimeUtils.h"
 
-#define LOOP_COUNTERS 8
-#define LOOP_CAPTURE_INTERVAL 60000
+#define TIME_RANGES 8
+#define LOOP_CAPTURE_INTERVAL 10000
 
 enum LoopTimerState { CAPTURE_IDLE,
                       CAPTURE_PROGRESS,
                       CAPTURE_DONE };
 
-struct LoopCapture {
-    unsigned long duration;
-    uint32_t total;
-    uint32_t max_time_counter;
-    unsigned long max_time;
-    uint32_t counter[LOOP_COUNTERS];
-    uint8_t counters_size;
-    unsigned long module[APP_MODULES];
-    uint8_t modules_size;
+struct LoopCapture : Printable {
+    unsigned long loop_;
+    unsigned long cnt_;
+    unsigned long overrange_cnt_;
+    unsigned long max_;
+    uint8_t time_size_;
+    uint8_t module_size_;
+    unsigned long time_[TIME_RANGES];
+    unsigned long module_[APP_MODULES];
 
-    LoopCapture() { reset(); }
+    LoopCapture() : loop_(0),
+                    cnt_(0),
+                    overrange_cnt_(0),
+                    max_(0),
+                    time_size_(TIME_RANGES),
+                    module_size_(APP_MODULES),
+                    time_{0},
+                    module_{0} {}
 
-    void reset() {
-        duration = 0;
-        total = 0;
-        max_time_counter = 0;
-        max_time = 0;
-        counters_size = LOOP_COUNTERS;
-        modules_size = APP_MODULES;
-        memset(counter, 0, sizeof(counter[0]) * LOOP_COUNTERS);
-        memset(module, 0, sizeof(module[0]) * APP_MODULES);
+    void module(uint8_t index, const unsigned long time) {
+        module_[index] += time;
+    }
+
+    void loop(const unsigned long time) {
+        cnt_++;
+        unsigned long range = 2;
+        uint8_t i;
+        for (i = 0; i <= time_size_ - 1; ++i) {
+            if (time <= range) {
+                time_[i]++;
+                break;
+            }
+            range *= 2;
+        }
+        if (time > range) {
+            overrange_cnt_++;
+        }
+        if (max_ < time) {
+            max_ = time;
+        }
+        loop_ += time;
+    }
+
+    size_t printTo(Print& p) const {
+        size_t n = 0;
+        unsigned long range = 2;
+        uint8_t i;
+        for (i = 0; i <= time_size_ - 1; ++i) {
+            if (time_[i]) {
+                n += p.print(range < max_ ? range : max_);
+                n += p.print('\t');
+                n += p.println(time_[i]);
+            }
+            range *= 2;
+        }
+        if (overrange_cnt_) {
+            n += p.print(FPSTR(str_over));
+            n += p.print('\t');
+            n += p.print(overrange_cnt_);
+            n += p.println(max_);
+        }
+        n += p.print(FPSTR(str_total));
+        n += p.print('\t');
+        n += p.print(cnt_);
+        n += p.print('\t');
+        n += p.println((float)loop_ / cnt_);
+
+        unsigned long modules_time = 0;
+        for (uint8_t i = 0; i < module_size_ - 1; ++i) {
+            modules_time += module_[i];
+            n += p.print(i);
+        }
+        n += p.println();
+        for (uint8_t i = 0; i < module_size_ - 1; ++i) {
+            float per = (float) module_[i] / modules_time * 100;
+            n += p.print(per);
+            n += p.print('\t');
+        }
+        unsigned long other_time = loop_ - modules_time / 1000;
+        n += p.print(FPSTR(str_other));
+        n += p.print('\t');
+        n += p.print( (float) other_time / loop_ * 100);
+        n += p.println();
+        return n;
     }
 };
 
-class RunTimerHost {
+class LoopTimer {
    public:
-    virtual void onRunTimer(ModuleEnum, unsigned long);
-};
-
-class RunTimer {
-   public:
-    RunTimer(RunTimerHost* host, ModuleEnum module) : host_(host), module_(module), start_(micros()) {}
-
-    ~RunTimer() { host_->onRunTimer(module_, micros() - start_); }
-
-   private:
-    RunTimerHost* host_;
-    ModuleEnum module_;
-    unsigned long start_;
-};
-
-class LoopTimer : public RunTimerHost {
-   public:
-    void onRunTimer(ModuleEnum item, unsigned long time) {
+    void onResult(ModuleEnum item, unsigned long time) {
         if (state_ == CAPTURE_PROGRESS)
-            data_.module[item] += time;
+            data_.module(item, time);
     }
 
    public:
@@ -65,31 +111,15 @@ class LoopTimer : public RunTimerHost {
 
     void loop() {
         if (state_ != CAPTURE_PROGRESS) return;
-       
+
         if (!start_) {
             start_ = millis();
             return;
         }
-
         unsigned long now = millis();
         unsigned long passed = millis_passed(start_, now);
 
-        data_.total++;
-        unsigned long range = 2;
-        uint8_t i;
-        for (i = 0; i < LOOP_COUNTERS; ++i) {
-            if (passed <= range) {
-                data_.counter[i]++;
-                break;
-            }
-            range *= 2;
-        }
-
-        if (data_.max_time < passed) data_.max_time = passed;
-
-        if (i == LOOP_COUNTERS) data_.max_time_counter++;
-
-        data_.duration += passed;
+        data_.loop(passed);
 
         if (left_ <= passed) {
             left_ = 0;
@@ -101,7 +131,7 @@ class LoopTimer : public RunTimerHost {
     }
 
     void start() {
-        data_.reset();
+        data_ = LoopCapture();
         left_ = LOOP_CAPTURE_INTERVAL;
         state_ = CAPTURE_PROGRESS;
     }
@@ -110,14 +140,15 @@ class LoopTimer : public RunTimerHost {
 
     LoopTimerState getState() { return state_; }
 
-    LoopCapture* getData() { return &data_; }
+    LoopCapture getData() { return data_; }
 
-    RunTimer start(uint8_t index) {
-        return start(ModuleEnum(index));
+    void start(uint8_t index) {
+        mod_ = ModuleEnum(index);
+        mod_start_ = micros();
     }
 
-    RunTimer start(ModuleEnum module) {
-        return RunTimer(this, module);
+    void end() {
+        onResult(mod_, micros() - mod_start_);
     }
 
    private:
@@ -125,4 +156,6 @@ class LoopTimer : public RunTimerHost {
     LoopCapture data_;
     unsigned long left_;
     unsigned long start_;
+    unsigned long mod_start_;
+    ModuleEnum mod_;
 };

@@ -21,21 +21,21 @@ void Display::setScreen(ScreenEnum value) {
         return;
 
     switch (value) {
-    case SCREEN_BOOT:
-        lcd->loadBank(BANK_PROGRESS);
-        break;
-    case SCREEN_CLEAR:
-    case SCREEN_PSU:
-    case SCREEN_PSU_STAT:
-    case SCREEN_READY:
-    case SCREEN_PLOT:
-    case SCREEN_AP:
-    case SCREEN_AP_STA:
-    case SCREEN_STA:
-        lcd->loadBank(BANK_NONE);
-        break;
-    case SCREEN_MESSAGE:
-        break;
+        case SCREEN_BOOT:
+            lcd->loadBank(BANK_PROGRESS);
+            break;
+        case SCREEN_CLEAR:
+        case SCREEN_PSU:
+        case SCREEN_PSU_STAT:
+        case SCREEN_READY:
+        case SCREEN_PLOT:
+        case SCREEN_AP:
+        case SCREEN_AP_STA:
+        case SCREEN_STA:
+            lcd->loadBank(BANK_NONE);
+            break;
+        case SCREEN_MESSAGE:
+            break;
     }
 
     lcd->clear();
@@ -73,11 +73,11 @@ void Display::showProgress(uint8_t per, const char *str) {
 
 bool Display::enableBacklight(const bool enabled, const time_t time) {
     if (!isEnabled()) return false;
-    
+
     if (enabled)
         lcd->turnOn();
     else
-        lcd->turnOff();        
+        lcd->turnOff();
     backlight_ = enabled;
     backlightTime_ = time;
     return true;
@@ -86,44 +86,41 @@ bool Display::enableBacklight(const bool enabled, const time_t time) {
 void Display::clear(void) { activeScreen = SCREEN_CLEAR; }
 
 void Display::refresh(void) {
-#ifdef DEBUG_DISPLAY
-    DEBUG.println("refresh()");
-#endif
     Modules::Psu *psu = app.psu();
-    if (psu->checkState(POWER_ON)) {
+    if (psu->getState() == POWER_ON) {
         setScreen(SCREEN_PSU);
         PsuStatus status = psu->getStatus();
         switch (status) {
-        case PSU_OK:
-            load_psu_info(&screen);
-            return;
-        case PSU_ALERT:            
-            load_message(&screen, FPSTR(str_alert), getAlertStr(psu->getAlert()));
-            return;
-        case PSU_ERROR:
-            load_message(&screen, FPSTR(str_error), getErrorStr(psu->getError()));
-            return;
+            case PSU_OK:
+                load_psu_info(&screen);
+                return;
+            case PSU_ALERT:
+                load_message(&screen, FPSTR(str_alert), getAlertStr(psu->getAlert()));
+                return;
+            case PSU_ERROR:
+                load_message(&screen, FPSTR(str_error), getErrorStr(psu->getError()));
+                return;
         }
     }
 
     NetworkMode mode = Wireless::getMode();
     switch (mode) {
-    case NetworkMode::NETWORK_OFF:
-        setScreen(SCREEN_READY);
-        load_ready(&screen);
-        return;
-    case NetworkMode::NETWORK_STA:
-        setScreen(SCREEN_STA);
-        load_wifi_sta(&screen);
-        return;
-    case NetworkMode::NETWORK_AP:
-        setScreen(SCREEN_AP);
-        load_wifi_ap(&screen);
-        return;
-    case NetworkMode::NETWORK_AP_STA:
-        setScreen(SCREEN_AP_STA);
-        load_wifi_ap_sta(&screen);
-        return;
+        case NetworkMode::NETWORK_OFF:
+            setScreen(SCREEN_READY);
+            load_ready(&screen);
+            return;
+        case NetworkMode::NETWORK_STA:
+            setScreen(SCREEN_STA);
+            load_wifi_sta(&screen);
+            return;
+        case NetworkMode::NETWORK_AP:
+            setScreen(SCREEN_AP);
+            load_wifi_ap(&screen);
+            return;
+        case NetworkMode::NETWORK_AP_STA:
+            setScreen(SCREEN_AP_STA);
+            load_wifi_ap_sta(&screen);
+            return;
     }
 }
 
@@ -158,30 +155,31 @@ void Display::load_wifi_ap_sta(Screen *obj) {
 };
 
 void Display::load_psu_info(Screen *obj) {
-    Modules::Psu *psu = app.psu();
-    String str = String(psu->getV(), 3);
-    if (str.length() == 5)
-        str += " ";
+    PsuData data = app.psu()->getInfo();
+    String str = String(data.V, 3);
+    if (str.length() == 5) str += " ";
     str += "V ";
-    str += String(psu->getI(), 3);
+    str += String(data.I, 3);
     str += " A ";
     obj->set(0, str.c_str());
 
-    double watt = psu->getP();
-    str = String(watt, (watt < 10) ? 3 : 2);
+    double p = data.P;
+    str = String(p, p < 10 ? 3 : 2);
     str += " W ";
-    double rwatth = psu->getWh();
-    if (rwatth < 1000) {
-        str += String(rwatth, rwatth < 10 ? 3 : rwatth < 100 ? 2 : 1);
+
+    double total = data.mWh;
+    if (total < 1000) {
+        str += String(total, total < 10 ? 3 : total < 100 ? 2 : 1);
         str += " Wh";
     } else {
-        str += String(rwatth / 1000, 3);
+        total = total / 1000;
+        str += String(total, 3);
         str += "KWh";
     }
     obj->set(1, str.c_str());
     obj->setCount(2);
     obj->moveFirst();
-}
+}  // namespace Modules
 
 void Display::load_ready(Screen *obj) {
     obj->set(0, "READY> ");
@@ -200,7 +198,6 @@ void Display::load_psu_stat(Screen *obj) {
 void Display::load_message(Screen *obj, String header, String message) {
     load_message(obj, header.c_str(), message.c_str());
 }
-
 
 void Display::load_message(Screen *obj, const char *header,
                            const char *message) {
@@ -221,26 +218,26 @@ void Display::showPlot(PlotData *data, size_t cols) {
 
 void Display::updateScreen(void) {
     switch (activeScreen) {
-    case SCREEN_CLEAR:
-    case SCREEN_BOOT:
-    case SCREEN_PLOT:
-    case SCREEN_MESSAGE:
-    case SCREEN_PSU:
-        return;
-    case SCREEN_STA:
-        load_wifi_sta(&screen);
-        return;
-    case SCREEN_AP:
-        load_wifi_ap(&screen);
-        return;
-    case SCREEN_AP_STA:
-        load_wifi_ap_sta(&screen);
-        return;
-    case SCREEN_READY:
-        load_ready(&screen);
-        return;
-    case SCREEN_PSU_STAT:
-        load_psu_stat(&screen);
+        case SCREEN_CLEAR:
+        case SCREEN_BOOT:
+        case SCREEN_PLOT:
+        case SCREEN_MESSAGE:
+        case SCREEN_PSU:
+            return;
+        case SCREEN_STA:
+            load_wifi_sta(&screen);
+            return;
+        case SCREEN_AP:
+            load_wifi_ap(&screen);
+            return;
+        case SCREEN_AP_STA:
+            load_wifi_ap_sta(&screen);
+            return;
+        case SCREEN_READY:
+            load_ready(&screen);
+            return;
+        case SCREEN_PSU_STAT:
+            load_psu_stat(&screen);
     }
 }
 
@@ -298,8 +295,7 @@ Error Display::onExecute(const String &param, const String &value) {
         enableBacklight(value.toInt());
         return Error();
     } else {
-       return Error(ERROR_EXECUTE, FPSTR(str_unknown));
+        return Error(ERROR_EXECUTE, FPSTR(str_unknown));
     }
 }
-
-}
+}  // namespace Modules

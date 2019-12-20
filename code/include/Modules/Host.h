@@ -2,14 +2,13 @@
 
 #include "Core/Module.h"
 
-struct ModuleDefinition {
-    PGM_P name;
+struct ModuleDef {
     Module *obj;
-    uint8_t network_required;
-    uint8_t network_mode;
+    PGM_P name;
+    NetworkMode network;
 };
 
-class ModuleHost {
+class Host {
    public:
     virtual String getName(uint8_t index) const = 0;
 

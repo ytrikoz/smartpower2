@@ -1,4 +1,4 @@
-#include "DeduplicationLog.h"
+#include "Core/DedupLog.h"
 
 #include "Strings.h"
 #include "Utils/StrUtils.h"
@@ -102,7 +102,7 @@ void DedupLog::values(float array[], size_t &size) {
 
     size_t pos = getFirstEntryIndex();
 
-    for (size_t i = 0; i < size; ++i) {
+    for (size_t i = 0; i < size - 1; ++i) {
         LogItem li = items[pos];
         array[i] = li.value;
         if (i >= li.number) pos = getEntryIndex(pos);

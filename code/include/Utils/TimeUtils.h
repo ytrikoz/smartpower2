@@ -36,7 +36,7 @@ namespace TimeUtils {
 
 int timeZoneInSeconds(const byte timeZone);
 
-void format_elapsed_short(char *buf, time_t elapsed);
+char* format_elapsed_short(const unsigned long);
 
 char* format_elapsed_full(double elapsed);
 

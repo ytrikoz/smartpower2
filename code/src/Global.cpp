@@ -5,6 +5,6 @@ BootWatcher boot;
 Logger syslog;
 
 ConfigHelper* config;
-PsuLogHelper* powerlog;
-LoopTimer* looptimer;
+PowerLog* powerlog;
+LoopTimer* looptimer = nullptr;
 

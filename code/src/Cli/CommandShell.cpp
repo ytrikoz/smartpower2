@@ -7,25 +7,15 @@ using namespace TimeUtils;
 
 namespace Cli {
 
-CommandShell::CommandShell(Cli::Runner *runner) : term_(nullptr) {
-    runner_ = runner;
-}
-
-Terminal *CommandShell::term() {
-    return term_;
-}
+CommandShell::CommandShell(Cli::Runner *runner) : term_(nullptr), runner_(runner), path_('\\'), active_(false), greetings_(false), farewell_(false) {}
 
 void CommandShell::setTerm(Cli::Terminal *term) {
     term_ = term;
     if (term_ != nullptr) {
-        term_->setOnEvent([this](TerminalEventEnum event, Print *out) {
+        term_->setOnEvent([this](TerminalEventEnum event, Stream *out) {
             switch (event) {
                 case EVENT_OPEN: {
-                    if (welcome_) {
-                        print_welcome(out);
-                    }
-                    print_prompt(out);
-                    open_ = true;
+                    onOpen(out);
                     break;
                 }
                 case EVENT_CLOSE:
@@ -42,17 +32,30 @@ void CommandShell::setTerm(Cli::Terminal *term) {
     }
 }
 
-bool CommandShell::isOpen() { return open_; }
+Terminal *CommandShell::term() {
+    return term_;
+}
 
-void CommandShell::enableWelcome(bool enabled) { welcome_ = enabled; }
+void CommandShell::loop() {
+    if (term_ != nullptr) term_->loop();
+}
+
+bool CommandShell::active() { return active_; }
+
+void CommandShell::showGreetings(bool enabled) { greetings_ = enabled; }
+
+void CommandShell::showFarewell(bool enabled) { farewell_ = enabled; }
 
 void CommandShell::onOpen(Print *out) {
-    open_ = true;
+    if (greetings_) printGreetings(out);    
+    printPrompt(out);
+    active_ = true;
 }
 
 void CommandShell::onClose(Print *out) {
-    print_shell_exit(out);
-    open_ = false;
+    out->println();
+    if (farewell_) printFarewell(out);
+    active_ = false;
 }
 
 void CommandShell::onHistory(Print *out) {
@@ -60,11 +63,11 @@ void CommandShell::onHistory(Print *out) {
 
     if (term_->getLine().available()) {
         out->println();
-        print_prompt(out);
+        printPrompt(out);
     }
     String str;
     if (getLastInput(str)) {
-        setEditBuffer(str);
+        setEditLine(str);
     };
 }
 
@@ -73,14 +76,13 @@ void CommandShell::onData(const char *str) {
 
     runner_->run(str, term_);
 
-    print_prompt(term_);
+    printPrompt(term_);
 }
 
 void CommandShell::clearHistory() { history.clear(); }
 
-void CommandShell::setEditBuffer(String &str) {
+void CommandShell::setEditLine(const String &str) {
     term_->setLine((const uint8_t *)str.c_str(), str.length());
-    term_->print(str);
 }
 
 bool CommandShell::getLastInput(String &str) {
@@ -105,20 +107,20 @@ void CommandShell::addHistory(const char *str) {
     }
 }
 
-void CommandShell::loop() {
-    if (term_ != nullptr) term_->loop();
+size_t CommandShell::printGreetings(Print *p) {
+    return p->println(FPSTR(msg_greetings));
 }
 
-size_t CommandShell::print_welcome(Print *p) {
-    return p->println(FPSTR(msg_welcome));
+size_t CommandShell::printFarewell(Print *p) {
+    return p->println(FPSTR(str_exit_bye));
 }
 
-size_t CommandShell::print_shell_exit(Print *p) {
-    return p->println(FPSTR(msg_shell_exit));
-}
-
-size_t CommandShell::print_prompt(Print *p) {
-    return p->print("/> ");
+size_t CommandShell::printPrompt(Print *p) {
+    size_t n = 0;
+    n += p->print(path_);    
+    n += p->print('>'); 
+    n += p->print(' ');
+    return n;
 }
 
 }  // namespace Cli

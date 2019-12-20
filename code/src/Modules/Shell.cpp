@@ -16,7 +16,7 @@ bool Shell::onInit() {
     term->enableControlCodes(false);
     term->enableEcho();       
     shell_ = new Cli::CommandShell(Cli::get());
-    shell_->enableWelcome();    
+    shell_->showGreetings();    
     shell_->setTerm(term);
     return true;
 }
@@ -35,8 +35,9 @@ void Shell::onLoop() {
 }
 
 bool Shell::isOpen() { 
-    return  shell_ != nullptr && shell_->isOpen();
+    return  shell_ != nullptr && shell_->active();
 }
 
 }
 
+ 

@@ -11,7 +11,7 @@
 
 class Module {
    public:
-    Module() : state_(ModuleState::STATE_INIT) {}
+    Module() : modState_(ModuleState::STATE_INIT) {}
 
     void setOutput(Print *p) { out_ = p; }
 
@@ -27,32 +27,38 @@ class Module {
     }
 
     bool init() {
-        if (state_ > ModuleState::STATE_INIT)
-            return false;
-        state_ = onInit() ? ModuleState::STATE_INIT_COMPLETE : ModuleState::STATE_INIT_FAILED;
-        return state_ == ModuleState::STATE_INIT_COMPLETE;
+        if (modState_ > ModuleState::STATE_INIT_COMPLETE) return true;
+        if (modState_ == ModuleState::STATE_INIT_FAILED) return false;
+        
+        modState_ = onInit() ? STATE_INIT_COMPLETE : ModuleState::STATE_INIT_FAILED;                
+        return modState_ == ModuleState::STATE_INIT_COMPLETE;
     }
 
-    bool start() {
-        if (state_ == ModuleState::STATE_INIT_FAILED)
-            return false;
-        if (state_ == ModuleState::STATE_INIT_COMPLETE || init())
-            state_ = onStart() ? ModuleState::STATE_ACTIVE : ModuleState::STATE_START_FAILED;
-        return state_ == ModuleState::STATE_ACTIVE;
+    bool start() {        
+        if (modState_ == ModuleState::STATE_ACTIVE) return true;
+        if (modState_ == ModuleState::STATE_START_FAILED) return false;
+
+        if (modState_ < ModuleState::STATE_INIT_COMPLETE)  {
+            if (!init()) return false;           
+        }        
+        modState_ = onStart() ? STATE_ACTIVE: ModuleState::STATE_START_FAILED;        
+        return modState_ == ModuleState::STATE_ACTIVE;
     }
 
-    virtual void stop(){};
-
-    void end() {
-        if (state_ < ModuleState::STATE_INIT_FAILED) return;
-        onDeinit();
-        state_ = ModuleState::STATE_INIT;
+    void stop(){
+        if (modState_ < ModuleState::STATE_ACTIVE) return;
+        onStop();
+        modState_ = ModuleState::STATE_INIT_COMPLETE;
     };
 
-    void loop() {
-        if (state_ == ModuleState::STATE_START_FAILED)
-            return;
-        if (state_ == ModuleState::STATE_ACTIVE || start()) onLoop();
+    void end() {
+        if (modState_ < ModuleState::STATE_INIT_FAILED) return;
+        onDeinit();
+        modState_ = ModuleState::STATE_INIT;
+    };
+
+    void loop() {   
+        if (modState_ == ModuleState::STATE_ACTIVE || start()) onLoop();
     };
 
     size_t printDiag(void) {
@@ -61,7 +67,7 @@ class Module {
 
     size_t printDiag(Print *p) {
         StaticJsonDocument<256> doc;
-        doc[FPSTR(str_state)] = getStateStr();
+        doc[FPSTR(str_state)] = getModuleStateStr();
         JsonVariant obj = doc.as<JsonObject>();
         onDiag(obj);
         return serializeJsonPretty(doc, *p);
@@ -69,8 +75,8 @@ class Module {
 
     virtual void onDiag(const JsonObject &obj) {}
 
-    String getStateStr() {
-        return getModuleStateStr(state_);
+    String getModuleStateStr() {
+        return getModuleStateStr(modState_);
     }
 
    protected:
@@ -88,8 +94,6 @@ class Module {
         Error err = Error(ERROR_EXECUTE, FPSTR(str_unsupported));
         return err;
     }
-
-    void setError(const String &str);
 
     String getModuleStateStr(const ModuleState state) {
         PGM_P strP;
@@ -114,9 +118,13 @@ class Module {
         }
         return String(FPSTR(strP));
     }
-   protected:
-    ModuleState state_;
-    Error error_;
+protected:
+    void setError(Error e){
+        modError_ = e;
+    }
     Print *out_;
     Config *config_;
+private:
+    Error modError_;
+    ModuleState modState_;    
 };
