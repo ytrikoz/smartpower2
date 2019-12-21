@@ -20,7 +20,7 @@ class Module {
     bool execute(const String &param, const String &value) {
         Error res = onExecute(param, value);
         if (!res) {
-            PrintUtils::print(out_, res.code(), res.message());
+            PrintUtils::print(out_, res.code(), res.description());
             PrintUtils::println(out_);
         }
         return res;

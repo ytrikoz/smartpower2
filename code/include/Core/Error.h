@@ -18,48 +18,32 @@ class Error {
     static Error ok() { return Error(); }
 
    public:
-   
-    Error(const ErrorCode code, const __FlashStringHelper *pstr) {
-        char buf[64]; 
-        strcpy_P(buf, (PGM_P) pstr);
-        set(code, buf);
-    } 
-
-    Error(const ErrorCode code, const char *desc = "") {
-        set(code, "none");
-    }
-
     Error() {
         code_ = 0;
-        memset(message_, 0, sizeof(message_));
+        memset(description_, 0, OUTPUT_MAX_LENGTH);
     };
 
-    void set(const ErrorCode code, const char* desc) {
-        switch (code) {
-            case ERROR_PARAM:
-                sprintf(message_, "param not set: %s", desc);
-                break;
-            case ERROR_NETWORK:
-                sprintf(message_, "network related: %s", desc);
-                break;
-            case ERROR_EXECUTE: 
-                sprintf(message_, "on execute: %s", desc);
-                break;
-            default:
-                sprintf(message_,  "unknown: %s", desc);
-                break;
-        }
+    Error(const ErrorCode code) {
+        code_ = code;
     }
-    
+
+    Error(const ErrorCode code, const __FlashStringHelper *pstr) : Error(code) {
+        strcpy_P(description_, (PGM_P)pstr);
+    }
+
+    Error(const ErrorCode code, const char *description) : Error(code) {
+        strncpy(description_, description, OUTPUT_MAX_LENGTH);
+    }
+
     int code() const { return code_; }
 
-    const char *message() const { return message_; }
+    const char *description() const { return description_; }
 
-    operator bool() const { return code_ == 0; }
+    operator bool() const { return code_ != 0; }
 
    private:
     int code_;
-    char message_[128];
+    char description_[OUTPUT_MAX_LENGTH];
 };
 
 #endif

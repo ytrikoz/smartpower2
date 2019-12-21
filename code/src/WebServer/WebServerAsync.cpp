@@ -8,7 +8,9 @@ WebServerAsync::WebServerAsync(uint16_t port) {
     sprintf(last_modified, "%s %s GMT", __DATE__, __TIME__);
 
     web_ = new AsyncWebServer(port);
-    web_->rewrite("/", "/index.html");
+    //web_->rewrite("/", "/index.html");
+    
+    web_->serveStatic("/", SPIFFS, "/www/").setDefaultFile("index.html");
     web_->rewrite("/system.json", "/system.json");
 
     web_->on("/system.json", HTTP_GET, [this](AsyncWebServerRequest *request) {
@@ -19,15 +21,17 @@ WebServerAsync::WebServerAsync(uint16_t port) {
         AsyncWebServerResponse *response = request->beginResponse(200, "application/json", json);
         request->send(response);
     });
+    
+
 
     web_->on("/index.html", HTTP_GET, [this](AsyncWebServerRequest *request) {
         if (request->header("If-Modified-Since").equals(last_modified)) {
             request->send(304);
         } else {
-            AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", (uint8_t *)index_html_gz, index_html_gz_len);
-             response->addHeader("Content-Encoding", "gzip");
-             response->addHeader("Last-Modified", last_modified);
-             request->send(response);
+            // AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", (uint8_t *)index_html_gz, index_html_gz_len);
+            // response->addHeader("Content-Encoding", "gzip");
+            // response->addHeader("Last-Modified", last_modified);
+            // request->send(response);
         };
     });
 

@@ -10,6 +10,12 @@
 
 #include "Utils/TimeUtils.h"
 
+enum AppState {
+    STATE_NORMAL,
+    STATE_RESTART,
+    STATE_RESET
+};
+
 enum NetworkMode {
     NETWORK_OFF,
     NETWORK_STA,
@@ -33,8 +39,8 @@ enum LogLevel { LEVEL_ERROR,
                 LEVEL_WARN,
                 LEVEL_INFO };
 
-enum PsuState { POWER_ON = 0,
-                POWER_OFF = 1 };
+enum PsuState { POWER_OFF,
+                POWER_ON };
 
 enum PsuStatus { PSU_OK,
                  PSU_ERROR,
@@ -71,8 +77,8 @@ struct PsuData : Printable {
    public:
     PsuData() { time = V = I = P = Wh = 0; }
 
-    PsuData(unsigned long time_ms, float V, float I, float P, double mWh)
-        : time(time_ms), V(V), I(I), P(P), Wh(mWh){};
+    PsuData(unsigned long time_ms, float V, float I, float P, double Wh)
+        : time(time_ms), V(V), I(I), P(P), Wh(Wh){};
 
     void reset(void) { time = V = I = P = Wh = 0; }
 
@@ -85,7 +91,7 @@ struct PsuData : Printable {
         res += String(P, 3);
         res += "W, ";
         res += String(Wh, 3);
-        res += "mWh";
+        res += "Wh";
         return res;
     }
 

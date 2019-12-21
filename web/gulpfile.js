@@ -1,7 +1,8 @@
 /* eslint-disable no-console */
 const srcFolder = 'src/';
 const tmpFolder = 'tmp/';
-const destFolder = 'built/';
+const headerFolder = 'built/';
+const wwwFolder = '../code/data/www';
 
 const del = require('del');
 const gulp = require('gulp');
@@ -56,13 +57,13 @@ function toHeader() {
     }
     output += '};\n';
     const dest = src.clone();
-    dest.path = `${destFolder}${srcName}.h`;
+    dest.path = `${headerFolder}${srcName}.h`;
     dest.contents = Buffer.from(output);
     cb(null, dest);
   });
 }
 
-function webUiBuild() {
+function webUiBuildProgmem() {
   return gulp.src(`${srcFolder}*.html`)
     .pipe(favicon())
     .pipe(inline({
@@ -80,13 +81,33 @@ function webUiBuild() {
     .pipe(gzip())
     .pipe(gulp.dest(tmpFolder))
     .pipe(toHeader())
-    .pipe(gulp.dest(destFolder));
+    .pipe(gulp.dest(headerFolder));
 }
 
-gulp.task('webui_inline', () => webUiBuild());
+function webUiBuildFileSystem() {
+  return gulp.src(`${srcFolder}*.html`)
+    .pipe(favicon())
+    .pipe(inline({
+      base: srcFolder,
+      js: [],
+      css: [inlineImages],
+      disabledTypes: ['svg', 'img'],
+    }))
+    .pipe(htmlmin({
+      collapseWhitespace: true,
+      removeComments: true,
+      minifyCSS: true,
+      minifyJS: true,
+    }))
+    .pipe(gzip())
+    .pipe(gulp.dest(wwwFolder));
+}
+gulp.task('webui_build_progmem', () => webUiBuildProgmem());
 
-gulp.task('webui_build', gulp.series('webui_clear', 'webui_inline', 'webui_clear'));
+gulp.task('webui_build_filesystem', () => webUiBuildFileSystem());
 
-gulp.task('webui_build_lint', gulp.series('webui_htmllint', 'webui_csslint', 'webui_build'));
+gulp.task('lint', gulp.series('webui_htmllint', 'webui_csslint'));
 
-gulp.task('default', gulp.series('webui_build'));
+gulp.task('progmem', gulp.series('webui_build_progmem'));
+
+gulp.task('filesystem', gulp.series('webui_build_filesystem'));

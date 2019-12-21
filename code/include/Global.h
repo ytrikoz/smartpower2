@@ -10,5 +10,5 @@ extern Logger syslog;
 
 extern ConfigHelper* config;
 extern PowerLog* powerlog;
-extern LoopTimer* looptimer;
+extern LoopTimer* loopTimer;
 

@@ -11,22 +11,20 @@ const SET_VOLTAGE = 'w';
 const SET_NETWORK = 'n';
 const FW_VERSION = 'f';
 const TAG_PVI = 'd';
-const SYS_INFO = 'S';
-const NETWORK_INFO = 'N';
+
+const TAG_SYS_INFO = 'S';
+const TAG_NETWORK_INFO = 'N';
 
 const PAGE_MAIN_JSON = 'M';
 const PAGE_OPTIONS_JSON = 'O';
-/*
-const SET_SSID = 's';
-const SET_IP_ADDR = 'i';
-const SET_PASSWD = 'x';
-*/
+
 const PAGE_HOME = 1;
 const PAGE_OPTIONS = 2;
 const PAGE_INFO = 3;
 
 let ws;
 
+// eslint-disable-next-line no-unused-vars
 function parseIP(ipaddress) { if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ipaddress)) { return ipaddress; } return ''; }
 
 function onVoltChange(item) {
@@ -64,6 +62,7 @@ const template = {
   '<>': 'li',
   html() {
     let key;
+    // eslint-disable-next-line no-restricted-syntax
     for (key in this) if (Object.prototype.hasOwnProperty.call(this, key)) break;
     return `${key}<span>${this[key]}</span>`;
   },
@@ -122,10 +121,6 @@ function getConnectionStatus() {
   } catch (e) {
     return false;
   }
-}
-
-function store(param, value) {
-  localStorage.setItem(param, value);
 }
 
 // eslint-disable-next-line no-unused-vars
@@ -223,7 +218,7 @@ function enableUI(value = true) {
 
 function sendOnOff(value) {
   // invert!
-  send(`${SET_ONOFF}${value ? '0' : '1'}`);
+  send(`${SET_ONOFF}${value ? '1' : '0'}`);
 }
 
 function sendLogEnabled(value) {
@@ -247,38 +242,6 @@ function sendNetwork(wifi, ssid, passwd, dhcp, ip, netmask, gateway, dns) {
 
 function updateUI(param, value) {
   switch (param) {
-    case SET_ONOFF:
-      showOnOff(!parseInt(value, 10));
-      break;
-    case SET_MEASUREWATTHOUR:
-      showEnableLog(parseInt(value, 10));
-      break;
-    case SET_VOLTAGE:
-      showOutputVoltage(parseFloat(value));
-      break;
-    case SET_POWER_MODE:
-      showPowerMode(parseInt(value, 10));
-      break;
-    case SET_NETWORK: {
-      const str = value.split(',');
-      const wifi = parseInt(str[0], 10);
-      const ssid = str[1];
-      const passwd = str[2];
-      const dhcp = parseInt(str[3], 2);
-      const ip = parseIP(str[4]);
-      const netmask = parseIP(str[5]);
-      const gateway = parseIP(str[6]);
-      const dns = parseIP(str[7]);
-      showWiFi(wifi);
-      showSSID(ssid);
-      showPassword(passwd);
-      showDHCP(dhcp);
-      showIPAddr(ip);
-      showNetmask(netmask);
-      showGateway(gateway);
-      showDns(dns);
-      break;
-    }
     case TAG_PVI: {
       const strArray = value.split(',');
       const volts = parseFloat(strArray[0]);
@@ -291,11 +254,11 @@ function updateUI(param, value) {
       watthMeasurement.setValue(watth);
       break;
     }
-    case SYS_INFO: {
+    case TAG_SYS_INFO: {
       showSysInfo(value);
       break;
     }
-    case NETWORK_INFO: {
+    case TAG_NETWORK_INFO: {
       showNetworkInfo(value);
       break;
     }
@@ -382,7 +345,7 @@ function onload() {
     const scheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
     const uri = `${scheme}${window.location.host}/ws`;
     console.log('connect', uri);
-    //ws = new WebSocket('ws://192.168.1.204/ws');
+    // ws = new WebSocket('ws://192.168.1.204/ws');
     ws = new WebSocket(uri);
     ws.onmessage = function onMessage(msg) {
       enableUI();
@@ -401,11 +364,6 @@ function onload() {
   } catch (e) {
     console.log(e);
   }
-}
-
-// eslint-disable-next-line no-unused-vars
-function onunload() {
-  localStorage.clear();
 }
 
 $(() => {
@@ -451,22 +409,22 @@ $(document).ready(() => {
     sendLogEnabled(value);
   });
 
-  $('#btn_reset_voltage').click(() => {
+  $('#btn_reset_startup_option').click(() => {
     showPowerMode(0);
     showOutputVoltage(5);
     sendPowermode(0);
     sendOutputVoltage(5, true);
   });
 
-  $('#btn_reset_total').click(() => {
-    sendWh(0);
-  });
-
-  $('#btn_save_voltage').click(() => {
-    const outputVoltage = $('#slider_voltage').val();
+  $('#btn_save_startup_option').click(() => {
     const powerMode = $('input:radio[name=power_mode]:checked').val();
+    const outputVoltage = $('#slider_voltage').val();
     sendPowermode(powerMode);
     sendOutputVoltage(outputVoltage, true);
+  });
+
+  $('#btn_reset_total').click(() => {
+    sendWh(0);
   });
 
   $('#chk_dhcp').change(() => {

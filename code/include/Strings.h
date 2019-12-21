@@ -92,6 +92,7 @@ static const char str_dhcp[] PROGMEM = "dhcp";
 static const char str_dns[] PROGMEM = "dns";
 static const char str_dir[] PROGMEM = "dir";
 static const char str_done[] PROGMEM = "done";
+static const char str_diff[] PROGMEM = "diff";
 static const char str_duration[] PROGMEM = "duration";
 static const char str_interval[] PROGMEM = "interval";
 static const char str_enabled[] PROGMEM = "enabled";

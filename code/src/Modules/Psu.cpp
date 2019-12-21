@@ -12,6 +12,7 @@ namespace Modules {
 bool Psu::onInit() {
     ina231_configure();
     clearErrorsAndAlerts();
+    if (isWhStoreEnabled() && info_.Wh != lastStoredWh_) restoreWh(info_.Wh);
     return true;
 }
 
@@ -29,10 +30,10 @@ bool Psu::onStart() {
             restoreState(stored);
             if (stored == POWER_ON)
                 powerOn();
-             else
+            else
                 powerOff();
             break;
-        }
+    }
     return true;
 }
 
@@ -46,7 +47,7 @@ void Psu::onLoop() {
         info_.V = ina231_read_voltage();
         info_.I = ina231_read_current();
         info_.P = ina231_read_power();
-        double sec = (double) passed / 1000;
+        double sec = (double)passed / 1000;
         double ws = sec * info_.P;
         info_.Wh += (ws / 3600);
         info_.time = now;
@@ -69,37 +70,45 @@ void Psu::onLoop() {
     }
 
     if (millis_passed(lastStore_, now) > ONE_MINUTE_ms) {
-        if (isWhStoreEnabled()) storeWh(info_.Wh);
+        if (isWhStoreEnabled() && info_.Wh != lastStoredWh_) storeWh(info_.Wh);
         lastStore_ = now;
-    }
+    }    
+}
+
+Error Psu::onExecute(const String &paramStr, const String &valueStr) {
+    mcp4652_set(paramStr.toInt());
+    Error err = Error();
+    return err;
 }
 
 void Psu::powerOn() {
     startTime_ = infoUpdated_ = powerInfoUpdated_ = lastCheck_ = millis();
-    if (isWhStoreEnabled()) restoreWh(info_.Wh);
-    if (isStateStoreEnabled()) storeState(POWER_ON);
+    if (isStateStoreEnabled() && state_ != lastStoredState_) storeState(POWER_ON);
     float voltage = getOutputVoltage();
     setOutputVoltage(voltage);
-
     applyState(POWER_ON);
 }
 
 void Psu::powerOff() {
-    if (isWhStoreEnabled()) storeWh(info_.Wh);
-    if (isStateStoreEnabled()) storeState(POWER_OFF);
-    
+    if (isWhStoreEnabled() && lastStoredWh_ != info_.Wh) storeWh(info_.Wh);
+    if (isStateStoreEnabled() && lastStore_ != state_) storeState(POWER_OFF);
+
     applyState(POWER_OFF);
 }
 
 void Psu::applyState(PsuState value) {
+    digitalWrite(POWER_SWITCH_PIN, mapState(value));
     if (state_ == value) return;
-    state_ = value;
-    digitalWrite(POWER_SWITCH_PIN, value);
+    state_ = value;    
     if (stateChangeHandler_)
         stateChangeHandler_(state_);
 }
 
-int Psu::mapVoltage(const float value) {
+bool Psu::mapState(const PsuState state) {
+    return state == POWER_ON ? 0 : 1;
+}
+
+uint8_t Psu::mapVoltage(const float value) {
     float v;
     float min;
     float max;
@@ -155,7 +164,8 @@ bool Psu::storeWh(double value) {
     PrintUtils::print_ident(out_, FPSTR(str_psu));
     bool res = FSUtils::writeDouble(FS_WH_VAR, value);
     if (res) {
-        PrintUtils::print(out_, FPSTR(str_total), FPSTR(str_arrow_dest),  String(value, 6));
+        PrintUtils::print(out_, FPSTR(str_arrow_dest), String(value, 6));
+        lastStoredWh_ = value;
     } else {
         PrintUtils::print(out_, FPSTR(str_failed));
     }
@@ -167,7 +177,7 @@ bool Psu::restoreWh(double& value) {
     PrintUtils::print_ident(out_, FPSTR(str_psu));
     bool res = FSUtils::readDouble(FS_WH_VAR, value);
     if (res) {
-        PrintUtils::print(out_, FPSTR(str_total), FPSTR(str_arrow_src), String(value, 6));
+        PrintUtils::print(out_, FPSTR(str_arrow_src), String(value, 6));
     } else {
         PrintUtils::print(out_, FPSTR(str_failed));
     }
@@ -176,16 +186,18 @@ bool Psu::restoreWh(double& value) {
 }
 
 const unsigned long Psu::getUptime() const {
-    return millis_passed(startTime_, infoUpdated_) / ONE_SECOND_ms;
+    return millis_passed(startTime_, infoUpdated_);
 }
 
 bool Psu::storeState(PsuState value) {
-    bool res = FSUtils::writeInt(FS_POWER_STATE_VAR, (long)value);
     PrintUtils::print_ident(out_, FPSTR(str_psu));
+    PrintUtils::print(out_, FPSTR(str_state), FPSTR(str_arrow_dest));
+    bool res = FSUtils::writeInt(FS_POWER_STATE_VAR, (long) value);
     if (res) {
-        PrintUtils::print(out_, FPSTR(str_stored), value);
+        lastStoredState_ = value;
+        PrintUtils::print(out_, getPsuStateStr(value));
     } else {
-        PrintUtils::print(out_, FPSTR(str_store), FPSTR(str_failed));
+        PrintUtils::print(out_, FPSTR(str_failed));
     }
     PrintUtils::println(out_);
     return res;
@@ -193,13 +205,20 @@ bool Psu::storeState(PsuState value) {
 
 bool Psu::restoreState(PsuState& value) {
     PrintUtils::print_ident(out_, FPSTR(str_psu));
+    PrintUtils::print(out_, FPSTR(str_state), FPSTR(str_arrow_src));
     long buf;
-    bool res = FSUtils::readInt(FS_POWER_STATE_VAR, buf);
-    if (res) {
-        value = (PsuState) buf;
-        PrintUtils::print(out_, FPSTR(str_restored), value);
+    bool res = false;
+    if (FSUtils::readInt(FS_POWER_STATE_VAR, buf)) {
+        if (buf >= 0 && buf <= 1) {
+            value = (PsuState)buf;
+            PrintUtils::print(out_, getPsuStateStr(value));
+            lastStoredState_ = value;
+            res = true;
+        } else {
+            PrintUtils::print(out_, FPSTR(str_invalid));
+        }
     } else {
-        PrintUtils::print(out_, FPSTR(str_restore), FPSTR(str_failed));
+        PrintUtils::print(out_, FPSTR(str_failed));
     }
     PrintUtils::println(out_);
     return res;
@@ -208,10 +227,10 @@ bool Psu::restoreState(PsuState& value) {
 void Psu::onDiag(const JsonObject& doc) {
     doc[FPSTR(str_power)] = getPsuStateStr(state_);
     if (state_ == POWER_ON) {
-        doc[FPSTR(str_time)] = getUptime();
+        doc[FPSTR(str_time)] = TimeUtils::format_elapsed_short(getUptime());
+        doc[FPSTR(str_status)] = getStatusStr(status_);
+        doc[FPSTR(str_data)] = info_.toString();
     }
-    doc[FPSTR(str_status)] = getStatusStr(status_);
-    doc[FPSTR(str_data)] = info_.toString();
 }
 
 void Psu::togglePower() {

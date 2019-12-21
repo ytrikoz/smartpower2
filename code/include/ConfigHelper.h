@@ -19,7 +19,7 @@ class ConfigHelper : public Printable {
     void setDefaultParams();
     void load();
     bool load(Config *src, Queue<String>& data);
-    bool save();
+    bool save(bool backup = false);
     bool save(Config &src, Queue<String>& data);
     bool setBootPowerState(BootPowerState);
     bool setBootPowerState(uint8_t);

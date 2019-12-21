@@ -76,7 +76,8 @@ String ConfigHelper::extractValue(const String &str) {
     return res;
 }
 
-bool ConfigHelper::save() {
+bool ConfigHelper::save(bool backup) {
+    if (backup) FSUtils::rename(FS_MAIN_CONFIG, FS_MAIN_CONFIG ".bak");    
     auto file = StringFile(FS_MAIN_CONFIG);
     auto data = file.get();
     for (size_t i = 0; i < CONFIG_ITEMS; ++i) {

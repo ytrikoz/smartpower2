@@ -109,7 +109,7 @@ class LoopTimer {
    public:
     LoopTimer() : state_(CAPTURE_IDLE), start_(0) {}
 
-    void loop() {
+    void tick() {
         if (state_ != CAPTURE_PROGRESS) return;
 
         if (!start_) {

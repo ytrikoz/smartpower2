@@ -106,17 +106,25 @@
                                 name="power_mode" value="2" /></label>
                     </div>
                 </label>
+                <label>Output voltage
+                    <input id="slider_voltage" name="slider_voltage" type="range" min="4" max="13" step="0.1" value="5"
+                        data-popup-enabled="true">
+                    <div>
+                        <button id="btn_reset_startup_option" data-mini="true" data-inline="true">Reset</button>
+                        <button id="btn_save_startup_option" data-mini="true" data-inline="true">Save</button>
+                    </div>
+                </label>
             </div>
 
-            <div data-role="collapsible" data-inset="false" data-iconpos="right" data-theme="a" data-content-theme="a">
+            <!--<div data-role="collapsible" data-inset="false" data-iconpos="right" data-theme="a" data-content-theme="a">
                 <h3 for="slider_voltage">Output voltage</h3>
                 <input id="slider_voltage" name="slider_voltage" type="range" min="4" max="13" step="0.1" value="5"
                     data-popup-enabled="true">
                 <div>
                     <button id="btn_reset_voltage" data-mini="true" data-inline="true">Reset</button>
                     <button id="btn_save_voltage" data-mini="true" data-inline="true">Save</button>
-                </div>
-            </div>
+                </div> 
+            </div>-->
 
             <div data-role="collapsible" data-iconpos="right" data-inset="false" data-theme="a" data-content-theme="a">
                 <h3>Live data</h3>
@@ -167,15 +175,19 @@
 
     <div id="info" data-role="page" data-title="Info" data-theme="a">
         <div role="main" class="ui-content ui-corner-all custom-corners">
-            <div data-role="accordion" data-icons="" data-height-style="content">
+            <div data-role="collapsible" data-iconpos="right" data-inset="false" data-theme="a" data-content-theme="a">
                 <h3>Version</h3>
                 <ul class="keyvaluepairs">
                     <div id="version_info_cont"></div>
                 </ul>
+            </div>
+            <div data-role="collapsible" data-iconpos="right" data-inset="false" data-theme="a" data-content-theme="a">
                 <h3>Network</h3>
                 <ul class="keyvaluepairs">
                     <div id="network_info_cont"></div>
                 </ul>
+            </div>
+            <div data-role="collapsible" data-iconpos="right" data-inset="false" data-theme="a" data-content-theme="a">
                 <h3>System</h3>
                 <ul class="keyvaluepairs">
                     <div id="system_info_cont"></div>
@@ -184,7 +196,8 @@
         </div>
     </div>
 
-    <div id="dlg_restart" data-role="dialog" data-title="Restart" data-theme="a">
+    <div id="dlg_r
+</div>estart" data-role="dialog" data-title="Restart" data-theme="a">
         <div data-role="header">
             <h3>Restart?</h3>
         </div>

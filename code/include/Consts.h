@@ -111,7 +111,8 @@
 #define SHELL_HISTORY_SIZE 4
 
 #define ONE_MHz_hz 1000000UL
-#define HOLD_TIME_TO_RESET_s 5
+#define HOLD_TIME_RESTART_s 5
+#define HOLD_TIME_RESET_s 10
 
 static const char TIME_FORMAT[] PROGMEM = "%02d:%02d:%02d";
 static const char TIME_LONG_FORMAT[] PROGMEM = "%s %02d:%02d:%02d";

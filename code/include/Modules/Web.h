@@ -23,7 +23,7 @@ class Web : public Module {
     void sendToClients(const String&, uint8_t);
     void sendToClients(const String&, uint8_t, uint8_t);
     uint8_t getClients();
-    
+
    private:
     void onConnection(uint8_t);
     void onDisconnection(uint8_t);

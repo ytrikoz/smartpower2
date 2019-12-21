@@ -4,7 +4,7 @@
 
 #include "Utils/PsuUtils.h"
 
-inline int quadratic_regression(const float value, float c) {
+inline uint8_t quadratic_regression(const float value, float c) {
     double a = 0.0000006562;
     double b = 0.0022084236;
     double d = b * b - a * (c - value);

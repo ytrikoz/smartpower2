@@ -15,6 +15,19 @@ bool crashReportEnabled_ = false;
 uint8_t crashReportNumber_ = 0;
 bool setupDone = false;
 
+void handleState(AppState state) {
+    if (state == STATE_RESET) {
+        PrintUtils::print_ident(&Serial, FPSTR(str_config));
+        PrintUtils::print(&Serial, FPSTR(str_reset));
+        config->setDefaultParams();
+        config->save();
+    }        
+    if (state >= STATE_RESTART) {
+        system_restart();
+        delay(100);
+    }
+}
+
 void preinit() {
     system_update_cpu_freq(SYS_CPU_160MHZ);
     WiFi.persistent(false);
@@ -59,8 +72,12 @@ void loop() {
         return;
     } 
     syslog.loop();
-    app.loop(looptimer);
-    if (looptimer != nullptr) looptimer->loop();
+
+    AppState res = app.loop(loopTimer);
+    
+    if (loopTimer) loopTimer->tick();
+    
+    handleState(res);
 }
 
 void initCrashReport() {

@@ -6,5 +6,4 @@ Logger syslog;
 
 ConfigHelper* config;
 PowerLog* powerlog;
-LoopTimer* looptimer = nullptr;
-
+LoopTimer* loopTimer = nullptr;

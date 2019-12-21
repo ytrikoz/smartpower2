@@ -37,7 +37,8 @@ enum CommandAction {
     ACTION_SET,
     ACTION_CONTROL,
     ACTION_CONFIG,
-    ACTION_SHOW
+    ACTION_SHOW,
+    ACTION_DIFF
 };
 
 Command cmdConfig, cmdPower, cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet,
@@ -121,9 +122,9 @@ void onSystem(cmd *c) {
     String paramStr = getParamStr(cmd);
     String valueStr = getValueStr(cmd);
 
-    Module *mod = app.getInstanceByName(modStr.c_str());
+    Module *mod = app.getInstanceByName(modStr);
     if (mod) {
-        if (mod->execute(paramStr, valueStr)) {
+        if (!mod->execute(paramStr, valueStr)) {
             PrintUtils::println_done(out_);
         }
     } else {
@@ -175,6 +176,8 @@ CommandAction getAction(Command &cmd) {
         return ACTION_SET;
     } else if (strcasecmp_P(str.c_str(), str_show) == 0) {
         return ACTION_SHOW;
+    } else if (strcasecmp_P(str.c_str(), str_diff) == 0) {
+        return ACTION_DIFF;
     }
     return ACTION_UNKNOWN;
 }  // namespace Cli
@@ -361,8 +364,19 @@ void onConfig(cmd *c) {
             break;
         case ACTION_APPLY:
             if (config->save())
-                app.restart(3);
+                app.systemRestart();
             return;
+        case ACTION_DIFF: {
+            Config *cfg = config->get();
+            for (uint8_t i = 0; i < CONFIG_ITEMS; ++i) {
+                ConfigItem item = ConfigItem(i);
+                if (strcmp(cfg->getValue(item), cfg->getValueDefault(item))) {
+                    PrintUtils::print(out_, cfg->getParamName(item), cfg->getValue(item));
+                    PrintUtils::println(out_);
+                }
+            }
+            return;
+        }
         default:
             String actionStr = getActionStr(cmd);
             PrintUtils::println_unknown_action(out_, actionStr);
@@ -405,9 +419,7 @@ void onWol(cmd *c) {
 
 void onRestart(cmd *c) {
     Command cmd(c);
-    String value = getValueStr(cmd);
-    int delay = !value.length() ? 3 : value.toInt();
-    app.restart(delay);
+    app.systemRestart();
 }
 
 void onClock(cmd *c) {
@@ -480,13 +492,13 @@ void onGet(cmd *c) {
 
 void onLoop(cmd *c) {
     Command cmd(c);
-    if (!looptimer)
-        looptimer = new LoopTimer();
-    switch (looptimer->getState()) {
+    if (!loopTimer)
+        loopTimer = new LoopTimer();
+    switch (loopTimer->getState()) {
         case CAPTURE_IDLE:
             PrintUtils::print(out_, FPSTR(str_start), FPSTR(str_capture));
             PrintUtils::println(out_);
-            looptimer->start();
+            loopTimer->start();
             break;
         case CAPTURE_PROGRESS:
             PrintUtils::print(out_, FPSTR(str_progress));
@@ -494,9 +506,9 @@ void onLoop(cmd *c) {
             break;
         case CAPTURE_DONE: {
             PrintUtils::println(out_, FPSTR(str_done));
-            PrintUtils::print(out_, looptimer->getData());
-            looptimer->idle();
-            looptimer = nullptr;
+            PrintUtils::print(out_, loopTimer->getData());
+            loopTimer->idle();
+            loopTimer = nullptr;
             break;
         }
     }

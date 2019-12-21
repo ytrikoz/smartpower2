@@ -34,6 +34,7 @@ class App : public Host, PsuDataListener {
 
     void onNetworkStatusChange(bool has, NetworkMode mode);
     void setOutputVoltage(float value);
+
    public:
     String getName(uint8_t index) const override;
     Module *getInstance(uint8_t index) const override;
@@ -44,16 +45,16 @@ class App : public Host, PsuDataListener {
     void instanceMods();
     void initMods();
     void setupMods();
+    void systemRestart();
+    void systemReset();
 
    public:
-    void restart(time_t delay = 0);
-    void handleRestart();
     void setConfig(ConfigHelper *config);
     void setPowerlog(PowerLog *powerlog);
 
     void begin();
     void startSafe();
-    void loop(LoopTimer* looper = nullptr);
+    AppState loop(LoopTimer *looper = nullptr);
     void loopSafe();
 
     size_t printDiag(Print *p);
@@ -77,9 +78,9 @@ class App : public Host, PsuDataListener {
 
     uint8_t getTPW();
 
-    void refreshRedLed();
+    void refreshRed();
 
-    void refreshBlueLed();
+    void refreshBlue();
 
     void logMessage(const LogLevel level, const String &msg) {
         char buf[16];
@@ -120,6 +121,9 @@ class App : public Host, PsuDataListener {
     void restart();
 
    private:
+    AppState exitState_;
+    bool exitFlag_;
+
     bool systemEvent_;
     bool networkEvent_;
     bool psuEvent_;
@@ -128,17 +132,12 @@ class App : public Host, PsuDataListener {
     NetworkMode networkMode_;
     bool webClients_;
     bool telnetClients_;
-    PsuStatus psuStatus_;
-    PsuState psuState_;
 
     ConfigHelper *config_;
     PowerLog *powerlog_;
     WiFiEventHandler onDisconnected, onGotIp;
 
-    bool restartFlag_;    
-    unsigned long restartUpdated_;
-    time_t restartCountdown_;
-    
+
     uint8_t boot_per;
 
    private:

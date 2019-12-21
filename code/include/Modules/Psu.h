@@ -10,7 +10,7 @@ namespace Modules {
 
 class Psu : public Module {
    public:
-    Psu() : Module(), startTime_(0), infoUpdated_(0), powerInfoUpdated_(0), listenerUpdate_(0), lastStore_(0){}
+    Psu() : Module(), startTime_(0), infoUpdated_(0), powerInfoUpdated_(0), listenerUpdate_(0), lastStore_(0), lastStoredWh_(0), lastStoredState_(-1){}
 
     void onDiag(const JsonObject&) override;
 
@@ -41,6 +41,7 @@ class Psu : public Module {
     bool onInit() override;
     bool onStart() override;
     void onLoop() override;
+    Error onExecute(const String &paramStr, const String &valueStr) override;
    
    private:          
     void applyState(PsuState value);
@@ -56,7 +57,8 @@ class Psu : public Module {
     bool storeState(PsuState);
     bool restoreState(PsuState&);
 
-    int mapVoltage(const float value);
+    uint8_t mapVoltage(const float value);
+    bool mapState(const PsuState state);
    private:
     PsuDataListener* dataListener_;
     PsuStateChangeHandler stateChangeHandler_;
@@ -67,9 +69,10 @@ class Psu : public Module {
     PsuError error_;
     PsuAlert alert_;
     PsuData info_;
-
     unsigned long startTime_, infoUpdated_, powerInfoUpdated_, listenerUpdate_,
-        lastCheck_, lastStore_;
+        lastStore_, lastCheck_;
+    double lastStoredWh_;
+    float lastStoredState_;
 };
 
 }  // namespace Modules

@@ -18,7 +18,7 @@ class Button : public Module {
    public:
     void setOnClick(ButtonClickEventHandler handler);
     void setOnHold(ButtonHoldEventHandler handler);
-    void setOnRelease(ButtonHoldReleaseEventHandler handler);
+    void setholdReleaseEvent(ButtonHoldReleaseEventHandler handler);
 
    public:
     void onDiag(const JsonObject& doc) override;
@@ -37,10 +37,11 @@ class Button : public Module {
     ButtonHoldEventHandler holdEventHandler;
     ButtonHoldReleaseEventHandler holdReleaseEventHandler;
 
-    time_t hold_;
+    ButtonState last_;
     unsigned long update_;
     unsigned long pressed_;
-    ButtonState last_;
+    unsigned long hold_;
+    unsigned long prevHold_;
 };
 
 }  // namespace Modules

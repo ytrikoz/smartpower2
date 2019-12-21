@@ -31,14 +31,9 @@ bool Clock::onInit() {
 
 bool Clock::onStart() {
     if (!isTimeSet()) {
-        PrintUtils::print_ident(out_, FPSTR(str_clock));
-        if (restoreState()) {
-            PrintUtils::print(out_, FPSTR(str_restored), TimeUtils::format_time(getLocal()));
+        if (restoreState()) {        
             setSystemTime(epoch_);
-        } else {
-            PrintUtils::print(out_, FPSTR(str_not), FPSTR(str_stored));
         }
-        PrintUtils::println(out_);
     }
     setSntp();
     return true;
@@ -114,8 +109,12 @@ time_t Clock::toLocal(time_t epoch) {
 }
 
 bool Clock::restoreState() {
-    if (FSUtils::readTime(FS_UTC_VAR, lastKnown_))
+    if (FSUtils::readTime(FS_UTC_VAR, lastKnown_)) {
         epoch_ = lastKnown_;
+        PrintUtils::print_ident(out_, FPSTR(str_clock));
+        PrintUtils::print(out_, FPSTR(str_arrow_src), TimeUtils::format_time(getLocal()));
+        PrintUtils::println(out_);
+    }
     else
         lastKnown_ = 0;
     return lastKnown_;

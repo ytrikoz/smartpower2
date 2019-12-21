@@ -7,7 +7,7 @@
 using namespace PrintUtils;
 using namespace StrUtils;
 
-App::App() : networkEvent_(true), restartFlag_(false), restartCountdown_(0) {}
+App::App() : exitState_(STATE_NORMAL), exitFlag_(false), systemEvent_(true), networkEvent_(false), psuEvent_(false) {}
 
 void App::instanceMods() {
     modules[MOD_LED].obj = new Modules ::Led();
@@ -48,7 +48,22 @@ void App::setupMods() {
     * Button
     */
     btn()->setOnClick([this]() { if (psu()) psu()->togglePower(); });
-    btn()->setOnHold([this](time_t time) {if (time >= HOLD_TIME_TO_RESET_s) restart(3); });
+    btn()->setOnHold([this](time_t time) {
+        if (time >= HOLD_TIME_RESTART_s && exitState_ < STATE_RESTART) {
+            PrintUtils::print_ident(out_, FPSTR(str_app));
+            PrintUtils::println(out_, FPSTR(str_restart));
+            exitState_ = STATE_RESTART;
+        }
+        if (time >= HOLD_TIME_RESET_s && exitState_ < STATE_RESET) {
+            PrintUtils::print_ident(out_, FPSTR(str_app));
+            PrintUtils::println(out_, FPSTR(str_reset));
+            exitState_ = STATE_RESET;
+        }
+        systemEvent_ = exitState_ != STATE_NORMAL;
+    });
+    btn()->setholdReleaseEvent([this](time_t time) {
+        exitFlag_ = exitState_ != STATE_NORMAL;
+    });
     /*
     * Power
     */
@@ -81,17 +96,22 @@ void App::setupMods() {
     });
 }
 
+void App::systemRestart() {
+    exitState_ = STATE_RESTART;
+    exitFlag_ = true;
+}
+
+void App::systemReset() {
+    exitState_ = STATE_RESET;
+    exitFlag_ = true;
+}
+
 void App::onPsuStateChange(PsuState state) {
     psuEvent_ = true;
-    psuState_ = state;
-    display()->refresh();
 }
 
 void App::onPsuStatusChange(PsuStatus status) {
     psuEvent_ = true;
-    psuStatus_ = status;
-    web()->sendPageState(PG_HOME);
-    display()->refresh();
 }
 
 void App::onPsuData(PsuData &item) {
@@ -177,47 +197,39 @@ void App::startSafe() {
 
 void App::loopSafe() { console()->loop(); }
 
-void App::loop(LoopTimer* looper) {
-    if (restartFlag_) {
-        unsigned long now = millis();
-        if (millis_passed(restartUpdated_, now) >= ONE_SECOND_ms) {
-            restartUpdated_ = now;
-            if (restartCountdown_ == 3) {
-                PrintUtils::print(out_, FPSTR(msg_restart));
-                systemEvent_ = true;
-            }
-            restartCountdown_--; 
-            if (restartCountdown_ == 0)
-                system_restart();           
-        }
-    }
+AppState App::loop(LoopTimer *looper) {
+    if (exitFlag_) return exitState_;
 
     for (size_t i = 0; i < APP_MODULES; ++i) {
         auto *obj = getInstance(i);
-        if (!obj) {
-            continue;
-        }
+        if (!obj) continue;
         if ((!hasNetwork_ && modules[i].network) || (hasNetwork_ && networkMode_ < modules[i].network)) {
             obj->stop();
             continue;
         } else {
             if (obj->start()) {
-                if (looper) looper->start(i);                                            
+                if (looper) looper->start(i);
                 obj->loop();
-                if (looper) looper->end();                                
+                if (looper) looper->end();
             }
             delay(0);
         }
     }
 
-    if (networkEvent_ || systemEvent_) {
-        refreshBlueLed();
+    if (psuEvent_) {
+        web()->sendPageState(PG_HOME);
+        display()->refresh();
     }
 
-    if (psuEvent_ || systemEvent_)
-        refreshRedLed();
+    if (systemEvent_ || networkEvent_)
+        refreshBlue();
+
+    if (systemEvent_ || psuEvent_)
+        refreshRed();
 
     networkEvent_ = systemEvent_ = psuEvent_ = false;
+
+    return STATE_NORMAL;
 }
 
 size_t App::printDiag(Print *p) {
@@ -241,17 +253,10 @@ size_t App::printDiag(Print *p) {
     return n += p->println();
 }
 
-void App::restart(time_t time) {
-    restartFlag_ = true;
-    restartCountdown_ = time;
-    restartUpdated_ = millis();
-}
-
 void App::displayProgress(uint8_t progress, const char *message) {
     if (display() && (display()->isEnabled()))
         display()->showProgress(progress, message);
 }
-
 
 void App::setOutputVoltage(float value) {
     config_->get()->setValueFloat(OUTPUT_VOLTAGE, value);
@@ -269,9 +274,9 @@ bool App::setBootPowerState(BootPowerState value) {
     return res;
 }
 
-void App::refreshBlueLed() {
+void App::refreshBlue() {
     LedSignal mode = LIGHT_OFF;
-    if (restartFlag_) {
+    if (systemEvent_ && exitState_ >= STATE_RESTART) {
         mode = BLINK_ERROR;
     } else if (hasNetwork_) {
         mode = LIGHT_ON;
@@ -281,18 +286,17 @@ void App::refreshBlueLed() {
     led()->set(BLUE_LED, mode);
 }
 
-void App::refreshRedLed() {
+void App::refreshRed() {
     LedSignal mode = LIGHT_ON;
-    if (restartFlag_) {
+    if (systemEvent_ && exitState_ >= STATE_RESET) {
         mode = BLINK_ERROR;
-    } else if (psuStatus_ == PSU_OK) {
-        mode = psuState_ == POWER_ON ? BLINK : LIGHT_ON;
+    } else if (psu()->getStatus() == PSU_OK) {
+        mode = psu()->getState() == POWER_ON ? BLINK : LIGHT_ON;
     } else {
         mode = BLINK_ALERT;
     }
     led()->set(RED_LED, mode);
 }
-
 
 void App::setPowerlog(PowerLog *powerlog) {
     powerlog_ = powerlog;
