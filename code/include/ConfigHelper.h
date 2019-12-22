@@ -12,6 +12,7 @@ class ConfigHelper : public Printable {
     ~ConfigHelper();
     size_t printTo(Print &p) const;
   public:
+    int setParam(const char* name, const char* value);
     void setName(const char* name);
     bool check();
     const char* name();
@@ -31,6 +32,7 @@ class ConfigHelper : public Printable {
     float getOutputVoltage();
     uint8_t getTPW();
     bool getWhStoreEnabled();
+    NetworkMode getWiFiMode();    
     bool setWiFiMode(uint8_t);
     bool setWiFiMode(WiFiMode_t);
     bool setSSID(const char *);

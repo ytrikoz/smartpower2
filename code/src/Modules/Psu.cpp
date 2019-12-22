@@ -75,8 +75,15 @@ void Psu::onLoop() {
     }    
 }
 
-Error Psu::onExecute(const String &paramStr, const String &valueStr) {
-    mcp4652_set(paramStr.toInt());
+bool Psu::onConfigChange(const ConfigItem param, const char* value) {
+    if (state_ == POWER_ON && param == OUTPUT_VOLTAGE) {
+        setOutputVoltage(getOutputVoltage());
+    }
+    return true;
+}
+
+Error Psu::onExecute(const String &param, const String &value) {
+    mcp4652_set(param.toInt());
     Error err = Error();
     return err;
 }
@@ -123,14 +130,6 @@ uint8_t Psu::mapVoltage(const float value) {
     return quadratic_regression(v, min);
 }
 
-bool Psu::isPowerOn() const {
-    return state_ == POWER_ON;
-}
-
-bool Psu::isWhStoreEnabled() const {
-    return config_->getValueAsBool(WH_STORE_ENABLED);
-}
-
 void Psu::setOutputVoltage(const float value) {
     PrintUtils::print_ident(out_, FPSTR(str_psu));
     PrintUtils::print(out_, FPSTR(str_voltage), FPSTR(str_arrow_dest), value);
@@ -145,6 +144,14 @@ void Psu::applyVoltage(const float value) {
 
 float Psu::getOutputVoltage() const {
     return config_->getValueAsFloat(OUTPUT_VOLTAGE);
+}
+
+bool Psu::isPowerOn() const {
+    return state_ == POWER_ON;
+}
+
+bool Psu::isWhStoreEnabled() const {
+    return config_->getValueAsBool(WH_STORE_ENABLED);
 }
 
 BootPowerState Psu::getBootPowerState() const {

@@ -1,134 +1,69 @@
-/* eslint-disable no-console */
-/* eslint-disable max-len */
+/* eslint-disable camelcase */
 /* eslint-disable no-undef */
-
-const GET_PAGE = 'p';
-const SET_ONOFF = 'o';
-const SET_MEASUREWATTHOUR = 'm';
-const SET_POWER_MODE = 'a';
-const SET_DEFAULT_VOLTAGE = 'v';
-const SET_VOLTAGE = 'w';
-const SET_NETWORK = 'n';
-const FW_VERSION = 'f';
-const TAG_PVI = 'd';
-
-const TAG_SYS_INFO = 'S';
-const TAG_NETWORK_INFO = 'N';
-
-const PAGE_MAIN_JSON = 'M';
-const PAGE_OPTIONS_JSON = 'O';
-
 const PAGE_HOME = 1;
 const PAGE_OPTIONS = 2;
 const PAGE_INFO = 3;
 
 let ws;
+const RESET_INTERVAL = 60000;
 
-// eslint-disable-next-line no-unused-vars
-function parseIP(ipaddress) { if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ipaddress)) { return ipaddress; } return ''; }
-
-function onVoltChange(item) {
-  $('#volt_ss').sevenSeg({ digits: 5, decimalPlaces: 3, value: item.last });
-}
-
-function onAmpChange(item) {
-  $('#amp_ss').sevenSeg({ digits: 5, decimalPlaces: 3, value: item.last });
-}
-
-function onWattChange(item) {
-  $('#watt_ss').sevenSeg({ digits: 5, decimalPlaces: 3, value: item.last });
-}
-
-function onWatthChange(item) {
-  if (item.last < 10) {
-    $('#watth_ss').sevenSeg({ digits: 5, decimalPlaces: 3 });
-  } else if (item.last < 100) {
-    $('#watth_ss').sevenSeg({ digits: 5, decimalPlaces: 2 });
-  } else if (item.last < 1000) {
-    $('#watth_ss').sevenSeg({ digits: 5, decimalPlaces: 1 });
-  } else {
-    $('#watth_ss').sevenSeg({ digits: 5, decimalPlaces: 0 });
+class Measurement {
+  constructor(name, onChange) {
+    this.name = name;
+    this.onChange = onChange;
+    this.lastStatUpdate = $.now();
+    this.reset();
   }
-  $('#watth_ss').sevenSeg({ value: item.last });
-}
 
-voltMeasurement = new Measurement('Volt', onVoltChange);
-currentMeasurement = new Measurement('Amps', onAmpChange);
-powerMeasurement = new Measurement('Watt', onWattChange);
-watthMeasurement = new Measurement('Watth', onWatthChange);
-
-// eslint-disable-next-line no-template-curly-in-string
-const template = {
-  '<>': 'li',
-  html() {
-    let key;
-    // eslint-disable-next-line no-restricted-syntax
-    for (key in this) if (Object.prototype.hasOwnProperty.call(this, key)) break;
-    return `${key}<span>${this[key]}</span>`;
-  },
-};
-
-function showOnOff(value) {
-  $('#chk_onoff').val(value ? 'on' : 'off').flipswitch().flipswitch('refresh');
-  if (value) {
-    $('ui-icon-power').addClass('state-on');
-  } else {
-    $('ui-icon-power').addClass('state-off');
+  setValue(newValue) {
+    if ($.now() - RESET_INTERVAL > this.lastStatUpdate) {
+      this.reset();
+    }
+    let changes = false;
+    if ((typeof this.lastValue === 'undefined') || (this.curValue !== newValue)) {
+      this.lastValue = newValue;
+      changes = true;
+    }
+    if ((typeof this.minValue === 'undefined') || ((this.minValue > newValue) || (this.newValue !== 0))) {
+      this.minValue = newValue;
+      changes = true;
+    }
+    if ((typeof this.maxValue === 'undefined') || (this.maxValue < newValue)) {
+      this.maxValue = newValue;
+      changes = true;
+    }
+    this.samplesCounter += 1;
+    if (changes) {
+      this.onChange(this);
+    }
   }
-}
 
-function enableOnOff(enabled = true) {
-  if (enabled) {
-    $('#onoff').removeClass('ui-state-disabled');
-  } else {
-    $('#onoff').addClass('ui-state-disabled');
+  get counter() {
+    return this.samplesCounter;
   }
-}
 
-function setHold(value) {
-  $('#chk_hold').val(value ? 'on' : 'off').flipswitch().flipswitch('refresh');
-
-  enableOnOff(!value);
-}
-
-function enableDashboard(enabled = true) {
-  const $containers = $('#livedata .ss_cont');
-  if (enabled) {
-    $containers.removeClass('ui-state-disabled');
-  } else {
-    $containers.addClass('ui-state-disabled');
-    $containers.sevenSeg().sevenSeg({ digits: 5, decimalPlaces: 3, value: null });
+  get last() {
+    return this.lastValue;
   }
-}
 
-function showPowerMode(value) {
-  const $obj = $('input:radio[name="power_mode"]');
-  $obj.prop('checked', false).checkboxradio().checkboxradio('refresh');
-  $obj.filter(`[value="${value}"]`).prop('checked', true).checkboxradio('refresh');
-}
-
-function showOutputVoltage(value) {
-  $('#slider_voltage').val(value).slider().slider('refresh');
-}
-
-function showEnableLog(value) {
-  $('#chk_enable_log').val(value ? 'on' : 'off').flipswitch().flipswitch('refresh');
-}
-
-function getConnectionStatus() {
-  try {
-    return ws.readyState === WebSocket.OPEN;
-  } catch (e) {
-    return false;
+  get max() {
+    return this.maxValue;
   }
-}
 
-// eslint-disable-next-line no-unused-vars
-function convertLineBreaks(line) {
-  if (line) {
-    return line.replace(/(?:\r\n|\r|\n)/g, '<br>');
+  get min() {
+    return this.minValue;
   }
-  return '';
+
+  get stat() {
+    return `${this.name} - ${this.counter} from ${this.min} to ${this.max}`;
+  }
+
+  reset() {
+    this.maxValue = undefined;
+    this.minValue = undefined;
+    this.lastValue = undefined;
+    this.samplesCounter = 0;
+  }
 }
 
 function getPageIndex(title) {
@@ -144,50 +79,155 @@ function getPageIndex(title) {
   return -1;
 }
 
-function send(message) {
-  console.log('>>>', message, getConnectionStatus());
+function getWSUri() {
+  const scheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+  const uri = `${scheme}${window.location.host}/ws`;
+  // return 'ws://192.168.1.204/ws';
+  return uri;
+}
+
+function getConnectionStatus() {
   try {
-    ws.send(message);
+    return ws.readyState === WebSocket.OPEN;
+  } catch (e) {
+    return false;
+  }
+}
+
+function send(data) {
+  try {
+    ws.send(data);
     return true;
   } catch (e) {
     return false;
   }
 }
 
+//
+// Home Page
+//
+function showPower(value) {
+  $('#chk_power').val(value ? 'on' : 'off').flipswitch().flipswitch('refresh');
+}
+
+function enableDashboard(enabled = true) {
+  // const $obj = $('#power_switch_cont');
+  // if (value) {
+  //   $obj.addClass('state-on');
+  // } else {
+  //   $obj.removeClass('state-off');
+  // }
+  const $obj = $('#dashboard .ss_cont');
+  if (enabled) {
+    $obj.removeClass('ui-state-disabled');
+  } else {
+    $obj.addClass('ui-state-disabled');
+  }
+}
+
+const voltage = new Measurement('V', () => {
+  $('#v_ss').sevenSeg({ digits: 5, decimalPlaces: 3, value: voltage.last });
+});
+
+const current = new Measurement('A', () => {
+  $('#i_ss').sevenSeg({ digits: 5, decimalPlaces: 3, value: current.last });
+});
+
+const power = new Measurement('P', () => {
+  $('#p_ss').sevenSeg({ digits: 5, decimalPlaces: 3, value: power.last });
+});
+
+const watth = new Measurement('W', () => {
+  if (watth.last < 10) {
+    $('#wh_ss').sevenSeg({ digits: 5, decimalPlaces: 3 });
+  } else if (watth.last < 100) {
+    $('#wh_ss').sevenSeg({ digits: 5, decimalPlaces: 2 });
+  } else if (watth.last < 1000) {
+    $('#wh_ss').sevenSeg({ digits: 5, decimalPlaces: 1 });
+  } else {
+    $('#wh_ss').sevenSeg({ digits: 5, decimalPlaces: 0 });
+  }
+  $('#wh_ss').sevenSeg({ value: watth.last });
+});
+//
+// Options Page
+//
+function showBootMode(value) {
+  const $obj = $('input:radio[name="boot_mode"]');
+  $obj.prop('checked', false).checkboxradio().checkboxradio('refresh');
+  $obj.filter(`[value="${value}"]`).prop('checked', true).checkboxradio('refresh');
+}
+
+function showVoltage(value) {
+  $('#voltage').val(value).slider().slider('refresh');
+}
+
+function showStoreWh(value) {
+  $('#storewh').val(value ? 'on' : 'off').flipswitch().flipswitch('refresh');
+}
+//
+// Wifi Mode
+//
 function showWiFi(value) {
   const $wifiMode = $('input:radio[name="wifi_mode"]');
   $wifiMode.prop('checked', false).checkboxradio().checkboxradio('refresh');
   $wifiMode.filter(`[value="${value}"]`).prop('checked', true).checkboxradio('refresh');
 }
-
+//
+// STA
+//
 function showSSID(value) {
-  $('#tf_ssid').val(value).textinput().textinput('refresh');
+  $('#txt_ssid').val(value).textinput().textinput('refresh');
 }
 
-function showPassword(value) {
-  $('#tf_passwd').val(value).textinput().textinput('refresh');
+function showPasswd(value) {
+  $('#txt_passwd').val(value).textinput().textinput('refresh');
 }
 
 function showDHCP(value) {
   $('#chk_dhcp').val(value ? 'on' : 'off').flipswitch().flipswitch('refresh');
 }
 
+function enableIPAddr(enabled = true) {
+  if (enabled) {
+    $('#sta_ipaddr_cont').removeClass('ui-state-disabled');
+  } else {
+    $('#sta_ipaddr_cont').addClass('ui-state-disabled');
+  }
+}
+
 function showIPAddr(value) {
-  $('#tf_ipaddr').val(value).textinput().textinput('refresh');
+  $('#txt_ipaddr').val(value).textinput().textinput('refresh');
 }
 
 function showNetmask(value) {
-  $('#tf_netmask').val(value).textinput().textinput('refresh');
+  $('#txt_netmask').val(value).textinput().textinput('refresh');
 }
 
 function showGateway(value) {
-  $('#tf_gateway').val(value).textinput().textinput('refresh');
+  $('#txt_gateway').val(value).textinput().textinput('refresh');
 }
 
 function showDns(value) {
-  $('#tf_dns').val(value).textinput().textinput('refresh');
+  $('#txt_dns').val(value).textinput().textinput('refresh');
+}
+//
+// AP
+//
+function showAP_SSID(value) {
+  $('#txt_ap_ssid').val(value).textinput().textinput('refresh');
 }
 
+function showAP_Passwd(value) {
+  $('#txt_ap_passwd').val(value).textinput().textinput('refresh');
+}
+
+function showAP_IPAddr(value) {
+  $('#txt_ap_ipaddr').val(value).textinput().textinput('refresh');
+}
+//
+// Info
+//
 function showVersion(value) {
   $('#version_info_cont').json2html(value, template, { replace: true });
 }
@@ -200,13 +240,6 @@ function showSysInfo(value) {
   $('#system_info_cont').json2html(value, template, { replace: true });
 }
 
-function enableIpAddrFields(enabled = true) {
-  if (enabled) {
-    $('#ipaddr_cont').removeClass('ui-state-disabled');
-  } else {
-    $('#ipaddr_cont').addClass('ui-state-disabled');
-  }
-}
 
 function enableUI(value = true) {
   if (value) {
@@ -216,86 +249,92 @@ function enableUI(value = true) {
   }
 }
 
-function sendOnOff(value) {
-  // invert!
-  send(`${SET_ONOFF}${value ? '1' : '0'}`);
+function setPage(value) {
+  const data = { page: value };
+  return send(JSON.stringify(data));
 }
 
-function sendLogEnabled(value) {
-  send(`${SET_MEASUREWATTHOUR}${value ? '1' : '0'}`);
+// Home
+function setPower(value) {
+  const data = { power: value };
+  send(JSON.stringify(data));
+}
+function setWh(value) {
+  const data = { wh: value };
+  send(JSON.stringify(data));
 }
 
-function sendPowermode(value) {
-  send(`${SET_POWER_MODE}${value}`);
+// Options
+function setBootMode(value) {
+  const data = { set: [{ bootpwr: value }] };
+  send(JSON.stringify(data));
+}
+function setVoltage(value) {
+  const data = { set: [{ voltage: value }] };
+  send(JSON.stringify(data));
+}
+function setStoreWh(value) {
+  const data = { set: [{ storewh: value ? 1 : 0 }] };
+  send(JSON.stringify(data));
 }
 
-function sendOutputVoltage(value, saveAsDefault = false) {
-  send(`${SET_VOLTAGE}${value}`);
-  if (saveAsDefault) {
-    send(SET_DEFAULT_VOLTAGE);
-  }
+function setWifi(wifi) {
+  const data = {
+    set: [{ wifi }],
+  };
+  send(JSON.stringify(data));
 }
 
-function sendNetwork(wifi, ssid, passwd, dhcp, ip, netmask, gateway, dns) {
-  send(`${SET_NETWORK}${wifi},${ssid},${passwd},${dhcp ? '1' : '0'},${ip},${netmask},${gateway},${dns}`);
+function setSta(ssid, passwd, dhcp, ipaddr, netmask, gateway, dns) {
+  const data = {
+    set: [
+      { ssid },
+      { passwd },
+      { dhcp },
+      { ipaddr },
+      { netmask },
+      { gateway },
+      { dns }],
+  };
+  send(JSON.stringify(data));
 }
 
-function updateUI(param, value) {
-  switch (param) {
-    case TAG_PVI: {
-      const strArray = value.split(',');
-      const volts = parseFloat(strArray[0]);
-      const amps = parseFloat(strArray[1]);
-      const watt = parseFloat(strArray[2]);
-      const watth = parseFloat(strArray[3]);
-      voltMeasurement.setValue(volts);
-      currentMeasurement.setValue(amps);
-      powerMeasurement.setValue(watt);
-      watthMeasurement.setValue(watth);
-      break;
-    }
-    case TAG_SYS_INFO: {
-      showSysInfo(value);
-      break;
-    }
-    case TAG_NETWORK_INFO: {
-      showNetworkInfo(value);
-      break;
-    }
-    case FW_VERSION:
-      showVersion(value);
-      break;
-    default:
-      console.log('unknown', param, value);
-      break;
-  }
+function setAp(ssid, passwd, ipaddr) {
+  const data = {
+    set: [
+      { ap_ssid: ssid },
+      { ap_passwd: passwd },
+      { ap_ipaddr: ipaddr },
+    ],
+  };
+  send(JSON.stringify(data));
 }
 
-function update(k, v) {
+function updateUI(k, v) {
   switch (k) {
-    case 'switch':
-      showOnOff(v);
+    case 'power':
+      showPower(v);
       break;
-    case 'total':
-      showEnableLog(v);
+    case 'storewh':
+      showStoreWh(v);
       break;
     case 'V':
-      voltMeasurement.setValue(v);
+      voltage.setValue(v);
       break;
     case 'I':
-      currentMeasurement.setValue(v);
+      current.setValue(v);
       break;
     case 'P':
-      powerMeasurement.setValue(v);
+      power.setValue(v);
       break;
     case 'Wh':
-      watthMeasurement.setValue(v);
+      watth.setValue(v);
       break;
-    case 'boot':
-      showPowerMode(parseInt(v, 10));
+    case 'bootpwr':
+      showBootMode(parseInt(v, 10));
       break;
     case 'voltage':
-      showOutputVoltage(parseFloat(v));
+      showVoltage(parseFloat(v));
       break;
     case 'wifi':
       showWiFi(parseInt(v, 10));
@@ -303,8 +342,14 @@ function update(k, v) {
     case 'ssid':
       showSSID(v);
       break;
-    case 'password':
-      showPassword(v);
+    case 'ap_ssid':
+      showAP_SSID(v);
+      break;
+    case 'passwd':
+      showPasswd(v);
+      break;
+    case 'ap_passwd':
+      showAP_Passwd(v);
       break;
     case 'dhcp':
       showDHCP(v);
@@ -312,138 +357,168 @@ function update(k, v) {
     case 'ipaddr':
       showIPAddr(v);
       break;
+    case 'ap_ipaddr':
+      showAP_IPAddr(v);
+      break;
+    case 'gateway':
+      showGateway(v);
+      break;
     case 'netmask':
       showNetmask(v);
       break;
     case 'dns':
       showDns(v);
       break;
-    default:
+    case 'sysinfo': {
+      showSysInfo(v);
+      break;
+    }
+    case 'netinfo': {
+      showNetworkInfo(v);
+      break;
+    }
+    case 'version': {
+      showVersion(v);
+      break;
+    }
+    default: {
+      // eslint-disable-next-line no-console
       console.log('unknown', k);
       break;
+    }
   }
 }
 
-
-function parseMessage(message) {
-  console.log('<<<', message);
-  const param = message.charAt(0);
-  const value = message.substring(1);
-  if ((param === PAGE_MAIN_JSON) || (param === PAGE_OPTIONS_JSON)) {
-    JSON.parse(value, (k, v) => {
-      if (k === '') return;
-      update(k, v);
-    });
-  } else {
-    updateUI(param, value);
-  }
+function parseMessage(data) {
+  JSON.parse(data, (k, v) => {
+    if (k === '') return;
+    updateUI(k, v);
+  });
 }
 
 // eslint-disable-next-line no-unused-vars
 function onload() {
   try {
-    const scheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-    const uri = `${scheme}${window.location.host}/ws`;
-    console.log('connect', uri);
-    // ws = new WebSocket('ws://192.168.1.204/ws');
+    const uri = getWSUri();
     ws = new WebSocket(uri);
-    ws.onmessage = function onMessage(msg) {
+    ws.onmessage = (msg) => {
       enableUI();
       parseMessage(msg.data);
     };
-    ws.onopen = function onOpen() {
+    ws.onopen = () => {
       const page = getPageIndex($('.ui-page-active').jqmData('title'));
-      if (page > 0) {
-        send(`${GET_PAGE}${[page]}`);
-      }
+      if (page > 0) setPage(page);
     };
-    ws.onclose = function onClose() {
+    ws.onclose = () => {
       enableUI(false);
       setTimeout(onload, 1000);
     };
   } catch (e) {
+    // eslint-disable-next-line no-console
     console.log(e);
   }
 }
 
-$(() => {
-  $('[data-role="navbar"]').navbar();
-  $('[data-role="toolbar"]').toolbar();
-});
-
 $(document).on('pagecontainerbeforeshow', (event, ui) => {
-  const pageName = $(ui.toPage).jqmData('title');
-  const page = getPageIndex(pageName);
+  const name = $(ui.toPage).jqmData('title');
+  const page = getPageIndex(name);
   if (page > 0) {
-    if (getConnectionStatus() && send(`${GET_PAGE}${[page]}`)) {
+    if (getConnectionStatus() && setPage(page)) {
       $(ui.toPage).removeClass('ui-disabled');
     }
   }
 });
 
 $(document).on('pagecontainershow', (event, ui) => {
-  const pageName = $(ui.toPage).jqmData('title');
+  const name = $(ui.toPage).jqmData('title');
   $('[data-role="navbar"] a.ui-button-active').removeClass('ui-button-active');
   $('#footer a').each((_index, element) => {
-    if ($(element).text() === pageName) {
+    if ($(element).text() === name) {
       $(element).addClass('ui-button-active');
     }
   });
 });
 
 $(document).ready(() => {
-  $('#chk_hold').change(() => {
-    const value = $('#chk_hold').val() === 'on';
-    enableOnOff(!value);
+  $(() => {
+    $('[data-role="navbar"]').navbar();
+    $('[data-role="toolbar"]').toolbar();
   });
-
-  $('#chk_onoff').change(() => {
-    const value = $('#chk_onoff').val() === 'on';
+  // Home
+  $('#chk_power').change(() => {
+    const value = $('#chk_power').val() === 'on';
+    setPower(value);
     enableDashboard(value);
-    setHold(value);
-    sendOnOff(value);
   });
-
-  $('#chk_enable_log').change(() => {
-    const value = $('#chk_enable_log').val() === 'on';
-    sendLogEnabled(value);
+  $('#v_ss').sevenSeg({
+    digits: 5,
+    value: null,
   });
-
-  $('#btn_reset_startup_option').click(() => {
-    showPowerMode(0);
-    showOutputVoltage(5);
-    sendPowermode(0);
-    sendOutputVoltage(5, true);
+  $('#p_ss').sevenSeg({
+    digits: 5,
+    value: null,
   });
-
-  $('#btn_save_startup_option').click(() => {
-    const powerMode = $('input:radio[name=power_mode]:checked').val();
-    const outputVoltage = $('#slider_voltage').val();
-    sendPowermode(powerMode);
-    sendOutputVoltage(outputVoltage, true);
+  $('#i_ss').sevenSeg({
+    digits: 5,
+    colorOff: '#003200',
+    colorOn: 'Lime',
+    value: null,
   });
-
-  $('#btn_reset_total').click(() => {
-    sendWh(0);
+  $('#wh_ss').sevenSeg({
+    digits: 5,
+    value: null,
+  });
+  $('#btn_wh_zero').click(() => {
+    setWh(0);
+  });
+  //
+  // Options
+  //
+  $('#slider_averaging').change(() => {
+    const value = $('#slider_averaging').val();
+    setAveraging(value);
+  });
+  $('input:radio[name=boot_mode]').change(() => {
+    const value = $('input:radio[name=boot_mode]:checked').val();
+    setBootMode(value);
+  });
+  $('#chk_totalwh').change(() => {
+    const value = $('#chk_totalwh').val() === 'on';
+    setStoreWh(value);
+  });
+  $('#btn_apply_voltage').click(() => {
+    const value = $('#slider_voltage').val();
+    setVoltage(parseFloat(value));
   });
 
   $('#chk_dhcp').change(() => {
     const value = $('#chk_dhcp').val() === 'on';
-    enableIpAddrFields(!value);
+    enableIPAddr(!value);
   });
 
-  $('#btn_save_network').click(() => {
+  $('#btn_save_wifi_mode').click(() => {
     const wifi = $('input:radio[name=wifi_mode]:checked').val();
-    const ssid = $('#tf_ssid').val();
-    const passwd = $('#tf_passwd').val();
+    setWifi(wifi);
+    $('.ui-pagecontainer').pagecontainer('change', '#dlg_restart', { reverse: false, changeHash: true });
+  });
+
+  $('#btn_save_sta').click(() => {
+    const ssid = $('#txt_ssid').val();
+    const passwd = $('#txt_passwd').val();
     const dhcp = $('#chk_dhcp').val() === 'on';
-    const ip = $('#tf_ipaddr').val();
-    const netmask = $('#tf_netmask').val();
-    const gateway = $('#tf_gateway').val();
-    const dns = $('#tf_dns').val();
+    const ipaddr = $('#txt_ipaddr').val();
+    const netmask = $('#txt_netmask').val();
+    const gateway = $('#txt_gateway').val();
+    const dns = $('#txt_dns').val();
+    setSta(ssid, passwd, dhcp, ipaddr, netmask, gateway, dns);
+    $('.ui-pagecontainer').pagecontainer('change', '#dlg_restart', { reverse: false, changeHash: true });
+  });
 
-    sendNetwork(wifi, ssid, passwd, dhcp, ip, netmask, gateway, dns);
-
+  $('#btn_save_ap').click(() => {
+    const ssid = $('#txt_ap_ssid').val();
+    const passwd = $('#txt_ap_passwd').val();
+    const ipaddr = $('#txt_ap_ipaddr').val();
+    setAp(ssid, passwd, ipaddr);
     $('.ui-pagecontainer').pagecontainer('change', '#dlg_restart', { reverse: false, changeHash: true });
   });
 
@@ -456,7 +531,7 @@ $(document).ready(() => {
     const netmask = '255.255.255.0';
     const gateway = '192.168.4.1';
     const dns = '192.168.4.1';
-    showWiFi(wifi);
+    showWiFiMode(wifi);
     showSSID(ssid);
     show(passwd);
     show(dhcp);
@@ -466,21 +541,6 @@ $(document).ready(() => {
     showDns(dns);
   });
 
-  $('#power_mode').change(() => {
-    const powerMode = $('input:radio[name=power_mode:checked').val();
-    sendPowermode(powerMode);
-  });
-
-  $('#slider_voltage').change(() => {
-    const value = $('#slider_voltage').val();
-    sendOutputVoltage(value);
-  });
-
-  $('#slider_averaging').change(() => {
-    const averaging = $('#slider_averaging').val();
-    sendAveraging(averaging);
-  });
-
   $('#dlg_restart_no').click(() => {
     $('.ui-pagecontainer').pagecontainer('change', '#options', {});
   });
@@ -488,28 +548,4 @@ $(document).ready(() => {
   $('#dlg_restart_yes').click(() => {
     $('.ui-pagecontainer').pagecontainer('change', '/restart', {});
   });
-
-  $('#watt_ss').sevenSeg({
-    digits: 5,
-    value: null,
-  });
-
-  $('#amp_ss').sevenSeg({
-    digits: 5,
-    colorOff: '#003200',
-    colorOn: 'Lime',
-    value: null,
-  });
-
-  $('#volt_ss').sevenSeg({
-    digits: 5,
-    value: null,
-  });
-
-  $('#watth_ss').sevenSeg({
-    digits: 5,
-    value: null,
-  });
-
-  enableDashboard(false);
 });

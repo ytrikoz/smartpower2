@@ -139,7 +139,7 @@ int8_t Config::setValueByName(const char *name, const char *value) {
     return res;
 }
 
-bool Config::setValueAsString(const ConfigItem param, String &value) {
+bool Config::setValueAsString(const ConfigItem param, const String &value) {
     return setValue(param, value.c_str());
 }
 

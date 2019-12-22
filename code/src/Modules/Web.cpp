@@ -1,23 +1,25 @@
 #include "Modules/Web.h"
+#include "WebJson.h"
 
-#include "Global.h"
 #include "Modules/Psu.h"
 
 namespace Modules {
 
 Web::Web() : Module() {
-    memset(session_, 0, sizeof(WebClient) * WEB_SERVER_CLIENT_MAX);
+    memset(client_, 0, sizeof(WebClient) * WEB_SERVER_CLIENT_MAX);
+    cnt_ = 0;
 }
 
 bool Web::onInit() {
     web_ = new WebServerAsync(HTTP_PORT);
     web_->setOnConnection(
-        [this](uint8_t num) { this->onConnection(num); });
-    web_->setOnDisconnection(
-        [this](uint8_t num) { this->onDisconnection(num); });
-    web_->setOnReceiveData([this](uint8_t num, String data) {
-        this->onData(num, data);
-    });
+        [this](const uint32_t num, const bool connected) {
+            this->onConnection(num, connected);
+        });
+    web_->setOnData(
+        [this](const uint32_t num, const String &data) {
+            this->onData(num, data);
+        });
 
     return true;
 }
@@ -31,157 +33,162 @@ void Web::onStop() { web_->stop(); }
 
 void Web::onLoop() { web_->loop(); }
 
-uint8_t Web::getClients() {
-    uint8_t result = 0;
-    for (uint8_t i = 0; i < WEB_SERVER_CLIENT_MAX; i++)
-        if (session_[i].connected)
-            result++;
-    return result;
+size_t Web::getClients() {
+    size_t res = 0;
+    for (size_t i = 0; i < WEB_SERVER_CLIENT_MAX; ++i)
+        if (client_[i].connected) res++;
+    return res;
 }
 
-void Web::onConnection(uint8_t n) {
-    session_[n].connected = true;
-    app.onWebStatusChange(true);
-}
-
-void Web::onDisconnection(uint8_t n) {
-    session_[n].connected = false;
-    app.onWebStatusChange(getClients());
-}
-
-void Web::onData(uint8_t num, const String &data) {
-    switch (data.charAt(0)) {
-        case GET_PAGE_STATE: {
-            uint8_t page = data.charAt(1) - CHR_ZERO;
-            session_[num].page = page;
-            sendPageState(num, page);
-            break;
-        }
-        case SET_POWER_ON_OFF: {
-            PsuState state = PsuState(data.substring(1).toInt());
-            Modules::Psu *psu = app.psu();
-            if (state == POWER_ON)
-                psu->powerOn();
-            else
-                psu->powerOff();
-            String payload = String(SET_POWER_ON_OFF);
-            payload += state;
-            sendToClients(payload, PG_HOME, num);
-            break;
-        }
-        case SET_VOLTAGE: {
-            float value = data.substring(1).toFloat();
-            app.setOutputVoltage(value);
-            sendToClients(data, PG_SETTINGS, num);
-            break;
-        }
-        case SET_DEFAULT_VOLTAGE: {
-            app.setOutputVoltageAsDefault();
-            break;
-        }
-        case SET_BOOT_POWER_MODE: {
-            BootPowerState state = BootPowerState(data.substring(1).toInt());
-            if (app.setBootPowerState(state)) {
-                String str = String(SET_BOOT_POWER_MODE) + String(state);
-                sendToClients(str, PG_SETTINGS, num);
-            }
-            break;
-        }
-        case SET_NETWORK: {
-            static const ConfigItem items[] = {WIFI, SSID, PASSWORD, DHCP,
-                                               IPADDR, NETMASK, GATEWAY, DNS};
-            static const size_t paramCount = sizeof(items) / sizeof(ConfigItem);
-            size_t index = 0;
-            size_t last = 0;
-            size_t pos = 0;
-            while (index < paramCount && (pos = data.indexOf(",", last))) {
-                app.params()->setValue(items[index++],
-                                       data.substring(last, pos).c_str());
-                last = pos + 1;
-            }
-            config->save();
-            break;
-        }
-        case SET_LOG_WATTHOURS: {
-            bool mode = data.substring(1).toInt();
-            config->get()->setValueBool(WH_STORE_ENABLED, mode);
-            config->save();
-            sendToClients(data, PG_HOME, num);
+bool Web::getFreeSlot(WebClient **c) {
+    bool res = false;
+    for (uint8_t i = 0; i < WEB_SERVER_CLIENT_MAX; ++i) {
+        if (!client_[i].connected) {
+            *c = &client_[i];
+            res = true;
             break;
         }
     }
-}  // namespace Modules
-
-void Web::sendToClients(const String &payload, uint8_t page, uint8_t except) {
-    for (uint8_t i = 0; i < WEB_SERVER_CLIENT_MAX; ++i)
-        if (session_[i].connected && (session_[i].page == page) && (i != except))
-            web_->sendData(i, payload);
+    return res;
 }
 
-void Web::sendToClients(const String &payload, uint8_t page) {
-    for (uint8_t i = 0; i < WEB_SERVER_CLIENT_MAX; ++i)
-        if (session_[i].connected && session_[i].page == page)
-            web_->sendData(i, payload);
+bool Web::getClientByNum(uint32_t num, WebClient **c) {
+    bool res = false;
+    for (uint8_t i = 0; i < WEB_SERVER_CLIENT_MAX; ++i) {
+        if (client_[i].num == num) {
+            *c = &client_[i];
+            res = true;
+            break;
+        }
+    }
+    return res;
 }
 
-void Web::sendPageState(uint8_t page) {
-    for (uint8_t i = 0; i < WEB_SERVER_CLIENT_MAX; ++i)
-        if (session_[i].connected && session_[i].page == page)
-            sendPageState(i, page);
+void Web::onConnection(const uint32_t num, const bool connected) {
+    WebClient *c;
+    if (connected) {
+        if (getFreeSlot(&c)) {
+            c->num = num;
+            c->connected = true;
+            cnt_++;
+        }
+    } else {
+        if (getClientByNum(num, &c)) {
+            c->connected = false;
+            cnt_--;
+        }
+    }
+    app.onWebStatusChange(cnt_);
 }
 
-void Web::sendPageState(uint8_t client, uint8_t page) {
-    switch (page) {
-        case PG_HOME: {
-            DynamicJsonDocument doc(512);
-            // Switch
-            doc[FPSTR(str_switch)] = app.psu()->isPowerOn();
-            // Data
-            doc["V"] = app.psu()->getInfo().V;
-            doc["I"] = app.psu()->getInfo().I;
-            doc["P"] = app.psu()->getInfo().P;
-            // Total    
-            doc[FPSTR(str_total)] = app.psu()->isWhStoreEnabled();            
-            doc["Wh"] = app.psu()->getInfo().Wh;        
-            String json;
-            serializeJson(doc, json);
-            json = TAG_MAIN_PAGE + json;
-            web_->sendData(client, json);
-            break;
+void Web::onData(const uint32_t num, const String &data) {
+    DynamicJsonDocument doc(512);
+    DeserializationError jsonError = deserializeJson(doc, data);
+    if (jsonError) {
+        setError(ERROR_PARSE, jsonError.c_str());
+        return;
+    }
+    for (JsonPair item : doc.as<JsonObject>()) {
+        const char *cmd = item.key().c_str();
+        // page
+        if (strcmp(cmd, "page") == 0) {
+            WebPageEnum page = WebPageEnum(item.value().as<uint>());
+            WebClient *c;
+            if (getClientByNum(num, &c)) {
+                c->page = page;
+                sendPage(page, num);
+            }
         }
-        case PG_SETTINGS: {
-            DynamicJsonDocument doc(512);
-            doc[FPSTR(str_boot)] = config_->getValueAsByte(POWER);
-            doc[FPSTR(str_voltage)] = config_->getValueAsFloat(OUTPUT_VOLTAGE);
-            doc[FPSTR(str_wifi)] = config_->getValueAsByte(WIFI);
-            doc[FPSTR(str_ssid)] = config_->getValue(SSID);
-            doc[FPSTR(str_password)] = config_->getValue(PASSWORD);
-            doc[FPSTR(str_dhcp)] = config_->getValueAsBool(DHCP);
-            doc[FPSTR(str_ipaddr)] = config_->getValue(IPADDR);
-            doc[FPSTR(str_netmask)] = config_->getValue(NETMASK);
-            doc[FPSTR(str_dns)] = config_->getValue(DNS);
-            String json;
-            serializeJson(doc, json);
-            json = TAG_OPTIONS_PAGE + json;
-            web_->sendData(client, json);
-            break;
+        // power
+        if (strcmp_P(cmd, str_power) == 0) {
+            bool value = item.value().as<bool>();
+            if (value)
+                app.psu()->powerOn();
+            else
+                app.psu()->powerOff();
         }
-        case PG_STATUS: {
-            String payload;
-
-            payload = String(TAG_FIRMWARE_INFO);
-            payload += SysInfo::getVersionJson();
-            web_->sendData(client, payload);
-
-            payload = String(TAG_SYSTEM_INFO);
-            payload += SysInfo::getSystemJson();
-            web_->sendData(client, payload);
-
-            payload = String(TAG_NETWORK_INFO);
-            payload += SysInfo::getNetworkJson();
-            web_->sendData(client, payload);
-            break;
+        // wh
+        if (strcmp(cmd, "wh") == 0) {
+            double value = item.value().as<double>();
+            app.psu()->setWh(value);
         }
+        // set
+        if (strcmp_P(cmd, str_set) == 0) {
+            for (JsonObject arguments : item.value().as<JsonArray>()) {
+                for (JsonPair item : arguments) {
+                    config->setParam(item.key().c_str(), item.value().as<String>().c_str());
+                }
+            }
+        }
+    }
+
+    // switch (tag) {
+    //     case TAG_SET_ON_OFF: {
+    //         PsuState value = PsuState(data.substring(1).toInt());
+    //         Modules::Psu *psu = app.psu();
+    //         if (value == POWER_ON)
+    //             psu->powerOn();
+    //         else
+    //             psu->powerOff();
+    //         String data = "{\"switch\":" + getBoolStr(value) + "}";
+    //         sendData(data, PAGE_HOME, num);
+    //         break;
+    //     }
+    //     case TAG_SET_VOLTAGE: {
+    //         float value = data.substring(1).toFloat();
+    //         app.setOutputVoltage(value);
+    //         String data = "{\"voltage\":" + String(value, 2) + "}";
+    //         sendData(data, PAGE_OPTIONS, num);
+    //         break;
+    //     }
+    //     case SET_DEFAULT_VOLTAGE: {
+    //         config->save();
+    //         break;
+    //     }
+    //     case TAG_SET_STORE_WH_TOTAL: {
+    //         long value = data.substring(1).toInt();
+    //         config->get()->setValueBool(WH_STORE_ENABLED, value);
+    //         String data = "{\"total\":" + getBoolStr(value) + "}";
+    //         sendData(data, PAGE_HOME, num);
+    //         break;
+    //     }
+    //     case SET_BOOT_POWER_MODE: {
+    //         BootPowerState value = BootPowerState(data.substring(1).toInt());
+    //         if (config->get()->setValueByte(POWER, (uint8_t)(value))) {
+    //             config->save();
+    //             String data = "{\"boot\":" + String(value, DEC) + "}";
+    //             sendData(data, PAGE_INFO, num);
+    //         }
+    //         break;
+    //     }
+    //     case TAG_SET_NETWORK: {
+    //         static const ConfigItem items[] = {WIFI, SSID, PASSWORD, DHCP,
+    //                                            IPADDR, NETMASK, GATEWAY, DNS};
+    //         static const size_t paramCount = sizeof(items) / sizeof(ConfigItem);
+    //         size_t index = 0;
+    //         size_t last = 0;
+    //         size_t pos = 0;
+    //         while (index < paramCount && (pos = data.indexOf(",", last))) {
+    //             app.params()->setValue(items[index++],
+    //                                    data.substring(last, pos).c_str());
+    //             last = pos + 1;
+    //         }
+    //         config->save();
+    //         break;
+    //     }
+    // }
+}
+
+void Web::sendPage(const WebPageEnum page, uint32_t num) {
+    String data = WebJson::getPageData(page);
+    web_->sendData(num, data);
+}
+
+void Web::sendData(const String &data, WebPageEnum page, uint32_t except_num) {
+    for (uint8_t i = 0; i < WEB_SERVER_CLIENT_MAX; ++i) {
+        WebClient *c = &client_[i];
+        if (c->num != except_num && c->connected && c->page == page)
+            web_->sendData(c->num, data);
     }
 }
 

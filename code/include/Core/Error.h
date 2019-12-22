@@ -7,10 +7,11 @@
 
 enum ErrorCode {
     ERROR_INIT = -1,
-    ERROR_START = -2,
+    ERROR_START = -2,    
     ERROR_PARAM = -100,
     ERROR_NETWORK = -200,
-    ERROR_EXECUTE = -300
+    ERROR_EXECUTE = -300,
+    ERROR_PARSE = -400
 };
 
 class Error {

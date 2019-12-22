@@ -5,20 +5,19 @@
 
 using namespace PrintUtils;
 
-ConfigHelper::ConfigHelper(const char* name):name_(nullptr){
+ConfigHelper::ConfigHelper(const char *name) : name_(nullptr) {
     setName(name);
- }
+}
 
-void ConfigHelper::setName(const char* name) {
-    if (name_ != nullptr) delete name_;    
-    size_t size = strlen(name);    
+void ConfigHelper::setName(const char *name) {
+    if (name_ != nullptr) delete name_;
+    size_t size = strlen(name);
     name_ = new char[size + 1];
     strncpy(name_, name, size);
     name_[size] = '\x00';
 }
 
-
-const char* ConfigHelper::name() {
+const char *ConfigHelper::name() {
     return name_;
 }
 
@@ -37,7 +36,7 @@ void ConfigHelper::load() {
     PrintUtils::print(out_, name_);
     StringFile file(name_);
     if (file.read()) {
-        auto data = file.get();        
+        auto data = file.get();
         if (data->available()) {
             while (data->available()) {
                 String buf;
@@ -48,10 +47,9 @@ void ConfigHelper::load() {
                 if (res == -1) {
                     PrintUtils::print(out_, FPSTR(str_error));
                     PrintUtils::print(out_, buf);
-                }
-                else                         
-                    changed_ |= res;               
-            }         
+                } else
+                    changed_ |= res;
+            }
             PrintUtils::println(out_, FPSTR(str_done));
         } else {
             PrintUtils::print(out_, FPSTR(str_failed));
@@ -77,7 +75,7 @@ String ConfigHelper::extractValue(const String &str) {
 }
 
 bool ConfigHelper::save(bool backup) {
-    if (backup) FSUtils::rename(FS_MAIN_CONFIG, FS_MAIN_CONFIG ".bak");    
+    if (backup) FSUtils::rename(FS_MAIN_CONFIG, FS_MAIN_CONFIG ".bak");
     auto file = StringFile(FS_MAIN_CONFIG);
     auto data = file.get();
     for (size_t i = 0; i < CONFIG_ITEMS; ++i) {
@@ -101,6 +99,10 @@ void ConfigHelper::setDefaultParams() {
 
 bool ConfigHelper::getWhStoreEnabled() {
     return obj_.getValueAsBool(WH_STORE_ENABLED);
+}
+
+NetworkMode ConfigHelper::getWiFiMode() {
+    return (NetworkMode) obj_.getValueAsByte(WIFI);    
 }
 
 Config *ConfigHelper::get() { return &obj_; }
@@ -191,6 +193,13 @@ const char *ConfigHelper::getPassword_AP() {
 // maximum value of RF Tx Power, unit: 0.25 dBm, range [0, 82]
 uint8_t ConfigHelper::getTPW() { return obj_.getValueAsByte(TPW); }
 
+int ConfigHelper::setParam(const char *name, const char *value) {
+    ConfigItem item;
+    int res = -1;
+    if (obj_.getConfig(name, item))
+        res = obj_.setValueAsString(item, value);
+    return res;
+}
 // String ConfigHelper::getConfigJson() {
 //     DynamicJsonDocument doc(1024);
 //     String str;

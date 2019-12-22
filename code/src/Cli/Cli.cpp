@@ -460,18 +460,12 @@ void onWifiScan(cmd *c) {
 
 void onSet(cmd *c) {
     Command cmd(c);
-    String paramStr = getParamStr(cmd);
-    String valueStr = getValueStr(cmd);
-    ConfigItem param;
-    size_t size;
-    Config *cfg = app.params();
-    if (cfg->getConfig(paramStr.c_str(), param, size)) {
-        if (cfg->setValueAsString(param, valueStr)) {
-            PrintUtils::println_done(out_);
-        }
-    } else {
-        PrintUtils::println_unknown_param(out_, paramStr);
-    }
+    String param = getParamStr(cmd);
+    String value = getValueStr(cmd);
+    if (config->setParam(param.c_str(), value.c_str()) >= 0)
+        PrintUtils::println_done(out_);
+    else
+        PrintUtils::println_unknown_param(out_, param);
 }
 
 void onGet(cmd *c) {

@@ -69,6 +69,13 @@ inline size_t println(Print *p) {
     return n;
 }
 
+inline size_t println(Print *p, const String& str) {
+    size_t n = 0;
+    n += print(p, str);
+    n += println(p);
+    return n;
+}
+
 inline size_t println(Print *p, const __FlashStringHelper *ifsh) {
     size_t n = 0;
     n += print(p, ifsh);

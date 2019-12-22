@@ -6,6 +6,13 @@
 // TODO refactor
 // now it's not for memory saving, but to collect literals in one place
 // and  code unification
+static const char str_bootpwr[] PROGMEM = "bootpwr";
+static const char str_storewh[] PROGMEM = "storewh";
+static const char str_passwd[] PROGMEM = "passwd";
+static const char str_ap_ssid[] PROGMEM = "ap_ssid";
+static const char str_ap_passwd[] PROGMEM = "ap_passwd";    
+static const char str_ap_ipaddr[] PROGMEM = "ap_ipaddr";
+
 static const char str_dns_resolve[] PROGMEM = "dsn resolve";
 static const char str_interrupted[] PROGMEM = "interrupted";
 static const char str_exit_bye[] PROGMEM = "exit, bye!";

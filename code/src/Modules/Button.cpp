@@ -13,7 +13,8 @@ ButtonState Button::readState() {
 
 void Button::onLoop() {
     unsigned long now = millis();
-    if (millis_passed(update_, now) < 50) return;
+    if (millis_passed(update_, now) < 100)
+        return;
     update_ = now;
     ButtonState state = readState();
     switch (state) {
@@ -42,14 +43,13 @@ void Button::onLoop() {
     last_ = state;
 }
 
-void Button::setOnClick(ButtonClickEventHandler handler) { clickEventHandler = handler; }
-
-void Button::clickEvent() {
-    if (clickEventHandler) clickEventHandler();
+void Button::onDiag(const JsonObject& doc) {
+    doc[FPSTR(str_time)] = hold_;
 }
 
-void Button::setOnHold(ButtonHoldEventHandler handler) {
-    holdEventHandler = handler;
+void Button::clickEvent() {
+    if (clickEventHandler) 
+        clickEventHandler();
 }
 
 void Button::holdEvent(time_t time) {
@@ -57,17 +57,21 @@ void Button::holdEvent(time_t time) {
         holdEventHandler(time);
 }
 
-void Button::setholdReleaseEvent(ButtonHoldReleaseEventHandler handler) {
-    holdReleaseEventHandler = handler;
-}
-
 void Button::holdReleaseEvent(time_t time) {
     if (holdReleaseEventHandler)
         holdReleaseEventHandler(time);
 }
 
-void Button::onDiag(const JsonObject& doc) {
-    doc[FPSTR(str_time)] = hold_;
+void Button::setOnClick(ButtonClickEventHandler h) {
+    clickEventHandler = h;
+}
+
+void Button::setOnHold(ButtonHoldEventHandler h) {
+    holdEventHandler = h;
+}
+
+void Button::setholdReleaseEvent(ButtonHoldReleaseEventHandler h) {
+    holdReleaseEventHandler = h;
 }
 
 }  // namespace Modules

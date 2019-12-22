@@ -1,3 +1,4 @@
+/* eslint-disable no-plusplus */
 /* eslint-disable no-console */
 const srcFolder = 'src/';
 const tmpFolder = 'tmp/';
@@ -20,26 +21,34 @@ function cleanTemp() {
   return del([tmpFolder]);
 }
 
+gulp.task('webui_clear', () => cleanTemp());
+
 function htmlReport(filepath, issues) {
   issues.forEach((issue) => console.info(`${filepath} at [${issue.line},${issue.column}] ${issue.code}: ${issue.msg}`));
   process.exit(1);
 }
 
-gulp.task('webui_clear', () => cleanTemp());
+function webUIcsslLint() {
+  return gulp.src(`${srcFolder}*.css`)
+    .pipe(csslint({ ids: false }))
+    .pipe(csslint.formatter());
+}
 
-gulp.task('webui_htmllint', () => gulp.src(`${srcFolder}*.html`)
-  .pipe(htmllint({
-    failOnError: true,
-    rules: {
-      'id-class-style': false,
-      'label-req-for': false,
-      'line-end-style': false,
-    },
-  }, htmlReport)));
+gulp.task('webui_csslint', () => webUIcsslLint());
 
-gulp.task('webui_csslint', () => gulp.src(`${srcFolder}*.css`)
-  .pipe(csslint({ ids: false }))
-  .pipe(csslint.formatter()));
+function webUIhtmlLint() {
+  return gulp.src(`${srcFolder}*.html`)
+    .pipe(htmllint({
+      failOnError: true,
+      rules: {
+        'id-class-style': false,
+        'label-req-for': false,
+        'line-end-style': false,
+      },
+    }, htmlReport));
+}
+
+gulp.task('webui_htmllint', () => webUIhtmlLint());
 
 function toHeader() {
   return through.obj((src, encoding, cb) => {
@@ -106,7 +115,7 @@ gulp.task('webui_build_progmem', () => webUiBuildProgmem());
 
 gulp.task('webui_build_filesystem', () => webUiBuildFileSystem());
 
-gulp.task('lint', gulp.series('webui_htmllint', 'webui_csslint'));
+gulp.task('lint', gulp.series('webui_htmllint'));
 
 gulp.task('progmem', gulp.series('webui_build_progmem'));
 

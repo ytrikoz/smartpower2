@@ -5,25 +5,24 @@
 #define CRASH_SIZE 32 + 512 + 1
 #define CRASH_NUM 10
 
-#define PG_HOME 1
-#define PG_SETTINGS 2
-#define PG_STATUS 3
+#define TAG_PAGE_REQUEST 'p'
 
 #define TAG_MAIN_PAGE "M"
 #define TAG_OPTIONS_PAGE "O"
+#define TAG_INFO_PAGE 'I'
 
-#define SET_POWER_ON_OFF 'o'
+#define TAG_SET_ON_OFF 'o'
+#define TAG_SET_STORE_WH_TOTAL 'm'
+#define TAG_SET_VOLTAGE 'w'
+#define TAG_SET_NETWORK 'n'
+
 #define SET_DEFAULT_VOLTAGE 'v'
-#define SET_VOLTAGE 'w'
-#define SET_BOOT_POWER_MODE 'a'
-#define SET_NETWORK 'n'
-#define SET_LOG_WATTHOURS 'm'
 
-#define GET_PAGE_STATE 'p'
+#define SET_BOOT_POWER_MODE 'a'
 
 #define TAG_PVI 'd'
 #define TAG_FIRMWARE_INFO 'f'
-#define TAG_SYSTEM_INFO 'S'
+
 #define TAG_NETWORK_INFO 'N'
 
 #define BOOT_WAIT_s 5
@@ -61,6 +60,8 @@
 #define CRASH_ROOT "/err/"
 #define FS_VAR_ROOT "/var/"
 #define BOOT_FLAG "/var/boot"
+
+#define FS_VERSION_JSON FS_WEB_ROOT "version.json"
 
 #define FS_MAIN_CONFIG FS_CONFIG_ROOT "main"
 #define FS_POWER_STATE_VAR FS_VAR_ROOT "ps"

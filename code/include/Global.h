@@ -1,3 +1,5 @@
+#pragma once
+
 #include "App.h"
 #include "Logger.h"
 #include "BootWatcher.h"

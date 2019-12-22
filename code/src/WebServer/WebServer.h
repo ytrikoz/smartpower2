@@ -4,22 +4,20 @@
 
 #include "index.html.gz.h"
 
-typedef std::function<void(uint8_t)> WebServerConnectionEventHandler;
-typedef std::function<void(uint8_t, const String&)> WebServerDataEventHandler;
+typedef std::function<void(const uint32_t num, const bool connected)> WebClientConnectionEventHandler;
+typedef std::function<void(const uint32_t num, const String& data)> WebClientDataEventHandler;
 
 class WebServer {
    public:
-    virtual bool start();
-    virtual void stop();
-    virtual void loop();
+    virtual bool start() = 0;
+    virtual void stop() = 0;
+    virtual void loop() = 0;
 
    public:
-    virtual void sendData(uint8_t, const char*) = 0;
-    virtual void sendData(uint8_t, const String&) = 0;
-    virtual void sendEvent(const String& content, const String& name) = 0;
+    virtual void sendData(const uint32_t, const String&) = 0;
+    virtual void sendEvent(const String&, const String&) = 0;
 
    public:
-    virtual void setOnConnection(WebServerConnectionEventHandler) = 0;
-    virtual void setOnDisconnection(WebServerConnectionEventHandler) = 0;
-    virtual void setOnReceiveData(WebServerDataEventHandler) = 0;
+    virtual void setOnConnection(WebClientConnectionEventHandler) = 0;
+    virtual void setOnData(WebClientDataEventHandler) = 0;
 };

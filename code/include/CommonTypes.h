@@ -10,6 +10,12 @@
 
 #include "Utils/TimeUtils.h"
 
+enum WebPageEnum {
+    PAGE_HOME = 1,
+    PAGE_OPTIONS = 2,
+    PAGE_INFO = 3
+};
+
 enum AppState {
     STATE_NORMAL,
     STATE_RESTART,
@@ -87,11 +93,20 @@ struct PsuData : Printable {
         res += String(V, 3);
         res += "V, ";
         res += String(I, 3);
-        res += "A, ";
+        res += "I, ";
         res += String(P, 3);
-        res += "W, ";
+        res += "P, ";
         res += String(Wh, 3);
         res += "Wh";
+        return res;
+    }
+
+    String toJson() const {
+        String res = "{";
+        res += "\"V\":" + String(V, 3) + ",";
+        res += "\"I\":" + String(I, 3) + ",";
+        res += "\"P\":" + String(P, 3) + ",";
+        res += "\"Wh\":" + String(Wh, 3) + "}";
         return res;
     }
 
@@ -137,11 +152,6 @@ enum State { ST_INACTIVE,
              ST_NORMAL,
              ST_ESC_SEQ,
              ST_CTRL_SEQ };
-
-struct WebClient {
-    bool connected = false;
-    uint8_t page = 0;
-};
 
 #define CONFIG_ITEMS 23
 #define APP_MODULES 11

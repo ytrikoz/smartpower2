@@ -1,8 +1,8 @@
 #include "WebServerAsync.h"
 
-#include <ArduinoJson.h>
-
+#include "WebJson.h"
 #include "Wireless.h"
+#include "Core/CharBuffer.h"
 
 WebServerAsync::WebServerAsync(uint16_t port) {
     sprintf(last_modified, "%s %s GMT", __DATE__, __TIME__);
@@ -11,8 +11,10 @@ WebServerAsync::WebServerAsync(uint16_t port) {
     //web_->rewrite("/", "/index.html");
     
     web_->serveStatic("/", SPIFFS, "/www/").setDefaultFile("index.html");
+    web_->serveStatic("/version.json", SPIFFS, FS_VERSION_JSON);
     web_->rewrite("/system.json", "/system.json");
-
+    web_->rewrite("/main.json", "/main.json");
+    
     web_->on("/system.json", HTTP_GET, [this](AsyncWebServerRequest *request) {
         DynamicJsonDocument doc(64);
         doc[FPSTR(str_ipaddr)] = Wireless::hostIP().toString();
@@ -21,8 +23,6 @@ WebServerAsync::WebServerAsync(uint16_t port) {
         AsyncWebServerResponse *response = request->beginResponse(200, "application/json", json);
         request->send(response);
     });
-    
-
 
     web_->on("/index.html", HTTP_GET, [this](AsyncWebServerRequest *request) {
         if (request->header("If-Modified-Since").equals(last_modified)) {
@@ -51,6 +51,7 @@ void WebServerAsync::sendEvent(const String &event, const String &content) {
 }
 
 bool WebServerAsync::start() {
+    WebJson::updateVersionJson();
     web_->begin();
     return true;
 }
@@ -69,20 +70,23 @@ void WebServerAsync::onNotFound(AsyncWebServerRequest *r) {
 
 void WebServerAsync::onWSEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
     switch (type) {
-        case WS_EVT_CONNECT: {
-            if (connectionHandler) connectionHandler(client->id());
-            break;
-        }
-        case WS_EVT_DISCONNECT: {
-            if (disconnectionHandler) disconnectionHandler(client->id());
-            break;
-        }
+        case WS_EVT_CONNECT:
+        case WS_EVT_DISCONNECT:
+            if (connectionHandler) 
+                connectionHandler(client->id(), type == WS_EVT_CONNECT);
+            break;        
         case WS_EVT_DATA: {
             AwsFrameInfo *info = (AwsFrameInfo *)arg;
             if (info->final && info->index == 0 && info->len == len) {
                 if (info->opcode == WS_TEXT) {
-                    if (dataHandler)
-                        dataHandler(client->id(), (char *)&data[0]);
+                    if (dataHandler) {
+                        char* buf = new char[INPUT_MAX_LENGTH];
+                        size_t len = info->len > INPUT_MAX_LENGTH? INPUT_MAX_LENGTH: info->len;
+                        strncpy(buf, (char*)data, len);
+                        buf[len] = '\x00';
+                        dataHandler(client->id(), buf);
+                        delete buf;
+                    }
                     return;
                 }
             }
@@ -93,16 +97,14 @@ void WebServerAsync::onWSEvent(AsyncWebSocket *server, AsyncWebSocketClient *cli
     }
 }
 
-void WebServerAsync::sendData(uint8_t num, const char *payload) {
+void WebServerAsync::sendData(const uint32_t num, const String &payload) {
     ws_->text(num, payload);
 }
 
-void WebServerAsync::sendData(uint8_t num, const String &payload) {
-    ws_->text(num, payload);
+void WebServerAsync::setOnConnection(WebClientConnectionEventHandler h) {
+    connectionHandler = h; 
 }
 
-void WebServerAsync::setOnConnection(WebServerConnectionEventHandler h) { connectionHandler = h; }
-
-void WebServerAsync::setOnDisconnection(WebServerConnectionEventHandler h) { disconnectionHandler = h; }
-
-void WebServerAsync::setOnReceiveData(WebServerDataEventHandler h) { dataHandler = h; }
+void WebServerAsync::setOnData(WebClientDataEventHandler h) { 
+    dataHandler = h; 
+}

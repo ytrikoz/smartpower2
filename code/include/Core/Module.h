@@ -16,6 +16,10 @@ class Module {
     void setOutput(Print *p) { out_ = p; }
 
     void setConfig(Config *c) { config_ = c; }
+    
+    bool changeConfig(ConfigItem param, const char* value) {
+        return onConfigChange(param, value);
+    }
 
     bool execute(const String &param, const String &value) {
         Error res = onExecute(param, value);
@@ -73,11 +77,11 @@ class Module {
         return serializeJsonPretty(doc, *p);
     };
 
-    virtual void onDiag(const JsonObject &obj) {}
-
     String getModuleStateStr() {
         return getModuleStateStr(modState_);
     }
+
+    virtual void onDiag(const JsonObject &obj) {}
 
    protected:
     virtual bool onInit() { return true; };
@@ -90,7 +94,11 @@ class Module {
 
     virtual void onLoop() = 0;
 
-    virtual Error onExecute(const String &paramStr, const String &valueStr) {
+    virtual bool onConfigChange(const ConfigItem item, const char* value) {
+        return true;
+    }
+
+    virtual Error onExecute(const String &param, const String &value) {
         Error err = Error(ERROR_EXECUTE, FPSTR(str_unsupported));
         return err;
     }
@@ -121,6 +129,9 @@ class Module {
 protected:
     void setError(Error e){
         modError_ = e;
+    }
+    void setError(ErrorCode code, const char* description) {
+        modError_ = Error(code, description);
     }
     Print *out_;
     Config *config_;

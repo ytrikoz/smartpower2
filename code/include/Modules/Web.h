@@ -5,6 +5,12 @@
 #include "WebServer/WebServer.h"
 #include "WebServer/WebServerAsync.h"
 
+struct WebClient {
+    bool connected;
+    uint32_t num;
+    WebPageEnum page;
+};
+
 namespace Modules {
 
 class Web : public Module {
@@ -18,19 +24,20 @@ class Web : public Module {
     void onLoop() override;
 
    public:
-    void sendPageState(uint8_t);
-    void sendPageState(uint8_t, uint8_t);
-    void sendToClients(const String&, uint8_t);
-    void sendToClients(const String&, uint8_t, uint8_t);
-    uint8_t getClients();
+    void sendPage(const WebPageEnum page, const uint32_t num = 0);
+    void sendData(const String& data, WebPageEnum page, uint32_t except_num = 0);
+    size_t getClients();
 
    private:
-    void onConnection(uint8_t);
-    void onDisconnection(uint8_t);
-    void onData(uint8_t n, const String& data);
-
+    void commandSet(JsonObject params);
+    void onConnection(const uint32_t num, const bool conntected);
+    void onDisconnection(const uint32_t num);
+    void onData(const uint32_t num, const String& data);
+    bool getFreeSlot(WebClient**c);
+    bool getClientByNum(uint32_t num, WebClient **c);
    private:
-    WebClient session_[WEB_SERVER_CLIENT_MAX];
+    size_t cnt_;
+    WebClient client_[WEB_SERVER_CLIENT_MAX];
     WebServer* web_;
 };
 

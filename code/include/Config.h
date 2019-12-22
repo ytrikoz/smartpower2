@@ -23,7 +23,7 @@ class Config {
     bool parseString(const String &str);
     String toString(const ConfigItem param) const;
     //
-    bool setValueAsString(const ConfigItem param, String &str);
+    bool setValueAsString(const ConfigItem param, const String &str);
     bool setValue(const ConfigItem param, const char *str);
     bool setValueByName(const String &name, const String &value);
     int8_t setValueByName(const char *name, const char *value);

@@ -13,29 +13,29 @@ using namespace StrUtils;
 
 namespace SysInfo {
 
-const String getUniqueName() {
+String getUniqueName() {
     String str(APP_SHORT "_");
     str += getChipId();
     return str;
 }
 
-const String getCpuFreq() {
+String getCpuFreq() {
     String str(system_get_cpu_freq());
     str += "MHz";
     return str;
 }
 
-const String getFreeSketch() {
+String getFreeSketch() {
     String str = prettyBytes(ESP.getFreeSketchSpace());
     return str;
 }
 
-const String getSketchSize() {
+String getSketchSize() {
     String str = prettyBytes(ESP.getSketchSize());
     return str;
 }
 
-const String getFlashSize() {
+String getFlashSize() {
     uint8_t flash_size_mbit;
     switch (system_get_flash_size_map()) {
         case FLASH_SIZE_2M:
@@ -70,7 +70,7 @@ const String getFlashSize() {
     return str;
 }
 
-const String getFlashMap() {
+String getFlashMap() {
     String str;
     switch (system_get_flash_size_map()) {
         case FLASH_SIZE_4M_MAP_256_256:
@@ -129,35 +129,6 @@ String getChipId() {
     return str;
 }
 
-const String getVersionJson() {
-    DynamicJsonDocument doc(256);
-    JsonObject obj = doc.createNestedObject();
-    obj[FPSTR(str_fw)] = APP_VERSION APP_BUILD_COMMIT;
-    obj = doc.createNestedObject();
-    obj[FPSTR(str_sdk)] = system_get_sdk_version();
-    obj = doc.createNestedObject();
-    obj[FPSTR(str_core)] = ESP.getCoreVersion();
-    String json;
-    serializeJson(doc, json);
-    return json;
-}
-
-String getSystemJson() {
-    DynamicJsonDocument doc(256);
-    JsonObject jo;
-    jo = doc.createNestedObject();
-    jo[FPSTR(str_cpu)] = getCpuFreq();
-    jo = doc.createNestedObject();
-    jo[FPSTR(str_chip)] = getChipId();
-    jo = doc.createNestedObject();
-    jo[FPSTR(str_file)] = getFSStats();
-    jo = doc.createNestedObject();
-    jo[FPSTR(str_heap)] = getHeapStats();
-    String json;
-    serializeJson(doc, json);
-    return json;
-}
-
 String getNetworkJson() {
     DynamicJsonDocument doc(512);
     JsonObject jo;
@@ -184,11 +155,11 @@ String getNetworkJson() {
     return json;
 }
 
-const String getFSStats() {
+String getFSStats() {
     return FSUtils::getFSUsed() + " / " + FSUtils::getFSTotal();
 }
 
-const String getHeapStats() {
+String getHeapStats() {
     uint32_t free;
     uint16_t max;
     uint8_t frag;

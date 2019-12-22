@@ -1,30 +1,50 @@
 #pragma once
 
+#include "Consts.h"
+
 #include <Arduino.h>
+#include <user_interface.h>
 
 namespace SysInfo {
 
-const String getUniqueName();
-const String getCpuFreq();
-const String getFreeSketch();
-const String getSketchSize();
+inline String getFW() {
+    return APP_VERSION APP_BUILD_COMMIT;
+}
 
-const String getFlashMap();
-const String getFlashSize();
+inline String getSDK() {
+    return system_get_sdk_version();
+}
+
+inline String getCore() {
+    return ESP.getCoreVersion();     
+}
+
+String getUniqueName();
+
+String getCpuFreq();
+
+String getFreeSketch();
+
+String getSketchSize();
+
+String getFlashMap();
+
+String getFlashSize();
 
 String getVcc();
 
 String getChipId();
 
-const String getVersionJson();
-
 String getNetworkJson();
+
 String getSystemJson();
 
-const String getHeapStats();
-const String getFSStats();
+String getHeapStats();
+
+String getFSStats();
 
 uint8_t getAPClients();
+
 String getAPClientsInfo();
 
 } // namespace SysInfo

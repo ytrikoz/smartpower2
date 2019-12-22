@@ -9,7 +9,6 @@
 #define OTA_FLASH 0
 #define OTA_FS 100
 
-
 namespace Modules {
 
 OTAUpdate::OTAUpdate(uint16_t port): port_(port){};

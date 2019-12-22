@@ -132,17 +132,17 @@ void App::onPsuData(PsuData &item) {
             telnet()->sendData(data.c_str());
         }
         if (web()->getClients()) {
-            String data = String(TAG_PVI);
-            data += item.toString();
-            web()->sendToClients(data, PG_HOME);
+            String data = item.toJson();
+            web()->sendData(data, PAGE_HOME);
         }
     }
 }
 
 void App::onConfigChange(ConfigItem param, const char *value) {
-    PrintUtils::print_ident(out_, FPSTR(str_app));
-    PrintUtils::print(out_, param, value);
-    PrintUtils::println(out_);
+    for (uint8_t i = 0; i < APP_MODULES; ++i) {
+        Module *obj = getInstance(i);
+            if(obj) obj->changeConfig(param, value);
+    }
 }
 
 void App::onTelnetStatusChange(bool clients) {
@@ -198,11 +198,13 @@ void App::startSafe() {
 void App::loopSafe() { console()->loop(); }
 
 AppState App::loop(LoopTimer *looper) {
-    if (exitFlag_) return exitState_;
-
     for (size_t i = 0; i < APP_MODULES; ++i) {
         auto *obj = getInstance(i);
         if (!obj) continue;
+        if (exitFlag_) {
+            obj->end();
+            continue;
+        }
         if ((!hasNetwork_ && modules[i].network) || (hasNetwork_ && networkMode_ < modules[i].network)) {
             obj->stop();
             continue;
@@ -217,7 +219,7 @@ AppState App::loop(LoopTimer *looper) {
     }
 
     if (psuEvent_) {
-        web()->sendPageState(PG_HOME);
+        web()->sendPage(PAGE_HOME);
         display()->refresh();
     }
 
@@ -228,6 +230,9 @@ AppState App::loop(LoopTimer *looper) {
         refreshRed();
 
     networkEvent_ = systemEvent_ = psuEvent_ = false;
+
+    if (exitFlag_) 
+        return exitState_;
 
     return STATE_NORMAL;
 }
@@ -261,10 +266,6 @@ void App::displayProgress(uint8_t progress, const char *message) {
 void App::setOutputVoltage(float value) {
     config_->get()->setValueFloat(OUTPUT_VOLTAGE, value);
     psu()->setOutputVoltage(value);
-}
-
-bool App::setOutputVoltageAsDefault() {
-    return config_->save();
 }
 
 bool App::setBootPowerState(BootPowerState value) {
