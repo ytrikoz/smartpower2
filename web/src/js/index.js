@@ -303,6 +303,7 @@ function setWifi(wifi) {
     set: [{ wifi }],
   };
   send(JSON.stringify(data));
+  saveConfig();
   askRestart();
 }
 
@@ -319,6 +320,7 @@ function setSta(ssid, passwd, dhcp, ipaddr, netmask, gateway, dns) {
     ],
   };
   send(JSON.stringify(data));
+  saveConfig();
 }
 
 function setAp(ssid, passwd, ipaddr) {
@@ -330,6 +332,7 @@ function setAp(ssid, passwd, ipaddr) {
     ],
   };
   send(JSON.stringify(data));
+  saveConfig();
 }
 
 function updateUI(k, v) {
