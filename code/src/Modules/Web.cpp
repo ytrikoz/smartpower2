@@ -19,6 +19,11 @@ bool Web::onInit() {
     web_->setOnData(
         [this](const uint32_t num, const String &data) {
             this->onData(num, data);
+            if (failed()) {
+                PrintUtils::print_ident(out_, FPSTR(str_web));
+                PrintUtils::print(out_, getError());
+                PrintUtils::println(out_);
+            }
         });
 
     return true;
@@ -82,10 +87,11 @@ void Web::onConnection(const uint32_t num, const bool connected) {
 }
 
 void Web::onData(const uint32_t num, const String &data) {
-    DynamicJsonDocument doc(512);
+    DynamicJsonDocument doc(1024);
     DeserializationError jsonError = deserializeJson(doc, data);
     if (jsonError) {
         setError(ERROR_PARSE, jsonError.c_str());
+        PrintUtils::print(out_, data);
         return;
     }
     for (JsonPair item : doc.as<JsonObject>()) {
@@ -99,8 +105,17 @@ void Web::onData(const uint32_t num, const String &data) {
                 sendPage(page, num);
             }
         }
+        // config
+        else if (strcmp_P(cmd, str_config) == 0) {
+            String param = item.value().as<String>().c_str();
+            if (param.equalsIgnoreCase("save")) {
+                config->save();
+            } else if (param.equalsIgnoreCase("default")) {
+                config->setDefaultParams();
+            }
+        }
         // power
-        if (strcmp_P(cmd, str_power) == 0) {
+        else if (strcmp_P(cmd, str_power) == 0) {
             bool value = item.value().as<bool>();
             if (value)
                 app.psu()->powerOn();
@@ -108,18 +123,22 @@ void Web::onData(const uint32_t num, const String &data) {
                 app.psu()->powerOff();
         }
         // wh
-        if (strcmp(cmd, "wh") == 0) {
+        else if (strcmp(cmd, "wh") == 0) {
             double value = item.value().as<double>();
             app.psu()->setWh(value);
         }
         // set
-        if (strcmp_P(cmd, str_set) == 0) {
+        else if (strcmp_P(cmd, str_set) == 0) {
             for (JsonObject arguments : item.value().as<JsonArray>()) {
                 for (JsonPair item : arguments) {
                     config->setParam(item.key().c_str(), item.value().as<String>().c_str());
                 }
             }
+        } else {
+            setError(ERROR_PARSE, "unhandled");
+            return;
         }
+        setError(Error::ok());
     }
 
     // switch (tag) {

@@ -290,12 +290,11 @@ bool Display::locked(unsigned long now) {
 
 void Display::unlock(void) { lockTimeout = 0; }
 
-Error Display::onExecute(const String &param, const String &value) {
-    if (param.equalsIgnoreCase(FPSTR(str_backlight))) {
-        enableBacklight(value.toInt());
-        return Error();
-    } else {
-        return Error(ERROR_EXECUTE, FPSTR(str_unknown));
+bool Display::onConfigChange(const ConfigItem param, const char* value) {
+    if (param == BACKLIGHT) {
+        bool enable = String(value).toInt();
+        enableBacklight(enable);
     }
+    return true;
 }
 }  // namespace Modules

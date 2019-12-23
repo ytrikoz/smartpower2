@@ -73,6 +73,12 @@ bool Config::getConfig(const char *name, ConfigItem &param, size_t &size) const 
     return result;
 }
 
+String Config::toKeyValueJson(ConfigItem param) const {
+    char buf[128];
+    sprintf(buf, "\"%s\":%s", getParamName(param), getValue(param));
+    return buf;
+}
+
 String Config::toString(ConfigItem param) const {
     char buf[128];
     sprintf(buf, "%s=\"%s\"", getParamName(param), getValue(param));

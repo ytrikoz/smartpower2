@@ -65,7 +65,11 @@
                 <button id="btn_wh_zero" data-mini="true" data-inline="true">Zero</button>
             </div>
         </div>
-
+        <div data-role="collapsible"  data-collapsed="true" data-iconpos="right" data-iconpos="right">
+            <h3>Display</h3>
+            <label>Averaging</label>
+            <input id="slider_averaging" name="slider_averaging" type="range" min="1" max="1024" step="4"value="3">
+        </div>
     </div>
     <!-- Options -->
     <div id="options" data-role="page" data-title="Options" data-theme="a">
@@ -74,7 +78,7 @@
                 <h3>General</h3>
 
                 <label>Power on boot</label>
-                <fieldset id="boot_mode_control" data-role="controlgroup" data-mini="true" data-type="horizontal">
+                <fieldset id="boot_mode_cont" data-role="controlgroup" data-mini="true" data-type="horizontal">
                     <input id="boot_mode_off" type="radio" name="boot_mode" value="0" />
                     <input id="boot_mode_on" type="radio" name="boot_mode" value="1" />
                     <input id="boot_mode_last" type="radio" name="boot_mode" value="2" />
@@ -89,24 +93,18 @@
                         data-popup-enabled="true">
                 </fieldset>
                 <div>
-                    <button id="btn_apply_voltage" data-mini="true" data-inline="true">Apply</button>
+                    <button id="btn_apply_voltage" data-mini="true" data-inline="true">Apply voltage</button>
                 </div>
                 <label>Totals</label>
-                <fieldset id="storewh_cont">
-                    <select id="chk_storewh" data-mini="true" name="storewh" data-role="flipswitch">
-                        <option value="off">Off</option>
-                        <option value="on">On</option>
-                    </select>
-                </fieldset>
-            </div>
-
-            <div data-role="collapsible" data-iconpos="right">
-                <h3>Live data</h3>
-                <div>
-                    <label>Averaging</label>
-                    <input id="slider_averaging" name="slider_averaging" type="range" min="1" max="1024" step="4"
-                        value="3">
-                </div>
+                <select id="chk_store_wh" data-mini="true" name="store_wh" data-role="flipswitch">
+                    <option value="off">Off</option>
+                    <option value="on">On</option>
+                </select>
+                <label>Backlight</label>
+                <select id="chk_backlight" data-mini="true" name="chk_backlight" data-role="flipswitch">
+                    <option value="off">Off</option>
+                    <option value="on">On</option>
+                </select>
             </div>
 
             <div data-role="collapsible" data-iconpos="right">
@@ -119,7 +117,7 @@
                     <label for="wifi_ap">AP</label>
                     <label for="wifi_ap_sta">AP + STA</label>
                 </fieldset>
-                <div><button id="btn_save_wifi_mode">Save</button></div>
+                <button id="btn_save_wifi_mode" data-inline="true" data-mini="true">Apply</button>
             </div>
 
             <div data-role="collapsible" data-iconpos="right">
@@ -133,7 +131,7 @@
                     <option value="off">Off</option>
                     <option value="on">On</option>
                 </select>                
-                <div id="sta_ipaddr_cont">
+                <div id="ipaddr_cont">
                     <label>IP Address</label>
                     <input id="txt_ipaddr" type="text" maxlength="16">
                     <label>IP Mask</label>
@@ -143,7 +141,7 @@
                     <label>DNS</label>
                     <input id="txt_dns" type="text" maxlength="16">
                 </div>            
-                <button id="btn_save_sta">Save</button>                
+                <button id="btn_save_sta" data-mini="true" data-inline="true">Save</button>
             </div>
 
             <div data-role="collapsible" data-iconpos="right">
@@ -154,12 +152,12 @@
                 <input id="txt_ap_passwd" type="password" maxlength="32"/>
                 <label>IP</label>
                 <input id="txt_ap_ipaddr" type="text" maxlength="16"/>
-                <button id="btn_save_ap">Save</button>
+                <button id="btn_save_ap" data-mini="true" data-inline="true">Save</button>
             </div>
         </div>
     </div>
 
-    <div id="info" data-role="page" data-title="Info" data-theme="a">
+    <div id="info" data-role="page" data-title="Info">
         <div role="main" class="ui-content ui-corner-all custom-corners">
             <div data-role="collapsible" data-iconpos="right" data-inset="false" data-theme="a" data-content-theme="a">
                 <h3>Version</h3>
@@ -182,6 +180,25 @@
         </div>
     </div>
 
+    <div id="dlg_restart" data-role="dialog" data-title="Restart">
+        <div data-role="header">
+            <h1>Restart?</h1>
+        </div>
+		<div role="main" class="ui-content">        
+            <a id="btn_restart_yes" data-role="button" href="#">Yes</a>
+            <a id="btn_restart_no" data-role="button" href="#" data-rel="back">No</a>
+        </div>
+    </div>
+
+    <div id="dlg_connection_lost" data-role="dialog" data-title="Connection">
+        <div data-role="header">
+            <h3>Connection Lost!</h3>
+        </div>
+        <div>
+            <a id="btn_ok" data-role="button" href="#" data-rel="back">Ok</a>
+        </div>
+    </div>
+
     <div id="footer" data-role="toolbar" data-type="footer" data-position="fixed" data-theme="b">
         <div data-role="navbar">
             <ul>
@@ -192,17 +209,6 @@
         </div>
     </div>
 
-    <div id="dlg_restart" data-role="dialog" data-title="Restart" data-theme="a">
-        <div data-role="header">
-            <h3>Restart?</h3>
-        </div>
-        <div>
-            <a id="dlg_restart_yes" data-role="button" href="#" data-inline="true">Yes</a>
-            <a id="dlg_restart_no" data-role="button" href="#" data-rel="back" data-inline="true">No</a>
-        </div>
-    </div>
-
 </body>
-
 
 </html>

@@ -22,6 +22,7 @@ class Config {
     void resetDefault(ConfigItem param);
     bool parseString(const String &str);
     String toString(const ConfigItem param) const;
+    String toKeyValueJson(ConfigItem param) const;
     //
     bool setValueAsString(const ConfigItem param, const String &str);
     bool setValue(const ConfigItem param, const char *str);

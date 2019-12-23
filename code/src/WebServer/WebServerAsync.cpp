@@ -14,7 +14,18 @@ WebServerAsync::WebServerAsync(uint16_t port) {
     web_->serveStatic("/version.json", SPIFFS, FS_VERSION_JSON);
     web_->rewrite("/system.json", "/system.json");
     web_->rewrite("/main.json", "/main.json");
-    
+    web_->rewrite("/restart", "/restart");
+
+    web_->on("/restart", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        DynamicJsonDocument doc(64);
+        doc[FPSTR(str_restart)] = "ok";
+        String json;
+        serializeJson(doc, json);
+        AsyncWebServerResponse *response = request->beginResponse(200, "application/json", json);
+        request->send(response);
+        app.systemRestart();
+    });
+
     web_->on("/system.json", HTTP_GET, [this](AsyncWebServerRequest *request) {
         DynamicJsonDocument doc(64);
         doc[FPSTR(str_ipaddr)] = Wireless::hostIP().toString();
@@ -80,10 +91,9 @@ void WebServerAsync::onWSEvent(AsyncWebSocket *server, AsyncWebSocketClient *cli
             if (info->final && info->index == 0 && info->len == len) {
                 if (info->opcode == WS_TEXT) {
                     if (dataHandler) {
-                        char* buf = new char[INPUT_MAX_LENGTH];
-                        size_t len = info->len > INPUT_MAX_LENGTH? INPUT_MAX_LENGTH: info->len;
-                        strncpy(buf, (char*)data, len);
-                        buf[len] = '\x00';
+                        char* buf = new char[info->len + 1];
+                        strncpy(buf, (char*)data, info->len);
+                        buf[info->len] = '\x00';
                         dataHandler(client->id(), buf);
                         delete buf;
                     }

@@ -31,7 +31,7 @@ class Display : public Module {
 
    protected:
     bool onInit() override;
-    Error onExecute(const String &param, const String &value) override;
+    bool onConfigChange(const ConfigItem param, const char* value) override;
     void onLoop() override;
 
    private:

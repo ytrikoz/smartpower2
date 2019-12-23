@@ -97,6 +97,14 @@ class Module {
     virtual bool onConfigChange(const ConfigItem item, const char* value) {
         return true;
     }
+    
+    virtual bool failed() {
+        return modError_.code() != 0;
+    }
+
+    virtual Error getError() {
+        return modError_;
+    }
 
     virtual Error onExecute(const String &param, const String &value) {
         Error err = Error(ERROR_EXECUTE, FPSTR(str_unsupported));

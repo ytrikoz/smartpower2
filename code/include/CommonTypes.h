@@ -103,10 +103,10 @@ struct PsuData : Printable {
 
     String toJson() const {
         String res = "{";
-        res += "\"V\":" + String(V, 3) + ",";
-        res += "\"I\":" + String(I, 3) + ",";
-        res += "\"P\":" + String(P, 3) + ",";
-        res += "\"Wh\":" + String(Wh, 3) + "}";
+        res += "\"v\":" + String(V, 3) + ",";
+        res += "\"i\":" + String(I, 3) + ",";
+        res += "\"p\":" + String(P, 3) + ",";
+        res += "\"wh\":" + String(Wh, 6) + "}";
         return res;
     }
 

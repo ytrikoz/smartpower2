@@ -84,29 +84,31 @@ bool Psu::onConfigChange(const ConfigItem param, const char* value) {
 
 Error Psu::onExecute(const String &param, const String &value) {
     mcp4652_set(param.toInt());
-    Error err = Error();
+    Error err = Error::ok();
     return err;
 }
 
 void Psu::powerOn() {
+    digitalWrite(POWER_SWITCH_PIN, mapState(POWER_ON));
+    if (state_ == POWER_ON) return;
     startTime_ = infoUpdated_ = powerInfoUpdated_ = lastCheck_ = millis();
+    state_ = POWER_ON;    
     if (isStateStoreEnabled() && state_ != lastStoredState_) storeState(POWER_ON);
     float voltage = getOutputVoltage();
     setOutputVoltage(voltage);
-    applyState(POWER_ON);
+    onStateChangeEvent(state_);
 }
 
 void Psu::powerOff() {
+    digitalWrite(POWER_SWITCH_PIN, mapState(POWER_OFF));
+    if (state_ == POWER_OFF) return;
+    state_ = POWER_OFF;    
     if (isWhStoreEnabled() && lastStoredWh_ != info_.Wh) storeWh(info_.Wh);
     if (isStateStoreEnabled() && lastStore_ != state_) storeState(POWER_OFF);
-
-    applyState(POWER_OFF);
+    onStateChangeEvent(state_);
 }
 
-void Psu::applyState(PsuState value) {
-    digitalWrite(POWER_SWITCH_PIN, mapState(value));
-    if (state_ == value) return;
-    state_ = value;    
+void Psu::onStateChangeEvent(PsuState value) {
     if (stateChangeHandler_)
         stateChangeHandler_(state_);
 }

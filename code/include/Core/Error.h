@@ -14,7 +14,7 @@ enum ErrorCode {
     ERROR_PARSE = -400
 };
 
-class Error {
+class Error : public Printable {
    public:
     static Error ok() { return Error(); }
 
@@ -41,6 +41,14 @@ class Error {
     const char *description() const { return description_; }
 
     operator bool() const { return code_ != 0; }
+    
+    virtual size_t printTo(Print& p) const {
+        size_t n = 0;
+        n += p.print(code_);
+        n += p.print(':');
+        n += p.print(description_);
+        return n;
+    }
 
    private:
     int code_;

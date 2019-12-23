@@ -3,6 +3,7 @@
 const PAGE_HOME = 1;
 const PAGE_OPTIONS = 2;
 const PAGE_INFO = 3;
+const DEBUG_WS = '192.168.1.204';
 
 let ws;
 const RESET_INTERVAL = 60000;
@@ -81,8 +82,9 @@ function getPageIndex(title) {
 
 function getWSUri() {
   const scheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-  const uri = `${scheme}${window.location.host}/ws`;
-  // return 'ws://192.168.1.204/ws';
+  let host = window.location.hostname;
+  if (host === '127.0.0.1') host = DEBUG_WS;
+  const uri = `${scheme}${host}/ws`;
   return uri;
 }
 
@@ -103,9 +105,17 @@ function send(data) {
   }
 }
 
+function askRestart() {
+  $('.ui-pagecontainer').pagecontainer('change', '#dlg_restart', { reverse: false, changeHash: true });
+}
+
 //
 // Home Page
 //
+function showBacklight(value) {
+  $('#chk_backlight').val(value ? 'on' : 'off').flipswitch().flipswitch('refresh');
+}
+
 function showPower(value) {
   $('#chk_power').val(value ? 'on' : 'off').flipswitch().flipswitch('refresh');
 }
@@ -190,9 +200,9 @@ function showDHCP(value) {
 
 function enableIPAddr(enabled = true) {
   if (enabled) {
-    $('#sta_ipaddr_cont').removeClass('ui-state-disabled');
+    $('#ipaddr_cont').removeClass('ui-state-disabled');
   } else {
-    $('#sta_ipaddr_cont').addClass('ui-state-disabled');
+    $('#ipaddr_cont').addClass('ui-state-disabled');
   }
 }
 
@@ -240,7 +250,6 @@ function showSysInfo(value) {
   $('#system_info_cont').json2html(value, template, { replace: true });
 }
 
-
 function enableUI(value = true) {
   if (value) {
     $('.ui-pagecontainer').removeClass('ui-disabled');
@@ -254,6 +263,11 @@ function setPage(value) {
   return send(JSON.stringify(data));
 }
 
+function saveConfig() {
+  const data = { config: 'save' };
+  send(JSON.stringify(data));
+}
+
 // Home
 function setPower(value) {
   const data = { power: value };
@@ -263,26 +277,33 @@ function setWh(value) {
   const data = { wh: value };
   send(JSON.stringify(data));
 }
-
 // Options
 function setBootMode(value) {
   const data = { set: [{ bootpwr: value }] };
   send(JSON.stringify(data));
+  saveConfig();
 }
 function setVoltage(value) {
   const data = { set: [{ voltage: value }] };
   send(JSON.stringify(data));
+  saveConfig();
 }
 function setStoreWh(value) {
-  const data = { set: [{ storewh: value ? 1 : 0 }] };
+  const data = { set: [{ store_wh: value ? 1 : 0 }] };
   send(JSON.stringify(data));
+  saveConfig();
 }
-
+function setBacklight(value) {
+  const data = { set: [{ backlight: value ? 1 : 0 }] };
+  send(JSON.stringify(data));
+  saveConfig();
+}
 function setWifi(wifi) {
   const data = {
     set: [{ wifi }],
   };
   send(JSON.stringify(data));
+  askRestart();
 }
 
 function setSta(ssid, passwd, dhcp, ipaddr, netmask, gateway, dns) {
@@ -294,7 +315,8 @@ function setSta(ssid, passwd, dhcp, ipaddr, netmask, gateway, dns) {
       { ipaddr },
       { netmask },
       { gateway },
-      { dns }],
+      { dns },
+    ],
   };
   send(JSON.stringify(data));
 }
@@ -315,19 +337,19 @@ function updateUI(k, v) {
     case 'power':
       showPower(v);
       break;
-    case 'storewh':
+    case 'store_wh':
       showStoreWh(v);
       break;
-    case 'V':
+    case 'v':
       voltage.setValue(v);
       break;
-    case 'I':
+    case 'i':
       current.setValue(v);
       break;
-    case 'P':
+    case 'p':
       power.setValue(v);
       break;
-    case 'Wh':
+    case 'wh':
       watth.setValue(v);
       break;
     case 'bootpwr':
@@ -369,36 +391,38 @@ function updateUI(k, v) {
     case 'dns':
       showDns(v);
       break;
-    case 'sysinfo': {
+    case 'sysinfo':
       showSysInfo(v);
       break;
-    }
-    case 'netinfo': {
+    case 'netinfo':
       showNetworkInfo(v);
       break;
-    }
-    case 'version': {
+    case 'version':
       showVersion(v);
       break;
-    }
-    default: {
-      // eslint-disable-next-line no-console
-      console.log('unknown', k);
+    case 'backlight':
+      showBacklight(v);
       break;
-    }
+    default:
+      // eslint-disable-next-line no-console
+      if (JSON.stringify(v) === JSON.stringify({})) {
+        return;
+      }
+      // console.log('unknown', k, v);
   }
 }
 
 function parseMessage(data) {
   JSON.parse(data, (k, v) => {
-    if (k === '') return;
-    updateUI(k, v);
+    if (k === '') { return undefined; }
+    return updateUI(k, v);
   });
 }
 
 // eslint-disable-next-line no-unused-vars
 function onload() {
   try {
+    enableUI(false);
     const uri = getWSUri();
     ws = new WebSocket(uri);
     ws.onmessage = (msg) => {
@@ -432,7 +456,7 @@ $(document).on('pagecontainerbeforeshow', (event, ui) => {
 $(document).on('pagecontainershow', (event, ui) => {
   const name = $(ui.toPage).jqmData('title');
   $('[data-role="navbar"] a.ui-button-active').removeClass('ui-button-active');
-  $('#footer a').each((_index, element) => {
+  $('#footer a').each((index, element) => {
     if ($(element).text() === name) {
       $(element).addClass('ui-button-active');
     }
@@ -482,26 +506,22 @@ $(document).ready(() => {
     const value = $('input:radio[name=boot_mode]:checked').val();
     setBootMode(value);
   });
-  $('#chk_totalwh').change(() => {
-    const value = $('#chk_totalwh').val() === 'on';
+  $('#chk_store_wh').change(() => {
+    const value = $('#chk_store_wh').val() === 'on';
     setStoreWh(value);
   });
   $('#btn_apply_voltage').click(() => {
     const value = $('#slider_voltage').val();
     setVoltage(parseFloat(value));
   });
-
   $('#chk_dhcp').change(() => {
     const value = $('#chk_dhcp').val() === 'on';
     enableIPAddr(!value);
   });
-
   $('#btn_save_wifi_mode').click(() => {
     const wifi = $('input:radio[name=wifi_mode]:checked').val();
     setWifi(wifi);
-    $('.ui-pagecontainer').pagecontainer('change', '#dlg_restart', { reverse: false, changeHash: true });
   });
-
   $('#btn_save_sta').click(() => {
     const ssid = $('#txt_ssid').val();
     const passwd = $('#txt_passwd').val();
@@ -511,41 +531,28 @@ $(document).ready(() => {
     const gateway = $('#txt_gateway').val();
     const dns = $('#txt_dns').val();
     setSta(ssid, passwd, dhcp, ipaddr, netmask, gateway, dns);
-    $('.ui-pagecontainer').pagecontainer('change', '#dlg_restart', { reverse: false, changeHash: true });
   });
-
   $('#btn_save_ap').click(() => {
     const ssid = $('#txt_ap_ssid').val();
     const passwd = $('#txt_ap_passwd').val();
     const ipaddr = $('#txt_ap_ipaddr').val();
     setAp(ssid, passwd, ipaddr);
-    $('.ui-pagecontainer').pagecontainer('change', '#dlg_restart', { reverse: false, changeHash: true });
   });
 
-  $('#btn_reset_network').click(() => {
-    const wifi = 2;
-    const ssid = 'smartpower2';
-    const passwd = '12345678';
-    const dhcp = false;
-    const ip = '192.168.4.1';
-    const netmask = '255.255.255.0';
-    const gateway = '192.168.4.1';
-    const dns = '192.168.4.1';
-    showWiFiMode(wifi);
-    showSSID(ssid);
-    show(passwd);
-    show(dhcp);
-    showIPAddr(ip);
-    showNetmask(netmask);
-    showGateway(gateway);
-    showDns(dns);
-  });
-
-  $('#dlg_restart_no').click(() => {
+  $('#btn_restart_no').click(() => {
     $('.ui-pagecontainer').pagecontainer('change', '#options', {});
   });
 
-  $('#dlg_restart_yes').click(() => {
+  $('#btn_restart_yes').click(() => {
     $('.ui-pagecontainer').pagecontainer('change', '/restart', {});
+  });
+
+  $('#btn_save_config').click(() => {
+    saveConfig();
+  });
+
+  $('#chk_backlight').change(() => {
+    const value = $('#chk_backlight').val() === 'on';
+    setBacklight(value);
   });
 });
