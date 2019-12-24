@@ -14,6 +14,7 @@ class Console : public Module {
     void setShell(Cli::CommandShell* shell);
     bool isOpen();
     void sendData(const String&);
+    void sendData(const char* data, size_t size);
   protected:
     bool onInit() override;
     bool onStart() override;

@@ -3,34 +3,23 @@
 #include "Global.h"
 #include "Modules/Psu.h"
 
+#define JSON_BUFFER_SIZE 512
+
 namespace Modules {
 
 Web::Web() : Module() {
     memset(client_, 0, sizeof(WebClient) * WEB_SERVER_CLIENT_MAX);
+    sprintf(last_modified_, "%s %s GMT", __DATE__, __TIME__);
     cnt_ = 0;
 }
 
 bool Web::onInit() {
     web_ = new WebServerAsync(HTTP_PORT);
-    web_->setOnConnection(
-        [this](const uint32_t num, const bool connected) {
-            this->onConnection(num, connected);
-        });
-    web_->setOnData(
-        [this](const uint32_t num, const String &data) {
-            this->onData(num, data);
-            if (failed()) {
-                PrintUtils::print_ident(out_, FPSTR(str_web));
-                PrintUtils::print(out_, getError());
-                PrintUtils::println(out_);
-            }
-        });
-
+    web_->init(this);
     return true;
 }
 
 bool Web::onStart() {
-    updateStaticJson();
     web_->start();
     return true;
 }
@@ -147,39 +136,15 @@ void Web::onData(const uint32_t num, const String &data) {
     }
 };
 
-String Web::getPageData(const WebPageEnum page) {
-    DynamicJsonDocument doc(512);
-    String json;
-    JsonObject obj = doc.createNestedObject();
-    switch (page) {
-        case PAGE_HOME: {
-            fillMain(obj);
-            break;
-        }
-        case PAGE_OPTIONS: {
-            fillOptions(obj);
-            break;
-        }
-        default:
-            return json;
-    }
-    size_t size = serializeJson(doc, json);
-    if (size > json.length()) {
-        setError(Error::buffer_low(size));
-    }
-    return json;
+
+bool Web::uriExist(const String& uri, String& lastModified) {
+    lastModified = last_modified_;
+    PrintUtils::print_ident(out_, FPSTR(str_web));
+    PrintUtils::println(out_, uri);
+    return true;
 }
 
-void Web::fillOptions(JsonObject &obj) {
-    Config *cfg = config->get();
-    for (uint8_t i = 0; i < PARAMS_COUNT; ++i) {
-        ConfigItem param = ConfigItem(i);
-        if (!config->isSecured(param))
-            obj[cfg->name(param)] = cfg->value(param);
-    }
-}
-
-void Web::updateStaticJson() {
+bool Web::getResponse(const String& uri, String& body) {
     DynamicJsonDocument doc(256);
     JsonObject obj = doc.createNestedObject();
     obj[FPSTR(str_fw)] = SysInfo::getFW();
@@ -191,9 +156,41 @@ void Web::updateStaticJson() {
     obj[FPSTR(str_cpu)] = SysInfo::getCpuFreq();
     obj = doc.createNestedObject();
     obj[FPSTR(str_chip)] = SysInfo::getChipId();
-    File f = SPIFFS.open(FS_VERSION, "w");
-    serializeJson(doc, f);
-    f.close();
+    
+    serializeJson(doc, body);
+    return true;
+}
+
+String Web::getPageData(const WebPageEnum page) {
+    DynamicJsonDocument doc(JSON_BUFFER_SIZE);
+    JsonObject obj = doc.createNestedObject();
+    switch (page) {
+        case PAGE_HOME: {
+            fillMain(obj);
+            break;
+        }
+        case PAGE_OPTIONS: {
+            fillOptions(obj);
+            break;
+        default:
+            break;
+        }               
+    }
+    String json;
+    size_t size = serializeJson(doc, json);
+    if (size > JSON_BUFFER_SIZE) {
+        setError(Error::buffer_low(JSON_BUFFER_SIZE));
+    }
+    return json;
+}
+
+void Web::fillOptions(JsonObject &obj) {
+    Config *cfg = config->get();
+    for (uint8_t i = 0; i < PARAMS_COUNT; ++i) {
+        ConfigItem param = ConfigItem(i);
+        if (!config->isSecured(param))
+            obj[cfg->name(param)] = cfg->value(param);
+    }
 }
 
 void Web::fillMain(JsonObject &obj) {

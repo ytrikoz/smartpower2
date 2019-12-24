@@ -42,6 +42,10 @@ void Console::sendData(const String& data) {
     Serial.print(data);
 }
 
+void Console::sendData(const char* data, size_t size) {
+    Serial.write(data, size);
+}
+
 }
 
  

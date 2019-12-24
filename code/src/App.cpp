@@ -122,16 +122,18 @@ void App::onPsuData(PsuData &item) {
     if (powerlog_) powerlog_->onPsuData(item);
 
     if (console() && !console()->isOpen()) {
-        String data = item.toString();
-        data += '\r';
-        console()->sendData(data);
+        char buf[64];
+        size_t size = item.toPretty(buf);
+        buf[size] = '\r';
+        buf[size + 1] = '\x00';
+        console()->sendData(buf, size + 1);
     }
 
     if (hasNetwork_) {
         if (telnet() && telnet()->hasClient() && !telnet()->isShellActive()) {
-            String data = item.toString();
+            String data = item.toJson();
             data += '\r';
-            telnet()->sendData(data.c_str());
+            telnet()->sendData(data);
         }
         if (web()->getClients()) {
             String data = item.toJson();

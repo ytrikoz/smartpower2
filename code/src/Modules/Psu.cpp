@@ -12,7 +12,7 @@ namespace Modules {
 bool Psu::onInit() {
     ina231_configure();
     clearErrorsAndAlerts();
-    if (isWhStoreEnabled() && info_.Wh != lastStoredWh_) restoreWh(info_.Wh);
+    if (isWhStoreEnabled()) restoreWh(info_.Wh);
     return true;
 }
 
@@ -238,7 +238,7 @@ void Psu::onDiag(const JsonObject& doc) {
     if (state_ == POWER_ON) {
         doc[FPSTR(str_time)] = TimeUtils::format_elapsed_short(getUptime());
         doc[FPSTR(str_status)] = getStatusStr(status_);
-        doc[FPSTR(str_data)] = info_.toString();
+        doc[FPSTR(str_data)] = info_.toJson();
     }
 }
 

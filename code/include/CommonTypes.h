@@ -79,7 +79,6 @@ struct PsuData : Printable {
     float I;
     float P;
     double Wh;
-
    public:
     PsuData() { time = V = I = P = Wh = 0; }
 
@@ -87,21 +86,35 @@ struct PsuData : Printable {
         : time(time_ms), V(V), I(I), P(P), Wh(Wh){};
 
     void reset(void) { time = V = I = P = Wh = 0; }
+    
+    char* prettyNumber(char* buf, float value, const char* name) const {
+        char tmp[8];
+        if (I < 0.5) {
+            strcpy(buf, dtostrf(value * 1000, 3, 0, tmp));
+            strcat(buf, "m");
+        } else {
+            strcpy(buf, dtostrf(value, 2, 2, tmp));
+        }            
+        strcat(buf, name);
+        return buf;
+    }
 
-    String toString() const {
-        String res = "";
-        res += String(V, 3);
-        res += "V, ";
-        res += String(I, 3);
-        res += "I, ";
-        res += String(P, 3);
-        res += "P, ";
-        res += String(Wh, 3);
-        res += "Wh";
-        return res;
+    size_t toPretty(char* buf) const {
+        char tmp[32];    
+        // Volt
+        strcat(buf, dtostrf(V, 2, 2, tmp));        
+        strcat(buf, "V ");
+        // Amper
+        strcat(buf, prettyNumber(tmp, I, "A "));        
+        // Watt
+        strcat(buf, dtostrf(P, 2, 2, tmp));
+        strcat(buf, "W");
+
+        return strlen(buf);
     }
 
     String toJson() const {
+        
         String res = "{";
         res += "\"v\":" + String(V, 3) + ",";
         res += "\"i\":" + String(I, 3) + ",";

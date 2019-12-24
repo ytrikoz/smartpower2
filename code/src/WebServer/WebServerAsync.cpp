@@ -2,21 +2,31 @@
 #include "Wireless.h"
 #include "Core/CharBuffer.h"
 
-WebServerAsync::WebServerAsync(uint16_t port) {
-    sprintf(last_modified, "%s %s GMT", __DATE__, __TIME__);
+WebServerAsync::WebServerAsync(uint16_t port) {    
     web_ = new AsyncWebServer(port);
     web_->serveStatic("/", SPIFFS, FS_WEB_ROOT).setDefaultFile("index.html");
-    web_->serveStatic("/version", SPIFFS, FS_VERSION);
-    web_->on("/system", HTTP_GET, [this](AsyncWebServerRequest *request) {
-        DynamicJsonDocument doc(64);
-        String json;
-        serializeJson(doc, json);
-        AsyncWebServerResponse *response = request->beginResponse(200, "application/json", json);
-        request->send(response); 
-    });
 
     web_->onNotFound([this](AsyncWebServerRequest *request) {
-        onNotFound(request);
+        String lastModified;        
+        String url = request->url();
+        if (!handler_->uriExist(url, lastModified)) {
+            request->send(404);  
+            return;
+        }        
+        if (request->header("If-Modified-Since").equals(lastModified)) {
+            request->send(304);
+            return;
+        }
+        String responseBody;
+        if (handler_->getResponse(url, responseBody)) {
+            if (responseBody) {
+                AsyncWebServerResponse *response = request->beginResponse(200, "application/json", responseBody);
+                response->addHeader("Last-Modified", lastModified);
+                request->send(response);
+                return;
+            }
+        }
+        request->send(504);         
     });
 
     ws_ = new AsyncWebSocket("/ws");
@@ -63,28 +73,21 @@ void WebServerAsync::loop() {
     ws_->cleanupClients();
 }
 
-void WebServerAsync::onNotFound(AsyncWebServerRequest *r) {
-    r->send(404);
-};
-
 void WebServerAsync::onWSEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
     switch (type) {
         case WS_EVT_CONNECT:
         case WS_EVT_DISCONNECT:
-            if (connectionHandler)
-                connectionHandler(client->id(), type == WS_EVT_CONNECT);
+            handler_->onConnection(client->id(), type == WS_EVT_CONNECT);
             break;
         case WS_EVT_DATA: {
             AwsFrameInfo *info = (AwsFrameInfo *)arg;
             if (info->final && info->index == 0 && info->len == len) {
                 if (info->opcode == WS_TEXT) {
-                    if (dataHandler) {
-                        char *buf = new char[info->len + 1];
-                        strncpy(buf, (char *)data, info->len);
-                        buf[info->len] = '\x00';
-                        dataHandler(client->id(), buf);
-                        delete buf;
-                    }
+                    char *buf = new char[info->len + 1];
+                    strncpy(buf, (char *)data, info->len);
+                    buf[info->len] = '\x00';
+                    handler_->onData(client->id(), buf);
+                    delete buf;
                     return;
                 }
             }
@@ -99,10 +102,3 @@ void WebServerAsync::sendData(const uint32_t num, const String &payload) {
     ws_->text(num, payload);
 }
 
-void WebServerAsync::setOnConnection(WebClientConnectionEventHandler h) {
-    connectionHandler = h;
-}
-
-void WebServerAsync::setOnData(WebClientDataEventHandler h) {
-    dataHandler = h;
-}

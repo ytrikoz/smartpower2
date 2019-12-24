@@ -13,7 +13,13 @@ struct WebClient {
 
 namespace Modules {
 
-class Web : public Module {
+class Web : public Module, public WebServerHandler {
+   public:
+    void onConnection(const uint32_t num, const bool connected) override;
+    void onData(const uint32_t num, const String &data) override;
+    bool getResponse(const String& uri, String& body) override;
+    bool uriExist(const String& uri, String& lastModified) override;
+
    public:
     Web();
 
@@ -29,20 +35,18 @@ class Web : public Module {
     size_t getClients();
 
    private:
-    void updateStaticJson();
     void fillInfo(JsonObject& obj);
     void fillOptions(JsonObject& obj);
     void fillMain(JsonObject& obj);
     String getPageData(const WebPageEnum page);
-    void onConnection(const uint32_t num, const bool conntected);
-    void onDisconnection(const uint32_t num);
-    void onData(const uint32_t num, const String& data);
-    bool getFreeSlot(WebClient**c);
-    bool getClientByNum(uint32_t num, WebClient **c);
+    bool getFreeSlot(WebClient** c);
+    bool getClientByNum(uint32_t num, WebClient** c);
+
    private:
     size_t cnt_;
     WebClient client_[WEB_SERVER_CLIENT_MAX];
     WebServer* web_;
+    char last_modified_[50];
 };
 
 }  // namespace Modules

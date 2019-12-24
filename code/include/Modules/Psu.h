@@ -72,7 +72,7 @@ class Psu : public Module {
     unsigned long startTime_, infoUpdated_, powerInfoUpdated_, listenerUpdate_,
         lastStore_, lastCheck_;
     double lastStoredWh_;
-    float lastStoredState_;
+    int lastStoredState_;
 };
 
 }  // namespace Modules
