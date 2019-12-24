@@ -16,8 +16,6 @@ class WebServer {
    public:
     virtual void sendData(const uint32_t, const String&) = 0;
     virtual void sendEvent(const String&, const String&) = 0;
-
-   public:
     virtual void setOnConnection(WebClientConnectionEventHandler) = 0;
     virtual void setOnData(WebClientDataEventHandler) = 0;
 };

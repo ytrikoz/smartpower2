@@ -1,10 +1,9 @@
 #pragma once
 
-#include <ESP8266WiFi.h>
-
-#include "CommonTypes.h"
 #include "Config.h"
 #include "Core/Storage.h"
+
+#include <ESP8266WiFi.h>
 
 class ConfigHelper : public Printable {
   public:
@@ -12,12 +11,12 @@ class ConfigHelper : public Printable {
     ~ConfigHelper();
     size_t printTo(Print &p) const;
   public:
-    int setParam(const char* name, const char* value);
     void setName(const char* name);
+    bool isSecured(ConfigItem i);
     bool check();
     const char* name();
     void setOutput(Print* p);
-    void setDefaultParams();
+    void setDefaultConfig();
     void load();
     bool load(Config *src, Queue<String>& data);
     bool save(bool backup = false);

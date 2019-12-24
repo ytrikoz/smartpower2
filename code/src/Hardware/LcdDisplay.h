@@ -43,7 +43,7 @@ class LcdDisplay {
     void drawTextRight(uint8_t row, const char *str);
     void drawTextCenter(uint8_t row, const char *str);
     void drawProgressBar(uint8_t row, uint8_t per);
-    void drawPlot(PlotData *data, size_t col_start);
+    void drawPlot(PlotSummary *data, size_t col_start);
     void drawFloat(uint8_t col, uint8_t row, float value);
     void drawText(uint8_t col, uint8_t row, const char *str);
 

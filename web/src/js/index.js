@@ -6,6 +6,8 @@ const PAGE_INFO = 3;
 const DEBUG_WS = '192.168.1.204';
 
 let ws;
+let conn = false;
+
 const RESET_INTERVAL = 60000;
 
 class Measurement {
@@ -96,9 +98,10 @@ function getConnectionStatus() {
   }
 }
 
-function send(data) {
+function sendJsonObject(obj) {
   try {
-    ws.send(data);
+    const text = JSON.stringify(obj);
+    ws.send(text);
     return true;
   } catch (e) {
     return false;
@@ -169,11 +172,15 @@ function showBootMode(value) {
 }
 
 function showVoltage(value) {
-  $('#voltage').val(value).slider().slider('refresh');
+  $('#slider_voltage').val(value).slider().slider('refresh');
+}
+
+function showTWP(value) {
+  $('#slider_twp').val(value).slider().slider('refresh');
 }
 
 function showStoreWh(value) {
-  $('#storewh').val(value ? 'on' : 'off').flipswitch().flipswitch('refresh');
+  $('#chk_store_wh').val(value ? 'on' : 'off').flipswitch().flipswitch('refresh');
 }
 //
 // Wifi Mode
@@ -239,15 +246,15 @@ function showAP_IPAddr(value) {
 // Info
 //
 function showVersion(value) {
-  $('#version_info_cont').json2html(value, template, { replace: true });
+  $('#version_cont').json2html(value, template, { replace: true });
 }
 
 function showNetworkInfo(value) {
-  $('#network_info_cont').json2html(value, template, { replace: true });
+  $('#network_cont').json2html(value, template, { replace: true });
 }
 
 function showSysInfo(value) {
-  $('#system_info_cont').json2html(value, template, { replace: true });
+  $('#system_cont').json2html(value, template, { replace: true });
 }
 
 function enableUI(value = true) {
@@ -260,49 +267,54 @@ function enableUI(value = true) {
 
 function setPage(value) {
   const data = { page: value };
-  return send(JSON.stringify(data));
+  return sendJsonObject(data);
 }
 
 function saveConfig() {
   const data = { config: 'save' };
-  send(JSON.stringify(data));
+  sendJsonObject(data);
+}
+
+function restart() {
+  const data = { restart: 0 };
+  sendJsonObject(data);
 }
 
 // Home
 function setPower(value) {
   const data = { power: value };
-  send(JSON.stringify(data));
+  sendJsonObject(data);
 }
 function setWh(value) {
   const data = { wh: value };
-  send(JSON.stringify(data));
+  sendJsonObject(data);
 }
 // Options
 function setBootMode(value) {
   const data = { set: [{ bootpwr: value }] };
-  send(JSON.stringify(data));
+  sendJsonObject(data);
   saveConfig();
 }
 function setVoltage(value) {
   const data = { set: [{ voltage: value }] };
-  send(JSON.stringify(data));
+  sendJsonObject(data);
   saveConfig();
 }
 function setStoreWh(value) {
   const data = { set: [{ store_wh: value ? 1 : 0 }] };
-  send(JSON.stringify(data));
+  sendJsonObject(data);
   saveConfig();
 }
 function setBacklight(value) {
   const data = { set: [{ backlight: value ? 1 : 0 }] };
-  send(JSON.stringify(data));
+  sendJsonObject(data);
   saveConfig();
 }
-function setWifi(wifi) {
+function setWifi(wifi, twp) {
   const data = {
-    set: [{ wifi }],
+    set: [{ wifi, twp }],
   };
-  send(JSON.stringify(data));
+  sendJsonObject(data);
   saveConfig();
   askRestart();
 }
@@ -311,15 +323,17 @@ function setSta(ssid, passwd, dhcp, ipaddr, netmask, gateway, dns) {
   const data = {
     set: [
       { ssid },
-      { passwd },
-      { dhcp },
+      { dhcp: dhcp ? 1 : 0 },
       { ipaddr },
       { netmask },
       { gateway },
       { dns },
     ],
   };
-  send(JSON.stringify(data));
+  if (passwd !== '') {
+    data.push({ passwd });
+  }
+  sendJsonObject(data);
   saveConfig();
 }
 
@@ -327,11 +341,13 @@ function setAp(ssid, passwd, ipaddr) {
   const data = {
     set: [
       { ap_ssid: ssid },
-      { ap_passwd: passwd },
       { ap_ipaddr: ipaddr },
     ],
   };
-  send(JSON.stringify(data));
+  if (passwd !== '') {
+    data.push({ ap_passwd: passwd });
+  }
+  sendJsonObject(data);
   saveConfig();
 }
 
@@ -341,19 +357,19 @@ function updateUI(k, v) {
       showPower(v);
       break;
     case 'store_wh':
-      showStoreWh(v);
+      showStoreWh(parseInt(v, 10));
       break;
     case 'v':
-      voltage.setValue(v);
+      voltage.setValue(parseFloat(v));
       break;
     case 'i':
-      current.setValue(v);
+      current.setValue(parseFloat(v));
       break;
     case 'p':
-      power.setValue(v);
+      power.setValue(parseFloat(v));
       break;
     case 'wh':
-      watth.setValue(v);
+      watth.setValue(parseFloat(v));
       break;
     case 'bootpwr':
       showBootMode(parseInt(v, 10));
@@ -363,6 +379,9 @@ function updateUI(k, v) {
       break;
     case 'wifi':
       showWiFi(parseInt(v, 10));
+      break;
+    case 'twp':
+      showTWP(parseInt(v, 10));
       break;
     case 'ssid':
       showSSID(v);
@@ -377,7 +396,7 @@ function updateUI(k, v) {
       showAP_Passwd(v);
       break;
     case 'dhcp':
-      showDHCP(v);
+      showDHCP(parseInt(v, 10));
       break;
     case 'ipaddr':
       showIPAddr(v);
@@ -394,24 +413,13 @@ function updateUI(k, v) {
     case 'dns':
       showDns(v);
       break;
-    case 'sysinfo':
-      showSysInfo(v);
-      break;
-    case 'netinfo':
-      showNetworkInfo(v);
-      break;
-    case 'version':
-      showVersion(v);
-      break;
     case 'backlight':
-      showBacklight(v);
+      showBacklight(parseInt(v, 10));
       break;
     default:
       // eslint-disable-next-line no-console
-      if (JSON.stringify(v) === JSON.stringify({})) {
-        return;
-      }
-      // console.log('unknown', k, v);
+      if (JSON.stringify(v) === JSON.stringify({})) break;
+    // console.log('unknown', k, v);
   }
 }
 
@@ -425,23 +433,30 @@ function parseMessage(data) {
 // eslint-disable-next-line no-unused-vars
 function onload() {
   try {
-    enableUI(false);
     const uri = getWSUri();
     ws = new WebSocket(uri);
     ws.onmessage = (msg) => {
+      conn = true;
       enableUI();
       parseMessage(msg.data);
     };
     ws.onopen = () => {
+      conn = true;
+      enableUI();
       const page = getPageIndex($('.ui-page-active').jqmData('title'));
       if (page > 0) setPage(page);
     };
     ws.onclose = () => {
-      enableUI(false);
+      if (conn) {
+        $('.ui-pagecontainer').pagecontainer('change', '#dlg_connection_lost', { reverse: false, changeHash: true });
+        enableUI(false);
+      }
+      conn = false;
       setTimeout(onload, 1000);
     };
   } catch (e) {
     // eslint-disable-next-line no-console
+
     console.log(e);
   }
 }
@@ -521,9 +536,10 @@ $(document).ready(() => {
     const value = $('#chk_dhcp').val() === 'on';
     enableIPAddr(!value);
   });
-  $('#btn_save_wifi_mode').click(() => {
+  $('#btn_save_wifi').click(() => {
     const wifi = $('input:radio[name=wifi_mode]:checked').val();
-    setWifi(wifi);
+    const twp = $('#slider_twp').val();
+    setWifi(wifi, twp);
   });
   $('#btn_save_sta').click(() => {
     const ssid = $('#txt_ssid').val();
@@ -547,7 +563,7 @@ $(document).ready(() => {
   });
 
   $('#btn_restart_yes').click(() => {
-    $('.ui-pagecontainer').pagecontainer('change', '/restart', {});
+    restart();
   });
 
   $('#btn_save_config').click(() => {
@@ -557,5 +573,13 @@ $(document).ready(() => {
   $('#chk_backlight').change(() => {
     const value = $('#chk_backlight').val() === 'on';
     setBacklight(value);
+  });
+
+  $('#version_cont').on('collapsibleexpand', (e, ui) => {
+    $('#version_div').load('/version');
+  });
+
+  $('#system_cont').on('collapsibleexpand', (e, ui) => {
+    $('#system_div').load('/system');
   });
 });

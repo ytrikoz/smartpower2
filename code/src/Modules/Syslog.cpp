@@ -16,12 +16,12 @@ bool Syslog::onInit() {
 }
 
 bool Syslog::onStart() {
-    if (!strlen(config_->getValue(SYSLOG_SERVER))) {
+    if (!strlen(config_->value(SYSLOG_SERVER))) {
         setError(Error(ERROR_PARAM, FPSTR(str_server)));
         return false;
     }
 
-    if (!WiFi.hostByName(config_->getValue(SYSLOG_SERVER), ip_)) {
+    if (!WiFi.hostByName(config_->value(SYSLOG_SERVER), ip_)) {
         setError(Error(ERROR_NETWORK, FPSTR(str_dns)));
         return false;
     }

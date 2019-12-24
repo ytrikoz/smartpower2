@@ -9,6 +9,8 @@ namespace Wireless {
 
 Print *out_ = 0;
 
+bool scanning_ = false;
+
 bool ap_enabled = false;
 
 NetworkMode networkMode = NETWORK_OFF;
@@ -221,14 +223,14 @@ boolean disconnectWiFi() { return WiFi.disconnect(); }
 
 void start_safe() {
     setMode(NETWORK_AP);
-    setupAP(StrUtils::atoip(config->get()->getValueDefault(AP_IPADDR)));
-    startAP(SysInfo::getUniqueName().c_str(), config->get()->getValueDefault(AP_PASSWORD));
+    setupAP(StrUtils::atoip(config->get()->getDefault(AP_IPADDR)));
+    startAP(SysInfo::getUniqueName().c_str(), config->get()->getDefault(AP_PASSWORD));
 }
 
 void start() {
     String host = AP_Name();
-    uint8_t tpw = config->get()->getValueAsByte(TPW);
-    NetworkMode mode = (NetworkMode)config->get()->getValueAsByte(WIFI);
+    uint8_t tpw = config->get()->asByte(TPW);
+    NetworkMode mode = (NetworkMode)config->get()->asByte(WIFI);
 
     init(mode, host.c_str(), tpw);
 
@@ -244,7 +246,7 @@ void start() {
 
     probeRequestHandler = WiFi.onSoftAPModeProbeRequestReceived(
         [](const WiFiEventSoftAPModeProbeRequestReceived &e) {
-           // PrintUtils::print_wifi_ap_probe(out_, e.mac, e.rssi);
+            // PrintUtils::print_wifi_ap_probe(out_, e.mac, e.rssi);
         });
 
     staConnectedEventHandler =
@@ -275,18 +277,18 @@ void start() {
         });
 
     if (mode == NETWORK_STA || mode == NETWORK_AP_STA) {
-        const char *ssid = config->get()->getValue(SSID);
-        const char *passwd = config->get()->getValue(PASSWORD);
-        const bool dhcp = config->get()->getValueAsBool(DHCP);
+        const char *ssid = config->get()->value(SSID);
+        const char *passwd = config->get()->value(PASSWORD);
+        const bool dhcp = config->get()->asBool(DHCP);
 
         if (dhcp) {
             setupSTA();
         } else {
             IPAddress ip, subnet, gateway, dns;
-            ip = config->get()->getValueAsIPAddress(IPADDR);
-            subnet = config->get()->getValueAsIPAddress(NETMASK);
-            gateway = config->get()->getValueAsIPAddress(GATEWAY);
-            dns = config->get()->getValueAsIPAddress(DNS);
+            ip = config->get()->asIPAddress(IPADDR);
+            subnet = config->get()->asIPAddress(NETMASK);
+            gateway = config->get()->asIPAddress(GATEWAY);
+            dns = config->get()->asIPAddress(DNS);
             setupSTA(ip, gateway, subnet, dns);
         }
 
@@ -297,9 +299,9 @@ void start() {
     }
 
     if (mode == NETWORK_AP || mode == NETWORK_AP_STA) {
-        const char *ap_ssid = config->get()->getValue(ConfigItem::AP_SSID);
-        const char *ap_passwd = config->get()->getValue(ConfigItem::AP_PASSWORD);
-        IPAddress ap_ipaddr = config->get()->getValueAsIPAddress(ConfigItem::AP_IPADDR);
+        const char *ap_ssid = config->get()->value(ConfigItem::AP_SSID);
+        const char *ap_passwd = config->get()->value(ConfigItem::AP_PASSWORD);
+        IPAddress ap_ipaddr = config->get()->asIPAddress(ConfigItem::AP_IPADDR);
 
         setupAP(ap_ipaddr);
 
@@ -450,7 +452,50 @@ String wifiPhyMode() {
     return String("801.11") + ch;
 }
 
+void startWiFiScan(bool hidden) {
+    WiFi.scanNetworksAsync([](int num) { onScanComplete(num); }, hidden);
+    scanning_ = true;
+}
+
+bool isScanning() {
+    return scanning_;
+}
+
 }  // namespace Wireless
+
+const char *encryptionTypeStr(int type) {
+    switch (type) {
+        case AUTH_OPEN:
+            return "NONE";
+        case AUTH_WEP:
+            return "WEP";
+        case AUTH_WPA_PSK:
+            return "WPA";
+        case AUTH_WPA2_PSK:
+            return "WPA2";
+        case AUTH_WPA_WPA2_PSK:
+            return "AUTO";
+        default:
+            return "----";
+    }
+}
+
+void onScanComplete(int found) {
+    Wireless::scanning_ = false;
+    File f = SPIFFS.open("/var/networks", "w");
+    if (found > 0) {
+        for (int i = 0; i < found; ++i) {
+            f.printf("%-18s", WiFi.BSSIDstr(i).c_str());
+            f.printf("%-4s", "");
+            f.printf("%-20s", WiFi.SSID(i).c_str());
+            f.printf("%-6d", WiFi.RSSI(i));
+            f.printf("%-6s", encryptionTypeStr(WiFi.encryptionType(i)));
+            f.printf("%4d", WiFi.channel(i));
+            f.println();
+        };
+    }
+    f.close();
+}
 
 // https://github.com/esp8266/Arduino/issues/4114
 class WiFiStationStaticIP : public ESP8266WiFiSTAClass {
@@ -461,4 +506,4 @@ class WiFiStationStaticIP : public ESP8266WiFiSTAClass {
 void enableStaticStationIP(bool enabled) {
     WiFiStationStaticIP tmp;
     tmp.useStaticStationIP(enabled);
-}
+};

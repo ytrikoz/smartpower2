@@ -10,7 +10,7 @@ class Display : public Module {
    public:
     bool isEnabled();
     void showProgress(uint8_t per, const char *str);
-    void showPlot(PlotData *data, size_t cols);
+    void showPlot(PlotSummary *data, size_t cols);
     void showMessage(const char *header, const char *message);
     void clear(void);
     void refresh(void);
@@ -31,7 +31,7 @@ class Display : public Module {
 
    protected:
     bool onInit() override;
-    bool onConfigChange(const ConfigItem param, const char* value) override;
+    bool onConfigChange(const ConfigItem param, const String& value) override;
     void onLoop() override;
 
    private:

@@ -93,8 +93,8 @@ void Terminal::loop() {
         }
         uint8_t i;
         for (i = 0; i < 10; ++i) {
-            if (strcmp(cc_buf, codeMap[i].cc) == 0) {
-                c = codeMap[i].ch;
+            if (strcmp(cc_buf, keyMap[i].cc) == 0) {
+                c = keyMap[i].ch;
                 state = ST_NORMAL;
             }
         }

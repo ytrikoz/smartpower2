@@ -1,7 +1,5 @@
 #pragma once
 
-#include <Arduino.h>
-
 #include "CommonTypes.h"
 
 #include "Cli/EditLine.h"
@@ -95,6 +93,10 @@ enum TerminalEventEnum {
     EVENT_TAB
 };
 
+enum SpecialKeyEnum {SPEC_KEY_UP, SPEC_KEY_TAB, SPEC_KEY_ENTER, SPEC_KEY_ESC};
+
+typedef std::function<bool(SpecialKeyEnum key)> SpecialKeyPressedEvent;
+
 typedef std::function<void(TerminalEventEnum, Stream*)> TerminalEventHandler;
 
 typedef std::function<void(const char *)> TerminalInputEventHandler;
@@ -110,6 +112,7 @@ class Terminal : public Print {
     void enableEcho(bool enabled = true);
     void enableColors(bool enabled = true);
     void setOnEvent(TerminalEventHandler);
+    void setOnSpecKeyPress(SpecialKeyPressedEvent);
     void setOnReadLine(TerminalInputEventHandler);
     
     bool setLine(const uint8_t *bytes, size_t size);
@@ -156,7 +159,7 @@ class Terminal : public Print {
         const char ch;
     };
 
-    ControlCode codeMap[10] = {
+    ControlCode keyMap[10] = {
         {"G", KEY_HOME},       // 71 Home key
         {"H", KEY_UP},         // 72 Up arrow
         {"I", KEY_PAGE_UP},    // 73 PageUp

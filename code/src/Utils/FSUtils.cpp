@@ -67,7 +67,11 @@ void printDir(Print *p, const char *path) {
         auto name = dir.fileName();
         if (getNestedLevel(name) > max_level)
             continue;
-        PrintUtils::print(p, name, '\t', prettyBytes(dir.fileSize()));
+        p->print(dir.fileName());
+        p->print('\t');
+        p->print(dir.fileTime());
+        p->print('\t');
+        p->println(prettyBytes(dir.fileSize()).c_str());
         PrintUtils::println(p);
     }
 }

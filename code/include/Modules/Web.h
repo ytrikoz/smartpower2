@@ -25,11 +25,15 @@ class Web : public Module {
 
    public:
     void sendPage(const WebPageEnum page, const uint32_t num = 0);
-    void sendData(const String& data, WebPageEnum page, uint32_t except_num = 0);
+    void sendAll(const String& data, WebPageEnum page, uint32_t except_num = 0);
     size_t getClients();
 
    private:
-    void commandSet(JsonObject params);
+    void updateStaticJson();
+    void fillInfo(JsonObject& obj);
+    void fillOptions(JsonObject& obj);
+    void fillMain(JsonObject& obj);
+    String getPageData(const WebPageEnum page);
     void onConnection(const uint32_t num, const bool conntected);
     void onDisconnection(const uint32_t num);
     void onData(const uint32_t num, const String& data);

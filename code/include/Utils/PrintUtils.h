@@ -86,7 +86,7 @@ inline size_t println(Print *p, const __FlashStringHelper *ifsh) {
 inline size_t print_not_found(Print *p, const String &str) {
     size_t n = 0;
     n += print_quoted(p, str);
-    n += print(p, FPSTR(str_not), FPSTR(str_found));
+    n += print(p, FPSTR(str_not_found));
     n += println(p);
     return n;
 }
@@ -120,10 +120,10 @@ inline size_t println_unknown_param(Print *p, const String &name) {
     return n;
 }
 
-inline size_t println_unknown_module(Print *p, const String &name) {
+inline size_t println_unknown_item(Print *p, const String &name) {
     size_t n = 0;
     n += print_unknown(p, name);
-    n += print(p, FPSTR(str_module));
+    n += print(p, FPSTR(str_item));
     n += println(p);
     return n;
 }
@@ -132,13 +132,6 @@ inline size_t println_unknown_action(Print *p, const String &name) {
     size_t n = 0;
     n += print_unknown(p, name);
     n += print(p, FPSTR(str_action));
-    n += println(p);
-    return n;
-}
-
-inline size_t println_done(Print *p) {
-    size_t n = 0;
-    n += print(p, FPSTR(str_done));
     n += println(p);
     return n;
 }

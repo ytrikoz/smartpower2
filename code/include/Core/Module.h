@@ -17,17 +17,13 @@ class Module {
 
     void setConfig(Config *c) { config_ = c; }
     
-    bool changeConfig(ConfigItem param, const char* value) {
+    bool changeConfig(const ConfigItem param, const String& value) {
         return onConfigChange(param, value);
     }
 
     bool execute(const String &param, const String &value) {
-        Error res = onExecute(param, value);
-        if (!res) {
-            PrintUtils::print(out_, res.code(), res.description());
-            PrintUtils::println(out_);
-        }
-        return res;
+        onExecute(param, value);
+        return !failed();            
     }
 
     bool init() {
@@ -82,7 +78,10 @@ class Module {
     }
 
     virtual void onDiag(const JsonObject &obj) {}
-
+    
+    virtual Error getError() {
+        return modError_;
+    }
    protected:
     virtual bool onInit() { return true; };
 
@@ -94,16 +93,12 @@ class Module {
 
     virtual void onLoop() = 0;
 
-    virtual bool onConfigChange(const ConfigItem item, const char* value) {
+    virtual bool onConfigChange(const ConfigItem item, const String& value) {
         return true;
     }
     
     virtual bool failed() {
         return modError_.code() != 0;
-    }
-
-    virtual Error getError() {
-        return modError_;
     }
 
     virtual Error onExecute(const String &param, const String &value) {
@@ -134,7 +129,7 @@ class Module {
         }
         return String(FPSTR(strP));
     }
-protected:
+protected:    
     void setError(Error e){
         modError_ = e;
     }
@@ -143,6 +138,7 @@ protected:
     }
     Print *out_;
     Config *config_;
+    
 private:
     Error modError_;
     ModuleState modState_;    

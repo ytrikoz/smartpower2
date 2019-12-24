@@ -6,17 +6,24 @@
 // TODO refactor
 // now it's not for memory saving, but to collect literals in one place
 // and  code unification
+static const char str_dns_resolve[] PROGMEM = "dsn resolve";
+static const char str_interrupted[] PROGMEM = "interrupted";
+
 static const char str_bootpwr[] PROGMEM = "bootpwr";
-static const char str_storewh[] PROGMEM = "storewh";
 static const char str_passwd[] PROGMEM = "passwd";
 static const char str_ap_ssid[] PROGMEM = "ap_ssid";
 static const char str_ap_passwd[] PROGMEM = "ap_passwd";    
 static const char str_ap_ipaddr[] PROGMEM = "ap_ipaddr";
+static const char str_time_zone[] PROGMEM = "time_zone";
+static const char str_twp[] PROGMEM =  "twp";
+static const char str_ntp_sync[] PROGMEM =  "ntp_sync";
+static const char str_ntp_pool[] PROGMEM =  "ntp_pool";
+static const char str_time_backup[] PROGMEM = "time_backup";
+static const char str_store_wh[] PROGMEM =  "store_wh";
 
-static const char str_dns_resolve[] PROGMEM = "dsn resolve";
-static const char str_interrupted[] PROGMEM = "interrupted";
 static const char str_exit_bye[] PROGMEM = "exit, bye!";
-
+static const char str_not_found[] PROGMEM = "not found";
+static const char str_not_exist[] PROGMEM = "not exist";
 static const char msg_greetings[] PROGMEM = "Welcome! To exit press ESC twice.";
 static const char msg_restart[] PROGMEM = "System restart!";
 
@@ -160,10 +167,9 @@ static const char str_eof[] PROGMEM = "eof";
 static const char str_event[] PROGMEM = "event";
 static const char str_exist[] PROGMEM = "exist";
 static const char str_none[] PROGMEM = "none";
-static const char str_not[] PROGMEM = "not";
-static const char str_not_exist[] PROGMEM = "not exist";
 static const char str_error[] PROGMEM = "error";
 static const char str_epoch[] PROGMEM = "epoch";
+static const char str_login[] PROGMEM = "login";
 static const char str_log[] PROGMEM = "log";
 static const char str_lps[] PROGMEM = "lps";
 static const char str_failed[] PROGMEM = "failed";

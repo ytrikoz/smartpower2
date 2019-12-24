@@ -41,9 +41,9 @@ enum CommandAction {
     ACTION_DIFF
 };
 
-Command cmdConfig, cmdPower, cmdShow, cmdSystem, cmdHelp, cmdPrint, cmdSet,
+Command cmdConfig, cmdPower, cmdShow, cmdExec, cmdHelp, cmdPrint, cmdSet,
     cmdGet, cmdRm, cmdClock, cmdPlot, cmdLog, cmdWol, cmdRestart, cmdRun, cmdLs,
-    cmdCrash, cmdLed, cmdSyslog;
+    cmdCrash, cmdLed, cmdSyslog, cmdWifi;
 
 SimpleCLI *cli_ = nullptr;
 Runner *runner_ = nullptr;
@@ -61,6 +61,11 @@ Runner *get() {
 }
 
 void onCommandError(cmd_error *e);
+
+void onExec(cmd *c);
+void onSet(cmd *c);
+void onGet(cmd *c);
+
 void onConfig(cmd *c);
 void onPower(cmd *c);
 void onShow(cmd *c);
@@ -68,10 +73,8 @@ void onHelp(cmd *c);
 void onPrint(cmd *c);
 void onPlot(cmd *c);
 void onRemove(cmd *c);
-void onSet(cmd *c);
-void onGet(cmd *c);
-void onSystem(cmd *c);
-void onWifiScan(cmd *c);
+
+void onWiFi(cmd *c);
 void onWifiDiag(cmd *c);
 void onClock(cmd *c);
 void onLog(cmd *c);
@@ -116,19 +119,19 @@ const String getValueStr(Command &command) {
     return command.getArgument(FPSTR(str_value)).getValue();
 }
 
-void onSystem(cmd *c) {
+void onExec(cmd *c) {
     Command cmd(c);
-    String modStr = getModStr(cmd);
-    String paramStr = getParamStr(cmd);
-    String valueStr = getValueStr(cmd);
-
-    Module *mod = app.getInstanceByName(modStr);
-    if (mod) {
-        if (!mod->execute(paramStr, valueStr)) {
-            PrintUtils::println_done(out_);
+    String item = getItemStr(cmd);
+    String param = getParamStr(cmd);
+    String value = getValueStr(cmd);
+    Module *obj = app.getInstanceByName(item);
+    if (obj) {
+        if (!obj->execute(param, value)) {
+            PrintUtils::print(out_, obj->getError());
+            PrintUtils::println(out_);
         }
     } else {
-        println_unknown_module(out_, modStr);
+        PrintUtils::println_unknown_item(out_, item);
     }
 }
 
@@ -188,31 +191,31 @@ void init() {
 
     cli_->setErrorCallback(onCommandError);
 
-    cmdPower = cli_->addCommand("power");
-    cmdPower.addPositionalArgument("action", "status");
-    cmdPower.addPositionalArgument("param", "0");
-    cmdPower.setCallback(Cli::onPower);
+    cmdHelp = cli_->addCommand("help");
+    cmdHelp.setCallback(Cli::onHelp);
 
     cmdConfig = cli_->addCommand("config");
     cmdConfig.addPositionalArgument("action", "print");
     cmdConfig.addPositionalArgument("param", "");
     cmdConfig.setCallback(Cli::onConfig);
 
-    cmdHelp = cli_->addCommand("help");
-    cmdHelp.setCallback(Cli::onHelp);
+    cmdPower = cli_->addCommand("power");
+    cmdPower.addPositionalArgument("action", "1");
+    cmdPower.addPositionalArgument("param", "0");
+    cmdPower.setCallback(Cli::onPower);
 
     cmdPrint = cli_->addCommand("print");
     cmdPrint.addPositionalArgument("path");
     cmdPrint.setCallback(Cli::onPrint);
 
-    cmdSystem = cli_->addCommand("system");
-    cmdSystem.addPositionalArgument("mod", "");
-    cmdSystem.addPositionalArgument("param", "");
-    cmdSystem.addPositionalArgument("value", "");
-    cmdSystem.setCallback(Cli::onSystem);
+    cmdExec = cli_->addCommand("exec");
+    cmdExec.addPositionalArgument("item", "");
+    cmdExec.addPositionalArgument("param", "");
+    cmdExec.addPositionalArgument("value", "");
+    cmdExec.setCallback(Cli::onExec);
 
     cmdShow = cli_->addCommand("show");
-    cmdShow.addPositionalArgument("mod", "app");
+    cmdShow.addPositionalArgument("item", "app");
     cmdShow.setCallback(Cli::onShow);
 
     cmdSet = cli_->addCommand("set");
@@ -249,8 +252,7 @@ void init() {
     cmdWol.setCallback(Cli::onWol);
 
     cmdRestart = cli_->addCommand("restart");
-    cmdRestart.addArgument("value", "");
-    cmdRestart.setCallback(Cli::onRestart);
+    cmdRestart.setCallback([](cmd *c) { app.systemRestart(); });
 
     cmdRun = cli_->addCommand("run");
     cmdRun.addPositionalArgument("path");
@@ -280,6 +282,10 @@ void init() {
     cmdSyslog.addPositionalArgument("action", "print");
     cmdSyslog.addPositionalArgument("param", "");
     cmdSyslog.setCallback(Cli::onSyslog);
+
+    cmdWifi = cli_->addCommand("wifi");
+    cmdWifi.addPositionalArgument("action", "scan");
+    cmdWifi.setCallback(Cli::onWiFi);
 }
 
 void onLed(cmd *c) {
@@ -354,7 +360,7 @@ void onConfig(cmd *c) {
             config->printTo(*out_);
             return;
         case ACTION_RESET:
-            config->setDefaultParams();
+            config->setDefaultConfig();
             break;
         case ACTION_SAVE:
             config->save();
@@ -368,10 +374,10 @@ void onConfig(cmd *c) {
             return;
         case ACTION_DIFF: {
             Config *cfg = config->get();
-            for (uint8_t i = 0; i < CONFIG_ITEMS; ++i) {
+            for (uint8_t i = 0; i < PARAMS_COUNT; ++i) {
                 ConfigItem item = ConfigItem(i);
-                if (strcmp(cfg->getValue(item), cfg->getValueDefault(item))) {
-                    PrintUtils::print(out_, cfg->getParamName(item), cfg->getValue(item));
+                if (strcmp(cfg->value(item), cfg->getDefault(item))) {
+                    PrintUtils::print(out_, cfg->name(item), cfg->value(item));
                     PrintUtils::println(out_);
                 }
             }
@@ -382,7 +388,7 @@ void onConfig(cmd *c) {
             PrintUtils::println_unknown_action(out_, actionStr);
             return;
     }
-    PrintUtils::println_done(out_);
+    PrintUtils::println(out_, FPSTR(str_done));
 }
 
 void onPower(cmd *c) {
@@ -417,11 +423,6 @@ void onWol(cmd *c) {
     Actions::WakeOnLan(out_).exec(ipStr, macStr);
 }
 
-void onRestart(cmd *c) {
-    Command cmd(c);
-    app.systemRestart();
-}
-
 void onClock(cmd *c) {
     Command cmd(c);
     CommandAction action = getAction(cmd);
@@ -447,40 +448,42 @@ void onClock(cmd *c) {
     }
 }
 
-void onWifiScan(cmd *c) {
+void onWiFi(cmd *c) {
     Command cmd(c);
-    PrintUtils::print(out_, FPSTR(str_scanning));
-    int8_t n = WiFi.scanNetworks();
-    if (n == 0)
-        print_not_found(out_, FPSTR(str_network));
-    else
-        for (int i = 0; i < n; ++i)
-            out_->printf("#%d %s %d\n", i + 1, WiFi.SSID(i).c_str(), WiFi.RSSI(i));
+    if (Wireless::isScanning()) {
+        PrintUtils::println(out_, FPSTR(str_scanning));        
+        return;
+    }
+    String actionStr = getActionStr(cmd);
+    if (actionStr == "scan") {  
+        Wireless::startWiFiScan(true);
+    } else if (actionStr == "list") {
+        FSUtils::print(out_, "/var/networks");
+    };
 }
 
 void onSet(cmd *c) {
     Command cmd(c);
     String param = getParamStr(cmd);
     String value = getValueStr(cmd);
-    if (config->setParam(param.c_str(), value.c_str()) >= 0)
-        PrintUtils::println_done(out_);
+    if (config->get()->setByName(param.c_str(), value.c_str()) >= 0)
+        PrintUtils::println(out_, FPSTR(str_done));
     else
         PrintUtils::println_unknown_param(out_, param);
 }
 
 void onGet(cmd *c) {
     Command cmd(c);
-    String paramStr = getParamStr(cmd);
-    ConfigItem paramItem;
-    size_t valueSize = 0;
-    if (app.params()->getConfig(paramStr, paramItem, valueSize)) {
-        size_t len = paramStr.length() + valueSize + 4 + 1;
+    String param = getParamStr(cmd);
+    ConfigItem item;
+    size_t size = 0;
+    if (app.params()->getParamByName(param.c_str(), item, size)) {
+        size_t len = param.length() + size + 4 + 1;
         char *buf = new char(len);
-        sprintf(buf, "%s=\"%s\"", paramStr.c_str(), app.params()->getValue(paramItem));
-        PrintUtils::print(out_, buf);
-        PrintUtils::println(out_);
+        sprintf(buf, "%s=\"%s\"", param.c_str(), app.params()->value(item));
+        PrintUtils::println(out_, buf);
     } else {
-        PrintUtils::println_unknown_param(out_, paramStr);
+        PrintUtils::println_unknown_param(out_, param);
     }
 }
 
@@ -510,50 +513,45 @@ void onLoop(cmd *c) {
 
 void onShow(cmd *c) {
     Command cmd(c);
-    String modStr = getModStr(cmd);
-    if (modStr == "app") {
+    String item = getItemStr(cmd);
+    if (item == "app") {
         app.printDiag(out_);
     } else {
         ModuleEnum mod;
-        if (app.getByName(modStr.c_str(), mod)) {
+        if (app.getByName(item.c_str(), mod)) {
             app.getInstance(mod)->printDiag(out_);
         } else {
-            println_unknown_module(out_, modStr);
+            PrintUtils::println_unknown_item(out_, item);
         }
     }
 }
 
 void onPlot(cmd *c) {
     Command cmd(c);
-    if (app.psu()->getState() == POWER_OFF) {
-        size_t size = constrain(
-            powerlog->getSize(PsuLogEnum::VOLTAGE), 0, 1024);
-        if (size > 0) {
-            PlotData data;
-            float raw[size];
-            powerlog->getValues(PsuLogEnum::VOLTAGE, raw, size);
-            size_t cols = group(&data, raw, size);
-            app.display()->showPlot(&data, cols);
+    size_t size = powerlog->getSize(PsuLogEnum::VOLTAGE);
+    if (!size) return;
+    PlotSummary summary;
+    float *values = new float[size];
+    powerlog->fill(PsuLogEnum::VOLTAGE, values, size);
+    size_t cols = group(&summary, values, size);
+    app.display()->showPlot(&summary, cols);
 
-            char tmp[PLOT_ROWS * 8 + 1];
-            for (uint8_t x = 0; x < data.size; ++x) {
-                uint8_t y = compress(&data, x);
-                StrUtils::strfill(tmp, '*', y);
-                out_->printf("#%d %2.4f ", x + 1, data.columns[x]);
-                out_->print(tmp);
-                out_->println();
-            }
-        };
+    char tmp[PLOT_ROWS * 8 + 1];
+    for (size_t x = 0; x < summary.size; ++x) {
+        size_t y = compress(&summary, x);
+        StrUtils::strfill(tmp, '*', y);
+        PrintUtils::print(out_, x + 1, summary.columns[x]);
+        PrintUtils::println(out_, tmp);
     }
 }
 
 void onPrint(cmd *c) {
     Command cmd(c);
-    auto file = getPathStr(cmd);
-    if (FSUtils::exists(file)) {
-        FSUtils::print(out_, file);
+    auto path = getPathStr(cmd);
+    if (FSUtils::exists(path)) {
+        FSUtils::print(out_, path);
     } else {
-        print_file_not_found(out_, file);
+        print_file_not_found(out_, path);
     }
 }
 

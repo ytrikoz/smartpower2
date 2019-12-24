@@ -1,6 +1,6 @@
 #include "Plot.h"
 
-float compress(PlotData *data, size_t column) {
+float compress(PlotSummary *data, size_t column) {
     float value = data->columns[column];
     float min = data->min_value;
     float limit_range = PLOT_ROWS * 8 - 2;
@@ -8,7 +8,7 @@ float compress(PlotData *data, size_t column) {
     return 1 + ((value - min) / full_range * limit_range);
 }
 
-size_t group(PlotData *data, float *array, size_t array_size) {
+size_t group(PlotSummary *data, float *array, size_t array_size) {
     size_t group_size, offset, column_count;
     if (array_size <= PLOT_COLS) {
         column_count = array_size;

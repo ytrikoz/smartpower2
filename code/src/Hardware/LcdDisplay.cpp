@@ -358,7 +358,7 @@ void LcdDisplay::drawText(uint8_t col, uint8_t row, const char *str) {
     lcd->print(str);
 }
 
-void LcdDisplay::drawPlot(PlotData *data, size_t col_start) {
+void LcdDisplay::drawPlot(PlotSummary *data, size_t col_start) {
     if (!connect())
         return;
 

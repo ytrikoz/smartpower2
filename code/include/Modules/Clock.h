@@ -45,7 +45,6 @@ class Clock : public Module {
     int getBiasInSeconds() const;
     int getBiasInMinutes() const;
     time_t getStoreInterval();
-
     void updateLastKnown(const time_t epoch, bool forced = false);
 
    private:

@@ -61,19 +61,20 @@
 #define FS_VAR_ROOT "/var/"
 #define BOOT_FLAG "/var/boot"
 
-#define FS_VERSION_JSON FS_WEB_ROOT "version.json"
+#define FS_VERSION FS_WEB_ROOT "version"
+#define FS_SYSTEM FS_WEB_ROOT "system"
 
 #define FS_MAIN_CONFIG FS_CONFIG_ROOT "main"
 #define FS_POWER_STATE_VAR FS_VAR_ROOT "ps"
 #define FS_UTC_VAR FS_VAR_ROOT "utc"
 #define FS_WH_VAR FS_VAR_ROOT "wh"
 
-#define CONFIG_CHAR 2
-#define CONFIG_STR 31
-#define CONFIG_IPADDR 16
-#define CONFIG_FLOAT 8
-#define CONFIG_BYTE 4
-#define CONFIG_NUMBER 9
+#define PARAM_CHAR 1
+#define PARAM_BYTE 3
+#define PARAM_STRING 31
+#define PARAM_IPADDR 16
+#define PARAM_NUMBER 8
+#define PARAM_FLOAT 12
 
 #define HOST_DOMAIN "local"
 #define WIFI_CONNECT_TIMEOUT 40

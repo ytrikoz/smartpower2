@@ -1,12 +1,13 @@
 #pragma once
 
-#include "Print.h"
-#include "time.h"
 #include "FS.h"
+#include "StrUtils.h"
+#include <Print.h>
+#include <time.h>
 
 namespace FSUtils {
 
-inline bool rename(const char* src,  const char* dst) {
+inline bool move(const char *src, const char *dst) {
     return SPIFFS.exists(src) && SPIFFS.rename(src, dst);
 }
 
@@ -15,9 +16,12 @@ inline bool exists(const String &name) {
 }
 
 inline void print(Print *p, const String &name) {
-    auto f = SPIFFS.open(name, "r");
-    while (f.available()) p->print(f.readString());
-    f.close();
+    if (auto f = SPIFFS.open(name, "r")) {
+        while (f.available()) {
+            p->println(f.readStringUntil('\n'));
+        }
+        f.close();
+    }
 }
 
 const String getFSTotal();

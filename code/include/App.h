@@ -25,7 +25,7 @@ class App : public Host, PsuDataListener {
     App();
 
    public:
-    void onConfigChange(ConfigItem param, const char *value);
+    void onConfigChange(const ConfigItem param, const String& value);
     void onPsuData(PsuData &item) override;
     void onPsuStateChange(PsuState);
     void onPsuStatusChange(PsuStatus);
@@ -59,7 +59,7 @@ class App : public Host, PsuDataListener {
 
     size_t printDiag(Print *p);
 
-    void printPlot(PlotData *data, Print *p);
+    void printPlot(PlotSummary *data, Print *p);
 
     Modules::Display *display();
     Modules::Button *btn();
@@ -141,7 +141,7 @@ class App : public Host, PsuDataListener {
     uint8_t boot_per;
 
    private:
-    ModuleDef modules[APP_MODULES] = {
+    ModuleDef modules[MODULES_COUNT] = {
         {0, str_btn, NETWORK_OFF},
         {0, str_led, NETWORK_OFF},
         {0, str_clock, NETWORK_OFF},

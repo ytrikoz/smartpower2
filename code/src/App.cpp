@@ -24,12 +24,14 @@ void App::instanceMods() {
 }
 
 void App::initMods() {
-    for (uint8_t i = 0; i < APP_MODULES; ++i) {
+    for (uint8_t i = 0; i < MODULES_COUNT; ++i) {
         Module *obj = getInstance(i);
         obj->setOutput(out_);
         obj->setConfig(params());
         if (!obj->init()) {
-            PrintUtils::print(out_, FPSTR(str_failed), getName(i));
+            PrintUtils::print_ident(out_, getName(i));
+            PrintUtils::print(out_, FPSTR(str_init), FPSTR(str_failed));
+            PrintUtils::print(out_, obj->getError());
             PrintUtils::println(out_);
         }
     }
@@ -133,15 +135,15 @@ void App::onPsuData(PsuData &item) {
         }
         if (web()->getClients()) {
             String data = item.toJson();
-            web()->sendData(data, PAGE_HOME);
+            web()->sendAll(data, PAGE_HOME);
         }
     }
 }
 
-void App::onConfigChange(ConfigItem param, const char *value) {
-    for (uint8_t i = 0; i < APP_MODULES; ++i) {
+void App::onConfigChange(const ConfigItem param, const String& value) {
+    for (uint8_t i = 0; i < MODULES_COUNT; ++i) {
         Module *obj = getInstance(i);
-            if(obj) obj->changeConfig(param, value);
+        if (obj) obj->changeConfig(param, value);
     }
 }
 
@@ -198,7 +200,7 @@ void App::startSafe() {
 void App::loopSafe() { console()->loop(); }
 
 AppState App::loop(LoopTimer *looper) {
-    for (size_t i = 0; i < APP_MODULES; ++i) {
+    for (size_t i = 0; i < MODULES_COUNT; ++i) {
         auto *obj = getInstance(i);
         if (!obj) continue;
         if (exitFlag_) {
@@ -231,7 +233,7 @@ AppState App::loop(LoopTimer *looper) {
 
     networkEvent_ = systemEvent_ = psuEvent_ = false;
 
-    if (exitFlag_) 
+    if (exitFlag_)
         return exitState_;
 
     return STATE_NORMAL;
@@ -244,7 +246,7 @@ size_t App::printDiag(Print *p) {
     doc[FPSTR(str_wifi)] = getNetworkModeStr(networkMode_);
     doc[FPSTR(str_network)] = hasNetwork_;
 
-    for (uint8_t i = 0; i < APP_MODULES; ++i) {
+    for (uint8_t i = 0; i < MODULES_COUNT; ++i) {
         auto *obj = getInstance(i);
         JsonVariant mod_diag = doc.createNestedObject(getName(i));
         if (obj) {
@@ -264,7 +266,7 @@ void App::displayProgress(uint8_t progress, const char *message) {
 }
 
 void App::setOutputVoltage(float value) {
-    config_->get()->setValueFloat(OUTPUT_VOLTAGE, value);
+    config_->get()->setFloat(OUTPUT_VOLTAGE, value);
     psu()->setOutputVoltage(value);
 }
 
@@ -306,7 +308,11 @@ void App::setPowerlog(PowerLog *powerlog) {
 void App::setConfig(ConfigHelper *config) {
     config_ = config;
     config_->get()->setOnChange(
-        [this](ConfigItem param, const char *value) {
+        [this](ConfigItem param, const String& value) {
+            PrintUtils::print_ident(out_, FPSTR(str_app));
+            PrintUtils::print(out_, param, value);
+            PrintUtils::println(out_);
+
             onConfigChange(param, value);
         });
 }
@@ -320,7 +326,7 @@ String App::getName(uint8_t index) const {
 }
 
 bool App::getByName(const char *str, ModuleEnum &module) const {
-    for (uint8_t i = 0; i < APP_MODULES; ++i) {
+    for (uint8_t i = 0; i < MODULES_COUNT; ++i) {
         if (getName(i).equalsIgnoreCase(str)) {
             module = ModuleEnum(i);
             return true;

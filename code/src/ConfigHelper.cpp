@@ -41,9 +41,9 @@ void ConfigHelper::load() {
             while (data->available()) {
                 String buf;
                 data->pop(buf);
-                String paramStr = extractName(buf);
-                String valueStr = extractValue(buf);
-                int8_t res = obj_.setValueByName(paramStr, valueStr);
+                String param = extractName(buf);
+                String value = extractValue(buf);
+                int res = obj_.setByName(param.c_str(), value.c_str());
                 if (res == -1) {
                     PrintUtils::print(out_, FPSTR(str_error));
                     PrintUtils::print(out_, buf);
@@ -75,10 +75,10 @@ String ConfigHelper::extractValue(const String &str) {
 }
 
 bool ConfigHelper::save(bool backup) {
-    if (backup) FSUtils::rename(FS_MAIN_CONFIG, FS_MAIN_CONFIG ".bak");
+    if (backup) FSUtils::move(FS_MAIN_CONFIG, FS_MAIN_CONFIG ".bak");
     auto file = StringFile(FS_MAIN_CONFIG);
     auto data = file.get();
-    for (size_t i = 0; i < CONFIG_ITEMS; ++i) {
+    for (size_t i = 0; i < PARAMS_COUNT; ++i) {
         String buf(obj_.toString(ConfigItem(i)));
         data->push(buf);
     }
@@ -87,37 +87,44 @@ bool ConfigHelper::save(bool backup) {
 
 size_t ConfigHelper::printTo(Print &p) const {
     size_t n = 0;
-    for (size_t i = 0; i < CONFIG_ITEMS; ++i)
-        n += p.println(obj_.toString(ConfigItem(i)));
+    for (size_t i = 0; i < PARAMS_COUNT; ++i) {
+        ConfigItem param = ConfigItem(i);
+        n += p.println(obj_.toString(param));
+    }
     return n;
 }
 
-void ConfigHelper::setDefaultParams() {
-    for (size_t i = 0; i < CONFIG_ITEMS; ++i)
-        obj_.resetDefault(ConfigItem(i));
+//TODO
+bool ConfigHelper::isSecured(ConfigItem i) {
+    return i == PASSWD || i == PASSWORD || i == AP_PASSWORD;
+}
+
+void ConfigHelper::setDefaultConfig() {
+    for (size_t i = 0; i < PARAMS_COUNT; ++i)
+        obj_.setDefault(ConfigItem(i));
 }
 
 bool ConfigHelper::getWhStoreEnabled() {
-    return obj_.getValueAsBool(WH_STORE_ENABLED);
+    return obj_.asBool(WH_STORE_ENABLED);
 }
 
 NetworkMode ConfigHelper::getWiFiMode() {
-    return (NetworkMode) obj_.getValueAsByte(WIFI);    
+    return (NetworkMode) obj_.asByte(WIFI);    
 }
 
 Config *ConfigHelper::get() { return &obj_; }
 
 bool ConfigHelper::setBootPowerState(BootPowerState value) {
-    return obj_.setValueByte(POWER, (uint8_t)(value));
+    return obj_.setByte(POWER, (uint8_t)(value));
 }
 
 BootPowerState ConfigHelper::getBootPowerState() {
-    return BootPowerState(obj_.getValueAsByte(POWER));
+    return BootPowerState(obj_.asByte(POWER));
 }
 
 bool ConfigHelper::setNtpConfig(sint8_t timeZone_h, uint16_t sync_s) {
-    return obj_.setValueSignedByte(TIME_ZONE, timeZone_h) |
-           obj_.setValueInt(NTP_SYNC_INTERVAL, sync_s);
+    return obj_.setSignedByte(TIME_ZONE, timeZone_h) |
+           obj_.setInt(NTP_SYNC_INTERVAL, sync_s);
 }
 
 bool ConfigHelper::setNetworkSTAConfig(uint8_t wifi, const char *ssid,
@@ -138,20 +145,20 @@ bool ConfigHelper::setPowerConfig(BootPowerState state, float voltage) {
 
 bool ConfigHelper::setWiFiMode(uint8_t value) {
     return (value >= WIFI_OFF) && (value <= WIFI_AP_STA)
-               ? obj_.setValueByte(WIFI, value)
+               ? obj_.setByte(WIFI, value)
                : false;
 }
 
 bool ConfigHelper::setWiFiMode(WiFiMode_t value) {
-    return obj_.setValueByte(WIFI, (uint8_t)value);
+    return obj_.setByte(WIFI, (uint8_t)value);
 }
 
 bool ConfigHelper::setSSID(const char *value) {
-    return obj_.setValue(SSID, value);
+    return obj_.set(SSID, value);
 }
 
 bool ConfigHelper::setPassword(const char *value) {
-    return obj_.setValue(PASSWORD, value);
+    return obj_.set(PASSWORD, value);
 }
 
 bool ConfigHelper::setIPAddress(IPAddress value) {
@@ -159,47 +166,41 @@ bool ConfigHelper::setIPAddress(IPAddress value) {
 }
 
 bool ConfigHelper::setIPAddress(const char *value) {
-    return obj_.setValue(IPADDR, value);
+    return obj_.set(IPADDR, value);
 }
 
 bool ConfigHelper::setGateway(const char *value) {
-    return obj_.setValue(GATEWAY, value);
+    return obj_.set(GATEWAY, value);
 }
 
 bool ConfigHelper::setNetmask(const char *value) {
-    return obj_.setValue(NETMASK, value);
+    return obj_.set(NETMASK, value);
 }
 
 bool ConfigHelper::setDns(const char *value) {
-    return obj_.setValue(DNS, value);
+    return obj_.set(DNS, value);
 }
 
 bool ConfigHelper::setDHCP(bool value) {
-    return obj_.setValueBool(DHCP, value);
+    return obj_.setBool(DHCP, value);
 }
 
 float ConfigHelper::getOutputVoltage() {
-    return obj_.getValueAsFloat(OUTPUT_VOLTAGE);
+    return obj_.asFloat(OUTPUT_VOLTAGE);
 }
 
 const char *ConfigHelper::getPassword() {
-    return obj_.getValue(PASSWORD);
+    return obj_.value(PASSWORD);
 }
 
 const char *ConfigHelper::getPassword_AP() {
-    return obj_.getValue(AP_PASSWORD);
+    return obj_.value(AP_PASSWORD);
 }
 
 // maximum value of RF Tx Power, unit: 0.25 dBm, range [0, 82]
-uint8_t ConfigHelper::getTPW() { return obj_.getValueAsByte(TPW); }
+uint8_t ConfigHelper::getTPW() { return obj_.asByte(TPW); }
 
-int ConfigHelper::setParam(const char *name, const char *value) {
-    ConfigItem item;
-    int res = -1;
-    if (obj_.getConfig(name, item))
-        res = obj_.setValueAsString(item, value);
-    return res;
-}
+
 // String ConfigHelper::getConfigJson() {
 //     DynamicJsonDocument doc(1024);
 //     String str;

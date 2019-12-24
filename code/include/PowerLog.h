@@ -19,7 +19,7 @@ class PowerLog : public PsuDataListener {
    public:
     DedupLog *getLog(PsuLogEnum item);
     size_t getSize(PsuLogEnum item);
-    bool getValues(PsuLogEnum log, float *values, size_t &size);
+    bool fill(PsuLogEnum log, float *values, size_t &size);
 
    private:
     DedupLog *log_[2] = {0};

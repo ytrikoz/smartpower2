@@ -20,14 +20,14 @@ struct LoopCapture : Printable {
     uint8_t time_size_;
     uint8_t module_size_;
     unsigned long time_[TIME_RANGES];
-    unsigned long module_[APP_MODULES];
+    unsigned long module_[MODULES_COUNT];
 
     LoopCapture() : loop_(0),
                     cnt_(0),
                     overrange_cnt_(0),
                     max_(0),
                     time_size_(TIME_RANGES),
-                    module_size_(APP_MODULES),
+                    module_size_(MODULES_COUNT),
                     time_{0},
                     module_{0} {}
 

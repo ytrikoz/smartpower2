@@ -19,7 +19,7 @@ void handleState(AppState state) {
     if (state == STATE_RESET) {
         PrintUtils::print_ident(&Serial, FPSTR(str_config));
         PrintUtils::print(&Serial, FPSTR(str_reset));
-        config->setDefaultParams();
+        config->setDefaultConfig();
         config->save();
     }        
     if (state >= STATE_RESTART) {
@@ -48,7 +48,7 @@ void setup() {
     if (!config->check()) {
         PrintUtils::print_ident(&syslog, FPSTR(str_config));
         PrintUtils::print_file_not_found(&syslog, config->name());
-        config->setDefaultParams();
+        config->setDefaultConfig();
         config->save();
     }
     config->load();

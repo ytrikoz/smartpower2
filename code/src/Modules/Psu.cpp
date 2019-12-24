@@ -75,9 +75,9 @@ void Psu::onLoop() {
     }    
 }
 
-bool Psu::onConfigChange(const ConfigItem param, const char* value) {
+bool Psu::onConfigChange(const ConfigItem param, const String& value) {
     if (state_ == POWER_ON && param == OUTPUT_VOLTAGE) {
-        setOutputVoltage(getOutputVoltage());
+        setOutputVoltage(value.toFloat());
     }
     return true;
 }
@@ -145,7 +145,7 @@ void Psu::applyVoltage(const float value) {
 }
 
 float Psu::getOutputVoltage() const {
-    return config_->getValueAsFloat(OUTPUT_VOLTAGE);
+    return config_->asFloat(OUTPUT_VOLTAGE);
 }
 
 bool Psu::isPowerOn() const {
@@ -153,11 +153,11 @@ bool Psu::isPowerOn() const {
 }
 
 bool Psu::isWhStoreEnabled() const {
-    return config_->getValueAsBool(WH_STORE_ENABLED);
+    return config_->asBool(WH_STORE_ENABLED);
 }
 
 BootPowerState Psu::getBootPowerState() const {
-    return (BootPowerState)config_->getValueAsByte(POWER);
+    return (BootPowerState)config_->asByte(POWER);
 }
 
 bool Psu::isStateStoreEnabled() const {

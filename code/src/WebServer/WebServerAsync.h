@@ -18,7 +18,6 @@ class WebServerAsync : public WebServer {
     void sendEvent(const String&, const String&) override;
     void setOnConnection(WebClientConnectionEventHandler) override;
     void setOnData(WebClientDataEventHandler) override;
-
   private:
     void onNotFound(AsyncWebServerRequest *r);
     void onWSEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len);

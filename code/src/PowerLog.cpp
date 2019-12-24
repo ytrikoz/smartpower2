@@ -23,7 +23,7 @@ size_t PowerLog::getSize(PsuLogEnum item) {
     return log_[item] ? getLog(item)->count(): 0;
 }
 
-bool PowerLog::getValues(PsuLogEnum item, float *dest, size_t &size) {
+bool PowerLog::fill(PsuLogEnum item, float *dest, size_t &size) {
     size = log_[item]->count();
     if (size)
         log_[item]->values(dest, size);

@@ -82,7 +82,7 @@ time_t Clock::getLocal() const {
     return epoch_ + getBiasInSeconds(); };
 
 const char* Clock::getSntpServer() {
-    return config_->getValue(NTP_POOL_SERVER);
+    return config_->value(NTP_POOL_SERVER);
 }
 
 int Clock::getBiasInMinutes() const {
@@ -90,11 +90,11 @@ int Clock::getBiasInMinutes() const {
 }
 
 int Clock::getBiasInSeconds() const {
-    return TimeUtils::timeZoneInSeconds(config_->getValueAsByte(TIME_ZONE));
+    return TimeUtils::timeZoneInSeconds(config_->asByte(TIME_ZONE));
 }
 
 time_t Clock::getStoreInterval() {
-    time_t interval = config_->getValueAsInt(TIME_BACKUP_INTERVAL);
+    time_t interval = config_->asInt(TIME_BACKUP_INTERVAL);
     if (interval) interval = constrain(interval, TIME_BACKUP_INTERVAL_MIN_s, ONE_DAY_s);
     return interval;
 }
@@ -104,15 +104,15 @@ void Clock::onTimeChange(const time_t now, const double drift) {
         timeChangeHandler(toLocal(now), drift);
 }
 
-time_t Clock::toLocal(time_t epoch) {
-    return epoch + getBiasInSeconds();
+time_t Clock::toLocal(time_t local) {
+    return local + getBiasInSeconds();
 }
 
 bool Clock::restoreState() {
     if (FSUtils::readTime(FS_UTC_VAR, lastKnown_)) {
         epoch_ = lastKnown_;
         PrintUtils::print_ident(out_, FPSTR(str_clock));
-        PrintUtils::print(out_, FPSTR(str_arrow_src), TimeUtils::format_time(getLocal()));
+        PrintUtils::print(out_, TimeUtils::format_time(getLocal()));
         PrintUtils::println(out_);
     }
     else
@@ -139,11 +139,11 @@ time_t Clock::getSystemTime() {
     return epoch;
 }
 
-void Clock::updateLastKnown(const time_t epoch, bool forced) {
+void Clock::updateLastKnown(const time_t time, bool forced) {
     const time_t interval = getStoreInterval();
-    if (forced || (interval && (!lastKnown_ || difftime(epoch, lastKnown_) > interval))) {
-        if (FSUtils::writeTime(FS_UTC_VAR, epoch))
-            lastKnown_ = epoch;
+    if (forced || (interval && (!lastKnown_ || difftime(time, lastKnown_) > interval))) {
+        if (FSUtils::writeTime(FS_UTC_VAR, time))
+            lastKnown_ = time;
     }
 }
 

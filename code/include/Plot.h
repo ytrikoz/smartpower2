@@ -9,7 +9,7 @@
 #define UNSET_MAX -16364
 #define UNSET_MIN 16364
 
-struct PlotData {
+struct PlotSummary {
     float columns[PLOT_COLS];
     size_t size = 0;
     float min_value = UNSET_MIN;
@@ -19,6 +19,6 @@ struct PlotData {
 
 void value_max_min(float value, float &max, float &min);
 
-float compress(PlotData *data, size_t column);
+float compress(PlotSummary *data, size_t column);
 
-size_t group(PlotData *data, float *vals, size_t size);
+size_t group(PlotSummary *data, float *vals, size_t size);

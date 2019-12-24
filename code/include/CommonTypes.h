@@ -153,9 +153,6 @@ enum State { ST_INACTIVE,
              ST_ESC_SEQ,
              ST_CTRL_SEQ };
 
-#define CONFIG_ITEMS 23
-#define APP_MODULES 11
-
 enum ModuleEnum {
     MOD_LED,
     MOD_BTN,
@@ -203,3 +200,6 @@ enum ConfigItem {
     BACKLIGHT,
     SYSLOG_SERVER
 };
+
+#define PARAMS_COUNT 23
+#define MODULES_COUNT 11

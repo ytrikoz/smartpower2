@@ -46,11 +46,13 @@ void Display::setScreen(ScreenEnum value) {
 bool Display::onInit() {
     lcd = new LcdDisplay();
     lastUpdated = lockTimeout = lockUpdated = 0;
-    backlight_ = config_->getValueAsBool(BACKLIGHT);
+    backlight_ = config_->asBool(BACKLIGHT);
     backlightTime_ = 0;
     bool result = lcd->connect();
     if (result) {
         enableBacklight(backlight_);
+    } else {
+        setError(Error(ERROR_INIT, FPSTR(str_not_found)));
     }
     return result;
 }
@@ -211,7 +213,7 @@ void Display::showMessage(const char *header, const char *message) {
     load_message(&screen, header, message);
 }
 
-void Display::showPlot(PlotData *data, size_t cols) {
+void Display::showPlot(PlotSummary *data, size_t cols) {
     lcd->drawPlot(data, 8 - cols);
     lock(15000);
 }
@@ -290,11 +292,12 @@ bool Display::locked(unsigned long now) {
 
 void Display::unlock(void) { lockTimeout = 0; }
 
-bool Display::onConfigChange(const ConfigItem param, const char* value) {
+bool Display::onConfigChange(const ConfigItem param, const String& value) {
     if (param == BACKLIGHT) {
         bool enable = String(value).toInt();
         enableBacklight(enable);
     }
     return true;
 }
+
 }  // namespace Modules
