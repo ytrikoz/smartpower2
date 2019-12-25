@@ -100,7 +100,8 @@ struct PsuData : Printable {
     }
 
     size_t toPretty(char* buf) const {
-        char tmp[32];    
+        char tmp[32];   
+        memset(tmp, 0, 32);
         // Volt
         strcat(buf, dtostrf(V, 2, 2, tmp));        
         strcat(buf, "V ");
