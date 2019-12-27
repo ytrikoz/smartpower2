@@ -10,64 +10,53 @@
 #include "ConfigHelper.h"
 #include "SysInfo.h"
 
-namespace Wireless {
+#include "Utils/WirelessUtils.h"
 
 typedef std::function<void(bool has, unsigned long time)> NetworkStatusChangeEventHandler;
 
-void setOutput(Print *p);
-void start();
-void init(NetworkMode mode, const char *host, uint8_t tpw);
-void setMode(NetworkMode mode);
-void setOnNetworkStatusChange(NetworkStatusChangeEventHandler);
-void updateState();
-void setNetworkStatus(NetworkStatus);
-void onNetworkUp();
-void onNetworkDown();
-bool hasNetwork();
+class Wireless {
+   public:
+    Wireless() : out_(nullptr), mode_(NETWORK_OFF), networkStatus_(NETWORK_DOWN), ap_enabled_(false), lastUp_(0), lastDown_(0), scanning_(false){};
 
-NetworkMode getMode();
-String getModeStr(NetworkMode mode);
+    void setOutput(Print *p);
+    void start(const bool safe = false);
+    void init(const NetworkMode mode, const char *host, const uint8_t tpw);
+    bool hasNetwork();
+    void setMode(const NetworkMode mode);
+    void setOnStatusChange(NetworkStatusChangeEventHandler);
 
-String wifiPhyMode();
-String wifiChannel();
-String getSTAStatus();
-String getNetworkState();
+    void setStatus(NetworkStatus);
+    void statusChangeEvent(unsigned long now = millis());
 
-String hostSSID();
-String hostSTA_SSID();
-IPAddress hostSTA_IP();
-String hostSTA_RSSI();
+    String getModeStr();
+    void refreshStatus();
+    NetworkMode getMode();
+                    
+    void setupAP(const IPAddress host);
+    bool startAP(const char *ssid, const char *password);
 
-String hostName();
-IPAddress hostIP();
-IPAddress hostSubnet();
-IPAddress hostGateway();
-IPAddress hostDNS();
+    void setupSTA(const IPAddress ipaddr = IP_ADDR_ANY, const IPAddress subnet = IP_ADDR_ANY,
+                  const IPAddress gateway = IP_ADDR_ANY, const IPAddress dns = IP_ADDR_ANY);
+    bool startSTA(const char *ssid, const char *password);
+    bool disconnectWiFi();
 
-String hostMac();
+    void setBroadcast(uint8_t);
 
-String AP_Name();
-String AP_Password();
-String AP_SSID();
-IPAddress AP_IP();
-uint8_t AP_Clients();
-
-void setupAP(const IPAddress host);
-bool startAP(const char *ssid, const char *password);
-
-void setupSTA();
-void setupSTA(const IPAddress ipaddr, const IPAddress subnet,
-              const IPAddress gateway, const IPAddress dns);
-bool startSTA(const char *ssid, const char *password);
-
-void setBroadcast(uint8_t);
-bool disconnectWiFi();
-
-bool isScanning();
-
-void startWiFiScan(bool hidden);
-}  // namespace Wireless
-
-void onScanComplete(int found);
-
-void useStaticStationIP(bool enabled);
+    void startWiFiScan(bool hidden);
+    bool isScanning();
+    bool isActive();
+    void onScanComplete(int found);
+    void useStaticStationIP(bool enabled);
+    
+   private:
+    WiFiEventHandler staGotIpEventHandler, staConnectedEventHandler, staDisconnectedEventHandler;
+    WiFiEventHandler stationConnectedHandler, stationDisconnectedHandler, probeRequestHandler;
+    Print *out_ = 0;    
+    NetworkMode mode_;
+    NetworkStatus networkStatus_;
+    NetworkStatusChangeEventHandler statusChangeHandler;
+    bool ap_enabled_;
+    unsigned long lastUp_;
+    unsigned long lastDown_;
+    bool scanning_;
+};

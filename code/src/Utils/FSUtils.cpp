@@ -93,6 +93,12 @@ bool formatFS() {
     return res;
 }
 
+
+String getFSStats() {
+    return getFSUsed() + " / " + getFSTotal();
+}
+
+
 bool writeString(const char *name, const String &value) {
     auto file = StringFile(name);
     auto data = file.get();

@@ -47,7 +47,7 @@ void CommandShell::showGreetings(bool enabled) { greetings_ = enabled; }
 void CommandShell::showFarewell(bool enabled) { farewell_ = enabled; }
 
 void CommandShell::onOpen(Print *out) {
-    if (greetings_) printGreetings(out);    
+    if (greetings_) printGreetings(out);
     printPrompt(out);
     active_ = true;
 }
@@ -117,8 +117,8 @@ size_t CommandShell::printFarewell(Print *p) {
 
 size_t CommandShell::printPrompt(Print *p) {
     size_t n = 0;
-    n += p->print(path_);    
-    n += p->print('>'); 
+    n += p->print(path_);
+    n += p->print('>');
     n += p->print(' ');
     return n;
 }

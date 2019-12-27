@@ -75,3 +75,15 @@ class CircularBuffer {
     size_t tail_;
     bool full_;
 };
+
+template <size_t Size>
+class CircularStringBuffer {
+    virtual void push(const String& item) {
+        pool_.push(item);
+    }
+    bool pull(String& item) {
+        return pool_.pop(item);
+    }
+   private:
+    CircularBuffer<String, Size> pool_;
+};

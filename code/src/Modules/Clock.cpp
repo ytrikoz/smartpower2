@@ -13,8 +13,8 @@ Clock::Clock() : Module(){};
 Clock::~Clock() {}
 
 void Clock::onDiag(const JsonObject& doc) {
-    doc[FPSTR(str_uptime)] = getUptime();
-    doc[FPSTR(str_local)] = getLocal();
+    doc[FPSTR(str_uptime)] = uptime();
+    doc[FPSTR(str_local)] = local();
     doc[FPSTR(str_stored)] = lastKnown_;
 }
 
@@ -70,15 +70,27 @@ void Clock::setOnChange(TimeChangeEvent h) {
     timeChangeHandler = h;
 }
 
-time_t Clock::getUptime() const {
+ tm* Clock::now() {
+    time_t local_ = local();
+    time_ = localtime(&local_);
+    return time_;
+}
+
+String Clock::timeStr() {
+    char buf[32];
+    strftime(buf, 32, "%T", now());
+    return buf;
+}
+
+time_t Clock::uptime() const {
     return uptime_ / ONE_SECOND_ms;
 }
 
-time_t Clock::getUtc() const{ 
+time_t Clock::utc() const{ 
     return epoch_; 
 };
 
-time_t Clock::getLocal() const { 
+time_t Clock::local() const { 
     return epoch_ + getBiasInSeconds(); };
 
 const char* Clock::getSntpServer() {
@@ -112,7 +124,7 @@ bool Clock::restoreState() {
     if (FSUtils::readTime(FS_UTC_VAR, lastKnown_)) {
         epoch_ = lastKnown_;
         PrintUtils::print_ident(out_, FPSTR(str_clock));
-        PrintUtils::print(out_, TimeUtils::format_time(getLocal()));
+        PrintUtils::print(out_, TimeUtils::format_time(local()));
         PrintUtils::println(out_);
     }
     else

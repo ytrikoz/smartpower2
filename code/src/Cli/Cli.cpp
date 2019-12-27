@@ -315,7 +315,7 @@ void onSyslog(cmd *c) {
     Command cmd(c);
     CommandAction action = getAction(cmd);
     if (action == ACTION_PRINT) {
-        syslog.onDiag(out_);
+        mainlog.onDiag(out_);
     } else {
         println_unknown_action(out_, getActionStr(cmd));
     }
@@ -430,13 +430,13 @@ void onClock(cmd *c) {
     switch (action) {
         case ACTION_UPTIME: {
             char buf[16];
-            TimeUtils::format_elapsed_full(app.clock()->getUptime());
+            TimeUtils::format_elapsed_full(app.clock()->uptime());
             PrintUtils::print(out_, buf);
             PrintUtils::println(out_);
             break;
         }
         case ACTION_TIME: {
-            time_t local = app.clock()->getLocal();
+            time_t local = app.clock()->local();
             PrintUtils::print(out_, TimeUtils::format_time(local));
             PrintUtils::println(out_);
             break;
@@ -450,13 +450,13 @@ void onClock(cmd *c) {
 
 void onWiFi(cmd *c) {
     Command cmd(c);
-    if (Wireless::isScanning()) {
+    if (wireless->isScanning()) {
         PrintUtils::println(out_, FPSTR(str_scanning));        
         return;
     }
     String actionStr = getActionStr(cmd);
     if (actionStr == "scan") {  
-        Wireless::startWiFiScan(true);
+        wireless->startWiFiScan(true);
     } else if (actionStr == "list") {
         FSUtils::print(out_, "/var/networks");
     };
@@ -548,7 +548,7 @@ void onPlot(cmd *c) {
 void onPrint(cmd *c) {
     Command cmd(c);
     auto path = getPathStr(cmd);
-    if (FSUtils::exists(path)) {
+    if (FSUtils::exist(path)) {
         FSUtils::print(out_, path);
     } else {
         print_file_not_found(out_, path);
@@ -574,7 +574,7 @@ void onRemove(cmd *c) {
     Command cmd(c);
     String name = getPathStr(cmd);
     PrintUtils::print(out_, FPSTR(str_file));
-    if (FSUtils::exists(name)) {
+    if (FSUtils::exist(name)) {
         if (SPIFFS.remove(name)) {
             PrintUtils::println(out_, FPSTR(str_deleted));
         } else {

@@ -2,13 +2,13 @@
 
 #include <Arduino.h>
 
-#include "Strings.h"
 #include "Core/CircularBuffer.h"
 #include "Core/CharBuffer.h"
+#include "Strings.h"
 
-class Logger : public Print {
+class MainLog : public Print {
    public:
-    Logger(){
+    MainLog(){
         out_ = nullptr;
         buffer_ = new CharBuffer(128);
     };

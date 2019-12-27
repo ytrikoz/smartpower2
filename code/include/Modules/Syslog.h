@@ -2,9 +2,39 @@
 
 #include <Arduino.h>
 
+#include "Core/Logger.h"
 #include "Core/Module.h"
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
+
+#define SYSLOG_FACILITY 1
+
+namespace Modules {
+
+class Syslog : public Module, AbstactLog {
+   public:
+    Syslog(uint16_t port):Module(), udp_(nullptr), ip_(IPADDR_NONE), port_(port) {};
+   public:
+    void log(const LogSeverity level, const String &routine, const String &message);
+    virtual void onDiag(const JsonObject &doc) override;
+   protected:
+    virtual bool onConfigChange(const ConfigItem param, const String& value) override;
+    virtual bool onInit() override;
+    virtual bool onStart() override;
+    virtual void onStop() override;
+    virtual void onLoop() override;
+
+   private:
+    bool setServer(const char* value);
+    const char *getHostname();
+   private:
+    WiFiUDP *udp_;
+    IPAddress ip_;
+    uint16_t port_;
+};
+
+}  // namespace Modules
+
 
 /* Syslog Facility
 0	kernel messages
@@ -32,7 +62,6 @@
 22	local use 6 (local6)
 23	local use 7 (local7)
 */
-#define SYSLOG_FACILITY 1
 
 /* Syslog Severity
 0	EMERGENCY       A "panic" condition
@@ -45,40 +74,3 @@ error will occur if action is not taken 6	INFORMATIONAL   Normal
 operational messages - no action required. 7	DEBUG	        Info useful to
 developers for debugging, not useful during operations.
 */
-enum SysLogSeverity { SYSLOG_ALERT = 1,
-                      SYSLOG_INFO = 6,
-                      SYSLOG_DEBUG = 7 };
-namespace Modules {
-
-
-class Syslog : public Module {
-   public:
-    Syslog(uint16_t port):Module(), udp_(nullptr), ip_(IPADDR_NONE), port_(port) {};
-
-   public:
-    void alert(const String &, const String &);
-    void info(const String &, const String &);
-    void debug(const String &, const String &);
-    void onDiag(const JsonObject &doc) override;
-
-   protected:
-    bool onInit() override;
-    bool onStart() override;
-    void onStop() override;
-    void onLoop() override;
-
-   private:
-    const char *getHostname();
-
-   private:
-    void send(const SysLogSeverity level, const String &routine, const String &message);
-    void printPacket(const SysLogSeverity level, const String &routine,
-                     const String &message);
-
-   private:
-    WiFiUDP *udp_;
-    IPAddress ip_;
-    uint16_t port_;
-};
-
-}  // namespace Modules

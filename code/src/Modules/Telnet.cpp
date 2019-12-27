@@ -90,7 +90,7 @@ void Telnet::onDisconnect() {
 void Telnet::onDiag(const JsonObject& doc) {
     doc[FPSTR(str_connected)] = hasClient();    
     if (hasClient()) {
-        doc[FPSTR(str_client)] = prettyIpAddress(client_.remoteIP(), client_.remotePort());
+        doc[FPSTR(str_client)] = prettyIp(client_.remoteIP(), client_.remotePort());
         doc[FPSTR(str_shell)] = shell_->active();
     }
 }

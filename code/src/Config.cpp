@@ -22,10 +22,10 @@ Config::~Config() {
 bool Config::fromString(const String &str) {
     int index = str.indexOf("=");
     if (index == -1) return false;
-    ConfigItem param;
-    size_t size;
     String name = str.substring(0, index);
     String value = str.substring(index + 2);
+    ConfigItem param;
+    size_t size;
     bool res = getParamByName(name.c_str(), param, size);
     if (res) {
         res = set(param, value.c_str());
@@ -55,12 +55,12 @@ bool Config::getParamByName(const char *name, ConfigItem &param, size_t &size) c
 
 bool Config::getParamByName(const char *name, ConfigItem &param) const {
     bool res = false;
-    for (uint8_t i = 0; i < PARAMS_COUNT; ++i) {        
+    for (uint8_t i = 0; i < PARAMS_COUNT; ++i) {
         if (strcmp_P(name, get(i)->key_name) == 0) {
             param = ConfigItem(i);
-            res = true;            
-            break;     
-        }   
+            res = true;
+            break;
+        }
     }
     return res;
 }
@@ -182,8 +182,9 @@ bool Config::exist(const char *name) const {
     return res;
 }
 
-const Param *Config::get(const size_t index) const { return &pool_[index]; }
-
+const Param *Config::get(const size_t index) const {
+    return &pool_[index];
+}
 /*
 const char *Config::getName(ConfigItem param) const {
     return getParam(param).key_name;

@@ -35,10 +35,10 @@ class CharBuffer : Print {
 
     size_t available() const { return write_; }
 
-    const char *c_str() {         
-        if (pool_[write_] != '\x00') 
-            pool_[write_] = '\x00';            
-        return pool_; 
+    const char *c_str() {
+        if (pool_[write_] != '\x00')
+            pool_[write_] = '\x00';
+        return pool_;
     }
 
     size_t write(char ch) {
@@ -65,7 +65,6 @@ class CharBuffer : Print {
     }
 
    protected:
-
     char *pool_;
     size_t capacity_;
     size_t write_;

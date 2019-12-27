@@ -11,7 +11,7 @@ inline bool move(const char *src, const char *dst) {
     return SPIFFS.exists(src) && SPIFFS.rename(src, dst);
 }
 
-inline bool exists(const String &name) {
+inline bool exist(const String &name) {
     return SPIFFS.exists(name);
 }
 
@@ -43,6 +43,8 @@ void printDir(Print *p, const char *path);
 void clearDir(Print *p, const char *path);
 
 bool formatFS();
+
+String getFSStats();
 
 bool writeTime(const char *name, const time_t value);
 

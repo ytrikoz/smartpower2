@@ -3,7 +3,7 @@
 #include "Global.h"
 #include "Modules/Psu.h"
 
-#define JSON_BUFFER_SIZE 512
+#define JSON_BUFFER_SIZE 1024
 
 namespace Modules {
 
@@ -24,15 +24,16 @@ bool Web::onStart() {
     return true;
 }
 
-void Web::onStop() { web_->stop(); }
+void Web::onStop() {
+    web_->stop();
+}
 
-void Web::onLoop() { web_->loop(); }
+void Web::onLoop() {
+    web_->loop();
+}
 
 size_t Web::getClients() {
-    size_t res = 0;
-    for (size_t i = 0; i < WEB_SERVER_CLIENT_MAX; ++i)
-        if (client_[i].connected) res++;
-    return res;
+    return cnt_;
 }
 
 bool Web::getFreeSlot(WebClient **c) {
@@ -79,9 +80,10 @@ void Web::onConnection(const uint32_t num, const bool connected) {
 void Web::onData(const uint32_t num, const String &data) {
     DynamicJsonDocument doc(1024);
     DeserializationError jsonError = deserializeJson(doc, data);
+    PrintUtils::print_ident(out_, FPSTR(str_web));
+    PrintUtils::println(out_, data);
     if (jsonError) {
         setError(ERROR_JSON, jsonError.c_str());
-        PrintUtils::print(out_, data);
         return;
     }
     for (JsonPair item : doc.as<JsonObject>()) {
@@ -105,8 +107,11 @@ void Web::onData(const uint32_t num, const String &data) {
             }
         }
         // restart
-        else if (strcmp_P(cmd, str_restart) == 0) {
-            app.systemRestart();
+        else if (strcmp_P(cmd, str_system) == 0) {
+            String param = item.value().as<String>().c_str();
+            if (param.equalsIgnoreCase("restart")) {
+                app.systemRestart();
+            }
         }
         // power
         else if (strcmp_P(cmd, str_power) == 0) {
@@ -129,35 +134,15 @@ void Web::onData(const uint32_t num, const String &data) {
                 }
             }
         } else {
-            setError(ERROR_JSON, "unhandled");
+            setError(ERROR_UNSUPPORTED, "unhandled");
             return;
         }
         setError(Error::ok());
     }
 };
 
-
-bool Web::uriExist(const String& uri, String& lastModified) {
+bool Web::uriExist(const String &uri, String &lastModified) {
     lastModified = last_modified_;
-    PrintUtils::print_ident(out_, FPSTR(str_web));
-    PrintUtils::println(out_, uri);
-    return true;
-}
-
-bool Web::getResponse(const String& uri, String& body) {
-    DynamicJsonDocument doc(256);
-    JsonObject obj = doc.createNestedObject();
-    obj[FPSTR(str_fw)] = SysInfo::getFW();
-    obj = doc.createNestedObject();
-    obj[FPSTR(str_sdk)] = SysInfo::getSDK();
-    obj = doc.createNestedObject();
-    obj[FPSTR(str_core)] = SysInfo::getCore();
-    obj = doc.createNestedObject();
-    obj[FPSTR(str_cpu)] = SysInfo::getCpuFreq();
-    obj = doc.createNestedObject();
-    obj[FPSTR(str_chip)] = SysInfo::getChipId();
-    
-    serializeJson(doc, body);
     return true;
 }
 
@@ -172,31 +157,16 @@ String Web::getPageData(const WebPageEnum page) {
         case PAGE_OPTIONS: {
             fillOptions(obj);
             break;
-        default:
-            break;
-        }               
+            default:
+                break;
+        }
     }
     String json;
     size_t size = serializeJson(doc, json);
     if (size > JSON_BUFFER_SIZE) {
-        setError(Error::buffer_low(JSON_BUFFER_SIZE));
+        setError(Error::BufferLow(JSON_BUFFER_SIZE));
     }
     return json;
-}
-
-void Web::fillOptions(JsonObject &obj) {
-    Config *cfg = config->get();
-    for (uint8_t i = 0; i < PARAMS_COUNT; ++i) {
-        ConfigItem param = ConfigItem(i);
-        if (!config->isSecured(param))
-            obj[cfg->name(param)] = cfg->value(param);
-    }
-}
-
-void Web::fillMain(JsonObject &obj) {
-    Modules::Psu *ps = app.psu();
-    obj[FPSTR(str_power)] = (uint8_t)ps->isPowerOn();
-    obj["wh"] = ps->getInfo().Wh;
 }
 
 // switch (tag) {
@@ -262,8 +232,9 @@ void Web::sendPage(const WebPageEnum page, uint32_t num) {
         PrintUtils::print(out_, getError());
         PrintUtils::println(out_);
     }
-    if (data.length()) 
+    if (data.length()) {
         web_->sendData(num, data);
+    }
 }
 
 void Web::sendAll(const String &data, WebPageEnum page, uint32_t except_num) {
@@ -272,6 +243,74 @@ void Web::sendAll(const String &data, WebPageEnum page, uint32_t except_num) {
         if (c->num != except_num && c->connected && c->page == page)
             web_->sendData(c->num, data);
     }
+}
+
+void Web::fillMain(JsonObject &obj) {
+    Modules::Psu *ps = app.psu();
+    obj[FPSTR(str_power)] = (uint8_t)ps->isPowerOn();
+    obj[FPSTR(str_wh)] = ps->getInfo().Wh;
+}
+
+void Web::fillOptions(JsonObject &obj) {
+    Config *cfg = config->get();
+    for (uint8_t i = 0; i < PARAMS_COUNT; ++i) {
+        ConfigItem param = ConfigItem(i);
+        if (!config->isSecured(param))
+            obj[cfg->name(param)] = cfg->value(param);
+    }
+}
+
+void Web::fillVersion(JsonObject &obj) {
+    obj[FPSTR(str_fw)] = SysInfo::getFW();
+    obj[FPSTR(str_sdk)] = SysInfo::getSDK();
+    obj[FPSTR(str_core)] = SysInfo::getCore();
+}
+
+void Web::fillNetwork(JsonObject &obj) {
+    obj[FPSTR(str_phy)] = WirelessUtils::getWifiPhy();
+    obj[FPSTR(str_ch)] = WirelessUtils::getWifiCh();
+
+    NetInfo info;
+    WiFiMode_t mode = WiFi.getMode();
+    if (mode == WIFI_AP || mode == WIFI_AP_STA) {
+        JsonObject ap = obj.createNestedObject(FPSTR(str_ap));
+        ap[FPSTR(str_ssid)] = WirelessUtils::getApSsid();
+        info = WirelessUtils::getApNetInfo();
+        ap[FPSTR(str_ip)] = info.ip.toString();
+        ap[FPSTR(str_subnet)] = info.subnet.toString();
+        ap[FPSTR(str_gateway)] = info.gateway.toString();
+        ap[FPSTR(str_mac)] = WirelessUtils::getApMac();
+    }
+    if (mode == WIFI_STA || mode == WIFI_AP_STA) {
+        JsonObject sta = obj.createNestedObject(FPSTR(str_sta));
+        info = WirelessUtils::getStaNetInfo();
+        sta[FPSTR(str_ssid)] = WirelessUtils::getStaSsid();
+        sta[FPSTR(str_mac)] = WiFi.macAddress();
+        sta[FPSTR(str_host)] = WiFi.hostname();
+        sta[FPSTR(str_ip)] = info.ip.toString();
+        sta[FPSTR(str_subnet)] = info.subnet.toString();
+        sta[FPSTR(str_gateway)] = info.gateway.toString();
+        sta[FPSTR(str_dns)] = WiFi.dnsIP().toString();
+    }
+}
+
+void Web::fillSystem(JsonObject &obj) {
+    obj[FPSTR(str_cpu)] = SysInfo::getCpuFreq();
+    obj[FPSTR(str_chip)] = SysInfo::getChipId();
+    obj[FPSTR(str_file)] = FSUtils::getFSStats();
+}
+
+bool Web::getResponse(const String &uri, String &body) {
+    DynamicJsonDocument doc(1024);
+    JsonObject obj = doc.createNestedObject();
+    if (uri.endsWith("version"))
+        fillVersion(obj);
+    else if (uri.endsWith("network"))
+        fillNetwork(obj);
+    else if (uri.endsWith("system"))
+        fillSystem(obj);
+    serializeJson(doc, body);
+    return true;
 }
 
 }  // namespace Modules

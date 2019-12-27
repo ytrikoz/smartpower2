@@ -9,12 +9,8 @@ ConfigHelper::ConfigHelper(const char *name) : name_(nullptr) {
     setName(name);
 }
 
-void ConfigHelper::setName(const char *name) {
-    if (name_ != nullptr) delete name_;
-    size_t size = strlen(name);
-    name_ = new char[size + 1];
-    strncpy(name_, name, size);
-    name_[size] = '\x00';
+ConfigHelper::~ConfigHelper() {
+    delete name_;
 }
 
 const char *ConfigHelper::name() {
@@ -22,14 +18,21 @@ const char *ConfigHelper::name() {
 }
 
 bool ConfigHelper::check() {
-    return SPIFFS.exists(name_);
+    return FSUtils::exist(name_);
 }
 
-ConfigHelper::~ConfigHelper() {
-    delete name_;
+void ConfigHelper::setName(const char *name) {
+    if (name_ != nullptr) 
+        delete name_;
+    size_t size = strlen(name);
+    name_ = new char[size + 1];
+    strncpy(name_, name, size);
+    name_[size] = '\x00';
 }
 
-void ConfigHelper::setOutput(Print *p) { out_ = p; }
+void ConfigHelper::setOutput(Print *p) { 
+    out_ = p; 
+}
 
 void ConfigHelper::load() {
     PrintUtils::print_ident(out_, FPSTR(str_config));
@@ -199,7 +202,6 @@ const char *ConfigHelper::getPassword_AP() {
 
 // maximum value of RF Tx Power, unit: 0.25 dBm, range [0, 82]
 uint8_t ConfigHelper::getTPW() { return obj_.asByte(TPW); }
-
 
 // String ConfigHelper::getConfigJson() {
 //     DynamicJsonDocument doc(1024);

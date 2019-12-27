@@ -14,12 +14,12 @@ void App::instanceMods() {
     modules[MOD_BTN].obj = new Modules::Button(POWER_BTN_PIN);
     modules[MOD_CLOCK].obj = new Modules::Clock();
     modules[MOD_PSU].obj = new Modules::Psu();
-    modules[MOD_DISPLAY].obj = new Modules ::Display();
-    modules[MOD_CONSOLE].obj = new Modules ::Console();
+    modules[MOD_DISPLAY].obj = new Modules::Display();
+    modules[MOD_CONSOLE].obj = new Modules::Console();
     modules[MOD_NETSVC].obj = new NetworkService();
     modules[MOD_TELNET].obj = new Modules ::Telnet(TELNET_PORT);
     modules[MOD_UPDATE].obj = new Modules::OTAUpdate(OTA_PORT);
-    modules[MOD_SYSLOG].obj = new Modules ::Syslog(SYSLOG_PORT);
+    modules[MOD_SYSLOG].obj = new Modules::Syslog(SYSLOG_PORT);
     modules[MOD_WEB].obj = new Modules::Web();
 }
 
@@ -89,7 +89,7 @@ void App::setupMods() {
         PrintUtils::print_ident(out_, FPSTR(str_telnet));
         bool conn = (et == CLIENT_CONNECTED);
         if (conn) {
-            PrintUtils::print(out_, prettyIpAddress(client->remoteIP(), client->remotePort()));
+            PrintUtils::print(out_, prettyIp(client->remoteIP(), client->remotePort()));
         } else {
             PrintUtils::print(out_, FPSTR(str_disconnected));
         }
@@ -122,7 +122,8 @@ void App::onPsuData(PsuData &item) {
     if (powerlog_) powerlog_->onPsuData(item);
 
     if (console() && !console()->isOpen()) {
-        char buf[64];
+        char buf[32];
+        memset(buf, 0, 32);
         size_t size = item.toPretty(buf);
         buf[size] = '\r';
         buf[size + 1] = '\x00';
@@ -142,7 +143,7 @@ void App::onPsuData(PsuData &item) {
     }
 }
 
-void App::onConfigChange(const ConfigItem param, const String& value) {
+void App::onConfigChange(const ConfigItem param, const String &value) {
     for (uint8_t i = 0; i < MODULES_COUNT; ++i) {
         Module *obj = getInstance(i);
         if (obj) obj->changeConfig(param, value);
@@ -158,36 +159,23 @@ void App::onWebStatusChange(bool clients) {
     networkEvent_ = true;
     webClients_ = clients;
 }
-
-void App::onNetworkStatusChange(bool connected, NetworkMode mode) {
+ 
+void App::onNetworkStatusChange(bool network, NetworkMode mode) {
     networkEvent_ = true;
-    hasNetwork_ = connected;
+    hasNetwork_ = network;
     networkMode_ = mode;
-    if (!connected) webClients_ = telnetClients_ = 0;
+    if (!network) webClients_ = telnetClients_ = 0;
 }
 
 void App::begin() {
     instanceMods();
     initMods();
-
+    setupMods();
     displayProgress(0, BUILD_DATE);
 
-    setupMods();
     displayProgress(40, "<WIFI>");
 
-    Wireless::setOutput(out_);
-    Wireless::start();
-
     displayProgress(80, "<INIT>");
-
-    Wireless::setOnNetworkStatusChange(
-        [this](bool network, unsigned long time) {
-            PrintUtils::print_ident(out_, FPSTR(str_app));
-            PrintUtils::print(out_, FPSTR(str_network), getUpDownStr(network));
-            PrintUtils::print(out_, TimeUtils::format_elapsed_full((double)time / 1000));
-            PrintUtils::println(out_);
-            onNetworkStatusChange(network, Wireless::getMode());
-        });
 
     displayProgress(100, "<COMPLETE>");
 
@@ -209,7 +197,8 @@ AppState App::loop(LoopTimer *looper) {
             obj->end();
             continue;
         }
-        if ((!hasNetwork_ && modules[i].network) || (hasNetwork_ && networkMode_ < modules[i].network)) {
+        if ((!hasNetwork_ && modules[i].network) || 
+            (hasNetwork_ && networkMode_ == NetworkMode::NETWORK_AP  && modules[i].network == NetworkMode::NETWORK_STA)) {
             obj->stop();
             continue;
         } else {
@@ -244,8 +233,8 @@ AppState App::loop(LoopTimer *looper) {
 size_t App::printDiag(Print *p) {
     DynamicJsonDocument doc(2048);
     doc[FPSTR(str_heap)] = SysInfo::getHeapStats();
-    doc[FPSTR(str_file)] = SysInfo::getFSStats();
-    doc[FPSTR(str_wifi)] = getNetworkModeStr(networkMode_);
+    doc[FPSTR(str_file)] = FSUtils::getFSStats();
+    doc[FPSTR(str_wifi)] = WirelessUtils::getMode();
     doc[FPSTR(str_network)] = hasNetwork_;
 
     for (uint8_t i = 0; i < MODULES_COUNT; ++i) {
@@ -310,13 +299,23 @@ void App::setPowerlog(PowerLog *powerlog) {
 void App::setConfig(ConfigHelper *config) {
     config_ = config;
     config_->get()->setOnChange(
-        [this](ConfigItem param, const String& value) {
+        [this](ConfigItem param, const String &value) {
             PrintUtils::print_ident(out_, FPSTR(str_app));
             PrintUtils::print(out_, param, value);
             PrintUtils::println(out_);
 
             onConfigChange(param, value);
         });
+}
+
+void App::setWireless(Wireless *obj) {
+    wireless_ = obj;
+    wireless_->setOnStatusChange(
+    [this](bool network, unsigned long time) {
+        PrintUtils::print_ident(out_, FPSTR(str_app));
+        PrintUtils::println(out_, WirelessUtils::getStatusStr(network));
+        onNetworkStatusChange(network, wireless_->getMode());
+    });
 }
 
 String App::getName(uint8_t index) const {
@@ -380,4 +379,8 @@ Modules::Web *App::web() {
 
 Modules::Psu *App::psu() {
     return (Modules::Psu *)modules[MOD_PSU].obj;
+}
+
+Modules::Syslog *App::syslog() {
+    return (Modules::Syslog *)modules[MOD_SYSLOG].obj;
 }

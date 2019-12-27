@@ -2,175 +2,14 @@
 
 #include "Global.h"
 
-using namespace PrintUtils;
-using namespace StrUtils;
+void Wireless::setOutput(Print *p) { out_ = p; }
 
-namespace Wireless {
-
-Print *out_ = 0;
-
-bool scanning_ = false;
-
-bool ap_enabled = false;
-
-NetworkMode networkMode = NETWORK_OFF;
-
-NetworkStatus networkStatus = NETWORK_DOWN;
-
-unsigned long lastUp, lastDown = 0;
-
-WiFiEventHandler staGotIpEventHandler, staConnectedEventHandler,
-    staDisconnectedEventHandler;
-
-WiFiEventHandler stationConnectedHandler, stationDisconnectedHandler,
-    probeRequestHandler;
-
-NetworkStatusChangeEventHandler statusChangeHandler;
-
-void setOutput(Print *p) { out_ = p; }
-
-String AP_Name() { return String(APP_NAME); }
-
-String AP_SSID() { return WiFi.softAPSSID(); }
-
-String AP_Password() { return WiFi.softAPPSK(); }
-
-IPAddress AP_IP() { return WiFi.softAPIP(); }
-
-uint8_t AP_Clients() {
-    return (networkMode == NetworkMode::NETWORK_AP ||
-            networkMode == NetworkMode::NETWORK_AP_STA)
-               ? wifi_softap_get_station_num()
-               : 0;
-}
-
-String hostSTA_RSSI() { return StrUtils::prettyRssi(WiFi.RSSI()); }
-
-String hostSTA_SSID() { return WiFi.SSID(); }
-
-IPAddress hostSTA_IP() { return WiFi.localIP(); }
-
-IPAddress hostDNS() {
-    IPAddress res(IPADDR_NONE);
-    switch (getMode()) {
-        case NETWORK_OFF:
-            break;
-        case NETWORK_AP:
-            res = WiFi.softAPIP();
-            break;
-        case NETWORK_STA:
-        case NETWORK_AP_STA:
-            res = WiFi.dnsIP();
-            break;
-    }
-    return res;
-}
-
-String hostSSID() {
-    String res;
-    switch (getMode()) {
-        case NETWORK_OFF:
-            break;
-        case NETWORK_AP:
-            res = Wireless::AP_SSID();
-            break;
-        case NETWORK_STA:
-        case NETWORK_AP_STA:
-            res = hostSTA_SSID();
-            break;
-    }
-    return res;
-}
-
-String hostMac() {
-    String str;
-    switch (getMode()) {
-        case NETWORK_OFF:
-            break;
-        case NETWORK_AP:
-            str = WiFi.softAPmacAddress();
-            break;
-        case NETWORK_STA:
-        case NETWORK_AP_STA:
-            str = WiFi.macAddress();
-            break;
-    }
-    return str;
-}
-
-String hostName() {
-    String str;
-    switch (getMode()) {
-        case NETWORK_STA:
-        case NETWORK_AP_STA:
-            str += WiFi.hostname();
-            break;
-        case NETWORK_OFF:
-        case NETWORK_AP:
-            str += Wireless::AP_Name();
-            break;
-    }
-    return str;
-}
-
-IPAddress hostSubnet() {
-    IPAddress res(IPADDR_NONE);
-    switch (getMode()) {
-        case NETWORK_OFF:
-            break;
-        case NETWORK_AP:
-            res = IPAddress(255, 255, 255, 0);
-            break;
-        case NETWORK_STA:
-        case NETWORK_AP_STA:
-            res = WiFi.subnetMask();
-            break;
-        default:
-            break;
-    }
-    return res;
-}
-
-IPAddress hostGateway() {
-    IPAddress res(IPADDR_NONE);
-    switch (getMode()) {
-        case NETWORK_OFF:
-            break;
-        case NETWORK_AP:
-            res = WiFi.softAPIP();
-            break;
-        case NETWORK_STA:
-        case NETWORK_AP_STA:
-            res = WiFi.gatewayIP();
-            break;
-        default:
-            break;
-    }
-    return res;
-}
-
-IPAddress hostIP() {
-    IPAddress res;
-    switch (getMode()) {
-        case NETWORK_AP:
-            res = Wireless::AP_IP();
-            break;
-        case NETWORK_STA:
-        case NETWORK_AP_STA:
-            res = hostSTA_IP();
-            break;
-        default:
-            res = IPADDR_NONE;
-    }
-    return res;
-}
-
-void setMode(const NetworkMode mode) {
-    WiFi.mode((WiFiMode_t)mode);
+void Wireless::setMode(const NetworkMode mode) {
+    WiFi.mode((WiFiMode_t) mode);
     delay(100);
 }
 
-void setupAP(const IPAddress host) {
+void Wireless::setupAP(const IPAddress host) {
     const IPAddress gateway(host);
     const IPAddress subnet(255, 255, 255, 0);
 
@@ -181,13 +20,8 @@ void setupAP(const IPAddress host) {
     WiFi.softAPConfig(host, gateway, subnet);
 }
 
-void setupSTA() {
-    const IPAddress any(IP_ADDR_ANY);
-    setupSTA(any, any, any, any);
-}
-
-void setupSTA(const IPAddress ipaddr, const IPAddress subnet,
-              const IPAddress gateway, const IPAddress dns) {
+void Wireless::setupSTA(const IPAddress ipaddr, const IPAddress subnet,
+                        const IPAddress gateway, const IPAddress dns) {
     PrintUtils::print_ident(out_, FPSTR(str_wifi_sta));
     if (ipaddr == IPAddress(IP4_ADDR_ANY)) {
         PrintUtils::print(out_, FPSTR(str_dhcp));
@@ -198,59 +32,56 @@ void setupSTA(const IPAddress ipaddr, const IPAddress subnet,
     WiFi.config(ipaddr, gateway, subnet, dns);
 }
 
-bool startSTA(const char *ssid, const char *passwd) {
+bool Wireless::startSTA(const char *ssid, const char *passwd) {
     WiFi.begin(ssid, passwd);
-    uint8_t result = WiFi.waitForConnectResult();
+    uint8_t res = WiFi.waitForConnectResult();
     PrintUtils::print_ident(out_, FPSTR(str_wifi_sta));
-    PrintUtils::print(out_, FPSTR(str_ssid), ssid, getSTAStatus());
-    PrintUtils::println(out_);
-    return result;
-}
-
-bool startAP(const char *ssid, const char *passwd) {
-    bool res = WiFi.softAP(ssid, passwd);
-    PrintUtils::print_ident(out_, FPSTR(str_wifi_ap));
-    if (res) {
-        PrintUtils::print(out_, FPSTR(str_ssid), WiFi.softAPSSID());
-    } else {
-        PrintUtils::print(out_, FPSTR(str_failed));
-    }
+    PrintUtils::print(out_, FPSTR(str_ssid), ssid, WirelessUtils::getStaStatus());
     PrintUtils::println(out_);
     return res;
 }
 
-boolean disconnectWiFi() { return WiFi.disconnect(); }
-
-void start_safe() {
-    setMode(NETWORK_AP);
-    setupAP(StrUtils::atoip(config->get()->getDefault(AP_IPADDR)));
-    startAP(SysInfo::getUniqueName().c_str(), config->get()->getDefault(AP_PASSWORD));
+bool Wireless::startAP(const char *ssid, const char *passwd) {
+    bool res = WiFi.softAP(ssid, passwd);
+    PrintUtils::print_ident(out_, FPSTR(str_wifi_ap));
+    if (res)
+        PrintUtils::print(out_, FPSTR(str_ssid), WiFi.softAPSSID());
+    else
+        PrintUtils::print(out_, FPSTR(str_failed));
+    PrintUtils::println(out_);
+    return res;
 }
 
-void start() {
-    String host = AP_Name();
+boolean Wireless::disconnectWiFi() { return WiFi.disconnect(); }
+
+void Wireless::start(const bool safe) {
+    if (safe) {
+        setMode(NETWORK_AP);
+        setupAP(StrUtils::atoip(config->get()->getDefault(AP_IPADDR)));
+        startAP(SysInfo::getUniqueName().c_str(), config->get()->getDefault(AP_PASSWORD));
+    }
+
     uint8_t tpw = config->get()->asByte(TPW);
     NetworkMode mode = (NetworkMode)config->get()->asByte(WIFI);
-
-    init(mode, host.c_str(), tpw);
+    init(mode, APP_NAME, tpw);
 
     stationConnectedHandler = WiFi.onSoftAPModeStationConnected(
-        [](const WiFiEventSoftAPModeStationConnected &e) {
+        [this](const WiFiEventSoftAPModeStationConnected &e) {
             PrintUtils::print_wifi_ap_station(out_, e.aid, e.mac, true);
         });
 
     stationDisconnectedHandler = WiFi.onSoftAPModeStationDisconnected(
-        [](const WiFiEventSoftAPModeStationDisconnected &e) {
+        [this](const WiFiEventSoftAPModeStationDisconnected &e) {
             PrintUtils::print_wifi_ap_station(out_, e.aid, e.mac, false);
         });
 
     probeRequestHandler = WiFi.onSoftAPModeProbeRequestReceived(
-        [](const WiFiEventSoftAPModeProbeRequestReceived &e) {
+        [this](const WiFiEventSoftAPModeProbeRequestReceived &e) {
             // PrintUtils::print_wifi_ap_probe(out_, e.mac, e.rssi);
         });
 
     staConnectedEventHandler =
-        WiFi.onStationModeConnected([](const WiFiEventStationModeConnected &e) {
+        WiFi.onStationModeConnected([this](const WiFiEventStationModeConnected &e) {
             PrintUtils::print_ident(out_, FPSTR(str_wifi_sta));
             PrintUtils::print(out_, FPSTR(str_bssid), StrUtils::prettyMac(e.bssid));
             PrintUtils::print(out_, FPSTR(str_ch), e.channel);
@@ -258,43 +89,42 @@ void start() {
         });
 
     staGotIpEventHandler =
-        WiFi.onStationModeGotIP([](const WiFiEventStationModeGotIP &e) {
+        WiFi.onStationModeGotIP([this](const WiFiEventStationModeGotIP &e) {
             PrintUtils::print_ident(out_, FPSTR(str_wifi_sta));
-            PrintUtils::print(out_, FPSTR(str_got));
             PrintUtils::print_network(out_, e.ip, e.mask, e.gw);
             PrintUtils::println(out_);
-            updateState();
+            refreshStatus();
         });
 
     staDisconnectedEventHandler = WiFi.onStationModeDisconnected(
-        [](const WiFiEventStationModeDisconnected &e) {
-            if (networkStatus == NETWORK_UP) {
+        [this](const WiFiEventStationModeDisconnected &e) {
+            if (networkStatus_ == NETWORK_UP) {
                 PrintUtils::print_ident(out_, FPSTR(str_wifi_sta));
                 PrintUtils::print(out_, FPSTR(str_disconnected));
+                PrintUtils::print(out_, FPSTR(str_reason), e.reason);
                 PrintUtils::println(out_);
+                refreshStatus();
             }
-            updateState();
         });
 
     if (mode == NETWORK_STA || mode == NETWORK_AP_STA) {
-        const char *ssid = config->get()->value(SSID);
-        const char *passwd = config->get()->value(PASSWORD);
-        const bool dhcp = config->get()->asBool(DHCP);
+        const char *ssid = config->get()->value(ConfigItem::SSID);
+        const char *passwd = config->get()->value(ConfigItem::PASSWORD);
+        const bool dhcp = config->get()->asBool(ConfigItem::DHCP);
 
         if (dhcp) {
             setupSTA();
         } else {
             IPAddress ip, subnet, gateway, dns;
-            ip = config->get()->asIPAddress(IPADDR);
-            subnet = config->get()->asIPAddress(NETMASK);
-            gateway = config->get()->asIPAddress(GATEWAY);
-            dns = config->get()->asIPAddress(DNS);
+            ip = config->get()->asIPAddress(ConfigItem::IPADDR);
+            subnet = config->get()->asIPAddress(ConfigItem::NETMASK);
+            gateway = config->get()->asIPAddress(ConfigItem::GATEWAY);
+            dns = config->get()->asIPAddress(ConfigItem::DNS);
             setupSTA(ip, gateway, subnet, dns);
         }
 
         if (startSTA(ssid, passwd)) {
-            if (mode == NETWORK_AP_STA)
-                setBroadcast(3);
+            if (mode == NETWORK_AP_STA) setBroadcast(3);
         }
     }
 
@@ -302,17 +132,14 @@ void start() {
         const char *ap_ssid = config->get()->value(ConfigItem::AP_SSID);
         const char *ap_passwd = config->get()->value(ConfigItem::AP_PASSWORD);
         IPAddress ap_ipaddr = config->get()->asIPAddress(ConfigItem::AP_IPADDR);
-
         setupAP(ap_ipaddr);
-
-        ap_enabled = startAP(ap_ssid, ap_passwd);
-
-        updateState();
+        ap_enabled_ = startAP(ap_ssid, ap_passwd);
+        refreshStatus();
     }
 }
 
-void init(NetworkMode mode, const char *host, uint8_t tpw) {
-    PrintUtils::print_ident(out_, FPSTR(str_init));
+void Wireless::init(const NetworkMode mode, const char *host, uint8_t tpw) {
+    PrintUtils::print_ident(out_, FPSTR(str_wifi));
     PrintUtils::print(out_, FPSTR(str_host), host);
     PrintUtils::print(out_, FPSTR(str_tpw), tpw);
     PrintUtils::println(out_);
@@ -321,7 +148,7 @@ void init(NetworkMode mode, const char *host, uint8_t tpw) {
     setMode(mode);
 }
 
-void setBroadcast(uint8_t _if) {
+void Wireless::setBroadcast(uint8_t _if) {
     // 1: station 2: soft-AP 3: both station and soft-AP
     PrintUtils::print_ident(out_, FPSTR(str_wifi));
     PrintUtils::print(out_, FPSTR(str_broadcast), _if);
@@ -330,157 +157,68 @@ void setBroadcast(uint8_t _if) {
     PrintUtils::println(out_);
 }
 
-void updateState() {
-    NetworkMode mode = getMode();
+NetworkMode Wireless::getMode() {
+    return (NetworkMode)WiFi.getMode();
+}
+
+void Wireless::refreshStatus() {
     bool res = false;
-    switch (mode) {
-        case NETWORK_OFF:
+    switch (WiFi.getMode()) {
+        case WiFiMode_t::WIFI_OFF:
             break;
-        case WIFI_AP:
-            res = ap_enabled;
+        case WiFiMode_t::WIFI_AP:
+            res = ap_enabled_;
             break;
-        case WIFI_STA:
-        case WIFI_AP_STA:
-            res = WiFi.isConnected();
+        case WiFiMode_t::WIFI_STA:
+        case WiFiMode_t::WIFI_AP_STA:
+            res = WiFi.isConnected() || ap_enabled_;
             break;
         default:
             break;
     }
-    setNetworkStatus(res ? NETWORK_UP : NETWORK_DOWN);
+    setStatus(res ? NETWORK_UP : NETWORK_DOWN);
 }
 
-void setNetworkStatus(NetworkStatus status) {
-    if (networkStatus != status) {
-        networkStatus = status;
-        if (statusChangeHandler)
-            statusChangeHandler(status, millis());
+void Wireless::setStatus(NetworkStatus status) {
+    unsigned long now = millis();
+    if (networkStatus_ != status) {
+        if (networkStatus_ == NETWORK_UP) lastUp_ = now;
+        if (networkStatus_ == NETWORK_DOWN) lastDown_ = now;
+        networkStatus_ = status;
+        statusChangeEvent(now);
     }
 }
 
-void onNetworkUp() { lastUp = millis(); }
-
-void onNetworkDown() { lastDown = millis(); }
-
-NetworkMode getMode() {
-    networkMode = (NetworkMode)WiFi.getMode();
-    return networkMode;
+void Wireless::setOnStatusChange(NetworkStatusChangeEventHandler h) {
+    statusChangeHandler = h;
+    statusChangeEvent();
 }
 
-bool hasNetwork() {
-    return networkStatus == NETWORK_UP;
+void Wireless::statusChangeEvent(unsigned long now) {
+    if (statusChangeHandler)
+        statusChangeHandler(hasNetwork(), millis_passed(networkStatus_ == NETWORK_UP ? lastDown_ : lastUp_, now));
 }
 
-bool isActive() {
+bool Wireless::hasNetwork() {
+    return networkStatus_ == NETWORK_UP;
+}
+
+bool Wireless::isActive() {
     return WiFi.softAPgetStationNum() || WiFi.status() == WL_CONNECTED;
 }
 
-void setOnNetworkStatusChange(NetworkStatusChangeEventHandler h) {
-    statusChangeHandler = h;
-    if (statusChangeHandler)
-        statusChangeHandler(hasNetwork(), millis());
-}
-
-String getNetworkState() {
-    bool has = hasNetwork();
-    String str = FPSTR(str_network);
-    str += getUpDownStr(has);
-    str += millis_since(has ? lastDown : lastUp);
-    return str;
-}
-
-String getSTAStatus() {
-    PGM_P strP;
-    switch (wifi_station_get_connect_status()) {
-        case STATION_CONNECTING:
-            strP = str_connecting;
-            break;
-        case STATION_GOT_IP:
-            strP = str_connected;
-            break;
-        case STATION_NO_AP_FOUND:
-            strP = str_ap_not_found;
-            break;
-        case STATION_CONNECT_FAIL:
-            strP = str_connection_failed;
-            break;
-        case STATION_WRONG_PASSWORD:
-            strP = str_wrong_password;
-            break;
-        case STATION_IDLE:
-            strP = str_idle;
-            break;
-        default:
-            strP = str_unknown;
-            break;
-    }
-    return String(FPSTR(strP));
-}
-
-bool scanWiFi(const char *ssid) {
-    setupSTA(hostIP(), IPAddress(IP_ADDR_ANY), IPAddress(IP_ADDR_ANY),
-             IPAddress(IP_ADDR_ANY));
-
-    int8_t discovered = WiFi.scanNetworks(false, true, 0, (uint8_t *)ssid);
-
-    WiFi.scanDelete();
-    WiFi.disconnect(true);
-    delay(100);
-
-    return discovered;
-}
-
-String wifiChannel() {
-    return String(WiFi.channel());
-}
-
-String wifiPhyMode() {
-    char ch;
-    switch (WiFi.getPhyMode()) {
-        case WIFI_PHY_MODE_11B:
-            ch = 'b';
-            break;
-        case WIFI_PHY_MODE_11G:
-            ch = 'g';
-            break;
-        case WIFI_PHY_MODE_11N:
-            ch = 'n';
-            break;
-        default:
-            ch = '?';
-            break;
-    }
-    return String("801.11") + ch;
-}
-
-void startWiFiScan(bool hidden) {
-    WiFi.scanNetworksAsync([](int num) { onScanComplete(num); }, hidden);
+void Wireless::startWiFiScan(bool hidden) {
+    WiFi.scanNetworksAsync([this](int num) { 
+        onScanComplete(num); }, hidden
+    );
     scanning_ = true;
 }
 
-bool isScanning() {
+bool Wireless::isScanning() {
     return scanning_;
 }
 
-}  // namespace Wireless
-
-const char *encryptionTypeStr(int type) {
-    switch (type) {
-        case AUTH_OPEN:
-            return "NONE";
-        case AUTH_WEP:
-            return "WEP";
-        case AUTH_WPA_PSK:
-            return "WPA";
-        case AUTH_WPA2_PSK:
-            return "WPA2";
-        case AUTH_WPA_WPA2_PSK:
-            return "AUTO";
-        default:
-            return "----";
-    }
-}
-
-void onScanComplete(int found) {
+void Wireless::onScanComplete(int found) {
     Wireless::scanning_ = false;
     File f = SPIFFS.open("/var/networks", "w");
     if (found > 0) {
@@ -489,7 +227,7 @@ void onScanComplete(int found) {
             f.printf("%-4s", "");
             f.printf("%-20s", WiFi.SSID(i).c_str());
             f.printf("%-6d", WiFi.RSSI(i));
-            f.printf("%-6s", encryptionTypeStr(WiFi.encryptionType(i)));
+            f.printf("%-6s", WirelessUtils::encryptTypeStr(i));
             f.printf("%4d", WiFi.channel(i));
             f.println();
         };

@@ -1,7 +1,7 @@
 #include "Modules/Display.h"
 
 #include "Modules/Psu.h"
-
+#include "Utils/TimeUtils.h"
 #include "Global.h"
 
 namespace Modules {
@@ -105,7 +105,7 @@ void Display::refresh(void) {
         }
     }
 
-    NetworkMode mode = Wireless::getMode();
+    NetworkMode mode = wireless->getMode();
     switch (mode) {
         case NetworkMode::NETWORK_OFF:
             setScreen(SCREEN_READY);
@@ -126,33 +126,40 @@ void Display::refresh(void) {
     }
 }
 
-void Display::load_wifi_sta(Screen *obj) {
+void Display::load_ready(Screen *obj) {
     size_t n = 0;
-    obj->set(n++, "WIFI> ", Wireless::getSTAStatus());
-    obj->set(n++, "STA> ", Wireless::hostSTA_SSID());
-    obj->set(n++, "IP> ", Wireless::hostSTA_IP().toString());
-    obj->set(n++, "RSSI> ", Wireless::hostSTA_RSSI());
-    obj->set(n++, "CLK> ", getTimeStr(app.clock()->getLocal(), true));
+    obj->set(n++, "READY> ");
+    obj->set(n++, NULL, TimeUtils::format_time(app.clock()->local()));
     obj->setCount(n);
-};
+    obj->moveFirst();
+}
 
 void Display::load_wifi_ap(Screen *obj) {
     size_t n = 0;
-    obj->set(n++, "AP> ", Wireless::AP_SSID());
-    obj->set(n++, "PWD> ", Wireless::AP_Password());
-    obj->set(n++, "CLK> ", getTimeStr(app.clock()->getLocal(), true));
+    obj->set(n++, "SSID ", WirelessUtils::getApSsid());
+    obj->set(n++, "PWD ", WirelessUtils::getApPasswd());
+    obj->set(n++, NULL, app.clock()->timeStr());
+    obj->setCount(n);
+};
+
+void Display::load_wifi_sta(Screen *obj) {
+    size_t n = 0;
+    obj->set(n++, "WiFi ", WirelessUtils::getStaStatus());
+    obj->set(n++, "RSSI ", WirelessUtils::getRssi());
+    obj->set(n++, NULL, WirelessUtils::getStaIp().toString());
+    obj->set(n++, NULL, app.clock()->timeStr());
     obj->setCount(n);
 };
 
 void Display::load_wifi_ap_sta(Screen *obj) {
     size_t n = 0;
-    obj->set(n++, "WIFI> ", Wireless::getSTAStatus());
-    obj->set(n++, "RSSI> ", Wireless::hostSTA_RSSI());
-    obj->set(n++, "STA> ", Wireless::hostSTA_SSID());
-    obj->set(n++, "AP> ", Wireless::AP_SSID());
-    obj->set(n++, "IP AP> ", Wireless::AP_IP().toString());
-    obj->set(n++, "IP STA> ", Wireless::hostSTA_IP().toString());
-    obj->set(n++, "CLK> ", getTimeStr(app.clock()->getLocal(), true));
+    obj->set(n++, "WiFi ", WirelessUtils::getStaStatus());
+    obj->set(n++, "RSSI ", WirelessUtils::getRssi());
+    obj->set(n++, "STA ", WirelessUtils::getStaSsid());
+    obj->set(n++, "STA IP ", WirelessUtils::getStaIp().toString());
+    obj->set(n++, "AP ", WirelessUtils::getApSsid());
+    obj->set(n++, "AP IP ", WirelessUtils::getApIp().toString());
+    obj->set(n++, NULL, app.clock()->timeStr());
     obj->setCount(n);
 };
 
@@ -182,13 +189,6 @@ void Display::load_psu_info(Screen *obj) {
     obj->setCount(2);
     obj->moveFirst();
 }  // namespace Modules
-
-void Display::load_ready(Screen *obj) {
-    obj->set(0, "READY> ");
-    obj->set(1, "CLK> ", getTimeStr(app.clock()->getLocal(), true).c_str());
-    obj->setCount(2);
-    obj->moveFirst();
-}
 
 void Display::load_psu_stat(Screen *obj) {
     obj->set(0, "MAX> ");
@@ -292,7 +292,7 @@ bool Display::locked(unsigned long now) {
 
 void Display::unlock(void) { lockTimeout = 0; }
 
-bool Display::onConfigChange(const ConfigItem param, const String& value) {
+bool Display::onConfigChange(const ConfigItem param, const String &value) {
     if (param == BACKLIGHT) {
         bool enable = String(value).toInt();
         enableBacklight(enable);

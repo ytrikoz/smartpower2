@@ -17,7 +17,7 @@ bool NetworkService::onInit() {
 bool NetworkService::onStart() {
     host_ = APP_NAME;
     dns_name_ = host_ + "." + HOST_DOMAIN;            
-    ip_ = Wireless::hostIP();
+    ip_ =  WiFi.getMode() == WiFiMode::WIFI_AP? WiFi.softAPIP(): WiFi.localIP();
     dns_port_ = DNS_PORT;
 
     if (!has_dns) 

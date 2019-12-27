@@ -5,28 +5,19 @@ namespace StrUtils {
 static const char strf_network[] PROGMEM = "ip: %s subnet: %s gateway: %s";
 static const char strf_network_dns[] PROGMEM =
     "ip: %s subnet: %s gateway: %s dns: %s";
-static const char str_down[] PROGMEM = "down";
-static const char str_up[] PROGMEM = "up";
+
 static const char *weekdays[] = {"sun", "mon", "tue", "wed",
                                  "thu", "fri", "sat"};
 
-String getNetworkModeStr(NetworkMode mode) {
-    PGM_P strP = str_unknown;
-    switch (mode) {
-        case NETWORK_OFF:
-            strP = str_off;
-            break;
-        case NETWORK_AP:
-            strP = str_ap;
-            break;
-        case NETWORK_STA:
-            strP = str_sta;
-            break;
-        case NETWORK_AP_STA:
-            strP = str_ap_sta;
-            break;
-    }
-    return String(FPSTR(strP));
+static BoolSet bools[4] = {
+    {str_true, str_false},
+    {str_enabled, str_disabled},
+    {str_up, str_down},
+    {str_on, str_off}
+};
+
+String getBoolStr(bool value, BoolStrEnum set) {
+    return (FPSTR(value ? bools[set].true_ : bools[set].false_));    
 }
 
 String getTimeStr(const unsigned long epoch_s, bool fmtLong) {
@@ -69,7 +60,7 @@ IPAddress atoip(const char *str) {
         parts[part] += b - '0';
     }
     return IPAddress(parts[0], parts[1], parts[2], parts[3]);
-} // namespace StrUtils
+}  // namespace StrUtils
 
 void setnnstr(char *dest, const char *src) {
     if (src == NULL) {
@@ -110,11 +101,10 @@ String fmt_network(const IPAddress ipaddr, const IPAddress subnet,
                    const IPAddress gateway, const IPAddress dns) {
     char buf[128];
     sprintf_P(buf, strf_network_dns, ipaddr.toString().c_str(),
-            subnet.toString().c_str(), gateway.toString().c_str(),
-            dns.toString().c_str());
+              subnet.toString().c_str(), gateway.toString().c_str(),
+              dns.toString().c_str());
     return String(buf);
 }
-
 
 void strpadd(char *str, Align align, size_t size, const char ch) {
     uint8_t str_len = strlen(str);
@@ -125,18 +115,18 @@ void strpadd(char *str, Align align, size_t size, const char ch) {
     strfill(str, ch, size + 1);
     uint8_t str_start = 0;
     switch (align) {
-    // [...str]
-    case RIGHT:
-        str_start = size - str_len;
-        break;
-    // [..str..]
-    case CENTER:
-        str_start = floor((float)(size - str_len) / 2);
-        break;
-    // [str...]
-    case LEFT:
-    default:
-        str_start = 0;
+        // [...str]
+        case RIGHT:
+            str_start = size - str_len;
+            break;
+        // [..str..]
+        case CENTER:
+            str_start = floor((float)(size - str_len) / 2);
+            break;
+        // [str...]
+        case LEFT:
+        default:
+            str_start = 0;
     }
     for (size_t i = 0; i < str_len; ++i)
         str[i + str_start] = orig_str[i];
@@ -166,17 +156,13 @@ bool isip(const char *str) {
 
 bool isip(const String &str) { return isip(str.c_str()); }
 
-String getBoolStr(bool value, bool space) {
-    return String(value ? F("true") : F("false"));
-}
-
 String getOnOffStr(bool value, bool space) {
-    String res(value ? F("on") : F("off"));
+    String res(FPSTR(value ? str_on : str_off));
     return res;
 }
 
 String getEnabledStr(bool value, bool space) {
-    String res(value ? F("enabled") : F("disabled"));
+    String res(FPSTR(value ? str_enabled : str_disabled));
     return res;
 }
 
@@ -224,4 +210,4 @@ String getIdentStr(const char *str, bool with_space, char left, char right) {
     return String(buf);
 }
 
-} // namespace StrUtils
+}  // namespace StrUtils

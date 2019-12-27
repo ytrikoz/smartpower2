@@ -1,10 +1,9 @@
 #pragma once
 
-#include "CommonTypes.h"
-
 #include "Config.h"
 #include "Wireless.h"
 
+#include "Utils/ModuleUtils.h"
 #include "Utils/PrintUtils.h"
 #include "Utils/StrUtils.h"
 #include "Utils/FsUtils.h"
@@ -22,6 +21,7 @@ class Module {
     }
 
     bool execute(const String &param, const String &value) {
+        setError(Error::ok());
         onExecute(param, value);
         return !failed();            
     }
@@ -68,13 +68,16 @@ class Module {
     size_t printDiag(Print *p) {
         StaticJsonDocument<256> doc;
         doc[FPSTR(str_state)] = getModuleStateStr();
+        if(failed()) {
+            doc[FPSTR(str_error)] = getError().description();
+        }
         JsonVariant obj = doc.as<JsonObject>();
         onDiag(obj);
         return serializeJsonPretty(doc, *p);
     };
 
-    String getModuleStateStr() {
-        return getModuleStateStr(modState_);
+    virtual String getModuleStateStr() {
+        return ModuleUtils::getStateStr(modState_);
     }
 
     virtual void onDiag(const JsonObject &obj) {}
@@ -97,44 +100,30 @@ class Module {
         return true;
     }
     
-    virtual bool failed() {
+    virtual bool failed() const {
         return modError_.code() != 0;
     }
 
-    virtual Error onExecute(const String &param, const String &value) {
-        Error err = Error(ERROR_EXECUTE, FPSTR(str_unsupported));
-        return err;
+    virtual void onExecute(const String &param, const String &value) {
+        setError(ERROR_UNSUPPORTED);        
     }
 
-    String getModuleStateStr(const ModuleState state) {
-        PGM_P strP;
-        switch (state) {
-            case STATE_INIT:
-                strP = str_wait;
-                break;
-            case STATE_INIT_FAILED:
-                strP = str_invalid;
-                break;
-            case STATE_INIT_COMPLETE:
-                strP = str_ready;
-                break;
-            case STATE_START_FAILED:
-                strP = str_failed;
-                break;
-            case STATE_ACTIVE:
-                strP = str_active;
-                break;
-            default:
-                strP = str_unknown;
-        }
-        return String(FPSTR(strP));
-    }
+   
 protected:    
     void setError(Error e){
         modError_ = e;
     }
-    void setError(ErrorCode code, const char* description) {
-        modError_ = Error(code, description);
+    void setError(ErrorCode code) {
+        modError_ = Error(code);
+    }
+    void setError(ErrorCode code, const char* desc) {
+        modError_ = Error(code, desc);
+    }
+    void setError(ErrorCode code, String desc) {
+        modError_ = Error(code, desc.c_str());
+    }
+    void setError(ErrorCode code, ConfigItem param) {
+        modError_ = Error(code, config_->name(param).c_str());
     }
     Print *out_;
     Config *config_;

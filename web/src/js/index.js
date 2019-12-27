@@ -102,6 +102,8 @@ function sendJsonObject(obj) {
   try {
     const text = JSON.stringify(obj);
     ws.send(text);
+    // eslint-disable-next-line no-console
+    console.log(text);
     return true;
   } catch (e) {
     return false;
@@ -109,27 +111,15 @@ function sendJsonObject(obj) {
 }
 
 function askRestart() {
-  $('.ui-pagecontainer').pagecontainer('change', '#dlg_restart', { reverse: false, changeHash: true });
+  $('.ui-pagecontainer').pagecontainer('change', '#restart', { reverse: false, changeHash: true });
 }
 
-//
-// Home Page
-//
-function showBacklight(value) {
-  $('#chk_backlight').val(value ? 'on' : 'off').flipswitch().flipswitch('refresh');
-}
-
-function showPower(value) {
-  $('#chk_power').val(value ? 'on' : 'off').flipswitch().flipswitch('refresh');
+function saveConfig() {
+  const data = { config: 'save' };
+  sendJsonObject(data);
 }
 
 function enableDashboard(enabled = true) {
-  // const $obj = $('#power_switch_cont');
-  // if (value) {
-  //   $obj.addClass('state-on');
-  // } else {
-  //   $obj.removeClass('state-off');
-  // }
   const $obj = $('#dashboard .ss_cont');
   if (enabled) {
     $obj.removeClass('ui-state-disabled');
@@ -137,6 +127,58 @@ function enableDashboard(enabled = true) {
     $obj.addClass('ui-state-disabled');
   }
 }
+
+function setStoreWh(value) {
+  const data = { set: [{ store_wh: value ? 1 : 0 }] };
+  sendJsonObject(data);
+  saveConfig();
+}
+
+function setBacklight(value) {
+  const data = { set: [{ backlight: value ? 1 : 0 }] };
+  sendJsonObject(data);
+  saveConfig();
+}
+
+function setPower(value) {
+  const data = { power: value };
+  sendJsonObject(data);
+}
+
+function onChangeStoreWh() {
+  const value = $('#flipswitch_store_wh').val() === 'on';
+  setStoreWh(value);
+}
+
+function onChangeBacklight() {
+  const value = $('#flipswitch_backlight').val() === 'on';
+  setBacklight(value);
+}
+
+function onChangePower() {
+  const value = $('#flipswitch_power').val() === 'on';
+  setPower(value);
+  enableDashboard(value);
+}
+
+function showStoreWh(value) {
+  $('#flipswitch_store_wh').unbind('change', onChangeStoreWh);
+  $('#flipswitch_store_wh').val(value ? 'on' : 'off').flipswitch().flipswitch('refresh');
+  $('#flipswitch_store_wh').bind('change', onChangeStoreWh);
+}
+
+function showBacklight(value) {
+  $('#flipswitch_backlight').unbind('change', onChangeBacklight);
+  $('#flipswitch_backlight').val(value ? 'on' : 'off').flipswitch().flipswitch('refresh');
+  $('#flipswitch_backlight').bind('change', onChangeBacklight);
+}
+
+function showPower(value) {
+  $('#flipswitch_power').unbind('change', onChangePower);
+  $('#flipswitch_power').val(value ? 'on' : 'off').flipswitch().flipswitch('refresh');
+  $('#flipswitch_power').bind('change', onChangePower);
+}
+
 
 const voltage = new Measurement('V', () => {
   $('#v_ss').sevenSeg({ digits: 5, decimalPlaces: 3, value: voltage.last });
@@ -162,9 +204,7 @@ const watth = new Measurement('W', () => {
   }
   $('#wh_ss').sevenSeg({ value: watth.last });
 });
-//
-// Options Page
-//
+
 function showBootMode(value) {
   const $obj = $('input:radio[name="boot_mode"]');
   $obj.prop('checked', false).checkboxradio().checkboxradio('refresh');
@@ -179,9 +219,6 @@ function showTWP(value) {
   $('#slider_twp').val(value).slider().slider('refresh');
 }
 
-function showStoreWh(value) {
-  $('#chk_store_wh').val(value ? 'on' : 'off').flipswitch().flipswitch('refresh');
-}
 //
 // Wifi Mode
 //
@@ -202,7 +239,7 @@ function showPasswd(value) {
 }
 
 function showDHCP(value) {
-  $('#chk_dhcp').val(value ? 'on' : 'off').flipswitch().flipswitch('refresh');
+  $('#flipswitch_dhcp').val(value ? 'on' : 'off').flipswitch().flipswitch('refresh');
 }
 
 function enableIPAddr(enabled = true) {
@@ -242,20 +279,6 @@ function showAP_Passwd(value) {
 function showAP_IPAddr(value) {
   $('#txt_ap_ipaddr').val(value).textinput().textinput('refresh');
 }
-//
-// Info
-//
-function showVersion(value) {
-  $('#version_cont').json2html(value, template, { replace: true });
-}
-
-function showNetworkInfo(value) {
-  $('#network_cont').json2html(value, template, { replace: true });
-}
-
-function showSysInfo(value) {
-  $('#system_cont').json2html(value, template, { replace: true });
-}
 
 function enableUI(value = true) {
   if (value) {
@@ -270,46 +293,29 @@ function setPage(value) {
   return sendJsonObject(data);
 }
 
-function saveConfig() {
-  const data = { config: 'save' };
-  sendJsonObject(data);
-}
-
 function restart() {
-  const data = { restart: 0 };
+  const data = { system: 'restart' };
   sendJsonObject(data);
 }
 
-// Home
-function setPower(value) {
-  const data = { power: value };
-  sendJsonObject(data);
-}
 function setWh(value) {
   const data = { wh: value };
   sendJsonObject(data);
 }
+
 // Options
 function setBootMode(value) {
   const data = { set: [{ bootpwr: value }] };
   sendJsonObject(data);
   saveConfig();
 }
+
 function setVoltage(value) {
   const data = { set: [{ voltage: value }] };
   sendJsonObject(data);
   saveConfig();
 }
-function setStoreWh(value) {
-  const data = { set: [{ store_wh: value ? 1 : 0 }] };
-  sendJsonObject(data);
-  saveConfig();
-}
-function setBacklight(value) {
-  const data = { set: [{ backlight: value ? 1 : 0 }] };
-  sendJsonObject(data);
-  saveConfig();
-}
+
 function setWifi(wifi, twp) {
   const data = {
     set: [{ wifi, twp }],
@@ -324,14 +330,18 @@ function setSta(ssid, passwd, dhcp, ipaddr, netmask, gateway, dns) {
     set: [
       { ssid },
       { dhcp: dhcp ? 1 : 0 },
+    ],
+  };
+  if (!dhcp) {
+    data.set.push(
       { ipaddr },
       { netmask },
       { gateway },
       { dns },
-    ],
-  };
+    );
+  }
   if (passwd !== '') {
-    data.push({ passwd });
+    data.set.push({ passwd });
   }
   sendJsonObject(data);
   saveConfig();
@@ -345,7 +355,7 @@ function setAp(ssid, passwd, ipaddr) {
     ],
   };
   if (passwd !== '') {
-    data.push({ ap_passwd: passwd });
+    data.set.push({ ap_passwd: passwd });
   }
   sendJsonObject(data);
   saveConfig();
@@ -448,7 +458,6 @@ function onload() {
     };
     ws.onclose = () => {
       if (conn) {
-        $('.ui-pagecontainer').pagecontainer('change', '#dlg_connection_lost', { reverse: false, changeHash: true });
         enableUI(false);
       }
       conn = false;
@@ -456,14 +465,12 @@ function onload() {
     };
   } catch (e) {
     // eslint-disable-next-line no-console
-
     console.log(e);
   }
 }
 
 $(document).on('pagecontainerbeforeshow', (event, ui) => {
-  const name = $(ui.toPage).jqmData('title');
-  const page = getPageIndex(name);
+  const page = getPageIndex($(ui.toPage).jqmData('title'));
   if (page > 0) {
     if (getConnectionStatus() && setPage(page)) {
       $(ui.toPage).removeClass('ui-disabled');
@@ -473,8 +480,9 @@ $(document).on('pagecontainerbeforeshow', (event, ui) => {
 
 $(document).on('pagecontainershow', (event, ui) => {
   const name = $(ui.toPage).jqmData('title');
+  $('[data-role="header"] h1').text(name);
   $('[data-role="navbar"] a.ui-button-active').removeClass('ui-button-active');
-  $('#footer a').each((index, element) => {
+  $('[data-role="navbar"] a').each((index, element) => {
     if ($(element).text() === name) {
       $(element).addClass('ui-button-active');
     }
@@ -482,75 +490,73 @@ $(document).on('pagecontainershow', (event, ui) => {
 });
 
 $(document).ready(() => {
-  $(() => {
-    $('[data-role="navbar"]').navbar();
-    $('[data-role="toolbar"]').toolbar();
-  });
-  // Home
-  $('#chk_power').change(() => {
-    const value = $('#chk_power').val() === 'on';
-    setPower(value);
-    enableDashboard(value);
-  });
+  $('#flipswitch_power').bind('change', onChangePower);
+  $('#flipswitch_store_wh').bind('change', onChangeStoreWh);
+  $('#flipswitch_backlight').bind('change', onChangeBacklight);
+
   $('#v_ss').sevenSeg({
     digits: 5,
     value: null,
   });
+
   $('#p_ss').sevenSeg({
     digits: 5,
     value: null,
   });
+
   $('#i_ss').sevenSeg({
     digits: 5,
     colorOff: '#003200',
     colorOn: 'Lime',
     value: null,
   });
+
   $('#wh_ss').sevenSeg({
     digits: 5,
     value: null,
   });
+
   $('#btn_wh_zero').click(() => {
     setWh(0);
   });
-  //
-  // Options
-  //
+
   $('#slider_averaging').change(() => {
     const value = $('#slider_averaging').val();
     setAveraging(value);
   });
+
   $('input:radio[name=boot_mode]').change(() => {
     const value = $('input:radio[name=boot_mode]:checked').val();
     setBootMode(value);
   });
-  $('#chk_store_wh').change(() => {
-    const value = $('#chk_store_wh').val() === 'on';
-    setStoreWh(value);
-  });
+
   $('#btn_apply_voltage').click(() => {
     const value = $('#slider_voltage').val();
     setVoltage(parseFloat(value));
   });
-  $('#chk_dhcp').change(() => {
-    const value = $('#chk_dhcp').val() === 'on';
+
+  $('#flipswitch_dhcp').change(() => {
+    const value = $('#flipswitch_dhcp').val() === 'on';
     enableIPAddr(!value);
   });
+
   $('#btn_save_wifi').click(() => {
     const wifi = $('input:radio[name=wifi_mode]:checked').val();
     const twp = $('#slider_twp').val();
     setWifi(wifi, twp);
   });
+
   $('#btn_save_sta').click(() => {
     const ssid = $('#txt_ssid').val();
     const passwd = $('#txt_passwd').val();
-    const dhcp = $('#chk_dhcp').val() === 'on';
+    const dhcp = $('#flipswitch_dhcp').val() === 'on';
     const ipaddr = $('#txt_ipaddr').val();
     const netmask = $('#txt_netmask').val();
     const gateway = $('#txt_gateway').val();
     const dns = $('#txt_dns').val();
     setSta(ssid, passwd, dhcp, ipaddr, netmask, gateway, dns);
   });
+
   $('#btn_save_ap').click(() => {
     const ssid = $('#txt_ap_ssid').val();
     const passwd = $('#txt_ap_passwd').val();
@@ -558,21 +564,8 @@ $(document).ready(() => {
     setAp(ssid, passwd, ipaddr);
   });
 
-  $('#btn_restart_no').click(() => {
-    $('.ui-pagecontainer').pagecontainer('change', '#options', {});
-  });
-
-  $('#btn_restart_yes').click(() => {
+  $('#restart-button').click(() => {
     restart();
-  });
-
-  $('#btn_save_config').click(() => {
-    saveConfig();
-  });
-
-  $('#chk_backlight').change(() => {
-    const value = $('#chk_backlight').val() === 'on';
-    setBacklight(value);
   });
 
   $('#version_cont').on('collapsibleexpand', (e, ui) => {
@@ -581,5 +574,9 @@ $(document).ready(() => {
 
   $('#system_cont').on('collapsibleexpand', (e, ui) => {
     $('#system_div').load('/system');
+  });
+
+  $('#network_cont').on('collapsibleexpand', (e, ui) => {
+    $('#network_div').load('/network');
   });
 });

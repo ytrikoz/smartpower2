@@ -25,7 +25,7 @@ class App : public Host, PsuDataListener {
     App();
 
    public:
-    void onConfigChange(const ConfigItem param, const String& value);
+    void onConfigChange(const ConfigItem param, const String &value);
     void onPsuData(PsuData &item) override;
     void onPsuStateChange(PsuState);
     void onPsuStatusChange(PsuStatus);
@@ -49,8 +49,9 @@ class App : public Host, PsuDataListener {
     void systemReset();
 
    public:
-    void setConfig(ConfigHelper *config);
-    void setPowerlog(PowerLog *powerlog);
+    void setConfig(ConfigHelper *);
+    void setPowerlog(PowerLog *);
+    void setWireless(Wireless *);
 
     void begin();
     void startSafe();
@@ -69,6 +70,7 @@ class App : public Host, PsuDataListener {
     Modules::Telnet *telnet();
     Modules::Web *web();
     Modules::Psu *psu();
+    Modules::Syslog *syslog();
 
     Config *params() { return config_->get(); }
 
@@ -81,40 +83,6 @@ class App : public Host, PsuDataListener {
     void refreshRed();
 
     void refreshBlue();
-
-    void logMessage(const LogLevel level, const String &msg) {
-        char buf[16];
-        out_->print(millis() / ONE_SECOND_ms);
-        out_->print(' ');
-        out_->print(getLogLevel(buf, level));
-        out_->print(' ');
-        out_->println(msg);
-        out_->flush();
-    }
-
-    char *getLogLevel(char *buf, LogLevel level) {
-        PGM_P strP;
-        switch (level) {
-            case LEVEL_ERROR:
-                strP = str_error;
-                break;
-            case LEVEL_WARN:
-                strP = str_warn;
-                break;
-            case LEVEL_INFO:
-                strP = str_info;
-                break;
-            default:
-                strP = str_unknown;
-                break;
-        }
-        char str[16];
-        strncpy_P(str, strP, 13);
-        for (char *p = str; *p; p++)
-            *p = toupper(*p);
-        sprintf(buf, "[%s]", str);
-        return buf;
-    }
 
    private:
     void displayProgress(uint8_t progress, const char *message);
@@ -133,10 +101,10 @@ class App : public Host, PsuDataListener {
     bool webClients_;
     bool telnetClients_;
 
+    Wireless *wireless_;
     ConfigHelper *config_;
     PowerLog *powerlog_;
     WiFiEventHandler onDisconnected, onGotIp;
-
 
     uint8_t boot_per;
 
@@ -150,7 +118,7 @@ class App : public Host, PsuDataListener {
         {0, str_console, NETWORK_OFF},
         {0, str_netsvc, NETWORK_STA},
         {0, str_telnet, NETWORK_STA},
-        {0, str_update, NETWORK_STA},
+        {0, str_update, NETWORK_AP},
         {0, str_syslog, NETWORK_STA},
-        {0, str_web, NETWORK_STA}};
+        {0, str_web, NETWORK_AP}};
 };

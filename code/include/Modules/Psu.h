@@ -42,7 +42,7 @@ class Psu : public Module {
     bool onStart() override;
     void onLoop() override;
     bool onConfigChange(const ConfigItem param, const String& value) override;
-    Error onExecute(const String &param, const String &value) override;   
+    void onExecute(const String &param, const String &value) override;   
    private:          
     void onStateChangeEvent(PsuState value);
     void applyVoltage(const float value);

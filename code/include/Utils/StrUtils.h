@@ -11,8 +11,6 @@ enum Align { LEFT,
              CENTER,
              RIGHT };
 
-String getNetworkModeStr(NetworkMode mode);
-
 String getTimeStr(const unsigned long epoch_s, bool fmtLong = false);
 
 String getDateTimeStr(const unsigned long epoch_s);
@@ -59,13 +57,7 @@ void strpadd(char *str, Align align, size_t size, const char ch = ' ');
 
 String getStrP(PGM_P strP, bool space = true);
 
-String getBoolStr(bool value, bool space = true);
-
-String getOnOffStr(bool value, bool space = true);
-
-String getEnabledStr(bool value, bool space = true);
-
-String getUpDownStr(bool value);
+String getBoolStr(bool value, BoolStrEnum set = TRUE_FALSE);
 
 String getIdentStr(String &str, bool with_space = true);
 
@@ -123,7 +115,7 @@ inline int hex2byte(const char *hex) {
 }
 
 
-inline String prettyIpAddress(IPAddress ip, uint16_t port) {
+inline String prettyIp(IPAddress ip, uint16_t port) {
     char buf[32];
     sprintf(buf, "%s:%d", ip.toString().c_str(), port);
     return String(buf);

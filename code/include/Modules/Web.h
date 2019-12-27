@@ -16,7 +16,7 @@ namespace Modules {
 class Web : public Module, public WebServerHandler {
    public:
     void onConnection(const uint32_t num, const bool connected) override;
-    void onData(const uint32_t num, const String &data) override;
+    void onData(const uint32_t num, const String& data) override;
     bool getResponse(const String& uri, String& body) override;
     bool uriExist(const String& uri, String& lastModified) override;
 
@@ -35,10 +35,14 @@ class Web : public Module, public WebServerHandler {
     size_t getClients();
 
    private:
-    void fillInfo(JsonObject& obj);
+    String getPageData(const WebPageEnum page);
+
     void fillOptions(JsonObject& obj);
     void fillMain(JsonObject& obj);
-    String getPageData(const WebPageEnum page);
+    void fillNetwork(JsonObject& obj);
+    void fillVersion(JsonObject& obj);
+    void fillSystem(JsonObject& obj);
+
     bool getFreeSlot(WebClient** c);
     bool getClientByNum(uint32_t num, WebClient** c);
 

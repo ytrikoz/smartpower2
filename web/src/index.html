@@ -8,49 +8,55 @@
     <meta name="HandheldFriendly" content="true" />
     <title>SmartPower 2</title>
     <!-- shortcut::favicon.png -->
-    <script src="js/jquery.js"></script>
+    <script src="js/jquery-3.2.1.min.js"></script>
     <script type="text/javascript">
         $(document).bind("mobileinit", function () {
             $.mobile.hashListeningEnabled = false;
             $.mobile.pushStateEnabled = false;
             $.mobile.page.prototype.options.domCache = true;
-            $.mobile.loader.prototype.options.text = "loading";
-            $.mobile.loader.prototype.options.textVisible = true;
-            $.mobile.loader.prototype.options.theme = "a";
         });
     </script>
-    <script src="js/jquery.mobile.js"></script>
+    <script src="js/jquery.mobile-1.5.0-rc1.min.js"></script>
     <script src="js/sevenSeg.js"></script>
-    <script src="js/json2html.js"></script>
-    <script src="js/jquery.json2html.js"></script>
-    <script src="js/utils.js"></script>
     <script src="js/index.js"></script>
-    <link rel="stylesheet" href="css/jquery.mobile.css" />
+    <link rel="stylesheet" href="css/jquery.mobile-1.5.0-rc1.min.css" />
     <link rel="stylesheet" href="css/index.css" />
+    <script>
+        $(() => {
+            $('[data-role="header"], [data-role="footer"]').toolbar();
+            $('[data-role="navbar"]').navbar();
+        });
+    </script>
 </head>
 
 <body onload="onload();" onunload="onunload();">
-    <div data-role="toolbar" data-type="header" data-position="fixed" data-theme="b">
+    <!-- Header -->
+    <div data-role="header" data-type="header" data-position="fixed" data-theme="b">
         <h1>SmartPower2</h1>
     </div>
     <!-- Home -->
-    <div id="home" data-role="page" data-title="Home" data-theme="a">
-        <div role="main" class="ui-content ui-corner-all custom-corners">
-            <div data-role="collapsible" data-collapsed="true" data-iconpos="right" data-collapsed-icon="power"
-                data-expanded-icon="power">
-                <h2>Switch</h2>
-                <label>Output power</label>
+
+    <div id="home" data-role="page" data-title="Home">
+        <!-- Main-->
+        <div role="main" class="ui-content">
+            <!-- Switch-->
+            <div id="switch" data-role="collapsible" data-collapsed-icon="power" data-expanded-icon="power">
+                <h3>Switch</h3>
                 <fieldset>
-                    <select id="chk_power" name="chk_power" data-role="flipswitch">
-                        <option value="off">Off</option>
-                        <option value="on">On</option>
-                    </select>
+                    <div data-role="fieldcontain">
+                        <label for="flipswitch_power">Output power</label>
+                        <select id="flipswitch_power" data-role="flipswitch">
+                            <option value="off">Off</option>
+                            <option value="on">On</option>
+                        </select>
+                    </div>
                 </fieldset>
             </div>
 
-            <div id="dashboard" data-role="collapsible" data-collapsed="false" data-iconpos="right"
-                data-content-theme="b" data-collapsed-icon="search"" data-expanded-icon="search">
-                <h2>Dashboard</h2>
+            <!-- Dashboard-->
+            <div id="dashboard" data-role="collapsible" data-collapsed="false" data-collapsed-icon="search"
+                data-expanded-icon="search" data-content-theme="b">
+                <h3>Dashboard</h3>
                 <div id="v_ss" class="ss_cont">
                     <h3>V</h3>
                 </div>
@@ -66,21 +72,26 @@
                 <button id="btn_wh_zero" data-mini="true" data-inline="true">Zero</button>
             </div>
 
-            <div data-role="collapsible" data-collapsed="true" data-iconpos="right">
+            <!-- Display-->
+            <div id="display" data-role="collapsible">
                 <h3>Display</h3>
                 <label>Averaging</label>
                 <input id="slider_averaging" name="slider_averaging" type="range" min="1" max="1024" step="4" value="3">
             </div>
-        </div>
-    </div>
+
+        </div><!-- /main-->
+    </div><!-- /Home -->
 
     <!-- Options -->
     <div id="options" data-role="page" data-title="Options">
-        <div role="main" class="ui-content ui-corner-all custom-corners">
-            <div data-role="collapsible" data-iconpos="right" data-collapsed="false">
+        <!-- main-->
+        <div role="main" class="ui-content">
+            <!--General-->
+            <div data-role="collapsible" data-iconpos="right">
                 <h3>General</h3>
+
                 <label>Power on boot</label>
-                <fieldset id="boot_mode_cont" data-role="controlgroup" data-mini="true" data-type="horizontal">
+                <fieldset id="boot_mode_cont" data-role="controlgroup" data-type="horizontal">
                     <input id="boot_mode_off" type="radio" name="boot_mode" value="0" />
                     <input id="boot_mode_on" type="radio" name="boot_mode" value="1" />
                     <input id="boot_mode_last" type="radio" name="boot_mode" value="2" />
@@ -88,24 +99,35 @@
                     <label for="boot_mode_on">On</label>
                     <label for="boot_mode_last">Last state</label>
                 </fieldset>
+
                 <label>Voltage</label>
                 <fieldset id="slider_voltage_cont">
                     <input id="slider_voltage" name="slider_voltage" type="range" min="4" max="13" step="0.1" value="5"
                         data-popup-enabled="true">
                 </fieldset>
                 <button id="btn_apply_voltage" data-mini="true" data-inline="true">Apply voltage</button>
-                <label>Totals</label>
-                <select id="chk_store_wh" data-mini="true" name="chk_store_wh" data-role="flipswitch">
-                    <option value="off">Off</option>
-                    <option value="on">On</option>
-                </select>
-                <label>Backlight</label>
-                <select id="chk_backlight" data-mini="true" name="chk_backlight" data-role="flipswitch">
-                    <option value="off">Off</option>
-                    <option value="on">On</option>
-                </select>
-            </div>
 
+                <fieldset>
+                    <div data-role="fieldcontain">
+                        <label for="flipswitch_store_wh">Totals</label>
+                        <select id="flipswitch_store_wh" data-role="flipswitch">
+                            <option value="off">Off</option>
+                            <option value="on">On</option>
+                        </select>
+                    </div>
+                </fieldset>
+
+                <fieldset>
+                    <div data-role="fieldcontain">
+                        <label for="flipswitch_backlight">Backlight</label>
+                        <select id="flipswitch_backlight" data-role="flipswitch">
+                            <option value="off">Off</option>
+                            <option value="on">On</option>
+                        </select>
+                    </div>
+                </fieldset>
+            </div>
+            <!--WiFi-->
             <div data-role="collapsible" data-iconpos="right">
                 <h1>WiFi</h1>
                 <label>Mode</label>
@@ -124,18 +146,25 @@
                 </fieldset>
                 <button id="btn_save_wifi" data-inline="true" data-mini="true">Apply</button>
             </div>
-
+            <!-- Station Mode-->
             <div data-role="collapsible" data-iconpos="right">
                 <h3>Station Mode</h3>
+
                 <label>SSID</label>
                 <input id="txt_ssid" type="text" maxlength="32" />
+
                 <label>Password</label>
                 <input id="txt_passwd" type="password" maxlength="32" />
-                <label>DHCP</label>
-                <select id="chk_dhcp" name="chk_dhcp" data-role="flipswitch" data-mini="true">
-                    <option value="off">Off</option>
-                    <option value="on">On</option>
-                </select>
+
+                <fieldset>
+                    <div data-role="fieldcontain">
+                        <label for="flipswitch_dhcp">DHCP</label>
+                        <select id="flipswitch_dhcp" data-role="flipswitch">
+                            <option value="off">Off</option>
+                            <option value="on">On</option>
+                        </select>
+                    </div>
+                </fieldset>
                 <div id="ipaddr_cont">
                     <label>IP Address</label>
                     <input id="txt_ipaddr" type="text" maxlength="16">
@@ -148,7 +177,7 @@
                 </div>
                 <button id="btn_save_sta" data-mini="true" data-inline="true">Save</button>
             </div>
-
+            <!-- AP Mode-->
             <div data-role="collapsible" data-iconpos="right">
                 <h3>AP Mode</h3>
                 <label>SSID</label>
@@ -158,56 +187,49 @@
                 <label>IP</label>
                 <input id="txt_ap_ipaddr" type="text" maxlength="16" />
                 <button id="btn_save_ap" data-mini="true" data-inline="true">Save</button>
-            </div>
-        </div>
-    </div>
+            </div><!-- /AP Mode-->
+        </div><!-- /Main-->
+    </div><!-- /Options -->
 
     <!-- Info -->
     <div id="info" data-role="page" data-title="Info">
-        <div role="main" class="ui-content ui-corner-all custom-corners">
-            <div id="version_cont" data-role="collapsible" data-iconpos="right">
+        <div role="main" class="ui-content">
+            <div id="version_cont" data-role="collapsible">
                 <h3>Version</h3>
                 <div id="version_div"></div>
             </div>
-            <div id="system_cont" data-role="collapsible" data-iconpos="right">
+            <div id="system_cont" data-role="collapsible">
                 <h3>System</h3>
                 <div id="system_div"></div>
+            </div>
+            <div id="network_cont" data-role="collapsible">
+                <h3>Network</h3>
+                <div id="network_div"></div>
             </div>
         </div>
     </div>
 
-    <div id="dlg_restart" data-role="dialog" data-title="Restart">
-        <div data-role="header">
-            <h1>Warning!</h1>
+    <div id="restart" data-role="page" data-dialog="true" data-close-btn="none">
+        <div data-type="header">
+            <h1>Are you sure?</h1>
         </div>
         <div role="main" class="ui-content ui-corner-all custom-corners">
             <p>Configuration changes require restarting...</p>
-            <a id="btn_restart_yes" data-role="button" href="#options">Do it!</a>
-            <a id="btn_restart_no" data-role="button" href="#" data-rel="back">Postpone</a>
+            <a id="restart-button" data-role="button">Do it!</a>
+            <a id="postpone-button" data-role="button" href="#" data-rel="back">Postpone</a>
         </div>
     </div>
 
-    <div id="dlg_connection_lost" data-role="dialog" data-title="Connection">
-        <div data-role="header">
-            <h1>Warning!</h1>
-        </div>
-        <div role="main" class="ui-content ui-corner-all custom-corners">
-            <p>Connection lost! Trying to reconnect...</p>
-            <a id="btn_ok" data-role="button" href="#" data-rel="back">Ok</a>
-        </div>
-    </div>
-
-    <div id="footer" data-role="toolbar" data-type="footer" data-position="fixed" data-theme="b">
+    <div id="footer" data-role="footer" data-type="footer" data-position="fixed" data-theme="b">
         <div data-role="navbar">
             <ul>
                 <li><a href="#home" data-icon="ui-icon-grid">Home</a></li>
                 <li><a href="#options" data-icon="ui-icon-gear">Options</a></li>
                 <li><a href="#info" data-icon="ui-icon-info">Info</a></li>
             </ul>
-        </div>
-    </div>
+        </div><!-- /navbar -->
+    </div><!-- /footer -->
 
-    </div>
 </body>
 
 </html>

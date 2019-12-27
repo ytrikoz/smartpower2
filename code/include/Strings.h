@@ -1,13 +1,23 @@
 #pragma once
 
-#include "CommonTypes.h"
 #include <pgmspace.h>
 
-// TODO refactor
+// TODO
 // now it's not for memory saving, but to collect literals in one place
-// and  code unification
+
+enum BoolStrEnum {
+    TRUE_FALSE, ENABLED_DISABLED, UP_DONW, ON_OFF
+};
+
+struct BoolSet {
+    PGM_P true_;
+    PGM_P false_;
+};
+
 static const char str_dns_resolve[] PROGMEM = "dsn resolve";
 static const char str_interrupted[] PROGMEM = "interrupted";
+static const char str_down[] PROGMEM = "down";
+static const char str_up[] PROGMEM = "up";
 
 static const char str_bootpwr[] PROGMEM = "bootpwr";
 static const char str_passwd[] PROGMEM = "passwd";
@@ -276,9 +286,9 @@ static const char str_warn[] PROGMEM = "warn";
 static const char str_write[] PROGMEM = "write";
 static const char str_wrong[] PROGMEM = "wrong";
 static const char str_wrong_password[] PROGMEM = "wrong password";
+static const char str_wh[] PROGMEM = "wh";
 static const char str_wol[] PROGMEM = "wol";
 static const char str_yes[] PROGMEM = "yes";
 static const char str_web[] PROGMEM = "web";
 static const char str_busy[] PROGMEM = "busy";
 static const char str_wire[] PROGMEM = "wire";
-

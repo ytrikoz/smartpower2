@@ -20,10 +20,11 @@ class Clock : public Module {
    public:
     void setOnChange(TimeChangeEvent);
 
-    time_t getLocal() const;
-    time_t getUtc() const;
-    time_t getUptime() const;
-
+    time_t local() const;
+    time_t utc() const;
+    time_t uptime() const;
+    tm* now();
+    String timeStr();
    public:
     void onDiag(const JsonObject& doc) override;
 
@@ -52,6 +53,7 @@ class Clock : public Module {
     unsigned long uptime_;
     time_t epoch_;
     time_t lastKnown_;
+    tm* time_;
 };
 
 }  // namespace Modules

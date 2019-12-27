@@ -4,11 +4,30 @@
 
 namespace Modules {
 
-void Syslog::alert(const String& src, const String& str) { send(SYSLOG_ALERT, src, str); }
+bool Syslog::onConfigChange(const ConfigItem param, const String& value) {
+    if (param == SYSLOG_SERVER) {
+        return setServer(value.c_str());
+    }
+    return true;
+}
 
-void Syslog::info(const String& src, const String& str) { send(SYSLOG_INFO, src, str); }
+bool Syslog::setServer(const char* value) {
+    if (!strlen(value)) return false;
 
-void Syslog::debug(const String& src, const String& str) { send(SYSLOG_DEBUG, src, str); }
+    if (StrUtils::isip(value)) {
+        ip_ = StrUtils::atoip(value);
+        return true;
+    }
+
+    IPAddress buf;
+    if (WiFi.hostByName(value, buf)) {
+        ip_ = buf;
+        return true;
+    };
+
+    setError(WRONG_PARAM, SYSLOG_SERVER);
+    return false;
+}
 
 bool Syslog::onInit() {
     udp_ = new WiFiUDP();
@@ -16,17 +35,8 @@ bool Syslog::onInit() {
 }
 
 bool Syslog::onStart() {
-    if (!strlen(config_->value(SYSLOG_SERVER))) {
-        setError(Error(ERROR_PARAM, FPSTR(str_server)));
-        return false;
-    }
-
-    if (!WiFi.hostByName(config_->value(SYSLOG_SERVER), ip_)) {
-        setError(Error(ERROR_NETWORK, FPSTR(str_dns)));
-        return false;
-    }
-
-    return true;
+    bool res = setServer(config_->value(SYSLOG_SERVER));
+    return res;
 }
 
 void Syslog::onLoop() {}
@@ -37,46 +47,26 @@ const char* Syslog::getHostname() {
     return APP_NAME;
 }
 
-void Syslog::send(SysLogSeverity level, const String& routine, const String& message) {
+void Syslog::log(LogSeverity level, const String& routine, const String& message) {
     // String payload = getPayload(level, time, host.c_str(), message.c_str());
     // say_strP(str_log, payload.c_str());
     if (udp_->beginPacket(ip_, port_)) {
-        printPacket(level, routine, message);
+        udp_->print('<');
+        udp_->print(SYSLOG_FACILITY * 8 + (int)level);
+        udp_->print('>');
+        udp_->print(APP_NAME);
+        udp_->print(' ');
+        udp_->print('[');
+        udp_->print(routine);
+        udp_->print(']');
+        udp_->print(' ');
+        udp_->print(message);
         udp_->endPacket();
     }
 }
 
-void Syslog::printPacket(const SysLogSeverity level, const String& routine, const String& message) {
-    udp_->print('<');
-    udp_->print(SYSLOG_FACILITY * 8 + (int)level);
-    udp_->print('>');
-    udp_->print(APP_NAME);
-    udp_->print(' ');
-    udp_->print('[');
-    udp_->print(routine);
-    udp_->print(']');
-    udp_->print(' ');
-    udp_->print(message);
-}
-
 void Syslog::onDiag(const JsonObject& doc) {
-    doc[FPSTR(str_server)] = StrUtils::prettyIpAddress(ip_, port_);
-}
-
-String getLevelStr(SysLogSeverity level) {
-    PGM_P strP = str_unknown;
-    switch (level) {
-        case SYSLOG_ALERT:
-            strP = str_alert;
-            break;
-        case SYSLOG_INFO:
-            strP = str_info;
-            break;
-        case SYSLOG_DEBUG:
-            strP = str_debug;
-            break;
-    }
-    return String(FPSTR(strP));
+    doc[FPSTR(str_server)] = StrUtils::prettyIp(ip_, port_);
 }
 
 }  // namespace Modules

@@ -8,7 +8,8 @@
 enum ErrorCode {
     ERROR_INIT = -1,
     ERROR_START = -2,    
-    ERROR_PARAM = -100,
+    WRONG_PARAM = -3,
+    ERROR_UNSUPPORTED = -4,
     ERROR_NETWORK = -200,
     ERROR_EXECUTE = -300,
     ERROR_JSON = -400, 
@@ -18,15 +19,20 @@ enum ErrorCode {
 class Error : public Printable {
    public:
     static Error ok() { return Error(); }
-    static Error buffer_low(size_t require) {
-        return Error(ERROR_SIZE, String(require).c_str());
+    static Error BufferLow(size_t size) {
+        return Error(ERROR_SIZE, String(size).c_str());
     }
    public:
     Error() {
         code_ = 0;
         memset(desc_, 0, OUTPUT_MAX_LENGTH);
         strcpy(desc_, "ok");
-    };
+    }
+
+    Error(const ErrorCode code) {
+        code_ = code;
+        strcpy_P(desc_, str_unsupported);
+    }
 
     Error(const ErrorCode code, const __FlashStringHelper *pstr): Error() {
         code_ = code;

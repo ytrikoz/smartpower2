@@ -2,8 +2,9 @@
 
 App app;
 BootWatcher boot;
-Logger syslog;
+MainLog mainlog;
 
+Wireless* wireless;
 ConfigHelper* config;
 PowerLog* powerlog;
 LoopTimer* loopTimer = nullptr;

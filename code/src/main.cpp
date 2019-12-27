@@ -36,7 +36,7 @@ void preinit() {
 }
 
 void setup() {
-    boot.setOutput(&syslog);
+    boot.setOutput(&mainlog);
     boot.init();
     
     initCrashReport();
@@ -44,16 +44,22 @@ void setup() {
     boot.start();
 
     config = new ConfigHelper(FS_MAIN_CONFIG);
-    config->setOutput(&syslog);
+    config->setOutput(&mainlog);
     if (!config->check()) {
-        PrintUtils::print_ident(&syslog, FPSTR(str_config));
-        PrintUtils::print_file_not_found(&syslog, config->name());
+        PrintUtils::print_ident(&mainlog, FPSTR(str_config));
+        PrintUtils::print_file_not_found(&mainlog, config->name());
         config->setDefaultConfig();
         config->save();
     }
     config->load();
+
+    wireless = new Wireless();
+    wireless->setOutput(&mainlog);
+    wireless->start(boot.isSafeMode());
+
     app.setConfig(config);
-    app.setOutput(&syslog);    
+    app.setWireless(wireless);
+    app.setOutput(&mainlog);    
 
     powerlog = new PowerLog();
     app.setPowerlog(powerlog);
@@ -61,22 +67,23 @@ void setup() {
     Cli::init();
     
     app.begin();
-
+    
     boot.end();
-
+   
     setupDone = true;
 }
 
 void loop() {
-    if (!setupDone) {
+    if (!setupDone) 
         return;
-    } 
-    syslog.loop();
+
+    mainlog.loop();
 
     AppState res = app.loop(loopTimer);
     
-    if (loopTimer) loopTimer->tick();
-    
+    if (loopTimer) 
+        loopTimer->tick();
+
     handleState(res);
 }
 
@@ -84,11 +91,11 @@ void initCrashReport() {
     crashReportNumber_ = FSUtils::getFilesCount(CRASH_ROOT);
     crashReportEnabled_ = crashReportNumber_ < CRASH_NUM;
     if (crashReportNumber_) {
-        PrintUtils::print_ident(&syslog, FPSTR(str_crash));
-        PrintUtils::print(&syslog, crashReportNumber_);
+        PrintUtils::print_ident(&mainlog, FPSTR(str_crash));
+        PrintUtils::print(&mainlog, crashReportNumber_);
         if (!crashReportEnabled_)         
-            PrintUtils::print(&syslog, FPSTR(str_off));
-         PrintUtils::println(&syslog);
+            PrintUtils::print(&mainlog, FPSTR(str_off));
+         PrintUtils::println(&mainlog);
     }
 }
 

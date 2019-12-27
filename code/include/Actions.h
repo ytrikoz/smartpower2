@@ -4,7 +4,6 @@
 
 namespace Actions {
 
-
 class Action {
    public:
     virtual void exec(Print *p) = 0;

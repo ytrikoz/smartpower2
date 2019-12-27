@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <time.h>
+#include <IPAddress.h>
 
 #include "Consts.h"
 #include "Strings.h"
@@ -79,6 +80,7 @@ struct PsuData : Printable {
     float I;
     float P;
     double Wh;
+
    public:
     PsuData() { time = V = I = P = Wh = 0; }
 
@@ -86,7 +88,7 @@ struct PsuData : Printable {
         : time(time_ms), V(V), I(I), P(P), Wh(Wh){};
 
     void reset(void) { time = V = I = P = Wh = 0; }
-    
+
     char* prettyNumber(char* buf, float value, const char* name) const {
         char tmp[8];
         if (I < 0.5) {
@@ -94,19 +96,19 @@ struct PsuData : Printable {
             strcat(buf, "m");
         } else {
             strcpy(buf, dtostrf(value, 2, 2, tmp));
-        }            
+        }
         strcat(buf, name);
         return buf;
     }
 
     size_t toPretty(char* buf) const {
-        char tmp[32];   
+        char tmp[32];
         memset(tmp, 0, 32);
         // Volt
-        strcat(buf, dtostrf(V, 2, 2, tmp));        
+        strcat(buf, dtostrf(V, 2, 2, tmp));
         strcat(buf, "V ");
         // Amper
-        strcat(buf, prettyNumber(tmp, I, "A "));        
+        strcat(buf, prettyNumber(tmp, I, "A "));
         // Watt
         strcat(buf, dtostrf(P, 2, 2, tmp));
         strcat(buf, "W");
@@ -115,7 +117,6 @@ struct PsuData : Printable {
     }
 
     String toJson() const {
-        
         String res = "{";
         res += "\"v\":" + String(V, 3) + ",";
         res += "\"i\":" + String(I, 3) + ",";
@@ -124,7 +125,7 @@ struct PsuData : Printable {
         return res;
     }
 
-    size_t printTo(Print &p) const {
+    size_t printTo(Print& p) const {
         size_t n = 0;
         n += p.print(V, 3);
         n += p.print("V, ");
@@ -140,11 +141,23 @@ struct PsuData : Printable {
 
 class PsuDataListener {
    public:
-    virtual void onPsuData(PsuData &item){};
+    virtual void onPsuData(PsuData& item){};
 };
 
 typedef std::function<void(PsuState)> PsuStateChangeHandler;
 typedef std::function<void(PsuStatus)> PsuStatusChangeHandler;
+
+struct NetInfo {
+    IPAddress ip;
+    IPAddress subnet;
+    IPAddress gateway;
+    NetInfo(){};
+    NetInfo(ip_info& info) {
+        ip = IPAddress(info.ip.addr);
+        subnet = IPAddress(info.netmask.addr);
+        gateway = IPAddress(info.gw.addr);
+    }
+};
 
 enum BootPowerState {
     BOOT_POWER_OFF = 0,

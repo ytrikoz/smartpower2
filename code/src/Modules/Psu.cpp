@@ -82,10 +82,8 @@ bool Psu::onConfigChange(const ConfigItem param, const String& value) {
     return true;
 }
 
-Error Psu::onExecute(const String &param, const String &value) {
+void Psu::onExecute(const String &param, const String &value) {
     mcp4652_set(param.toInt());
-    Error err = Error::ok();
-    return err;
 }
 
 void Psu::powerOn() {
