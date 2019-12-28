@@ -59,6 +59,7 @@ void Wireless::start(const bool safe) {
         setMode(NETWORK_AP);
         setupAP(StrUtils::atoip(config->get()->getDefault(AP_IPADDR)));
         startAP(SysInfo::getUniqueName().c_str(), config->get()->getDefault(AP_PASSWORD));
+        return;
     }
 
     uint8_t tpw = config->get()->asByte(TPW);

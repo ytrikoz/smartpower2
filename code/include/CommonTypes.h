@@ -212,7 +212,7 @@ enum ConfigItem {
     GATEWAY,
     DNS,
     OUTPUT_VOLTAGE,
-    POWER,
+    BOOT_POWER,
     LOGIN,
     PASSWD,
     AP_SSID,

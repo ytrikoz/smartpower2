@@ -118,11 +118,11 @@ NetworkMode ConfigHelper::getWiFiMode() {
 Config *ConfigHelper::get() { return &obj_; }
 
 bool ConfigHelper::setBootPowerState(BootPowerState value) {
-    return obj_.setByte(POWER, (uint8_t)(value));
+    return obj_.setByte(BOOT_POWER, (uint8_t)(value));
 }
 
 BootPowerState ConfigHelper::getBootPowerState() {
-    return BootPowerState(obj_.asByte(POWER));
+    return BootPowerState(obj_.asByte(BOOT_POWER));
 }
 
 bool ConfigHelper::setNtpConfig(sint8_t timeZone_h, uint16_t sync_s) {

@@ -141,7 +141,7 @@ function setBacklight(value) {
 }
 
 function setPower(value) {
-  const data = { power: value };
+  const data = { power: value ? 1 : 0 };
   sendJsonObject(data);
 }
 
@@ -363,9 +363,12 @@ function setAp(ssid, passwd, ipaddr) {
 
 function updateUI(k, v) {
   switch (k) {
-    case 'power':
-      showPower(v);
+    case 'power': {
+      const value = parseInt(v, 10);
+      showPower(value);
+      enableDashboard(value);
       break;
+    }
     case 'store_wh':
       showStoreWh(parseInt(v, 10));
       break;
@@ -429,7 +432,7 @@ function updateUI(k, v) {
     default:
       // eslint-disable-next-line no-console
       if (JSON.stringify(v) === JSON.stringify({})) break;
-    // console.log('unknown', k, v);
+      console.log('unknown', k, v);
   }
 }
 
@@ -469,6 +472,11 @@ function onload() {
   }
 }
 
+$(() => {
+  $('[data-role="header"], [data-role="footer"]').toolbar();
+  $('[data-role="navbar"]').navbar();
+});
+
 $(document).on('pagecontainerbeforeshow', (event, ui) => {
   const page = getPageIndex($(ui.toPage).jqmData('title'));
   if (page > 0) {
@@ -480,7 +488,8 @@ $(document).on('pagecontainerbeforeshow', (event, ui) => {
 
 $(document).on('pagecontainershow', (event, ui) => {
   const name = $(ui.toPage).jqmData('title');
-  $('[data-role="header"] h1').text(name);
+  const title = `SmartPower2: ${name}`;
+  $('[data-role="header"] h1').text(title);
   $('[data-role="navbar"] a.ui-button-active').removeClass('ui-button-active');
   $('[data-role="navbar"] a').each((index, element) => {
     if ($(element).text() === name) {
@@ -568,15 +577,33 @@ $(document).ready(() => {
     restart();
   });
 
-  $('#version_cont').on('collapsibleexpand', (e, ui) => {
-    $('#version_div').load('/version');
+  $('#version_cont').on('collapsibleexpand', (event, ui) => {
+    $.getJSON('version', (data) => {
+      const items = [];
+      $.each(data[0], (key, val) => {
+        items.push(`<li>${key}:${val}</li>`);
+      });
+      $('#version_div').replaceWith($('<ul/>', { class: 'key-value-list', html: items.join('') }));
+    });
   });
 
-  $('#system_cont').on('collapsibleexpand', (e, ui) => {
-    $('#system_div').load('/system');
+  $('#system_cont').on('collapsibleexpand', (event, ui) => {
+    $.getJSON('system', (data) => {
+      const items = [];
+      $.each(data[0], (key, val) => {
+        items.push(`<li>${key}:${val}</li>`);
+      });
+      $('#system_div').replaceWith($('<ul/>', { class: 'key-value-list', html: items.join('') }));
+    });
   });
 
-  $('#network_cont').on('collapsibleexpand', (e, ui) => {
-    $('#network_div').load('/network');
+  $('#network_cont').on('collapsibleexpand', (event, ui) => {
+    $.getJSON('network', (data) => {
+      const items = [];
+      $.each(data[0], (key, val) => {
+        items.push(`<li>${key}:${val}</li>`);
+      });
+      $('#network_div').replaceWith($('<ul/>', { class: 'key-value-list', html: items.join('') }));
+    });
   });
 });

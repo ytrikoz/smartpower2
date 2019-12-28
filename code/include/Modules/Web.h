@@ -30,8 +30,9 @@ class Web : public Module, public WebServerHandler {
     void onLoop() override;
 
    public:
-    void sendPage(const WebPageEnum page, const uint32_t num = 0);
-    void sendAll(const String& data, WebPageEnum page, uint32_t except_num = 0);
+    void send(const String &data, const WebPageEnum page, const uint32_t num);
+    void brodcast(const WebPageEnum page);
+    void brodcast(const String &data, const WebPageEnum page, const uint32_t num = 0);
     size_t getClients();
 
    private:

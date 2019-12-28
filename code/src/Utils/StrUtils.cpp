@@ -170,44 +170,4 @@ String getUpDownStr(bool value) {
     return String(FPSTR(value ? str_up : str_down));
 }
 
-String getIdentStrP(PGM_P strP, bool with_space) {
-    String str = getStrP(strP, false);
-    return getIdentStr(str, with_space);
-}
-
-size_t getStrP(PGM_P strP, char *buf) {
-    strcpy_P(buf, strP);
-    return strlen(buf);
-}
-
-String getStrP(PGM_P strP, bool spaced) {
-    char buf[64];
-    strcpy_P(buf, strP);
-    String str(buf);
-    return str;
-}
-
-String getIdentStr(const char *str, bool with_space, char ch) {
-    return getIdentStr(str, with_space, ch, ch);
-}
-
-String getIdentStr(String &str, bool with_space) {
-    return getIdentStr(str.c_str(), with_space);
-}
-
-String getIdentStr(const char *str, bool with_space) {
-    return getIdentStr(str, with_space, '[', ']');
-}
-
-String getIdentStr(const char *str, bool with_space, char left, char right) {
-    char buf[32] = {0};
-    buf[0] = left;
-    strcpy(&buf[1], str);
-    size_t x = strlen(buf);
-    buf[x] = right;
-    if (with_space)
-        buf[++x] = ' ';
-    return String(buf);
-}
-
 }  // namespace StrUtils

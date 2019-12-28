@@ -1,6 +1,6 @@
 #include "Cli/Cli.h"
 
-#include "Actions/PowerAvg.h"
+#include "Actions/Avg.h"
 #include "Actions/WakeOnLan.h"
 
 #include "Global.h"
@@ -41,7 +41,7 @@ enum CommandAction {
     ACTION_DIFF
 };
 
-Command cmdConfig, cmdPower, cmdShow, cmdExec, cmdHelp, cmdPrint, cmdSet,
+Command cmdAvg, cmdConfig, cmdPower, cmdShow, cmdExec, cmdHelp, cmdPrint, cmdSet,
     cmdGet, cmdRm, cmdClock, cmdPlot, cmdLog, cmdWol, cmdRestart, cmdRun, cmdLs,
     cmdCrash, cmdLed, cmdSyslog, cmdWifi;
 
@@ -66,6 +66,7 @@ void onExec(cmd *c);
 void onSet(cmd *c);
 void onGet(cmd *c);
 
+void onAvg(cmd *c);
 void onConfig(cmd *c);
 void onPower(cmd *c);
 void onShow(cmd *c);
@@ -73,7 +74,6 @@ void onHelp(cmd *c);
 void onPrint(cmd *c);
 void onPlot(cmd *c);
 void onRemove(cmd *c);
-
 void onWiFi(cmd *c);
 void onWifiDiag(cmd *c);
 void onClock(cmd *c);
@@ -200,9 +200,13 @@ void init() {
     cmdConfig.setCallback(Cli::onConfig);
 
     cmdPower = cli_->addCommand("power");
-    cmdPower.addPositionalArgument("action", "1");
-    cmdPower.addPositionalArgument("param", "0");
+    cmdPower.addPositionalArgument("action", "");
     cmdPower.setCallback(Cli::onPower);
+
+    cmdAvg = cli_->addCommand("avg");
+    cmdAvg.addPositionalArgument("value", "");
+    cmdAvg.setCallback(Cli::onAvg);
+
 
     cmdPrint = cli_->addCommand("print");
     cmdPrint.addPositionalArgument("path");
@@ -395,11 +399,6 @@ void onPower(cmd *c) {
     Command cmd(c);
     CommandAction action = getAction(cmd);
     switch (action) {
-        case ACTION_AVG: {
-            String paramStr = getParamStr(cmd);
-            Actions::PowerAvg(paramStr.toInt()).exec(out_);
-            break;
-        }
         case ACTION_ON: {
             app.psu()->powerOn();
             break;
@@ -413,6 +412,16 @@ void onPower(cmd *c) {
             println_unknown_action(out_, actionStr);
             return;
         }
+    }
+}
+
+void onAvg(cmd *c) {
+    Command cmd(c);
+    String value = getValueStr(cmd);
+    if (value == "") {
+        Actions::Avg::print_config(out_);
+    } else  {
+        Actions::Avg::set(out_, value.toInt());
     }
 }
 

@@ -94,7 +94,8 @@ void Web::onData(const uint32_t num, const String &data) {
             WebClient *c;
             if (getClientByNum(num, &c)) {
                 c->page = page;
-                sendPage(page, num);
+                String data = getPageData(page);
+                send(data, page, num);
             }
         }
         // config
@@ -225,19 +226,23 @@ String Web::getPageData(const WebPageEnum page) {
 //     }
 // }
 
-void Web::sendPage(const WebPageEnum page, uint32_t num) {
-    String data = getPageData(page);
-    if (failed()) {
-        PrintUtils::print_ident(out_, FPSTR(str_web));
-        PrintUtils::print(out_, getError());
-        PrintUtils::println(out_);
-    }
-    if (data.length()) {
-        web_->sendData(num, data);
+
+void Web::send(const String &data, const WebPageEnum page, const uint32_t num) {
+    for (uint8_t i = 0; i < WEB_SERVER_CLIENT_MAX; ++i) {
+        WebClient *c = &client_[i];
+        if (c->num == num && c->page == page && c->connected) {
+            web_->sendData(c->num, data);
+            break;
+        }
     }
 }
 
-void Web::sendAll(const String &data, WebPageEnum page, uint32_t except_num) {
+void Web::brodcast(const WebPageEnum page) {
+    String data = getPageData(page);
+    brodcast(data, page);
+}
+
+void Web::brodcast(const String &data, const WebPageEnum page, const uint32_t except_num) {
     for (uint8_t i = 0; i < WEB_SERVER_CLIENT_MAX; ++i) {
         WebClient *c = &client_[i];
         if (c->num != except_num && c->connected && c->page == page)
@@ -247,7 +252,7 @@ void Web::sendAll(const String &data, WebPageEnum page, uint32_t except_num) {
 
 void Web::fillMain(JsonObject &obj) {
     Modules::Psu *ps = app.psu();
-    obj[FPSTR(str_power)] = (uint8_t)ps->isPowerOn();
+    obj[FPSTR(str_power)] = (int)ps->isPowerOn();
     obj[FPSTR(str_wh)] = ps->getInfo().Wh;
 }
 
@@ -273,29 +278,28 @@ void Web::fillNetwork(JsonObject &obj) {
     NetInfo info;
     WiFiMode_t mode = WiFi.getMode();
     if (mode == WIFI_AP || mode == WIFI_AP_STA) {
-        JsonObject ap = obj.createNestedObject(FPSTR(str_ap));
-        ap[FPSTR(str_ssid)] = WirelessUtils::getApSsid();
         info = WirelessUtils::getApNetInfo();
-        ap[FPSTR(str_ip)] = info.ip.toString();
-        ap[FPSTR(str_subnet)] = info.subnet.toString();
-        ap[FPSTR(str_gateway)] = info.gateway.toString();
-        ap[FPSTR(str_mac)] = WirelessUtils::getApMac();
+        obj[FPSTR(str_ssid)] = WirelessUtils::getApSsid();
+        obj[FPSTR(str_ip)] = info.ip.toString();
+        obj[FPSTR(str_subnet)] = info.subnet.toString();
+        obj[FPSTR(str_gateway)] = info.gateway.toString();
+        obj[FPSTR(str_mac)] = WirelessUtils::getApMac();
     }
     if (mode == WIFI_STA || mode == WIFI_AP_STA) {
-        JsonObject sta = obj.createNestedObject(FPSTR(str_sta));
         info = WirelessUtils::getStaNetInfo();
-        sta[FPSTR(str_ssid)] = WirelessUtils::getStaSsid();
-        sta[FPSTR(str_mac)] = WiFi.macAddress();
-        sta[FPSTR(str_host)] = WiFi.hostname();
-        sta[FPSTR(str_ip)] = info.ip.toString();
-        sta[FPSTR(str_subnet)] = info.subnet.toString();
-        sta[FPSTR(str_gateway)] = info.gateway.toString();
-        sta[FPSTR(str_dns)] = WiFi.dnsIP().toString();
+        obj[FPSTR(str_ssid)] = WirelessUtils::getStaSsid();
+        obj[FPSTR(str_mac)] = WiFi.macAddress();
+        obj[FPSTR(str_host)] = WiFi.hostname();
+        obj[FPSTR(str_ip)] = info.ip.toString();
+        obj[FPSTR(str_subnet)] = info.subnet.toString();
+        obj[FPSTR(str_gateway)] = info.gateway.toString();
+        obj[FPSTR(str_dns)] = WiFi.dnsIP().toString();
     }
 }
 
 void Web::fillSystem(JsonObject &obj) {
     obj[FPSTR(str_cpu)] = SysInfo::getCpuFreq();
+    obj[FPSTR(str_heap)] == SysInfo::getHeapStats();
     obj[FPSTR(str_chip)] = SysInfo::getChipId();
     obj[FPSTR(str_file)] = FSUtils::getFSStats();
 }

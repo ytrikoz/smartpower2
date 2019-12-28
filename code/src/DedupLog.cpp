@@ -142,5 +142,5 @@ void DedupLog::printDiag(Print *p) {
     p->print('\t');
     unsigned long period_s =
         floor(count() * PSU_LOG_INTERVAL_ms / ONE_SECOND_ms);
-    p->println(getTimeStr(period_s));
+    p->println(period_s);
 }

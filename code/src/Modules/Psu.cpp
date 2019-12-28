@@ -76,8 +76,13 @@ void Psu::onLoop() {
 }
 
 bool Psu::onConfigChange(const ConfigItem param, const String& value) {
-    if (state_ == POWER_ON && param == OUTPUT_VOLTAGE) {
-        setOutputVoltage(value.toFloat());
+    if (state_ == POWER_ON) {
+        if (param == OUTPUT_VOLTAGE) {
+            setOutputVoltage(value.toFloat());
+        }
+        if (param == BOOT_POWER && value.toInt() == BOOT_POWER_LAST_STATE) {
+            storeState(POWER_ON);
+        }
     }
     return true;
 }
@@ -102,7 +107,7 @@ void Psu::powerOff() {
     if (state_ == POWER_OFF) return;
     state_ = POWER_OFF;    
     if (isWhStoreEnabled() && lastStoredWh_ != info_.Wh) storeWh(info_.Wh);
-    if (isStateStoreEnabled() && lastStore_ != state_) storeState(POWER_OFF);
+    if (isStateStoreEnabled() && state_!= lastStore_) storeState(POWER_OFF);
     onStateChangeEvent(state_);
 }
 
@@ -116,16 +121,17 @@ bool Psu::mapState(const PsuState state) {
 }
 
 uint8_t Psu::mapVoltage(const float value) {
-    float v;
+
     float min;
     float max;
     if (value > 6) {
-        min = 11.83;
-        max = 12.9;
+        min = 11.83f;
+        max = 12.9f;
     } else {
-        min = 4.08;
-        max = 5.30;
+        min = 4.03f;
+        max = 5.30f;
     }
+    float v;
     v = constrain(value, min, max);
     return quadratic_regression(v, min);
 }
@@ -155,7 +161,7 @@ bool Psu::isWhStoreEnabled() const {
 }
 
 BootPowerState Psu::getBootPowerState() const {
-    return (BootPowerState)config_->asByte(POWER);
+    return (BootPowerState)config_->asByte(BOOT_POWER);
 }
 
 bool Psu::isStateStoreEnabled() const {
@@ -190,10 +196,6 @@ bool Psu::restoreWh(double& value) {
     }
     PrintUtils::println(out_);
     return res;
-}
-
-const unsigned long Psu::getUptime() const {
-    return millis_passed(startTime_, infoUpdated_);
 }
 
 bool Psu::storeState(PsuState value) {
@@ -247,6 +249,10 @@ void Psu::togglePower() {
         powerOn();
 }
 
+const unsigned long Psu::getUptime() const {
+    return millis_passed(startTime_, infoUpdated_);
+}
+
 PsuStatus Psu::getStatus(void) const { return status_; }
 
 PsuState Psu::getState(void) const { return state_; }
@@ -254,18 +260,6 @@ PsuState Psu::getState(void) const { return state_; }
 PsuError Psu::getError(void) const { return error_; }
 
 PsuAlert Psu::getAlert(void) const { return alert_; }
-
-void Psu::setOnStateChange(PsuStateChangeHandler h) {
-    stateChangeHandler_ = h;
-};
-
-void Psu::setOnStatusChange(PsuStatusChangeHandler h) {
-    statusChangeHandler_ = h;
-};
-
-void Psu::setOnData(PsuDataListener* l) {
-    dataListener_ = l;
-}
 
 void Psu::setError(PsuError value) {
     error_ = value;
@@ -282,6 +276,18 @@ void Psu::setStatus(PsuStatus value) {
     status_ = value;
     if (state_ == POWER_ON)
         if (statusChangeHandler_) statusChangeHandler_(status_);
+}
+
+void Psu::setOnStateChange(PsuStateChangeHandler h) {
+    stateChangeHandler_ = h;
+};
+
+void Psu::setOnStatusChange(PsuStatusChangeHandler h) {
+    statusChangeHandler_ = h;
+};
+
+void Psu::setOnData(PsuDataListener* l) {
+    dataListener_ = l;
 }
 
 const PsuData Psu::getInfo() const {

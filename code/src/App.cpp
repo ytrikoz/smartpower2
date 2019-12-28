@@ -138,7 +138,7 @@ void App::onPsuData(PsuData &item) {
         }
         if (web()->getClients()) {
             String data = item.toJson();
-            web()->sendAll(data, PAGE_HOME);
+            web()->brodcast(data, PAGE_HOME);
         }
     }
 }
@@ -212,7 +212,7 @@ AppState App::loop(LoopTimer *looper) {
     }
 
     if (psuEvent_) {
-        web()->sendPage(PAGE_HOME);
+        web()->brodcast(PAGE_HOME);
         display()->refresh();
     }
 
@@ -254,18 +254,6 @@ size_t App::printDiag(Print *p) {
 void App::displayProgress(uint8_t progress, const char *message) {
     if (display() && (display()->isEnabled()))
         display()->showProgress(progress, message);
-}
-
-void App::setOutputVoltage(float value) {
-    config_->get()->setFloat(OUTPUT_VOLTAGE, value);
-    psu()->setOutputVoltage(value);
-}
-
-bool App::setBootPowerState(BootPowerState value) {
-    bool res = false;
-    if (config_->setBootPowerState(value))
-        res = config_->save();
-    return res;
 }
 
 void App::refreshBlue() {

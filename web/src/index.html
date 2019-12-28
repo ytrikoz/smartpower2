@@ -21,12 +21,6 @@
     <script src="js/index.js"></script>
     <link rel="stylesheet" href="css/jquery.mobile-1.5.0-rc1.min.css" />
     <link rel="stylesheet" href="css/index.css" />
-    <script>
-        $(() => {
-            $('[data-role="header"], [data-role="footer"]').toolbar();
-            $('[data-role="navbar"]').navbar();
-        });
-    </script>
 </head>
 
 <body onload="onload();" onunload="onunload();">
@@ -215,7 +209,7 @@
         </div>
         <div role="main" class="ui-content ui-corner-all custom-corners">
             <p>Configuration changes require restarting...</p>
-            <a id="restart-button" data-role="button">Do it!</a>
+            <a id="restart-button" data-role="button" href="#" data-rel="back">Do it!</a>
             <a id="postpone-button" data-role="button" href="#" data-rel="back">Postpone</a>
         </div>
     </div>

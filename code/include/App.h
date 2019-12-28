@@ -74,12 +74,6 @@ class App : public Host, PsuDataListener {
 
     Config *params() { return config_->get(); }
 
-    bool setBootPowerState(BootPowerState state);
-
-    bool setOutputVoltageAsDefault();
-
-    uint8_t getTPW();
-
     void refreshRed();
 
     void refreshBlue();

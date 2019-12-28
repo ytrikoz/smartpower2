@@ -11,10 +11,6 @@ enum Align { LEFT,
              CENTER,
              RIGHT };
 
-String getTimeStr(const unsigned long epoch_s, bool fmtLong = false);
-
-String getDateTimeStr(const unsigned long epoch_s);
-
 void stringToBytes(const char *str, char sep, uint8_t *bytes, int len,
                    int base);
 
@@ -55,19 +51,7 @@ inline String prettyMac(const uint8_t mac[6]) {
 
 void strpadd(char *str, Align align, size_t size, const char ch = ' ');
 
-String getStrP(PGM_P strP, bool space = true);
-
 String getBoolStr(bool value, BoolStrEnum set = TRUE_FALSE);
-
-String getIdentStr(String &str, bool with_space = true);
-
-String getIdentStr(const char *str, bool with_space);
-
-String getIdentStr(const char *str, bool with_space, char ch);
-
-String getIdentStr(const char *str, bool with_space, char left, char right);
-
-String getIdentStrP(PGM_P strP, bool with_space = true);
 
 inline String getQuotedStr(const char* str) {
     String res;
