@@ -5,14 +5,6 @@
 // TODO
 // now it's not for memory saving, but to collect literals in one place
 
-enum BoolStrEnum {
-    TRUE_FALSE, ENABLED_DISABLED, UP_DONW, ON_OFF
-};
-
-struct BoolSet {
-    PGM_P true_;
-    PGM_P false_;
-};
 
 static const char str_dns_resolve[] PROGMEM = "dsn resolve";
 static const char str_interrupted[] PROGMEM = "interrupted";
@@ -205,6 +197,7 @@ static const char str_reload[] PROGMEM = "reload";
 static const char str_reset[] PROGMEM = "reset";
 static const char str_psu[] PROGMEM = "psu";
 static const char str_psu_log[] PROGMEM = "log";
+static const char str_page[] PROGMEM = "page";
 static const char str_ping[] PROGMEM = "ping";
 static const char str_pong[] PROGMEM = "pong";
 static const char str_power[] PROGMEM = "power";

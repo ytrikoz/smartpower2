@@ -102,6 +102,12 @@ typedef std::function<void(TerminalEventEnum, Stream*)> TerminalEventHandler;
 typedef std::function<void(const char *)> TerminalInputEventHandler;
 
 namespace Cli { 
+
+enum State { ST_INACTIVE,
+             ST_NORMAL,
+             ST_ESC_SEQ,
+             ST_CTRL_SEQ };
+
 class Terminal : public Print {
    public:
     Terminal(Stream *stream = nullptr);

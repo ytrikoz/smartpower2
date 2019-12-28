@@ -16,7 +16,7 @@ class Module {
 
     void setConfig(Config *c) { config_ = c; }
     
-    bool changeConfig(const ConfigItem param, const String& value) {
+    bool configChange(const ConfigItem param, const String& value) {
         return onConfigChange(param, value);
     }
 

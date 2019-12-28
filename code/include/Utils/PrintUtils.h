@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Arduino.h"
+#include <Arduino.h>
 
+#include "Consts.h"
 #include "Strings.h"
 #include "StrUtils.h"
 

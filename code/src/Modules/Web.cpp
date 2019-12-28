@@ -10,7 +10,7 @@ namespace Modules {
 Web::Web() : Module() {
     memset(client_, 0, sizeof(WebClient) * WEB_SERVER_CLIENT_MAX);
     sprintf(last_modified_, "%s %s GMT", __DATE__, __TIME__);
-    cnt_ = 0;
+    client_cnt_ = 0;
 }
 
 bool Web::onInit() {
@@ -33,10 +33,10 @@ void Web::onLoop() {
 }
 
 size_t Web::getClients() {
-    return cnt_;
+    return client_cnt_;
 }
 
-bool Web::getFreeSlot(WebClient **c) {
+bool Web::getSlot(WebClient **c) {
     bool res = false;
     for (uint8_t i = 0; i < WEB_SERVER_CLIENT_MAX; ++i) {
         if (!client_[i].connected) {
@@ -48,7 +48,7 @@ bool Web::getFreeSlot(WebClient **c) {
     return res;
 }
 
-bool Web::getClientByNum(uint32_t num, WebClient **c) {
+bool Web::getClient(uint32_t num, WebClient **c) {
     bool res = false;
     for (uint8_t i = 0; i < WEB_SERVER_CLIENT_MAX; ++i) {
         if (client_[i].num == num) {
@@ -60,21 +60,29 @@ bool Web::getClientByNum(uint32_t num, WebClient **c) {
     return res;
 }
 
+void Web::setClientPage(const uint32_t num, const WebPageEnum page) {
+    WebClient* c;
+    if (getClient(num, &c)) {
+        c->connected = true;
+        c->page = page;
+    }
+}
+
 void Web::onConnection(const uint32_t num, const bool connected) {
     WebClient *c;
     if (connected) {
-        if (getFreeSlot(&c)) {
+        if (getSlot(&c)) {
             c->num = num;
             c->connected = true;
-            cnt_++;
-        }
+            client_cnt_++;
+        }        
     } else {
-        if (getClientByNum(num, &c)) {
+        if (getClient(num, &c)) {
             c->connected = false;
-            cnt_--;
+            client_cnt_--;
         }
     }
-    app.onWebStatusChange(cnt_);
+    app.onWebStatusChange(client_cnt_);
 }
 
 void Web::onData(const uint32_t num, const String &data) {
@@ -89,14 +97,11 @@ void Web::onData(const uint32_t num, const String &data) {
     for (JsonPair item : doc.as<JsonObject>()) {
         const char *cmd = item.key().c_str();
         // page
-        if (strcmp(cmd, "page") == 0) {
+        if (strcmp_P(cmd, str_page) == 0) {
             WebPageEnum page = WebPageEnum(item.value().as<uint>());
-            WebClient *c;
-            if (getClientByNum(num, &c)) {
-                c->page = page;
-                String data = getPageData(page);
-                send(data, page, num);
-            }
+            String data = getPageData(page);
+            setClientPage(num, page);
+            send(data, page, num);
         }
         // config
         else if (strcmp_P(cmd, str_config) == 0) {
@@ -144,7 +149,7 @@ void Web::onData(const uint32_t num, const String &data) {
 
 bool Web::uriExist(const String &uri, String &lastModified) {
     lastModified = last_modified_;
-    return true;
+    return uri.endsWith("version") || uri.endsWith("system") || uri.endsWith("network");
 }
 
 String Web::getPageData(const WebPageEnum page) {
@@ -158,8 +163,8 @@ String Web::getPageData(const WebPageEnum page) {
         case PAGE_OPTIONS: {
             fillOptions(obj);
             break;
-            default:
-                break;
+        default:
+            break;
         }
     }
     String json;
@@ -227,22 +232,19 @@ String Web::getPageData(const WebPageEnum page) {
 // }
 
 
+void Web::updatePage(const WebPageEnum page) {
+    String data = getPageData(page);
+    broadcast(data, page);
+}
+
 void Web::send(const String &data, const WebPageEnum page, const uint32_t num) {
-    for (uint8_t i = 0; i < WEB_SERVER_CLIENT_MAX; ++i) {
-        WebClient *c = &client_[i];
-        if (c->num == num && c->page == page && c->connected) {
-            web_->sendData(c->num, data);
-            break;
-        }
+    WebClient *c;
+    if (getClient(num, &c)) {  
+        if (c->connected && c->page == page) web_->sendData(c->num, data);    
     }
 }
 
-void Web::brodcast(const WebPageEnum page) {
-    String data = getPageData(page);
-    brodcast(data, page);
-}
-
-void Web::brodcast(const String &data, const WebPageEnum page, const uint32_t except_num) {
+void Web::broadcast(const String &data, const WebPageEnum page, const uint32_t except_num) {
     for (uint8_t i = 0; i < WEB_SERVER_CLIENT_MAX; ++i) {
         WebClient *c = &client_[i];
         if (c->num != except_num && c->connected && c->page == page)
@@ -272,22 +274,22 @@ void Web::fillVersion(JsonObject &obj) {
 }
 
 void Web::fillNetwork(JsonObject &obj) {
-    obj[FPSTR(str_phy)] = WirelessUtils::getWifiPhy();
-    obj[FPSTR(str_ch)] = WirelessUtils::getWifiCh();
+    obj[FPSTR(str_phy)] = NetUtils::getWifiPhy();
+    obj[FPSTR(str_ch)] = NetUtils::getWifiCh();
 
     NetInfo info;
     WiFiMode_t mode = WiFi.getMode();
     if (mode == WIFI_AP || mode == WIFI_AP_STA) {
-        info = WirelessUtils::getApNetInfo();
-        obj[FPSTR(str_ssid)] = WirelessUtils::getApSsid();
+        info = NetUtils::getNetInfo(0);
+        obj[FPSTR(str_ssid)] = NetUtils::getApSsid();
         obj[FPSTR(str_ip)] = info.ip.toString();
         obj[FPSTR(str_subnet)] = info.subnet.toString();
         obj[FPSTR(str_gateway)] = info.gateway.toString();
-        obj[FPSTR(str_mac)] = WirelessUtils::getApMac();
+        obj[FPSTR(str_mac)] = NetUtils::getApMac();
     }
     if (mode == WIFI_STA || mode == WIFI_AP_STA) {
-        info = WirelessUtils::getStaNetInfo();
-        obj[FPSTR(str_ssid)] = WirelessUtils::getStaSsid();
+        info = NetUtils::getNetInfo(1);
+        obj[FPSTR(str_ssid)] = NetUtils::getStaSsid();
         obj[FPSTR(str_mac)] = WiFi.macAddress();
         obj[FPSTR(str_host)] = WiFi.hostname();
         obj[FPSTR(str_ip)] = info.ip.toString();
@@ -301,7 +303,7 @@ void Web::fillSystem(JsonObject &obj) {
     obj[FPSTR(str_cpu)] = SysInfo::getCpuFreq();
     obj[FPSTR(str_heap)] == SysInfo::getHeapStats();
     obj[FPSTR(str_chip)] = SysInfo::getChipId();
-    obj[FPSTR(str_file)] = FSUtils::getFSStats();
+    obj[FPSTR(str_file)] = FSUtils::getFSUsed();
 }
 
 bool Web::getResponse(const String &uri, String &body) {

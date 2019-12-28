@@ -1,7 +1,5 @@
 #pragma once
 
-#include "CommonTypes.h"
-
 namespace ModuleUtils {
 
 inline String getStateStr(const ModuleState state) {

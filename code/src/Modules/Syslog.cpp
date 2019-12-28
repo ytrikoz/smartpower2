@@ -15,7 +15,7 @@ bool Syslog::setServer(const char* value) {
     if (!strlen(value)) return false;
 
     if (StrUtils::isip(value)) {
-        ip_ = StrUtils::atoip(value);
+        ip_ = StrUtils::str2ip(value);
         return true;
     }
 

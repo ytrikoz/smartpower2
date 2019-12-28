@@ -36,7 +36,7 @@ bool Wireless::startSTA(const char *ssid, const char *passwd) {
     WiFi.begin(ssid, passwd);
     uint8_t res = WiFi.waitForConnectResult();
     PrintUtils::print_ident(out_, FPSTR(str_wifi_sta));
-    PrintUtils::print(out_, FPSTR(str_ssid), ssid, WirelessUtils::getStaStatus());
+    PrintUtils::print(out_, FPSTR(str_ssid), ssid, NetUtils::getStaStatus());
     PrintUtils::println(out_);
     return res;
 }
@@ -57,7 +57,7 @@ boolean Wireless::disconnectWiFi() { return WiFi.disconnect(); }
 void Wireless::start(const bool safe) {
     if (safe) {
         setMode(NETWORK_AP);
-        setupAP(StrUtils::atoip(config->get()->getDefault(AP_IPADDR)));
+        setupAP(StrUtils::str2ip(config->get()->getDefault(AP_IPADDR)));
         startAP(SysInfo::getUniqueName().c_str(), config->get()->getDefault(AP_PASSWORD));
         return;
     }
@@ -228,7 +228,7 @@ void Wireless::onScanComplete(int found) {
             f.printf("%-4s", "");
             f.printf("%-20s", WiFi.SSID(i).c_str());
             f.printf("%-6d", WiFi.RSSI(i));
-            f.printf("%-6s", WirelessUtils::encryptTypeStr(i));
+            f.printf("%-6s", NetUtils::encryptTypeStr(i));
             f.printf("%4d", WiFi.channel(i));
             f.println();
         };

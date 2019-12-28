@@ -31,8 +31,8 @@ class Web : public Module, public WebServerHandler {
 
    public:
     void send(const String &data, const WebPageEnum page, const uint32_t num);
-    void brodcast(const WebPageEnum page);
-    void brodcast(const String &data, const WebPageEnum page, const uint32_t num = 0);
+    void updatePage(const WebPageEnum page);
+    void broadcast(const String &data, const WebPageEnum page, const uint32_t num = 0);
     size_t getClients();
 
    private:
@@ -44,14 +44,14 @@ class Web : public Module, public WebServerHandler {
     void fillVersion(JsonObject& obj);
     void fillSystem(JsonObject& obj);
 
-    bool getFreeSlot(WebClient** c);
-    bool getClientByNum(uint32_t num, WebClient** c);
-
+    bool getSlot(WebClient** c);
+    bool getClient(uint32_t num, WebClient** c);
+    void setClientPage(const uint32_t num, const WebPageEnum page);
    private:
-    size_t cnt_;
     WebClient client_[WEB_SERVER_CLIENT_MAX];
-    WebServer* web_;
+    size_t client_cnt_;
     char last_modified_[50];
+    WebServer* web_;
 };
 
 }  // namespace Modules

@@ -136,29 +136,29 @@ void Display::load_ready(Screen *obj) {
 
 void Display::load_wifi_ap(Screen *obj) {
     size_t n = 0;
-    obj->set(n++, "SSID ", WirelessUtils::getApSsid());
-    obj->set(n++, "PWD ", WirelessUtils::getApPasswd());
+    obj->set(n++, "SSID ", NetUtils::getApSsid());
+    obj->set(n++, "PWD ", NetUtils::getApPasswd());
     obj->set(n++, NULL, app.clock()->timeStr());
     obj->setCount(n);
 };
 
 void Display::load_wifi_sta(Screen *obj) {
     size_t n = 0;
-    obj->set(n++, "WiFi ", WirelessUtils::getStaStatus());
-    obj->set(n++, "RSSI ", WirelessUtils::getRssi());
-    obj->set(n++, NULL, WirelessUtils::getStaIp().toString());
+    obj->set(n++, "WiFi ", NetUtils::getStaStatus());
+    obj->set(n++, "RSSI ", NetUtils::getRssi());
+    obj->set(n++, NULL, NetUtils::getStaIp().toString());
     obj->set(n++, NULL, app.clock()->timeStr());
     obj->setCount(n);
 };
 
 void Display::load_wifi_ap_sta(Screen *obj) {
     size_t n = 0;
-    obj->set(n++, "WiFi ", WirelessUtils::getStaStatus());
-    obj->set(n++, "RSSI ", WirelessUtils::getRssi());
-    obj->set(n++, "STA ", WirelessUtils::getStaSsid());
-    obj->set(n++, "STA IP ", WirelessUtils::getStaIp().toString());
-    obj->set(n++, "AP ", WirelessUtils::getApSsid());
-    obj->set(n++, "AP IP ", WirelessUtils::getApIp().toString());
+    obj->set(n++, "WiFi ", NetUtils::getStaStatus());
+    obj->set(n++, "RSSI ", NetUtils::getRssi());
+    obj->set(n++, "STA ", NetUtils::getStaSsid());
+    obj->set(n++, "STA IP ", NetUtils::getStaIp().toString());
+    obj->set(n++, "AP ", NetUtils::getApSsid());
+    obj->set(n++, "AP IP ", NetUtils::getApIp().toString());
     obj->set(n++, NULL, app.clock()->timeStr());
     obj->setCount(n);
 };

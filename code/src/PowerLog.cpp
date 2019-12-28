@@ -12,18 +12,18 @@ PowerLog::PowerLog() {
 void PowerLog::onPsuData(PsuData &item) {
     log_[VOLTAGE]->log(item.time, item.V);
     log_[CURRENT]->log(item.time, item.I);
-    lastRecord = millis();
+    lastRecord_ = millis();
 }
 
-DedupLog *PowerLog::getLog(PsuLogEnum item) {
+DedupLog *PowerLog::getLog(PowerLogEnum item) {
     return log_[item];
 }
 
-size_t PowerLog::getSize(PsuLogEnum item) { 
+size_t PowerLog::getSize(PowerLogEnum item) { 
     return log_[item] ? getLog(item)->count(): 0;
 }
 
-bool PowerLog::fill(PsuLogEnum item, float *dest, size_t &size) {
+bool PowerLog::fill(PowerLogEnum item, float *dest, size_t &size) {
     size = log_[item]->count();
     if (size)
         log_[item]->values(dest, size);
@@ -33,15 +33,15 @@ bool PowerLog::fill(PsuLogEnum item, float *dest, size_t &size) {
 void PowerLog::clear() {
     log_[VOLTAGE]->clear();
     log_[CURRENT]->clear();
-    lastRecord = startTime = 0;
+    lastRecord_ = startTime = 0;
 }
 
-void PowerLog::print(Print *p, PsuLogEnum item) { 
+void PowerLog::print(Print *p, PowerLogEnum item) { 
     log_[item]->printTo(p); 
 }
 
 void PowerLog::print(Print *p) {
-    if (!lastRecord) {
+    if (!lastRecord_) {
         p->println(FPSTR(str_empty));
         return;
     }

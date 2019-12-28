@@ -9,25 +9,11 @@ using namespace StrUtils;
 
 App::App() : exitState_(STATE_NORMAL), exitFlag_(false), systemEvent_(true), networkEvent_(false), psuEvent_(false) {}
 
-void App::instanceMods() {
-    modules[MOD_LED].obj = new Modules ::Led();
-    modules[MOD_BTN].obj = new Modules::Button(POWER_BTN_PIN);
-    modules[MOD_CLOCK].obj = new Modules::Clock();
-    modules[MOD_PSU].obj = new Modules::Psu();
-    modules[MOD_DISPLAY].obj = new Modules::Display();
-    modules[MOD_CONSOLE].obj = new Modules::Console();
-    modules[MOD_NETSVC].obj = new NetworkService();
-    modules[MOD_TELNET].obj = new Modules ::Telnet(TELNET_PORT);
-    modules[MOD_UPDATE].obj = new Modules::OTAUpdate(OTA_PORT);
-    modules[MOD_SYSLOG].obj = new Modules::Syslog(SYSLOG_PORT);
-    modules[MOD_WEB].obj = new Modules::Web();
-}
-
 void App::initMods() {
     for (uint8_t i = 0; i < MODULES_COUNT; ++i) {
         Module *obj = getInstance(i);
         obj->setOutput(out_);
-        obj->setConfig(params());
+        obj->setConfig(config_->get());
         if (!obj->init()) {
             PrintUtils::print_ident(out_, getName(i));
             PrintUtils::print(out_, FPSTR(str_init), FPSTR(str_failed));
@@ -138,7 +124,7 @@ void App::onPsuData(PsuData &item) {
         }
         if (web()->getClients()) {
             String data = item.toJson();
-            web()->brodcast(data, PAGE_HOME);
+            web()->broadcast(data, PAGE_HOME);
         }
     }
 }
@@ -146,7 +132,7 @@ void App::onPsuData(PsuData &item) {
 void App::onConfigChange(const ConfigItem param, const String &value) {
     for (uint8_t i = 0; i < MODULES_COUNT; ++i) {
         Module *obj = getInstance(i);
-        if (obj) obj->changeConfig(param, value);
+        if (obj) obj->configChange(param, value);
     }
 }
 
@@ -159,7 +145,7 @@ void App::onWebStatusChange(bool clients) {
     networkEvent_ = true;
     webClients_ = clients;
 }
- 
+
 void App::onNetworkStatusChange(bool network, NetworkMode mode) {
     networkEvent_ = true;
     hasNetwork_ = network;
@@ -168,7 +154,6 @@ void App::onNetworkStatusChange(bool network, NetworkMode mode) {
 }
 
 void App::begin() {
-    instanceMods();
     initMods();
     setupMods();
     displayProgress(0, BUILD_DATE);
@@ -197,8 +182,8 @@ AppState App::loop(LoopTimer *looper) {
             obj->end();
             continue;
         }
-        if ((!hasNetwork_ && modules[i].network) || 
-            (hasNetwork_ && networkMode_ == NetworkMode::NETWORK_AP  && modules[i].network == NetworkMode::NETWORK_STA)) {
+        if ((!hasNetwork_ && modules_[i].network) ||
+            (hasNetwork_ && networkMode_ == NetworkMode::NETWORK_AP && modules_[i].network == NetworkMode::NETWORK_STA)) {
             obj->stop();
             continue;
         } else {
@@ -212,7 +197,7 @@ AppState App::loop(LoopTimer *looper) {
     }
 
     if (psuEvent_) {
-        web()->brodcast(PAGE_HOME);
+        web()->updatePage(PAGE_HOME);
         display()->refresh();
     }
 
@@ -233,8 +218,8 @@ AppState App::loop(LoopTimer *looper) {
 size_t App::printDiag(Print *p) {
     DynamicJsonDocument doc(2048);
     doc[FPSTR(str_heap)] = SysInfo::getHeapStats();
-    doc[FPSTR(str_file)] = FSUtils::getFSStats();
-    doc[FPSTR(str_wifi)] = WirelessUtils::getMode();
+    doc[FPSTR(str_file)] = FSUtils::getFSUsed();
+    doc[FPSTR(str_wifi)] = NetUtils::getMode();
     doc[FPSTR(str_network)] = hasNetwork_;
 
     for (uint8_t i = 0; i < MODULES_COUNT; ++i) {
@@ -280,6 +265,10 @@ void App::refreshRed() {
     led()->set(RED_LED, mode);
 }
 
+void App::setModules(ModuleDef* objs) {
+    modules_ = objs;
+}
+
 void App::setPowerlog(PowerLog *powerlog) {
     powerlog_ = powerlog;
 }
@@ -299,16 +288,16 @@ void App::setConfig(ConfigHelper *config) {
 void App::setWireless(Wireless *obj) {
     wireless_ = obj;
     wireless_->setOnStatusChange(
-    [this](bool network, unsigned long time) {
-        PrintUtils::print_ident(out_, FPSTR(str_app));
-        PrintUtils::println(out_, WirelessUtils::getStatusStr(network));
-        onNetworkStatusChange(network, wireless_->getMode());
-    });
+        [this](bool network, unsigned long time) {
+            PrintUtils::print_ident(out_, FPSTR(str_app));
+            PrintUtils::println(out_, NetUtils::getStatusStr(network));
+            onNetworkStatusChange(network, wireless_->getMode());
+        });
 }
 
 String App::getName(uint8_t index) const {
     char buf[16];
-    PGM_P strP = modules[index].name;
+    PGM_P strP = modules_[index].name;
     strncpy_P(buf, strP, sizeof(buf) - 1);
     buf[sizeof(buf) - 1] = '\x00';
     return String(buf);
@@ -325,7 +314,7 @@ bool App::getByName(const char *str, ModuleEnum &module) const {
 }
 
 Module *App::getInstance(uint8_t index) const {
-    return modules[index].obj;
+    return modules_[index].obj;
 }
 
 Module *App::getInstanceByName(const String &name) {
@@ -338,37 +327,37 @@ Module *App::getInstanceByName(const String &name) {
 }
 
 Modules::Display *App::display() {
-    return (Modules::Display *)modules[MOD_DISPLAY].obj;
+    return (Modules::Display *)modules_[MOD_DISPLAY].obj;
 }
 
 Modules::Button *App::btn() {
-    return (Modules::Button *)modules[MOD_BTN].obj;
+    return (Modules::Button *)modules_[MOD_BTN].obj;
 }
 
 Modules::Clock *App::clock() {
-    return (Modules::Clock *)modules[MOD_CLOCK].obj;
+    return (Modules::Clock *)modules_[MOD_CLOCK].obj;
 }
 
 Modules::Led *App::led() {
-    return (Modules::Led *)modules[MOD_LED].obj;
+    return (Modules::Led *)modules_[MOD_LED].obj;
 }
 
 Modules::Console *App::console() {
-    return (Modules::Console *)modules[MOD_CONSOLE].obj;
+    return (Modules::Console *)modules_[MOD_CONSOLE].obj;
 }
 
 Modules::Telnet *App::telnet() {
-    return (Modules::Telnet *)modules[MOD_TELNET].obj;
+    return (Modules::Telnet *)modules_[MOD_TELNET].obj;
 }
 
 Modules::Web *App::web() {
-    return (Modules::Web *)modules[MOD_WEB].obj;
+    return (Modules::Web *)modules_[MOD_WEB].obj;
 }
 
 Modules::Psu *App::psu() {
-    return (Modules::Psu *)modules[MOD_PSU].obj;
+    return (Modules::Psu *)modules_[MOD_PSU].obj;
 }
 
 Modules::Syslog *App::syslog() {
-    return (Modules::Syslog *)modules[MOD_SYSLOG].obj;
+    return (Modules::Syslog *)modules_[MOD_SYSLOG].obj;
 }

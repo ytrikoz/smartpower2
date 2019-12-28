@@ -1,9 +1,11 @@
 #pragma once
 
-#include "FS.h"
 #include "StrUtils.h"
+#include "Core/Storage.h"
+
 #include <Print.h>
 #include <time.h>
+
 
 namespace FSUtils {
 
@@ -24,39 +26,136 @@ inline void print(Print *p, const String &name) {
     }
 }
 
-const String getFSTotal();
+inline const String getFSUsed() {
+    FSInfo fsi;
+    SPIFFS.info(fsi);
+    return StrUtils::prettyBytes(fsi.usedBytes);
+}
 
-const String getFSUsed();
+inline const String getFSTotal() {
+    FSInfo fsi;
+    SPIFFS.info(fsi);
+    return StrUtils::prettyBytes(fsi.totalBytes);
+}
 
-const String asDir(const String &path);
+inline bool formatFS() {
+    bool res = SPIFFS.format();
+    return res;
+}
 
-const String asDir(const char *path);
+inline size_t getNestedLevel(const String &path) {
+    size_t res = 0;
+    for (size_t i = 0; i < path.length(); ++i)
+        if (path.charAt(i) == '/') res++;
+    return res;
+}
 
-size_t getNestedLevel(const String &path);
+inline const String asDir(const char *path) {
+    String res(path);
+    if (!res.endsWith("/"))
+        res += "/";
+    return res;
+}
 
-size_t getFilesCount(const char *path);
+inline size_t getFilesCount(const char *path) {
+    String dir = asDir(path);
+    size_t level = getNestedLevel(asDir(dir.c_str()));
+    Dir d = SPIFFS.openDir(path);
+    size_t res = 0;
+    while (d.next()) {
+        if (getNestedLevel(d.fileName()) <= level) res++;
+    };
+    return res;
+}
 
-size_t getFilesCount(String &path);
+inline void printFileList(Print *p, const char *path) {
+    String dir = asDir(path);
+    uint8_t level = getNestedLevel(dir);
+    Dir d = SPIFFS.openDir(dir);
+    while (d.next()) {
+        String name = d.fileName();
+        if (getNestedLevel(name) <= level) {
+            p->print(name);
+            p->print(' ');
+            p->print(d.fileTime());
+            p->print(' ');
+            p->println(StrUtils::prettyBytes(d.fileSize()));
+        }
+    }
+}
 
-void printDir(Print *p, const char *path);
+inline void rmDir(Print *p, const char *path) {
+    String dir = asDir(path);
+    uint8_t level = getNestedLevel(dir);
+    Dir d = SPIFFS.openDir(dir);
+    while (d.next()) {
+        String name = d.fileName();
+        if (getNestedLevel(name) <= level) {
+            SPIFFS.remove(name);
+        }
+    }
+}
 
-void clearDir(Print *p, const char *path);
+inline bool writeString(const char *name, const String &value) {
+    bool res = false;
+    auto f = SPIFFS.open(name, "w");
+    if (f) {
+        f.println(value);
+        f.close();
+        res = true;
+    }
+    return res;
+}
 
-bool formatFS();
+inline bool writeTime(const char *file, const time_t value) {
+    String buf = String((unsigned long)value);
+    return writeString(file, StrUtils::long2str(value));
+}
 
-String getFSStats();
+inline bool writeInt(const char *file, long value) {
+    return writeString(file, StrUtils::long2str(value));
+}
 
-bool writeTime(const char *name, const time_t value);
+inline bool writeDouble(const char *file, double value) {
+    return writeString(file, StrUtils::double2str(value));
+}
 
-bool writeInt(const char *file, const long value);
+inline bool readString(const char *name, String &value) {
+    bool res = false;
+    auto f = SPIFFS.open(name, "r");
+    if (f) {
+        value = f.readStringUntil('\n');
+        f.close();
+        res = true;
+    }
+    return res;
+}
 
-bool readInt(const char *name, long &value);
+inline bool readTime(const char *file, time_t &value) {
+    String buf;
+    if (readString(file, buf)) {
+        value = buf.toInt();
+        return true;
+    }
+    return false;
+}
 
-bool readString(const char *name, String &value);
+inline bool readDouble(const char *name, double &value) {
+    String buf;
+    if (readString(name, buf)) {
+        value = buf.toDouble();
+        return true;
+    }
+    return false;
+}
 
-bool readDouble(const char *name, double &value);
+inline bool readInt(const char *name, long &value) {
+    String buf;
+    if (readString(name, buf)) {
+        value = buf.toInt();
+        return true;
+    }
+    return false;
+}
 
-bool writeDouble(const char *name, const double value);
-
-bool readTime(const char *name, time_t &value);
 }  // namespace FSUtils

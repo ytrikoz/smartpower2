@@ -147,7 +147,7 @@ float Config::asFloat(const ConfigItem param) const {
 }
 
 IPAddress Config::asIPAddress(const ConfigItem param) const {
-    return atoip(value(param));
+    return str2ip(value(param));
 }
 
 const char *Config::getDefault(const size_t index) const {

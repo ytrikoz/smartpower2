@@ -15,13 +15,26 @@ bool crashReportEnabled_ = false;
 uint8_t crashReportNumber_ = 0;
 bool setupDone = false;
 
+ModuleDef mods[MODULES_COUNT] = {
+    {0, str_btn, NETWORK_OFF},
+    {0, str_led, NETWORK_OFF},
+    {0, str_clock, NETWORK_OFF},
+    {0, str_psu, NETWORK_OFF},
+    {0, str_display, NETWORK_OFF},
+    {0, str_console, NETWORK_OFF},
+    {0, str_netsvc, NETWORK_STA},
+    {0, str_telnet, NETWORK_STA},
+    {0, str_update, NETWORK_AP},
+    {0, str_syslog, NETWORK_STA},
+    {0, str_web, NETWORK_AP}};
+
 void handleState(AppState state) {
     if (state == STATE_RESET) {
         PrintUtils::print_ident(&Serial, FPSTR(str_config));
         PrintUtils::print(&Serial, FPSTR(str_reset));
         config->setDefaultConfig();
         config->save();
-    }        
+    }
     if (state >= STATE_RESTART) {
         system_restart();
         delay(100);
@@ -38,9 +51,9 @@ void preinit() {
 void setup() {
     boot.setOutput(&mainlog);
     boot.init();
-    
+
     initCrashReport();
-    
+
     boot.start();
 
     config = new ConfigHelper(FS_MAIN_CONFIG);
@@ -57,31 +70,44 @@ void setup() {
     wireless->setOutput(&mainlog);
     wireless->start(boot.isSafeMode());
 
+    mods[MOD_LED].obj = new Modules ::Led();
+    mods[MOD_BTN].obj = new Modules::Button(POWER_BTN_PIN);
+    mods[MOD_CLOCK].obj = new Modules::Clock();
+    mods[MOD_PSU].obj = new Modules::Psu();
+    mods[MOD_DISPLAY].obj = new Modules::Display();
+    mods[MOD_CONSOLE].obj = new Modules::Console();
+    mods[MOD_NETSVC].obj = new NetworkService();
+    mods[MOD_TELNET].obj = new Modules ::Telnet(TELNET_PORT);
+    mods[MOD_UPDATE].obj = new Modules::OTAUpdate(OTA_PORT);
+    mods[MOD_SYSLOG].obj = new Modules::Syslog(SYSLOG_PORT);
+    mods[MOD_WEB].obj = new Modules::Web();
+
     app.setConfig(config);
     app.setWireless(wireless);
-    app.setOutput(&mainlog);    
+    app.setModules(mods);
+    app.setOutput(&mainlog);
 
     powerlog = new PowerLog();
     app.setPowerlog(powerlog);
-   
+
     Cli::init();
-    
+
     app.begin();
-    
+
     boot.end();
-   
+
     setupDone = true;
 }
 
 void loop() {
-    if (!setupDone) 
+    if (!setupDone)
         return;
 
     mainlog.loop();
 
     AppState res = app.loop(loopTimer);
-    
-    if (loopTimer) 
+
+    if (loopTimer)
         loopTimer->tick();
 
     handleState(res);
@@ -93,9 +119,9 @@ void initCrashReport() {
     if (crashReportNumber_) {
         PrintUtils::print_ident(&mainlog, FPSTR(str_crash));
         PrintUtils::print(&mainlog, crashReportNumber_);
-        if (!crashReportEnabled_)         
+        if (!crashReportEnabled_)
             PrintUtils::print(&mainlog, FPSTR(str_off));
-         PrintUtils::println(&mainlog);
+        PrintUtils::println(&mainlog);
     }
 }
 

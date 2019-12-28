@@ -17,10 +17,10 @@ enum WebPageEnum {
     PAGE_INFO = 3
 };
 
-enum AppState {
-    STATE_NORMAL,
-    STATE_RESTART,
-    STATE_RESET
+enum BootPowerState {
+    BOOT_POWER_OFF = 0,
+    BOOT_POWER_ON = 1,
+    BOOT_POWER_LAST_STATE = 2
 };
 
 enum NetworkMode {
@@ -32,15 +32,6 @@ enum NetworkMode {
 
 enum NetworkStatus { NETWORK_DOWN = 0,
                      NETWORK_UP = 1 };
-
-struct AppLogItem {
-    String str;
-};
-
-enum PsuLogEnum {
-    VOLTAGE = 0,
-    CURRENT = 1,
-};
 
 enum LogLevel { LEVEL_ERROR,
                 LEVEL_WARN,
@@ -144,9 +135,6 @@ class PsuDataListener {
     virtual void onPsuData(PsuData& item){};
 };
 
-typedef std::function<void(PsuState)> PsuStateChangeHandler;
-typedef std::function<void(PsuStatus)> PsuStatusChangeHandler;
-
 struct NetInfo {
     IPAddress ip;
     IPAddress subnet;
@@ -159,11 +147,6 @@ struct NetInfo {
     }
 };
 
-enum BootPowerState {
-    BOOT_POWER_OFF = 0,
-    BOOT_POWER_ON = 1,
-    BOOT_POWER_LAST_STATE = 2
-};
 
 enum EOLType { CRLF,
                LFCR,
@@ -175,10 +158,6 @@ enum MoveDirection { MD_LEFT,
                      MD_UP,
                      MD_DOWN };
 
-enum State { ST_INACTIVE,
-             ST_NORMAL,
-             ST_ESC_SEQ,
-             ST_CTRL_SEQ };
 
 enum ModuleEnum {
     MOD_LED,

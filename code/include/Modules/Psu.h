@@ -8,6 +8,9 @@
 
 namespace Modules {
 
+typedef std::function<void(PsuState)> PsuStateChangeHandler;
+typedef std::function<void(PsuStatus)> PsuStatusChangeHandler;
+
 class Psu : public Module {
    public:
     Psu() : Module(), startTime_(0), infoUpdated_(0), powerInfoUpdated_(0), listenerUpdate_(0), lastStore_(0), lastStoredWh_(0), lastStoredState_(-1){}

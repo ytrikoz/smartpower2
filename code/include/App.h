@@ -20,6 +20,12 @@
 #include "Plot.h"
 #include "Powerlog.h"
 
+enum AppState {
+    STATE_NORMAL,
+    STATE_RESTART,
+    STATE_RESET
+};
+
 class App : public Host, PsuDataListener {
    public:
     App();
@@ -42,12 +48,11 @@ class App : public Host, PsuDataListener {
    public:
     bool getByName(const char *str, ModuleEnum &module) const;
     Module *getInstanceByName(const String &name);
-    void instanceMods();
     void initMods();
     void setupMods();
     void systemRestart();
     void systemReset();
-
+    void setModules(ModuleDef*);
    public:
     void setConfig(ConfigHelper *);
     void setPowerlog(PowerLog *);
@@ -103,16 +108,5 @@ class App : public Host, PsuDataListener {
     uint8_t boot_per;
 
    private:
-    ModuleDef modules[MODULES_COUNT] = {
-        {0, str_btn, NETWORK_OFF},
-        {0, str_led, NETWORK_OFF},
-        {0, str_clock, NETWORK_OFF},
-        {0, str_psu, NETWORK_OFF},
-        {0, str_display, NETWORK_OFF},
-        {0, str_console, NETWORK_OFF},
-        {0, str_netsvc, NETWORK_STA},
-        {0, str_telnet, NETWORK_STA},
-        {0, str_update, NETWORK_AP},
-        {0, str_syslog, NETWORK_STA},
-        {0, str_web, NETWORK_AP}};
+    ModuleDef* modules_;
 };

@@ -5,7 +5,7 @@
 #include "Strings.h"
 #include "Utils/StrUtils.h"
 
-namespace WirelessUtils {
+namespace NetUtils {
 
 inline size_t getSoftApClients() {
     return wifi_softap_get_station_num();
@@ -26,7 +26,7 @@ inline String getStaSsid() {
 inline String getStatusStr(bool network) {
     String str = FPSTR(str_network);
     str += ' ';
-    str += StrUtils::getBoolStr(network, UP_DONW);
+    str += StrUtils::bool2str(network, StrUtils::UP_DONW);
     return str;
 }
 
@@ -97,13 +97,13 @@ inline String getWifiPhy() {
             ch = '?';
             break;
     }
-    return String("801.11") + ch;
+    return "801.11" + ch;
 }
 
 inline const char *encryptTypeStr(const int type) {
     switch (type) {
         case AUTH_OPEN:
-            return "NONE";
+            return "none";
         case AUTH_WEP:
             return "WEP";
         case AUTH_WPA_PSK:
@@ -111,9 +111,9 @@ inline const char *encryptTypeStr(const int type) {
         case AUTH_WPA2_PSK:
             return "WPA2";
         case AUTH_WPA_WPA2_PSK:
-            return "AUTO";
+            return "auto";
         default:
-            return "----";
+            return "---";
     }
 }
 
@@ -121,15 +121,9 @@ inline String getApSsid() {
     return WiFi.softAPSSID();
 }
 
-inline NetInfo getApNetInfo() {
+inline NetInfo getNetInfo(uint8 if_index) {
     struct ip_info ip;
-    wifi_get_ip_info(SOFTAP_IF, &ip);
-    return NetInfo(ip);
-}
-
-inline NetInfo getStaNetInfo() {
-    struct ip_info ip;
-    wifi_get_ip_info(STATION_IF, &ip);
+    wifi_get_ip_info(if_index, &ip);
     return NetInfo(ip);
 }
 

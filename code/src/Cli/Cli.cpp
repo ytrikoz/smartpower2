@@ -7,6 +7,7 @@
 #include "main.h"
 #include "CrashReport.h"
 #include "Cli/CliRunner.h"
+#include "PowerLog.h"
 
 using namespace PrintUtils;
 using namespace StrUtils;
@@ -251,8 +252,8 @@ void init() {
     cmdLog.setCallback(Cli::onLog);
 
     cmdWol = cli_->addCommand("wol");
-    cmdWol.addArgument("ip", "");
-    cmdWol.addArgument("mac", "");
+    cmdWol.addPositionalArgument("param", "");
+    cmdWol.addPositionalArgument("value", "");
     cmdWol.setCallback(Cli::onWol);
 
     cmdRestart = cli_->addCommand("restart");
@@ -272,7 +273,7 @@ void init() {
 
     cmdCrash = cli_->addCommand("crash");
     cmdCrash.addPositionalArgument("action", "list");
-    cmdCrash.addPositionalArgument("item", "*");
+    cmdCrash.addPositionalArgument("item", "");
     cmdCrash.setCallback(Cli::onCrash);
 
     cmdLed = cli_->addCommand("led");
@@ -337,11 +338,11 @@ void onLog(cmd *c) {
             return;
         }
         if (paramStr.indexOf("v") != -1) {
-            powerlog->print(out_, VOLTAGE);
+            powerlog->print(out_, PowerLogEnum::VOLTAGE);
             handled = true;
         }
         if (paramStr.indexOf("i") != -1) {
-            powerlog->print(out_, CURRENT);
+            powerlog->print(out_, PowerLogEnum::CURRENT);
             handled = true;
         }
         if (!handled)
@@ -427,9 +428,9 @@ void onAvg(cmd *c) {
 
 void onWol(cmd *c) {
     Command cmd(c);
-    String ipStr = getIpStr(cmd);
-    String macStr = getMacStr(cmd);
-    Actions::WakeOnLan(out_).exec(ipStr, macStr);
+    String param = getParamStr(cmd);
+    String value = getValueStr(cmd);
+    Actions::WakeOnLan::send(out_, param, value);
 }
 
 void onClock(cmd *c) {
@@ -537,11 +538,11 @@ void onShow(cmd *c) {
 
 void onPlot(cmd *c) {
     Command cmd(c);
-    size_t size = powerlog->getSize(PsuLogEnum::VOLTAGE);
+    size_t size = powerlog->getSize(VOLTAGE);
     if (!size) return;
     PlotSummary summary;
     float *values = new float[size];
-    powerlog->fill(PsuLogEnum::VOLTAGE, values, size);
+    powerlog->fill(VOLTAGE, values, size);
     size_t cols = group(&summary, values, size);
     app.display()->showPlot(&summary, cols);
 
@@ -567,15 +568,15 @@ void onPrint(cmd *c) {
 void onLs(cmd *c) {
     Command cmd(c);
     String str = getPathStr(cmd);
-    String path = FSUtils::asDir(str);
-    uint8_t max_level = FSUtils::getNestedLevel(path);
+    String path = FSUtils::asDir(str.c_str());
+    uint8_t level = FSUtils::getNestedLevel(path);
     auto dir = SPIFFS.openDir(path);
     while (dir.next()) {
         String name = dir.fileName();
-        if (FSUtils::getNestedLevel(name) > max_level)
-            continue;
-        PrintUtils::print(out_, dir.fileName(), '\t', prettyBytes(dir.fileSize()));
-        PrintUtils::println(out_);
+        if (FSUtils::getNestedLevel(name) <= level) {      
+            PrintUtils::print(out_, dir.fileName(), '\t', prettyBytes(dir.fileSize()));
+            PrintUtils::println(out_);
+        }
     }
 }
 
@@ -616,7 +617,7 @@ void onCrash(cmd *c) {
     String item = getItemStr(cmd);
     switch (getAction(cmd)) {
         case ACTION_LIST: {
-            FSUtils::printDir(out_, CRASH_ROOT);
+            FSUtils::printFileList(out_, CRASH_ROOT);
             break;
         }
         case ACTION_PRINT: {
@@ -628,7 +629,7 @@ void onCrash(cmd *c) {
             break;
         }
         case ACTION_CLEAR: {
-            FSUtils::clearDir(out_, CRASH_ROOT);
+            FSUtils::rmDir(out_, CRASH_ROOT);
             break;
         }
         case ACTION_TEST: {

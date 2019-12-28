@@ -10,7 +10,7 @@
 #include "ConfigHelper.h"
 #include "SysInfo.h"
 
-#include "Utils/WirelessUtils.h"
+#include "Utils/NetUtils.h"
 
 typedef std::function<void(bool has, unsigned long time)> NetworkStatusChangeEventHandler;
 
