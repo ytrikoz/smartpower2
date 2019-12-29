@@ -35,12 +35,12 @@ struct ScreenItem {
 };
 
 class Screen {
-  private:
+   private:
     ScreenItem items[DISPLAY_VIRTUAL_ROWS];
     size_t cur_line;
     size_t lines_count;
 
-  public:
+   public:
     Screen() { clear(); }
     void clear() {
         memset(items, 0, sizeof(ScreenItem) * DISPLAY_VIRTUAL_ROWS);

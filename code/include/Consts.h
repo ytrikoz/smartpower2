@@ -68,6 +68,7 @@
 #define FS_POWER_STATE_VAR FS_VAR_ROOT "ps"
 #define FS_UTC_VAR FS_VAR_ROOT "utc"
 #define FS_WH_VAR FS_VAR_ROOT "wh"
+#define FS_HOST_VAR FS_VAR_ROOT "host"
 
 #define PARAM_CHAR 1
 #define PARAM_BYTE 3

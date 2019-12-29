@@ -39,12 +39,14 @@ enum CommandAction {
     ACTION_CONTROL,
     ACTION_CONFIG,
     ACTION_SHOW,
-    ACTION_DIFF
+    ACTION_DIFF,
+    ACTION_ADD,
+    ACTION_DELETE,
 };
 
 Command cmdAvg, cmdConfig, cmdPower, cmdShow, cmdExec, cmdHelp, cmdPrint, cmdSet,
     cmdGet, cmdRm, cmdClock, cmdPlot, cmdLog, cmdWol, cmdRestart, cmdRun, cmdLs,
-    cmdCrash, cmdLed, cmdSyslog, cmdWifi;
+    cmdCrash, cmdLed, cmdSyslog, cmdWifi, cmdHost;
 
 SimpleCLI *cli_ = nullptr;
 Runner *runner_ = nullptr;
@@ -72,6 +74,7 @@ void onConfig(cmd *c);
 void onPower(cmd *c);
 void onShow(cmd *c);
 void onHelp(cmd *c);
+void onHost(cmd *c);
 void onPrint(cmd *c);
 void onPlot(cmd *c);
 void onRemove(cmd *c);
@@ -81,6 +84,7 @@ void onClock(cmd *c);
 void onLog(cmd *c);
 void onWol(cmd *c);
 void onRestart(cmd *c);
+void onHost(cmd *c);
 void onRun(cmd *c);
 void onLs(cmd *c);
 void onCrash(cmd *c);
@@ -182,6 +186,10 @@ CommandAction getAction(Command &cmd) {
         return ACTION_SHOW;
     } else if (strcasecmp_P(str.c_str(), str_diff) == 0) {
         return ACTION_DIFF;
+    } else if (strcasecmp_P(str.c_str(), str_add) == 0) {
+        return ACTION_ADD;
+    } else if (strcasecmp_P(str.c_str(), str_delete) == 0) {        
+        return ACTION_DELETE;
     }
     return ACTION_UNKNOWN;
 }  // namespace Cli
@@ -207,7 +215,6 @@ void init() {
     cmdAvg = cli_->addCommand("avg");
     cmdAvg.addPositionalArgument("value", "");
     cmdAvg.setCallback(Cli::onAvg);
-
 
     cmdPrint = cli_->addCommand("print");
     cmdPrint.addPositionalArgument("path");
@@ -291,6 +298,34 @@ void init() {
     cmdWifi = cli_->addCommand("wifi");
     cmdWifi.addPositionalArgument("action", "scan");
     cmdWifi.setCallback(Cli::onWiFi);
+
+    cmdHost = cli_->addCommand("host");
+    cmdHost.addPositionalArgument("action", "show");
+    cmdHost.addPositionalArgument("param", "");
+    cmdHost.addPositionalArgument("name", "");
+}
+
+void onHost(cmd *c) {
+    Command cmd(c);
+    String action = getActionStr(cmd);
+    String param = getParamStr(cmd);
+    String value = getValueStr(cmd);
+    switch (getAction(cmd)) {
+        case ACTION_SHOW:
+            // Print var/host
+            FSUtils::print(out_, FS_HOST_VAR);
+            break;
+        case ACTION_ADD:
+            // Add record to var/host
+            // FSUtils::writeString(FS_HOST_VAR, param + " " + value);
+            break;
+        case ACTION_DELETE:
+            // Delete record from var/host
+            break;
+        default:
+            println_unknown_action(out_, action);
+            break;
+    }
 }
 
 void onLed(cmd *c) {
@@ -421,7 +456,7 @@ void onAvg(cmd *c) {
     String value = getValueStr(cmd);
     if (value == "") {
         Actions::Avg::print_config(out_);
-    } else  {
+    } else {
         Actions::Avg::set(out_, value.toInt());
     }
 }
@@ -461,11 +496,11 @@ void onClock(cmd *c) {
 void onWiFi(cmd *c) {
     Command cmd(c);
     if (wireless->isScanning()) {
-        PrintUtils::println(out_, FPSTR(str_scanning));        
+        PrintUtils::println(out_, FPSTR(str_scanning));
         return;
     }
     String actionStr = getActionStr(cmd);
-    if (actionStr == "scan") {  
+    if (actionStr == "scan") {
         wireless->startWiFiScan(true);
     } else if (actionStr == "list") {
         FSUtils::print(out_, "/var/networks");
@@ -573,7 +608,7 @@ void onLs(cmd *c) {
     auto dir = SPIFFS.openDir(path);
     while (dir.next()) {
         String name = dir.fileName();
-        if (FSUtils::getNestedLevel(name) <= level) {      
+        if (FSUtils::getNestedLevel(name) <= level) {
             PrintUtils::print(out_, dir.fileName(), '\t', prettyBytes(dir.fileSize()));
             PrintUtils::println(out_);
         }

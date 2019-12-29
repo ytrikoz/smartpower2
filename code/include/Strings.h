@@ -11,6 +11,7 @@ static const char str_interrupted[] PROGMEM = "interrupted";
 static const char str_down[] PROGMEM = "down";
 static const char str_up[] PROGMEM = "up";
 
+static const char str_add[] PROGMEM = "add";
 static const char str_bootpwr[] PROGMEM = "bootpwr";
 static const char str_passwd[] PROGMEM = "passwd";
 static const char str_ap_ssid[] PROGMEM = "ap_ssid";
@@ -109,6 +110,7 @@ static const char str_dns[] PROGMEM = "dns";
 static const char str_dir[] PROGMEM = "dir";
 static const char str_done[] PROGMEM = "done";
 static const char str_diff[] PROGMEM = "diff";
+static const char str_delete[] PROGMEM = "delete";
 static const char str_duration[] PROGMEM = "duration";
 static const char str_interval[] PROGMEM = "interval";
 static const char str_enabled[] PROGMEM = "enabled";
