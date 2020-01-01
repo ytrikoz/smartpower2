@@ -8,6 +8,9 @@ enum BootMode { BT_ERROR,
                 BT_SAFE,
                 BT_NORMAL };
 
+enum RestartReasonClass { REASON_NORMAL,
+                         REASON_FAILURE };
+
 enum FSState { FS_ERROR,
                FS_EMPTY,
                FS_NORMAL };
@@ -24,7 +27,7 @@ class BootWatcher {
         out_ = p;
     }
 
-    void init() {
+    bool init() {
         initSerial();
 
         PrintUtils::print_ident(out_, FPSTR(str_wire));
@@ -34,7 +37,7 @@ class BootWatcher {
         fs_ = initFS();
         switch (fs_) {
             case FS_NORMAL:
-                mode_ = SPIFFS.exists(BOOT_FLAG) ? BT_SAFE : BT_NORMAL;
+                mode_ = SPIFFS.exists(BOOT_FLAG) && getRestartReason() == REASON_FAILURE ? BT_SAFE : BT_NORMAL;
                 break;
             case FS_EMPTY:
                 mode_ = BT_NORMAL;
@@ -43,11 +46,8 @@ class BootWatcher {
                 mode_ = BT_ERROR;
                 break;
         }
+        return mode_ == BT_NORMAL;
     }
-
-    bool isSafeMode() { return mode_ == BT_SAFE; }
-
-    BootMode getMode() { return mode_; }
 
     void start() {
         PrintUtils::print_ident(out_, FPSTR(str_boot));
@@ -61,9 +61,38 @@ class BootWatcher {
     }
 
    private:
+    RestartReasonClass getRestartReason() {
+        rst_info* info = ESP.getResetInfoPtr();
+        RestartReasonClass res = REASON_FAILURE;
+        switch (info->reason) {
+            // normal startup by power on
+            case REASON_DEFAULT_RST:
+            // software restart ,system_restart , GPIO status won’t change
+            case REASON_SOFT_RESTART:
+            // wake up from deep-sleep
+            case REASON_DEEP_SLEEP_AWAKE:
+            //  external system reset
+            case REASON_EXT_SYS_RST:
+                res = RestartReasonClass::REASON_NORMAL;
+                break;
+            // hardware watch dog reset
+            case REASON_WDT_RST:
+            // exception reset, GPIO status won’t change
+            case REASON_EXCEPTION_RST:
+            // software watch dog reset, GPIO status won’t change
+            case REASON_SOFT_WDT_RST:
+                res =  RestartReasonClass::REASON_FAILURE;
+                break;
+        }
+        PrintUtils::print_ident(out_, FPSTR(str_boot));
+        PrintUtils::print(out_, FPSTR(str_restart), ESP.getResetReason());
+        PrintUtils::println(out_);
+        return res;
+    }
+
     void setBootFlag() {
         File f = SPIFFS.open(BOOT_FLAG, "w");
-        f.println(APP_VERSION);
+        f.println(APP_VERSION __DATE__ __TIME__);
         f.flush();
         f.close();
     }

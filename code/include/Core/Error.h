@@ -22,6 +22,12 @@ class Error : public Printable {
     static Error BufferLow(size_t size) {
         return Error(ERROR_SIZE, String(size).c_str());
     }
+    static Error WrongParameter(const __FlashStringHelper* name) {
+        return Error(WRONG_PARAM, name);
+    }
+    static Error NetworkRelated(const String message) {
+        return Error(ERROR_NETWORK, message.c_str());
+    }
    public:
     Error() {
         code_ = 0;

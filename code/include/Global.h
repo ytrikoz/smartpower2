@@ -8,9 +8,9 @@
 #include "Wireless.h"
 
 extern App app;
-extern BootWatcher boot;
 extern MainLog mainlog;
 
+extern BootWatcher* boot;
 extern Wireless* wireless;
 extern ConfigHelper* config;
 extern PowerLog* powerlog;

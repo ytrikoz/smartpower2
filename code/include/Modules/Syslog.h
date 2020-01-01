@@ -4,37 +4,124 @@
 
 #include "Core/Logger.h"
 #include "Core/Module.h"
+
 #include <ESP8266WiFi.h>
+#include <IPAddress.h>
 #include <WiFiUdp.h>
 
-#define SYSLOG_FACILITY 1
-
-namespace Modules {
-
-class Syslog : public Module, AbstactLog {
+class UdpPacket : public StringPusher {
    public:
-    Syslog(uint16_t port):Module(), udp_(nullptr), ip_(IPADDR_NONE), port_(port) {};
-   public:
-    void log(const LogSeverity level, const String &routine, const String &message);
-    virtual void onDiag(const JsonObject &doc) override;
-   protected:
-    virtual bool onConfigChange(const ConfigItem param, const String& value) override;
-    virtual bool onInit() override;
-    virtual bool onStart() override;
-    virtual void onStop() override;
-    virtual void onLoop() override;
+    UdpPacket() { udp_ = new WiFiUDP(); };
+
+    ~UdpPacket() {
+        if (udp_) {
+            udp_->stop();
+            delete udp_;
+        }
+    }
+    void setup(const IPAddress ip, const uint16_t port) {
+        ip_ = ip;
+        port_ = port;
+    };
+
+    IPAddress ip() {
+        return ip_;
+    }
+
+    uint16_t port() {
+        return port_;
+    }
+
+    bool push(const String& data) override {
+        bool res = false;
+        if (udp_ && udp_->beginPacket(ip_, port_)) {
+            udp_->print(data);
+            res = udp_->endPacket();
+        }
+        return res;
+    };
 
    private:
-    bool setServer(const char* value);
-    const char *getHostname();
-   private:
-    WiFiUDP *udp_;
+    WiFiUDP* udp_;
     IPAddress ip_;
     uint16_t port_;
 };
 
-}  // namespace Modules
+class VisualSyslogServer {
+   public:
+    VisualSyslogServer(UdpPacket* dest) : dest_(dest), facility_(1){};
 
+    void setFacility(int8_t facility) {
+        facility_ = facility;
+    }
+
+    Error send(LogSeverity level, const char* tag, const char* message) {
+        if (!dest_) {
+            return Error::WrongParameter(FPSTR(str_server));
+        }
+        String buf;
+        buf += '<';
+        buf += getMask(level);
+        buf += '>';
+        buf += APP_NAME;
+        buf += ' ';
+        buf += tag;
+        buf += ':';
+        buf += ' ';
+        buf += message;
+        if (dest_->push(buf)) {
+            return Error::ok();
+        } else {
+            return Error::NetworkRelated(buf);
+        }
+    }
+    size_t cnt() {
+        return cnt_;
+    }
+
+    size_t total() {
+        return size_;
+    }
+   private:
+    int getMask(LogSeverity level) {
+        return (int)facility_ * 8 + (int)level;
+    }
+
+   private:
+    UdpPacket* dest_;
+    uint8_t facility_;
+    size_t cnt_;
+    size_t size_;
+};
+
+namespace Modules {
+
+class Syslog : public Module, public Logger {
+   public:
+    Syslog();
+
+   public:
+    virtual bool log(const LogSeverity level, const char* module, const char* str) override;
+
+   protected:
+    virtual bool onConfigChange(const ConfigItem param, const String& value) override;
+    virtual bool onInit() override;
+    virtual bool onStart() override;
+    virtual void onLoop() override;
+    virtual void onDiag(const JsonObject& doc) override;
+
+   private:
+    bool init(const char* address, uint16_t port);
+    void setSource(SourceLog* source);
+
+   private:
+    char* name_;
+    UdpPacket tranport_;
+    VisualSyslogServer proto_;
+    SourceLog* source_;
+};
+
+}  // namespace Modules
 
 /* Syslog Facility
 0	kernel messages

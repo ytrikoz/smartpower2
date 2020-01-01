@@ -1,72 +1,69 @@
 #include "Modules/Syslog.h"
-
+#include "Core/Error.h"
 #include "Wireless.h"
 
 namespace Modules {
 
+Syslog::Syslog() : Module(), proto_(VisualSyslogServer(&tranport_)) {}
+
+bool Syslog::log(const LogSeverity level, const char* tag, const char* message) {
+    setError(proto_.send(level, tag, message));
+    if (failed()) {
+        PrintUtils::print(out_, getError());
+        PrintUtils::println(out_);
+    }
+    return success();
+}
+
+void Syslog::onDiag(const JsonObject& doc) {
+    doc[FPSTR(str_name)] = name_;
+    doc[FPSTR(str_ip)] = StrUtils::prettyIp(tranport_.ip(), tranport_.port());
+    doc[FPSTR(str_count)] = proto_.cnt();
+    doc[FPSTR(str_total)] = StrUtils::prettyBytes(proto_.total());
+}
+
 bool Syslog::onConfigChange(const ConfigItem param, const String& value) {
     if (param == SYSLOG_SERVER) {
-        return setServer(value.c_str());
+        PrintUtils::print_ident(out_, FPSTR(str_syslog));
+        PrintUtils::println(out_, value);
+        return init(value.c_str(), SYSLOG_PORT);
     }
     return true;
 }
 
-bool Syslog::setServer(const char* value) {
-    if (!strlen(value)) return false;
-
-    if (StrUtils::isip(value)) {
-        ip_ = StrUtils::str2ip(value);
-        return true;
-    }
-
-    IPAddress buf;
-    if (WiFi.hostByName(value, buf)) {
-        ip_ = buf;
-        return true;
-    };
-
-    setError(WRONG_PARAM, SYSLOG_SERVER);
-    return false;
-}
-
 bool Syslog::onInit() {
-    udp_ = new WiFiUDP();
-    return udp_;
+    bool res = init(config_->value(SYSLOG_SERVER), SYSLOG_PORT);
+    if (!res) {
+        setError(WRONG_PARAM, SYSLOG_SERVER);
+    }
+    return res;
 }
 
 bool Syslog::onStart() {
-    bool res = setServer(config_->value(SYSLOG_SERVER));
+    return log(LOG_INFO, String(FPSTR(str_syslog)).c_str(), String(FPSTR(str_start)).c_str());
+}
+
+void Syslog::setSource(SourceLog* source) {
+    source_ = source;
+}
+
+bool Syslog::init(const char* name, uint16_t port) {
+    bool res = false;
+
+    size_t len = strlen(name);
+    if (name_) delete name_;
+    name_ = new char[len + 1];
+
+    if (StrUtils::setstr(name_, name, len + 1)) {
+        IPAddress ip = IPAddress(IPADDR_ANY);
+        if (ip.fromString(name_) || WiFi.hostByName(name_, ip)) {
+            tranport_.setup(ip, port);
+            res = true;
+        }
+    };
     return res;
 }
 
 void Syslog::onLoop() {}
-
-void Syslog::onStop() { udp_->stop(); }
-
-const char* Syslog::getHostname() {
-    return APP_NAME;
-}
-
-void Syslog::log(LogSeverity level, const String& routine, const String& message) {
-    // String payload = getPayload(level, time, host.c_str(), message.c_str());
-    // say_strP(str_log, payload.c_str());
-    if (udp_->beginPacket(ip_, port_)) {
-        udp_->print('<');
-        udp_->print(SYSLOG_FACILITY * 8 + (int)level);
-        udp_->print('>');
-        udp_->print(APP_NAME);
-        udp_->print(' ');
-        udp_->print('[');
-        udp_->print(routine);
-        udp_->print(']');
-        udp_->print(' ');
-        udp_->print(message);
-        udp_->endPacket();
-    }
-}
-
-void Syslog::onDiag(const JsonObject& doc) {
-    doc[FPSTR(str_server)] = StrUtils::prettyIp(ip_, port_);
-}
 
 }  // namespace Modules

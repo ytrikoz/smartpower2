@@ -6,7 +6,7 @@
 #include "Utils/ModuleUtils.h"
 #include "Utils/PrintUtils.h"
 #include "Utils/StrUtils.h"
-#include "Utils/FsUtils.h"
+#include "Utils/FSUtils.h"
 
 class Module {
    public:
@@ -18,6 +18,12 @@ class Module {
     
     bool configChange(const ConfigItem param, const String& value) {
         return onConfigChange(param, value);
+    }
+
+    bool getScreenItem(String** item, size_t& count ) {
+        item = nullptr;
+        count = 0;
+        return false;
     }
 
     bool execute(const String &param, const String &value) {
@@ -104,6 +110,11 @@ class Module {
         return modError_.code() != 0;
     }
 
+    virtual bool success() const {
+        return modError_.code() == 0;
+    }
+
+
     virtual void onExecute(const String &param, const String &value) {
         setError(ERROR_UNSUPPORTED);        
     }
@@ -114,17 +125,25 @@ protected:
         modError_ = e;
     }
     void setError(ErrorCode code) {
-        modError_ = Error(code);
+        if (code == 0) {
+            modError_ = Error::ok();
+        } else {
+            modError_ = Error(code);
+        }
     }
+    
     void setError(ErrorCode code, const char* desc) {
         modError_ = Error(code, desc);
     }
+
     void setError(ErrorCode code, String desc) {
-        modError_ = Error(code, desc.c_str());
+        setError(code, desc.c_str());
     }
+    
     void setError(ErrorCode code, ConfigItem param) {
-        modError_ = Error(code, config_->name(param).c_str());
+        setError(code, config_->name(param).c_str());
     }
+
     Print *out_;
     Config *config_;
     

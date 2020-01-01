@@ -4,56 +4,46 @@
 
 #include "Core/CircularBuffer.h"
 #include "Core/CharBuffer.h"
+#include "Core/Logger.h"
+
 #include "Strings.h"
 
-class MainLog : public Print {
+class MainLog : protected TextLog, public Print {
    public:
-    MainLog(){
-        out_ = nullptr;
+    MainLog() : out_(nullptr) {
         buffer_ = new CharBuffer(128);
     };
+
+    virtual size_t write(uint8_t ch) override {
+        Serial.print((char)ch);
+        if (ch == '\n') {
+            push(buffer_->c_str());
+            buffer_->clear();
+            return 1;
+        }
+        if (!buffer_->free()) {
+            push(buffer_->c_str());
+            buffer_->clear();
+        }
+        return buffer_->write(ch);
+    }
+    void post() {
+        String buf;
+        if (pool_.pop(buf)) {
+            if (out_ != nullptr) out_->print(buf);
+        }
+    }
 
     void setOutput(Print* p) {
         out_ = p;
     }
 
-    void loop() {
-        String buf;
-        if (pool_.pop(buf)) {
-            if (out_ != nullptr) 
-                out_->print(buf);           
-        }
-    }
-
-    size_t write(uint8_t ch) override {    
-        Serial.print((char)ch);
-        if (ch == '\n') {
-            push();      
-            return 1;
-        }        
-        if (!buffer_->free()) {
-            push();            
-        }
-        return buffer_->write(ch);        
-    }
-
-    size_t onDiag(Print* p) {
-        DynamicJsonDocument doc(128);
-        doc[FPSTR(str_size)] = pool_.size();
-        doc[FPSTR(str_full)] = pool_.full();
-        return serializeJsonPretty(doc, *p);
-    }
-
-private:
-    void push() {
-        push(buffer_->c_str());
-        buffer_->clear();        
-    }
-    
-    void push(const String& item) {
+   protected:
+    virtual bool push(const String& item) override {
         pool_.push(item);
+        return true;
     }
-    
+
    private:
     Print* out_;
     CharBuffer* buffer_;

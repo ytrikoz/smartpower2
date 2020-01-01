@@ -188,7 +188,7 @@ CommandAction getAction(Command &cmd) {
         return ACTION_DIFF;
     } else if (strcasecmp_P(str.c_str(), str_add) == 0) {
         return ACTION_ADD;
-    } else if (strcasecmp_P(str.c_str(), str_delete) == 0) {        
+    } else if (strcasecmp_P(str.c_str(), str_delete) == 0) {
         return ACTION_DELETE;
     }
     return ACTION_UNKNOWN;
@@ -291,8 +291,7 @@ void init() {
     cmdLed.setCallback(Cli::onLed);
 
     cmdSyslog = cli_->addCommand("syslog");
-    cmdSyslog.addPositionalArgument("action", "print");
-    cmdSyslog.addPositionalArgument("param", "");
+    cmdSyslog.addPositionalArgument("value", "");
     cmdSyslog.setCallback(Cli::onSyslog);
 
     cmdWifi = cli_->addCommand("wifi");
@@ -353,11 +352,12 @@ void onLed(cmd *c) {
 
 void onSyslog(cmd *c) {
     Command cmd(c);
-    CommandAction action = getAction(cmd);
-    if (action == ACTION_PRINT) {
-        mainlog.onDiag(out_);
-    } else {
-        println_unknown_action(out_, getActionStr(cmd));
+    String value = getValueStr(cmd);
+    app.syslog()->info(FPSTR(str_cli), value);  
+    Error e = app.syslog()->getError();
+    if(e) {
+       PrintUtils::print(out_, e);       
+       PrintUtils::println(out_);
     }
 }
 

@@ -13,7 +13,8 @@
 
 bool crashReportEnabled_ = false;
 uint8_t crashReportNumber_ = 0;
-bool setupDone = false;
+bool setupDone = true;
+bool safeMode = false;
 
 ModuleDef mods[MODULES_COUNT] = {
     {0, str_btn, NETWORK_OFF},
@@ -49,13 +50,12 @@ void preinit() {
 }
 
 void setup() {
-    boot.setOutput(&mainlog);
-    boot.init();
-
+    boot = new BootWatcher();
+    boot->setOutput(&mainlog);
+    safeMode = boot->init();
     initCrashReport();
 
-    boot.start();
-
+    boot->start();
     config = new ConfigHelper(FS_MAIN_CONFIG);
     config->setOutput(&mainlog);
     if (!config->check()) {
@@ -68,7 +68,7 @@ void setup() {
 
     wireless = new Wireless();
     wireless->setOutput(&mainlog);
-    wireless->start(boot.isSafeMode());
+    wireless->start();
 
     mods[MOD_LED].obj = new Modules ::Led();
     mods[MOD_BTN].obj = new Modules::Button(POWER_BTN_PIN);
@@ -79,7 +79,7 @@ void setup() {
     mods[MOD_NETSVC].obj = new NetworkService();
     mods[MOD_TELNET].obj = new Modules ::Telnet(TELNET_PORT);
     mods[MOD_UPDATE].obj = new Modules::OTAUpdate(OTA_PORT);
-    mods[MOD_SYSLOG].obj = new Modules::Syslog(SYSLOG_PORT);
+    mods[MOD_SYSLOG].obj = new Modules::Syslog();
     mods[MOD_WEB].obj = new Modules::Web();
 
     app.setConfig(config);
@@ -93,23 +93,24 @@ void setup() {
     Cli::init();
 
     app.begin();
-
-    boot.end();
-
-    setupDone = true;
 }
 
 void loop() {
     if (!setupDone)
         return;
 
-    mainlog.loop();
-
     AppState res = app.loop(loopTimer);
 
     if (loopTimer)
         loopTimer->tick();
 
+    mainlog.post();
+
+    if (boot) {
+        boot->end();
+        delete boot;
+        boot = nullptr;
+    }
     handleState(res);
 }
 

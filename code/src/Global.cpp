@@ -1,9 +1,9 @@
 #include "Global.h"
 
 App app;
-BootWatcher boot;
 MainLog mainlog;
 
+BootWatcher* boot;
 Wireless* wireless;
 ConfigHelper* config;
 PowerLog* powerlog;
