@@ -3,7 +3,7 @@
 #include "App.h"
 #include "MainLog.h"
 #include "BootWatcher.h"
-#include "Powerlog.h"
+#include "PowerLog.h"
 #include "LoopTiming.h"
 #include "Wireless.h"
 

@@ -18,7 +18,7 @@
 }
 
 .ss_cont {
-	display: flex;	
+	display: float;	
 	background-color: RGBa(0,0,0,.8);	
 	max-width: 320px;	
 }

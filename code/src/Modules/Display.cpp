@@ -1,12 +1,11 @@
 #include "Modules/Display.h"
 
-#include "Modules/Psu.h"
-#include "Utils/TimeUtils.h"
 #include "Global.h"
+#include "Utils/TimeUtils.h"
 
 namespace Modules {
 
-bool Display::isEnabled() {
+bool Display::connected() {
     return lcd && lcd->connected();
 }
 
@@ -38,14 +37,13 @@ void Display::showProgress(uint8_t per, const char *str) {
     last = per;
 }
 
-bool Display::enableBacklight(const bool enabled, const time_t time) {
-    if (!isEnabled()) return false;
+bool Display::enableBacklight(const bool enabled) {
+    if (!connected()) return false;
     if (enabled)
         lcd->turnOn();
     else
         lcd->turnOff();
     backlight_ = enabled;
-    backlightTime_ = time;
     return true;
 }
 

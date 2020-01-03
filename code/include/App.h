@@ -16,9 +16,9 @@
 
 #include "CommonTypes.h"
 #include "ConfigHelper.h"
-#include "Looptiming.h"
+#include "LoopTiming.h"
 #include "Plot.h"
-#include "Powerlog.h"
+#include "PowerLog.h"
 
 enum AppState {
     STATE_NORMAL,

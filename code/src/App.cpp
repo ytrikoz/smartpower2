@@ -1,7 +1,7 @@
 #include "App.h"
 
 #include "Cli/Cli.h"
-#include "Powerlog.h"
+#include "PowerLog.h"
 #include "LoopTiming.h"
 
 using namespace PrintUtils;
@@ -232,7 +232,7 @@ size_t App::printDiag(Print *p) {
 }
 
 void App::displayProgress(uint8_t progress, const char *message) {
-    if (display() && (display()->isEnabled()))
+    if (display() && (display()->connected()))
         display()->showProgress(progress, message);
 }
 

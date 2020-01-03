@@ -8,17 +8,17 @@ namespace Modules {
 
 class Display : public Module {
    public:
-    bool isEnabled();
     void showProgress(uint8_t per, const char *str);
     void showPlot(PlotSummary *data, size_t cols);
     void showMessage(const char *header, const char *message);
     void clear(void);
     void updateScreen(void);
-    bool enableBacklight(const bool value = true, const time_t time = 0);
+    bool enableBacklight(const bool value = true);
+    
+    bool connected();
 
     void show_psu_data(const PsuData& data);
     void show_psu_stat();
-    void show_message(const String &header, const String &message);
     void show_message(const char *header, const char *message);
     void show_network(const NetworkMode mode);
 

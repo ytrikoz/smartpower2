@@ -1,4 +1,4 @@
-#include "Powerlog.h"
+#include "PowerLog.h"
 
 #include "Utils/PrintUtils.h"
 
