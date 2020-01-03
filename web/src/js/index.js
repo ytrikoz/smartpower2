@@ -219,6 +219,10 @@ function showTWP(value) {
   $('#slider_twp').val(value).slider().slider('refresh');
 }
 
+function showSyslog(value) {
+  $('#txt_syslog').val(value).textinput().textinput('refresh');
+}
+
 //
 // Wifi Mode
 //
@@ -312,6 +316,12 @@ function setBootMode(value) {
 
 function setVoltage(value) {
   const data = { set: [{ voltage: value }] };
+  sendJsonObject(data);
+  saveConfig();
+}
+
+function setSyslog(value) {
+  const data = { set: [{ syslog: value }] };
   sendJsonObject(data);
   saveConfig();
 }
@@ -429,6 +439,9 @@ function updateUI(k, v) {
     case 'backlight':
       showBacklight(parseInt(v, 10));
       break;
+    case 'syslog':
+      showSyslog(v);
+      break;
     default:
       // eslint-disable-next-line no-console
       if (JSON.stringify(v) === JSON.stringify({})) break;
@@ -537,6 +550,11 @@ $(document).ready(() => {
   $('input:radio[name=boot_mode]').change(() => {
     const value = $('input:radio[name=boot_mode]:checked').val();
     setBootMode(value);
+  });
+
+  $('#txt_syslog').change(()=> {
+    const value = $('#txt_syslog').val();
+    setSyslog(value);
   });
 
   $('#btn_apply_voltage').click(() => {

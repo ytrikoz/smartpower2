@@ -72,7 +72,7 @@ void Psu::onLoop() {
     if (millis_passed(lastStore_, now) > ONE_MINUTE_ms) {
         if (isWhStoreEnabled() && info_.Wh != lastStoredWh_) storeWh(info_.Wh);
         lastStore_ = now;
-    }    
+    }
 }
 
 bool Psu::onConfigChange(const ConfigItem param, const String& value) {
@@ -91,7 +91,7 @@ void Psu::powerOn() {
     digitalWrite(POWER_SWITCH_PIN, mapState(POWER_ON));
     if (state_ == POWER_ON) return;
     startTime_ = infoUpdated_ = powerInfoUpdated_ = lastCheck_ = millis();
-    state_ = POWER_ON;    
+    state_ = POWER_ON;
     if (isStateStoreEnabled() && state_ != lastStoredState_) storeState(POWER_ON);
     float voltage = getOutputVoltage();
     setOutputVoltage(voltage);
@@ -101,15 +101,17 @@ void Psu::powerOn() {
 void Psu::powerOff() {
     digitalWrite(POWER_SWITCH_PIN, mapState(POWER_OFF));
     if (state_ == POWER_OFF) return;
-    state_ = POWER_OFF;    
+    state_ = POWER_OFF;
     if (isWhStoreEnabled() && lastStoredWh_ != info_.Wh) storeWh(info_.Wh);
-    if (isStateStoreEnabled() && state_!= lastStore_) storeState(POWER_OFF);
+    if (isStateStoreEnabled() && state_ != lastStore_) storeState(POWER_OFF);
     onStateChangeEvent(state_);
 }
 
 void Psu::onStateChangeEvent(PsuState value) {
-    if (stateChangeHandler_)
-        stateChangeHandler_(state_);
+    if (stateChangeHandler_) {
+        String str = getStateStr();
+        stateChangeHandler_(state_, str);
+    }
 }
 
 bool Psu::mapState(const PsuState state) {
@@ -117,7 +119,6 @@ bool Psu::mapState(const PsuState state) {
 }
 
 uint8_t Psu::mapVoltage(const float value) {
-
     float min;
     float max;
     if (value > 6) {
@@ -197,10 +198,10 @@ bool Psu::restoreWh(double& value) {
 bool Psu::storeState(PsuState value) {
     PrintUtils::print_ident(out_, FPSTR(str_psu));
     PrintUtils::print(out_, FPSTR(str_state), FPSTR(str_arrow_dest));
-    bool res = FSUtils::writeInt(FS_POWER_STATE_VAR, (long) value);
+    bool res = FSUtils::writeInt(FS_POWER_STATE_VAR, (long)value);
     if (res) {
         lastStoredState_ = value;
-        PrintUtils::print(out_, getPsuStateStr(value));
+        PrintUtils::print(out_, getStateStr(value));
     } else {
         PrintUtils::print(out_, FPSTR(str_failed));
     }
@@ -216,7 +217,7 @@ bool Psu::restoreState(PsuState& value) {
     if (FSUtils::readInt(FS_POWER_STATE_VAR, buf)) {
         if (buf >= 0 && buf <= 1) {
             value = (PsuState)buf;
-            PrintUtils::print(out_, getPsuStateStr(value));
+            PrintUtils::print(out_, getStateStr(value));
             lastStoredState_ = value;
             res = true;
         } else {
@@ -230,10 +231,10 @@ bool Psu::restoreState(PsuState& value) {
 }
 
 void Psu::onDiag(const JsonObject& doc) {
-    doc[FPSTR(str_power)] = getPsuStateStr(state_);
+    doc[FPSTR(str_power)] = getStateStr(state_);
     if (state_ == POWER_ON) {
         doc[FPSTR(str_time)] = TimeUtils::format_elapsed_short(getUptime());
-        doc[FPSTR(str_status)] = getStatusStr(status_);
+        doc[FPSTR(str_status)] = getStatusStr();
         doc[FPSTR(str_data)] = info_.toJson();
     }
 }
@@ -270,8 +271,12 @@ void Psu::setAlert(PsuAlert value) {
 void Psu::setStatus(PsuStatus value) {
     if (status_ == value) return;
     status_ = value;
-    if (state_ == POWER_ON)
-        if (statusChangeHandler_) statusChangeHandler_(status_);
+    if (state_ == POWER_ON) {        
+        if (statusChangeHandler_) {
+            String str = getStatusStr();
+            statusChangeHandler_(status_, str);
+        }
+    }
 }
 
 void Psu::setOnStateChange(PsuStateChangeHandler h) {
@@ -294,6 +299,78 @@ void Psu::clearErrorsAndAlerts() {
     alert_ = PSU_ALERT_NONE;
     error_ = PSU_ERROR_NONE;
     status_ = PSU_OK;
+}
+
+uint8_t Psu::quadratic_regression(const float value, const float c) const {
+    double a = 0.0000006562;
+    double b = 0.0022084236;
+    double d = b * b - a * (c - value);
+    double root = (-b + sqrt(d)) / a;
+    if (root < 0)
+        root = 0;
+    else if (root > 255)
+        root = 255;
+    return root;
+}
+
+String Psu::getStateStr() const {
+    return getStateStr(state_);
+}
+
+String Psu::getAlertStr() const {
+    return getAlertStr(alert_);
+}
+
+String Psu::getErrorStr() const {
+    return getErrorStr(error_);
+}
+
+String Psu::getStateStr(const PsuState value) const {
+    return String(FPSTR(value == POWER_ON ? str_on : str_off));
+}
+
+String Psu::getStatusStr() const {
+    String str;
+    switch (status_) {
+        case PSU_OK:
+            str = String(FPSTR(str_ok));
+            break;
+        case PSU_ALERT:
+            str =  String(FPSTR(str_alert));
+            str += ':';
+            str += getAlertStr(alert_);
+            break;
+        case PSU_ERROR:
+            str = String(FPSTR(str_error));
+            str += ':';
+            str += getErrorStr(error_);
+            break;
+    }
+    return str;
+}
+
+String Psu::getErrorStr(const PsuError value) const {
+    String str;
+    switch (value) {
+        case PSU_ERROR_LOW_VOLTAGE:
+            str = String(FPSTR(str_low_voltage));
+            break;
+        case PSU_ERROR_NONE:
+            break;
+    }
+    return str;
+}
+
+String Psu::getAlertStr(const PsuAlert value) const {
+    String str;
+    switch (value) {
+        case PSU_ALERT_LOAD_LOW:
+            str = String(FPSTR(str_load_low));
+            break;
+        case PSU_ALERT_NONE:
+            break;
+    }
+    return str;
 }
 
 }  // namespace Modules

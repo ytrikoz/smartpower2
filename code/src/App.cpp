@@ -56,15 +56,15 @@ void App::setupMods() {
     * Power
     */
     psu()->setOnData(this);
-    psu()->setOnStatusChange([this](PsuStatus status) {
-        PrintUtils::print_ident(out_, FPSTR(str_power));
-        PrintUtils::print(out_, getStatusStr(status));
+    psu()->setOnStatusChange([this](const PsuStatus status, const String description) {
+        PrintUtils::print_ident(out_, FPSTR(str_psu));
+        PrintUtils::print(out_, description);
         PrintUtils::println(out_);
         onPsuStatusChange(status);
     });
-    psu()->setOnStateChange([this](PsuState state) {
-        PrintUtils::print_ident(out_, FPSTR(str_power));
-        PrintUtils::print(out_, getPsuStateStr(state));
+    psu()->setOnStateChange([this](const PsuState state, const String description) {
+        PrintUtils::print_ident(out_, FPSTR(str_psu));
+        PrintUtils::print(out_, description);
         PrintUtils::println(out_);
         onPsuStateChange(state);
     });
@@ -86,7 +86,7 @@ void App::setupMods() {
     /*
     * Syslog
     */
-   syslog()->setSource(out_);
+    syslog()->setSource(out_);
 };
 
 void App::systemRestart() {
@@ -226,7 +226,7 @@ size_t App::printDiag(Print *p) {
         auto *obj = getInstance(i);
         JsonVariant mod_root = doc.createNestedObject(getName(i));
         if (obj) {
-            mod_root[FPSTR(str_state)] = (uint8_t) obj->getNoduleState();
+            mod_root[FPSTR(str_state)] = (uint8_t)obj->getNoduleState();
             if (obj->failed()) {
                 mod_root[FPSTR(str_error)] = obj->getError().toString();
             }
@@ -268,7 +268,7 @@ void App::refreshRed() {
     led()->set(RED_LED, mode);
 }
 
-void App::setModules(ModuleDef* objs) {
+void App::setModules(ModuleDef *objs) {
     modules_ = objs;
 }
 
@@ -280,10 +280,9 @@ void App::setConfig(ConfigHelper *config) {
     config_ = config;
     config_->get()->setOnChange(
         [this](ConfigItem param, const String &value) {
-            PrintUtils::print_ident(out_, FPSTR(str_app));
-            PrintUtils::print(out_, param, value);
+            PrintUtils::print_ident(out_, FPSTR(str_config));
+            PrintUtils::print(out_, config_->get()->name(param), value);
             PrintUtils::println(out_);
-
             onConfigChange(param, value);
         });
 }

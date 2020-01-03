@@ -97,10 +97,10 @@ void Display::refresh(void) {
                 load_psu_info(&screen);
                 return;
             case PSU_ALERT:
-                load_message(&screen, FPSTR(str_alert), getAlertStr(psu->getAlert()));
+                load_message(&screen, FPSTR(str_alert), psu->getAlertStr());
                 return;
             case PSU_ERROR:
-                load_message(&screen, FPSTR(str_error), getErrorStr(psu->getError()));
+                load_message(&screen, FPSTR(str_error), psu->getErrorStr());
                 return;
         }
     }

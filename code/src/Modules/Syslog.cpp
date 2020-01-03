@@ -23,7 +23,7 @@ void Syslog::onDiag(const JsonObject& doc) {
 
 bool Syslog::onConfigChange(const ConfigItem param, const String& value) {
     if (param == SYSLOG_SERVER) {
-        start(true);        
+        init(true);        
     }
     return true;
 }
@@ -66,8 +66,18 @@ void Syslog::setServer(const char* name, uint16_t port) {
 void Syslog::onLoop() {
     if (source_) {
         String buf;
-        if (source_->pull(buf)) {
-            log(LOG_DEBUG, "main", buf.c_str());
+        if (source_->pull(buf)) {            
+            String tag = "main";
+            String message (buf);
+            int tag_s = buf.indexOf('[');
+            if (tag_s >= 0) {
+                int tag_e = buf.indexOf(']', tag_s);
+                if (tag_e >= 0) {
+                    tag = buf.substring(tag_s + 1, tag_e);
+                }            
+                message = buf.substring(tag_e + 1);
+            }
+            log(LOG_DEBUG, tag.c_str(), message.c_str());
         }
     }
 }

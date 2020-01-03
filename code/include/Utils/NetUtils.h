@@ -23,7 +23,7 @@ inline String getStaSsid() {
     return WiFi.SSID();
 }
 
-inline String getStatusStr(bool network) {
+inline String getStatusStr(const bool network) {
     String str = FPSTR(str_network);
     str += ' ';
     str += StrUtils::bool2str(network, StrUtils::UP_DONW);
