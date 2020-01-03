@@ -7,40 +7,7 @@
 namespace Modules {
 
 bool Display::isEnabled() {
-    return lcd && lcd->isEnabled();
-}
-
-void Display::setScreen(ScreenEnum value) {
-    if (activeScreen == value)
-        return;
-
-    if (!lcd->connect())
-        return;
-
-    if (locked())
-        return;
-
-    switch (value) {
-        case SCREEN_BOOT:
-            lcd->loadBank(BANK_PROGRESS);
-            break;
-        case SCREEN_CLEAR:
-        case SCREEN_PSU:
-        case SCREEN_PSU_STAT:
-        case SCREEN_READY:
-        case SCREEN_PLOT:
-        case SCREEN_AP:
-        case SCREEN_AP_STA:
-        case SCREEN_STA:
-            lcd->loadBank(BANK_NONE);
-            break;
-        case SCREEN_MESSAGE:
-            break;
-    }
-
-    lcd->clear();
-    screenUpdated = lastScroll = screenRedraw = millis();
-    activeScreen = value;
+    return lcd && lcd->connected();
 }
 
 bool Display::onInit() {
@@ -48,34 +15,31 @@ bool Display::onInit() {
     lastUpdated = lockTimeout = lockUpdated = 0;
     backlight_ = config_->asBool(BACKLIGHT);
     backlightTime_ = 0;
-    bool result = lcd->connect();
-    if (result) {
+    bool res = lcd->connect();
+    if (res) {
         enableBacklight(backlight_);
     } else {
-        setError(Error(ERROR_INIT, FPSTR(str_not_found)));
+        setError(ERROR_INIT, String(FPSTR(str_not_found)).c_str());
     }
-    return result;
+    return res;
 }
 
 void Display::showProgress(uint8_t per, const char *str) {
-    setScreen(SCREEN_BOOT);
+    lcd->loadBank(BANK_PROGRESS);
     static uint8_t last = 0;
-    if (per == 0)
-        lcd->drawTextCenter(LCD_ROW_1, str);
-    lcd->drawProgressBar(LCD_ROW_2, per);
+    if (per == 0) lcd->drawTextCenter(LCD_ROW_1, str);
+    lcd->drawProgressBar(LCD_ROW_2, last);
     while (per > last) {
         last += 5;
         delay(250);
-        lcd->drawProgressBar(LCD_ROW_2, per);
+        lcd->drawProgressBar(LCD_ROW_2, last);
     }
-    if (last > 0)
-        lcd->drawTextCenter(LCD_ROW_1, str);
+    if (last > 0) lcd->drawTextCenter(LCD_ROW_1, str);
     last = per;
 }
 
 bool Display::enableBacklight(const bool enabled, const time_t time) {
     if (!isEnabled()) return false;
-
     if (enabled)
         lcd->turnOn();
     else
@@ -85,92 +49,40 @@ bool Display::enableBacklight(const bool enabled, const time_t time) {
     return true;
 }
 
-void Display::clear(void) { activeScreen = SCREEN_CLEAR; }
-
-void Display::refresh(void) {
-    Modules::Psu *psu = app.psu();
-    if (psu->getState() == POWER_ON) {
-        setScreen(SCREEN_PSU);
-        PsuStatus status = psu->getStatus();
-        switch (status) {
-            case PSU_OK:
-                load_psu_info(&screen);
-                return;
-            case PSU_ALERT:
-                load_message(&screen, FPSTR(str_alert), psu->getAlertStr());
-                return;
-            case PSU_ERROR:
-                load_message(&screen, FPSTR(str_error), psu->getErrorStr());
-                return;
-        }
-    }
-
-    NetworkMode mode = wireless->getMode();
-    switch (mode) {
-        case NetworkMode::NETWORK_OFF:
-            setScreen(SCREEN_READY);
-            load_ready(&screen);
-            return;
-        case NetworkMode::NETWORK_STA:
-            setScreen(SCREEN_STA);
-            load_wifi_sta(&screen);
-            return;
-        case NetworkMode::NETWORK_AP:
-            setScreen(SCREEN_AP);
-            load_wifi_ap(&screen);
-            return;
-        case NetworkMode::NETWORK_AP_STA:
-            setScreen(SCREEN_AP_STA);
-            load_wifi_ap_sta(&screen);
-            return;
-    }
+void Display::clear(void) { 
+    activeScreen = SCREEN_CLEAR; 
 }
 
-void Display::load_ready(Screen *obj) {
+void Display::show_network(const NetworkMode mode) {
+    lcd->loadBank(BANK_NONE);
     size_t n = 0;
-    obj->set(n++, "READY> ");
-    obj->set(n++, NULL, TimeUtils::format_time(app.clock()->local()));
-    obj->setCount(n);
-    obj->moveFirst();
+    screen.set(n++, "READY> ", TimeUtils::format_time(app.clock()->local()));
+    if (mode == NETWORK_AP) {
+        screen.set(n++, "SSID ", NetUtils::getApSsid());
+        screen.set(n++, "PWD ", NetUtils::getApPasswd());
+    } else if (mode == NETWORK_STA) {
+        screen.set(n++, "WiFi ", NetUtils::getStaStatus());
+        screen.set(n++, "RSSI ", NetUtils::getRssi());
+    } else if (mode == NETWORK_AP_STA) {
+        screen.set(n++, "WiFi ", NetUtils::getStaStatus());
+        screen.set(n++, "RSSI ", NetUtils::getRssi());
+        screen.set(n++, "STA ", NetUtils::getStaSsid());
+        screen.set(n++, "STA IP ", NetUtils::getStaIp().toString());
+        screen.set(n++, "AP ", NetUtils::getApSsid());
+        screen.set(n++, "AP IP ", NetUtils::getApIp().toString());
+    }
+    screen.setCount(n);
+    screen.moveFirst();
 }
 
-void Display::load_wifi_ap(Screen *obj) {
-    size_t n = 0;
-    obj->set(n++, "SSID ", NetUtils::getApSsid());
-    obj->set(n++, "PWD ", NetUtils::getApPasswd());
-    obj->set(n++, NULL, app.clock()->timeStr());
-    obj->setCount(n);
-};
-
-void Display::load_wifi_sta(Screen *obj) {
-    size_t n = 0;
-    obj->set(n++, "WiFi ", NetUtils::getStaStatus());
-    obj->set(n++, "RSSI ", NetUtils::getRssi());
-    obj->set(n++, NULL, NetUtils::getStaIp().toString());
-    obj->set(n++, NULL, app.clock()->timeStr());
-    obj->setCount(n);
-};
-
-void Display::load_wifi_ap_sta(Screen *obj) {
-    size_t n = 0;
-    obj->set(n++, "WiFi ", NetUtils::getStaStatus());
-    obj->set(n++, "RSSI ", NetUtils::getRssi());
-    obj->set(n++, "STA ", NetUtils::getStaSsid());
-    obj->set(n++, "STA IP ", NetUtils::getStaIp().toString());
-    obj->set(n++, "AP ", NetUtils::getApSsid());
-    obj->set(n++, "AP IP ", NetUtils::getApIp().toString());
-    obj->set(n++, NULL, app.clock()->timeStr());
-    obj->setCount(n);
-};
-
-void Display::load_psu_info(Screen *obj) {
-    PsuData data = app.psu()->getInfo();
+void Display::show_psu_data(const PsuData &data) {
+    setScreen(SCREEN_PSU);
     String str = String(data.V, 3);
     if (str.length() == 5) str += " ";
     str += "V ";
     str += String(data.I, 3);
     str += " A ";
-    obj->set(0, str.c_str());
+    screen.set(0, str.c_str());
 
     double p = data.P;
     str = String(p, p < 10 ? 3 : 2);
@@ -185,32 +97,31 @@ void Display::load_psu_info(Screen *obj) {
         str += String(total, 3);
         str += "KWh";
     }
-    obj->set(1, str.c_str());
-    obj->setCount(2);
-    obj->moveFirst();
-}  // namespace Modules
-
-void Display::load_psu_stat(Screen *obj) {
-    obj->set(0, "MAX> ");
-    obj->set(1, "MIN> ");
-    obj->setCount(2);
-    obj->moveFirst();
+    screen.set(1, str.c_str());
+    screen.setCount(2);
+    screen.moveFirst();
 }
 
-void Display::load_message(Screen *obj, String header, String message) {
-    load_message(obj, header.c_str(), message.c_str());
+void Display::show_psu_stat() {
+    screen.set(0, "MAX> ");
+    screen.set(1, "MIN> ");
+    screen.setCount(2);
+    screen.moveFirst();
 }
 
-void Display::load_message(Screen *obj, const char *header,
-                           const char *message) {
-    obj->set(0, header);
-    obj->set(1, message);
-    obj->setCount(2);
-    obj->moveFirst();
+void Display::setScreen(ScreenEnum value) {
+    if (activeScreen == value) return;
+    screenUpdated = lastScroll = screenRedraw = millis();
+    activeScreen = value;
+    lcd->clear();
 }
 
-void Display::showMessage(const char *header, const char *message) {
-    load_message(&screen, header, message);
+void Display::show_message(const char *header, const char *message) {
+    setScreen(SCREEN_MESSAGE);
+    screen.set(0, header);
+    screen.set(1, message);
+    screen.setCount(2);
+    screen.moveFirst();
 }
 
 void Display::showPlot(PlotSummary *data, size_t cols) {
@@ -218,35 +129,7 @@ void Display::showPlot(PlotSummary *data, size_t cols) {
     lock(15000);
 }
 
-void Display::updateScreen(void) {
-    switch (activeScreen) {
-        case SCREEN_CLEAR:
-        case SCREEN_BOOT:
-        case SCREEN_PLOT:
-        case SCREEN_MESSAGE:
-        case SCREEN_PSU:
-            return;
-        case SCREEN_STA:
-            load_wifi_sta(&screen);
-            return;
-        case SCREEN_AP:
-            load_wifi_ap(&screen);
-            return;
-        case SCREEN_AP_STA:
-            load_wifi_ap_sta(&screen);
-            return;
-        case SCREEN_READY:
-            load_ready(&screen);
-            return;
-        case SCREEN_PSU_STAT:
-            load_psu_stat(&screen);
-    }
-}
-
 void Display::onLoop() {
-    if (activeScreen == SCREEN_CLEAR || activeScreen == SCREEN_BOOT)
-        return;
-
     unsigned long now = millis();
 
     if (locked(now))
@@ -259,7 +142,6 @@ void Display::onLoop() {
 
     if (screen.count() > LCD_ROWS) {
         if (millis_passed(lastScroll, now) >= LCD_SCROLL_INTERVAL) {
-            updateScreen();
             screen.next();
             lastScroll = now;
         }
@@ -267,10 +149,6 @@ void Display::onLoop() {
 }
 
 void Display::lock(unsigned long time) {
-#ifdef DEBUG_DISPLAY
-    DEBUG.printf("lock %lu", time);
-    DEBUG.println();
-#endif
     lockTimeout = time;
     lockUpdated = millis();
 }

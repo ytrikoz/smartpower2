@@ -13,25 +13,21 @@ class Display : public Module {
     void showPlot(PlotSummary *data, size_t cols);
     void showMessage(const char *header, const char *message);
     void clear(void);
-    void refresh(void);
     void updateScreen(void);
     bool enableBacklight(const bool value = true, const time_t time = 0);
 
-    void load_message(Screen *obj, String header, String message);
-    void load_message(Screen *obj, const char *header, const char *message);
-    void load_wifi_sta(Screen *obj);
-    void load_wifi_ap(Screen *obj);
-    void load_wifi_ap_sta(Screen *obj);
-    void load_ready(Screen *obj);
-    void load_psu_info(Screen *obj);
-    void load_psu_stat(Screen *obj);
+    void show_psu_data(const PsuData& data);
+    void show_psu_stat();
+    void show_message(const String &header, const String &message);
+    void show_message(const char *header, const char *message);
+    void show_network(const NetworkMode mode);
 
    public:
     Display() : Module(){};
 
    protected:
     bool onInit() override;
-    bool onConfigChange(const ConfigItem param, const String& value) override;
+    bool onConfigChange(const ConfigItem param, const String &value) override;
     void onLoop() override;
 
    private:
@@ -55,5 +51,4 @@ class Display : public Module {
     Screen screen;
     ScreenEnum activeScreen;
 };
-
-}
+}  // namespace Modules

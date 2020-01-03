@@ -255,7 +255,7 @@ void Web::broadcast(const String &data, const WebPageEnum page, const uint32_t e
 void Web::fillMain(JsonObject &obj) {
     Modules::Psu *ps = app.psu();
     obj[FPSTR(str_power)] = (int)ps->isPowerOn();
-    obj[FPSTR(str_wh)] = ps->getInfo().Wh;
+    obj[FPSTR(str_wh)] = ps->getData().Wh;
 }
 
 void Web::fillOptions(JsonObject &obj) {

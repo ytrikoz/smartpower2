@@ -99,63 +99,59 @@ using StrUtils::setstr;
 using StrUtils::strfill;
 using StrUtils::strpadd;
 
-LcdDisplay::LcdDisplay() { addr = NONE_ADDRESS; }
+LcdDisplay::LcdDisplay() { 
+    addr_ = NONE_ADDRESS; 
+}
 
-bool LcdDisplay::isEnabled() {
-    return addr != NONE_ADDRESS;
+bool LcdDisplay::connected() {
+    return addr_ != NONE_ADDRESS;
 }
 
 bool LcdDisplay::connect() {
-    if (addr != NONE_ADDRESS)
-        return true;
+    if (connected()) return true;
 
     Wire.beginTransmission(LCD_SLAVE_ADDRESS);
-
     if (!Wire.endTransmission()) {
-        addr = LCD_SLAVE_ADDRESS;
+        addr_ = LCD_SLAVE_ADDRESS;
     } else {
         Wire.beginTransmission(LCD_SLAVE_ADDRESS_ALT);
         if (!Wire.endTransmission())
-            addr = LCD_SLAVE_ADDRESS_ALT;
+            addr_ = LCD_SLAVE_ADDRESS_ALT;
     }
 
-    if (addr != NONE_ADDRESS) {
-        lcd = new LiquidCrystal_I2C(addr, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
+    if (connected()) {
+        lcd = new LiquidCrystal_I2C(addr_, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
         lcd->begin(LCD_COLS, LCD_ROWS);
         lcd->clear();
     }
 
-    return addr != NONE_ADDRESS;
+    return connected();
 }
 
 void LcdDisplay::turnOn() {
-    if (!connect())
-        return;
-
+    if (!connect()) return;
     lcd->display();
     lcd->backlight();
 }
 
-void LcdDisplay::clear() { lcd->clear(); }
+void LcdDisplay::clear() { 
+    lcd->clear(); 
+}
 
 void LcdDisplay::turnOff() {
-    if (!connect())
-        return;
-
+    if (!connect()) return;
     lcd->noDisplay();
     lcd->noBacklight();
 }
 
 void LcdDisplay::drawScreen(Screen *screen, bool force) {
-    if (!connect())
-        return;
+    if (!connect()) return;
 #ifdef DEBUG_DISPLAY
     DEBUG.printf("drawScreen(%d, %d)", screen, force);
     DEBUG.println();
 #endif
     for (uint8_t row = 0; row < LCD_ROWS; ++row) {
-        if (row >= screen->count())
-            break;
+        if (row >= screen->count()) break;
         ScreenItem *item = screen->get(row);
         if (force || item->needsRedraw())
             drawScreenItem(row, item);
@@ -163,8 +159,7 @@ void LcdDisplay::drawScreen(Screen *screen, bool force) {
 }
 
 void LcdDisplay::drawScreenItem(uint8_t row, ScreenItem *item) {
-    if (!connect())
-        return;
+    if (!connect()) return;
 #ifdef DEBUG_DISPLAY
     DEBUG.printf("#%d drawScreenItem(%s)", row, item->label);
     DEBUG.println();
@@ -184,8 +179,7 @@ void LcdDisplay::drawScreenItem(uint8_t row, ScreenItem *item) {
             strcat(buf, tmp);
         }
         drawText(0, row, buf);
-        item->redrawLabel = false;
-        item->redrawText = false;
+        item->redrawLabel = item->redrawText = false;
         return;
     }
 
@@ -220,8 +214,7 @@ void LcdDisplay::drawScreenItem(uint8_t row, ScreenItem *item) {
 }
 
 void LcdDisplay::drawTextCenter(uint8_t row, const char *str) {
-    if (!connect())
-        return;
+    if (!connect()) return;
     char buf[LCD_COLS + 1];
     size_t str_len = strlen(str);
     if (str_len > LCD_COLS)
@@ -235,13 +228,7 @@ void LcdDisplay::drawTextCenter(uint8_t row, const char *str) {
 }
 
 void LcdDisplay::loadBank(CharBank bank, bool force) {
-    if ((!force) && (this->bank == bank))
-        return;
-#ifdef DEBUG_DISPLAY
-    DEBUG.printf("loadBank(%d, %d)", bank, force);
-    DEBUG.println();
-#endif
-    this->bank = bank;
+    if (bank_ == bank && !force)  return;
     switch (bank) {
         case BANK_PLOT:
             lcd->createChar(0, char_solid);
@@ -288,15 +275,14 @@ void LcdDisplay::loadBank(CharBank bank, bool force) {
         default:
             break;
     }
+    this->bank_ = bank;
 }
 
 void LcdDisplay::drawProgressBar(uint8_t row, uint8_t per) {
-    if (!connect())
-        return;
+    if (!connect()) return;
+    
     lcd->setCursor(0, row);
-
     uint8_t y = map(per, 0, 100, 0, (LCD_COLS - 4) * 2 * 4 - 2 * 4);
-
     for (uint8_t i = 0; i < LCD_COLS - 4; ++i) {
         if (i == 0) {
             if (y > 4) {

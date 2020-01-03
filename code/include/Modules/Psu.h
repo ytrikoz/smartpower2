@@ -41,7 +41,7 @@ class Psu : public Module {
     PsuError getError(void) const;
     float getOutputVoltage() const;
     const unsigned long getUptime() const;
-    const PsuData getInfo() const;
+    const PsuData getData() const;
     String getErrorStr() const;
     String getAlertStr() const;
 

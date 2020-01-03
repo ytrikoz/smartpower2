@@ -8,7 +8,7 @@
 
 #include "Strings.h"
 
-class MainLog : protected TextLog, public StringPullable, public Print {
+class MainLog : public StringPullable, public StringPusher, public Print {
    public:
     MainLog() : out_(nullptr) {
         buffer_ = new CharBuffer(128);

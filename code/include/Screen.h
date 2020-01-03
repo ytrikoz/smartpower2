@@ -27,10 +27,11 @@ struct ScreenItem {
     char label[LCD_COLS + 1] = {0};
     char text[DISPLAY_VIRTUAL_COLS + 1] = {0};
     uint8_t text_pos = 0;
-    bool needsRedraw() { return redrawLabel || redrawText; }
+    bool needsRedraw() { 
+        return redrawLabel || redrawText;
+    }
     void forceRedraw() {
-        redrawLabel = true;
-        redrawText = true;
+        redrawLabel = redrawText = true;
     }
 };
 
@@ -77,8 +78,16 @@ class Screen {
 
     void set(size_t n, const char *label, const char *text) {
         ScreenItem *item = &items[n];
-        item->redrawLabel = setstr(item->label, label, LCD_COLS + 1);
-        item->redrawText = setstr(item->text, text, DISPLAY_VIRTUAL_COLS + 1);
+        if (!item->redrawLabel) {
+            item->redrawLabel = setstr(item->label, label, LCD_COLS + 1);
+        } else {
+            setstr(item->label, label, LCD_COLS + 1);
+        }
+        if (!item->redrawText) {        
+            item->redrawText = setstr(item->text, text, DISPLAY_VIRTUAL_COLS + 1);
+        } else {
+            setstr(item->text, text, DISPLAY_VIRTUAL_COLS + 1);
+        }        
 #ifdef DEBUG_DISPLAY
         DEBUG.printf("[screen] set(%d, %s, %s) = %d\r\n", n, item->label,
                      item->text, item->needsRedraw());

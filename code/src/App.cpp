@@ -108,7 +108,7 @@ void App::onPsuStatusChange(PsuStatus status) {
 }
 
 void App::onPsuData(PsuData &item) {
-    if (display()) display()->refresh();
+    refreshDisplay();
 
     if (powerlog_) powerlog_->onPsuData(item);
 
@@ -160,19 +160,11 @@ void App::onNetworkStatusChange(bool network, NetworkMode mode) {
 
 void App::begin() {
     initMods();
-    displayProgress(0, BUILD_DATE);
     setupMods();
-    displayProgress(80, "<INIT>");
-    displayProgress(100, "<COMPLETE>");
-    display()->refresh();
+    displayProgress(0, BUILD_DATE);
+    displayProgress(100, BUILD_DATE);
+    refreshDisplay();
 }
-
-void App::startSafe() {
-    start(MOD_CONSOLE);
-    console()->init();
-}
-
-void App::loopSafe() { console()->loop(); }
 
 AppState App::loop(LoopTimer *looper) {
     for (size_t i = 0; i < MODULES_COUNT; ++i) {
@@ -196,9 +188,9 @@ AppState App::loop(LoopTimer *looper) {
         }
     }
 
-    if (psuEvent_) {
+    if (psuEvent_ || networkEvent_) {
         web()->updatePage(PAGE_HOME);
-        display()->refresh();
+        refreshDisplay();
     }
 
     if (systemEvent_ || networkEvent_)
@@ -260,16 +252,37 @@ void App::refreshRed() {
     LedSignal mode = LIGHT_ON;
     if (systemEvent_ && exitState_ >= STATE_RESET) {
         mode = BLINK_ERROR;
-    } else if (psu()->getStatus() == PSU_OK) {
-        mode = psu()->getState() == POWER_ON ? BLINK : LIGHT_ON;
+    } else if (psu()->getState() == POWER_ON) {
+        mode = psu()->getStatus() == PSU_OK ? BLINK : BLINK_ALERT;
     } else {
-        mode = BLINK_ALERT;
+        mode = LIGHT_ON;
     }
     led()->set(RED_LED, mode);
 }
 
-void App::setModules(ModuleDef *objs) {
-    modules_ = objs;
+void App::refreshDisplay(void) {
+    if (!display()) return;
+
+    if (psu()->getState() == POWER_ON) {
+        PsuStatus status = psu()->getStatus();
+        switch (status) {
+            case PSU_OK:
+                display()->show_psu_data(psu()->getData());
+                return;
+            case PSU_ALERT:
+                display()->show_message(String(FPSTR(str_alert)).c_str(), psu()->getAlertStr().c_str());
+                return;
+            case PSU_ERROR:
+                display()->show_message(String(FPSTR(str_error)).c_str(), psu()->getErrorStr().c_str());
+                return;
+        }
+    } else {
+        display()->show_network(networkMode_);
+    }
+}
+
+void App::setModules(ModuleDef *obj) {
+    modules_ = obj;
 }
 
 void App::setPowerlog(PowerLog *powerlog) {

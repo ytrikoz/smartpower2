@@ -59,10 +59,7 @@ class App : public Host, PsuDataListener {
     void setWireless(Wireless *);
 
     void begin();
-    void startSafe();
     AppState loop(LoopTimer *looper = nullptr);
-    void loopSafe();
-
     size_t printDiag(Print *p);
 
     void printPlot(PlotSummary *data, Print *p);
@@ -80,9 +77,8 @@ class App : public Host, PsuDataListener {
     Config *params() { return config_->get(); }
 
     void refreshRed();
-
     void refreshBlue();
-
+    void refreshDisplay();
    private:
     void displayProgress(uint8_t progress, const char *message);
     void restart();

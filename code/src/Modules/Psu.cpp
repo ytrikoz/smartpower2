@@ -291,7 +291,7 @@ void Psu::setOnData(PsuDataListener* l) {
     dataListener_ = l;
 }
 
-const PsuData Psu::getInfo() const {
+const PsuData Psu::getData() const {
     return info_;
 }
 

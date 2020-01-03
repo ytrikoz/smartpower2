@@ -31,7 +31,7 @@ class LcdDisplay {
     void loop();
 
    public:
-    bool isEnabled();
+    bool connected();
     void loadBank(CharBank bank, bool force = false);
     bool connect();
     void turnOn();
@@ -51,8 +51,8 @@ class LcdDisplay {
     void drawScreenItem(uint8_t row, ScreenItem *l);
 
    private:
-    uint8_t addr;
+    uint8_t addr_;
     LiquidCrystal_I2C *lcd;
     bool active;
-    CharBank bank;
+    CharBank bank_;
 };
