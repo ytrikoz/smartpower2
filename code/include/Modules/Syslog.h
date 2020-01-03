@@ -55,10 +55,8 @@ class VisualSyslogServer {
         facility_ = facility;
     }
 
-    Error send(LogSeverity level, const char* tag, const char* message) {
-        if (!dest_) {
-            return Error::WrongParameter(FPSTR(str_server));
-        }
+    bool send(LogSeverity level, const char* tag, const char* message) {
+        bool res = false;
         String buf;
         buf += '<';
         buf += getMask(level);
@@ -70,11 +68,13 @@ class VisualSyslogServer {
         buf += ' ';
         buf += message;
         if (dest_->push(buf)) {
-            return Error::ok();
-        } else {
-            return Error::NetworkRelated(buf);
+            cnt_++;
+            size_ += buf.length();
+            res = true;
         }
+        return res;
     }
+
     size_t cnt() {
         return cnt_;
     }
@@ -82,6 +82,7 @@ class VisualSyslogServer {
     size_t total() {
         return size_;
     }
+
    private:
     int getMask(LogSeverity level) {
         return (int)facility_ * 8 + (int)level;
@@ -102,6 +103,7 @@ class Syslog : public Module, public Logger {
 
    public:
     virtual bool log(const LogSeverity level, const char* module, const char* str) override;
+    void setSource(StringPullable* source);
 
    protected:
     virtual bool onConfigChange(const ConfigItem param, const String& value) override;
@@ -111,14 +113,13 @@ class Syslog : public Module, public Logger {
     virtual void onDiag(const JsonObject& doc) override;
 
    private:
-    bool init(const char* address, uint16_t port);
-    void setSource(SourceLog* source);
+    void setServer(const char* address, uint16_t port);
 
    private:
     char* name_;
     UdpPacket tranport_;
     VisualSyslogServer proto_;
-    SourceLog* source_;
+    StringPullable* source_;
 };
 
 }  // namespace Modules

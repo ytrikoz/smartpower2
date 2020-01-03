@@ -104,8 +104,6 @@ void loop() {
     if (loopTimer)
         loopTimer->tick();
 
-    mainlog.post();
-
     if (boot) {
         boot->end();
         delete boot;

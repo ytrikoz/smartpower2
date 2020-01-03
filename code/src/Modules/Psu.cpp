@@ -87,10 +87,6 @@ bool Psu::onConfigChange(const ConfigItem param, const String& value) {
     return true;
 }
 
-void Psu::onExecute(const String &param, const String &value) {
-    mcp4652_set(param.toInt());
-}
-
 void Psu::powerOn() {
     digitalWrite(POWER_SWITCH_PIN, mapState(POWER_ON));
     if (state_ == POWER_ON) return;

@@ -28,7 +28,7 @@ class OTAUpdate : public Module {
    private:
     uint16_t port_;
     String host_;
-    ArduinoOTAClass *ota;
+    ArduinoOTAClass *ota_;
     unsigned int update_progress;
 };
 

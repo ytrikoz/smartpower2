@@ -18,7 +18,7 @@ const char *ConfigHelper::name() {
 }
 
 bool ConfigHelper::check() {
-    return FSUtils::exist(name_);
+    return FSUtils::exists(name_);
 }
 
 void ConfigHelper::setName(const char *name) {
@@ -202,15 +202,3 @@ const char *ConfigHelper::getPassword_AP() {
 
 // maximum value of RF Tx Power, unit: 0.25 dBm, range [0, 82]
 uint8_t ConfigHelper::getTPW() { return obj_.asByte(TPW); }
-
-// String ConfigHelper::getConfigJson() {
-//     DynamicJsonDocument doc(1024);
-//     String str;
-//     for (uint8_t i = 0; i < CONFIG_ITEMS; ++i) {
-//         ConfigItem param = ConfigItem(i);
-//         JsonObject item = doc.createNestedObject();
-//         item[config->getName(param)] = config->getValueAsString(param);
-//     }
-//     serializeJson(doc, str);
-//     return str;
-// }

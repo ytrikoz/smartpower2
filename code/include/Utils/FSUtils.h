@@ -13,7 +13,7 @@ inline bool move(const char *src, const char *dst) {
     return SPIFFS.exists(src) && SPIFFS.rename(src, dst);
 }
 
-inline bool exist(const String &name) {
+inline bool exists(const String &name) {
     return SPIFFS.exists(name);
 }
 

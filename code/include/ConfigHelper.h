@@ -51,8 +51,7 @@ class ConfigHelper : public Printable {
                              const char *);
     bool setPowerConfig(BootPowerState state, float outputVoltage);
     bool setNtpConfig(sint8_t timeZone_h, uint16_t updateInterval_s);
-    
-    void setOnConfigChange(ConfigItem param);
+  
     Config *get();
   private:
     String extractName(const String &str);

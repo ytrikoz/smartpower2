@@ -15,43 +15,37 @@ class Module {
     void setOutput(Print *p) { out_ = p; }
 
     void setConfig(Config *c) { config_ = c; }
-    
-    bool configChange(const ConfigItem param, const String& value) {
+
+    bool configChange(const ConfigItem param, const String &value) {
         return onConfigChange(param, value);
     }
 
-    bool getScreenItem(String** item, size_t& count ) {
+    bool getScreenItem(String **item, size_t &count) {
         item = nullptr;
         count = 0;
         return false;
     }
 
-    bool execute(const String &param, const String &value) {
-        setError(Error::ok());
-        onExecute(param, value);
-        return !failed();            
-    }
-
-    bool init() {
+    bool init(bool force = false) {
         if (modState_ > ModuleState::STATE_INIT_COMPLETE) return true;
-        if (modState_ == ModuleState::STATE_INIT_FAILED) return false;
-        
-        modState_ = onInit() ? STATE_INIT_COMPLETE : ModuleState::STATE_INIT_FAILED;                
+        if (modState_ == ModuleState::STATE_INIT_FAILED && !force) return false;
+
+        modState_ = onInit() ? STATE_INIT_COMPLETE : ModuleState::STATE_INIT_FAILED;
         return modState_ == ModuleState::STATE_INIT_COMPLETE;
     }
 
-    bool start() {        
+    bool start(bool force = false) {
         if (modState_ == ModuleState::STATE_ACTIVE) return true;
-        if (modState_ == ModuleState::STATE_START_FAILED) return false;
+        if (modState_ == ModuleState::STATE_START_FAILED && !force) return false;
 
-        if (modState_ < ModuleState::STATE_INIT_COMPLETE)  {
-            if (!init()) return false;           
-        }        
-        modState_ = onStart() ? STATE_ACTIVE: ModuleState::STATE_START_FAILED;        
+        if (modState_ < ModuleState::STATE_INIT_COMPLETE) {
+            if (!init(force)) return false;
+        }
+        modState_ = onStart() ? STATE_ACTIVE : ModuleState::STATE_START_FAILED;
         return modState_ == ModuleState::STATE_ACTIVE;
     }
 
-    void stop(){
+    void stop() {
         if (modState_ < ModuleState::STATE_ACTIVE) return;
         onStop();
         modState_ = ModuleState::STATE_INIT_COMPLETE;
@@ -59,11 +53,11 @@ class Module {
 
     void end() {
         if (modState_ < ModuleState::STATE_INIT_FAILED) return;
-        onDeinit();
+        onEnd();
         modState_ = ModuleState::STATE_INIT;
     };
 
-    void loop() {   
+    void loop() {
         if (modState_ == ModuleState::STATE_ACTIVE || start()) onLoop();
     };
 
@@ -72,29 +66,46 @@ class Module {
     };
 
     size_t printDiag(Print *p) {
-        StaticJsonDocument<256> doc;
-        doc[FPSTR(str_state)] = getModuleStateStr();
-        if(failed()) {
-            doc[FPSTR(str_error)] = getError().description();
+        DynamicJsonDocument doc(512);
+        doc[FPSTR(str_state)] = (uint8_t) modState_;
+        if (failed()) {
+            doc[FPSTR(str_error)] = modError_;
         }
         JsonVariant obj = doc.as<JsonObject>();
         onDiag(obj);
-        return serializeJsonPretty(doc, *p);
+        return serializeJson(doc, *p);
     };
 
-    virtual String getModuleStateStr() {
-        return ModuleUtils::getStateStr(modState_);
+    void clearError() {
+        modError_ = Error::none();
+    }
+
+    Error getError() {
+        return modError_;
+    }
+
+    ModuleState getNoduleState() {
+        return modState_;
     }
 
     virtual void onDiag(const JsonObject &obj) {}
-    
-    virtual Error getError() {
-        return modError_;
+
+    virtual bool failed() const {
+        return modError_.code() != 0;
     }
+
+    virtual bool ok() const {
+        return modError_.code() == 0;
+    }
+
    protected:
+    virtual bool onConfigChange(const ConfigItem item, const String &value) {
+        return true;
+    }
+
     virtual bool onInit() { return true; };
 
-    virtual void onDeinit(){};
+    virtual void onEnd(){};
 
     virtual bool onStart() { return true; }
 
@@ -102,52 +113,30 @@ class Module {
 
     virtual void onLoop() = 0;
 
-    virtual bool onConfigChange(const ConfigItem item, const String& value) {
-        return true;
-    }
-    
-    virtual bool failed() const {
-        return modError_.code() != 0;
-    }
-
-    virtual bool success() const {
-        return modError_.code() == 0;
-    }
-
-
-    virtual void onExecute(const String &param, const String &value) {
-        setError(ERROR_UNSUPPORTED);        
-    }
-
-   
-protected:    
-    void setError(Error e){
+   protected:
+    void setError(Error e) {
         modError_ = e;
     }
+
     void setError(ErrorCode code) {
-        if (code == 0) {
-            modError_ = Error::ok();
-        } else {
-            modError_ = Error(code);
-        }
-    }
-    
-    void setError(ErrorCode code, const char* desc) {
-        modError_ = Error(code, desc);
+        setError(Error(code));
     }
 
-    void setError(ErrorCode code, String desc) {
-        setError(code, desc.c_str());
+    void setError(ErrorCode code, const char *desc) {
+        setError(Error(code, desc));
     }
-    
+
     void setError(ErrorCode code, ConfigItem param) {
-        setError(code, config_->name(param).c_str());
+        char buf[OUTPUT_MAX_LENGTH];
+        sprintf_P(buf, strf_wrong_parameter, config_->name(param).c_str());
+        setError(code, buf);
     }
 
+   protected:
     Print *out_;
     Config *config_;
-    
-private:
+
+   private:
     Error modError_;
-    ModuleState modState_;    
+    ModuleState modState_;
 };

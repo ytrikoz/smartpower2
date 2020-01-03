@@ -79,5 +79,7 @@ class Config {
         {str_time_backup, nullptr, PARAM_NUMBER, "3600"},
         {str_store_wh, nullptr, PARAM_CHAR, "0"},
         {str_backlight, nullptr, PARAM_CHAR, "1"},
-        {str_syslog, nullptr, PARAM_STRING, "192.168.1.1"}};
+        {str_syslog, nullptr, PARAM_STRING, "192.168.1.1"},
+        {str_domain, nullptr, PARAM_STRING, ""}
+        };
 };

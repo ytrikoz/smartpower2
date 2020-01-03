@@ -5,7 +5,7 @@
 void Wireless::setOutput(Print *p) { out_ = p; }
 
 void Wireless::setMode(const NetworkMode mode) {
-    WiFi.mode((WiFiMode_t) mode);
+    WiFi.mode((WiFiMode_t)mode);
     delay(100);
 }
 
@@ -112,17 +112,14 @@ void Wireless::start(const bool safe) {
         const char *ssid = config->get()->value(ConfigItem::SSID);
         const char *passwd = config->get()->value(ConfigItem::PASSWORD);
         const bool dhcp = config->get()->asBool(ConfigItem::DHCP);
-
-        if (dhcp) {
-            setupSTA();
-        } else {
-            IPAddress ip, subnet, gateway, dns;
+        IPAddress ip, subnet, gateway, dns;
+        if (!dhcp) {
             ip = config->get()->asIPAddress(ConfigItem::IPADDR);
             subnet = config->get()->asIPAddress(ConfigItem::NETMASK);
             gateway = config->get()->asIPAddress(ConfigItem::GATEWAY);
             dns = config->get()->asIPAddress(ConfigItem::DNS);
-            setupSTA(ip, gateway, subnet, dns);
         }
+        setupSTA(ip, gateway, subnet, dns);
 
         if (startSTA(ssid, passwd)) {
             if (mode == NETWORK_AP_STA) setBroadcast(3);
@@ -208,15 +205,13 @@ bool Wireless::isActive() {
     return WiFi.softAPgetStationNum() || WiFi.status() == WL_CONNECTED;
 }
 
-void Wireless::startWiFiScan(bool hidden) {
-    WiFi.scanNetworksAsync([this](int num) { 
-        onScanComplete(num); }, hidden
-    );
-    scanning_ = true;
-}
-
 bool Wireless::isScanning() {
     return scanning_;
+}
+
+void Wireless::startWiFiScan(bool hidden) {
+    WiFi.scanNetworksAsync([this](int num) { onScanComplete(num); }, hidden);
+    scanning_ = true;
 }
 
 void Wireless::onScanComplete(int found) {

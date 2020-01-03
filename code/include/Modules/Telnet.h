@@ -30,7 +30,7 @@ class Telnet : public Module {
     
    protected:
     bool onInit() override;
-    void onDeinit() override;
+    void onEnd() override;
     bool onStart() override;
     void onStop() override;
     void onLoop() override;

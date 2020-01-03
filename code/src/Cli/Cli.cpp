@@ -1,4 +1,5 @@
 #include "Cli/Cli.h"
+#include "Cli/CliUtils.h"
 
 #include "Actions/Avg.h"
 #include "Actions/WakeOnLan.h"
@@ -15,38 +16,9 @@ using namespace TimeUtils;
 
 namespace Cli {
 
-enum CommandAction {
-    ACTION_UNKNOWN,
-    ACTION_PRINT,
-    ACTION_RESET,
-    ACTION_SAVE,
-    ACTION_LOAD,
-    ACTION_APPLY,
-    ACTION_STATUS,
-    ACTION_LOG,
-    ACTION_AVG,
-    ACTION_ON,
-    ACTION_OFF,
-    ACTION_RESTART,
-    ACTION_BACKLIGHT,
-    ACTION_UPTIME,
-    ACTION_TIME,
-    ACTION_WOL,
-    ACTION_LIST,
-    ACTION_CLEAR,
-    ACTION_TEST,
-    ACTION_SET,
-    ACTION_CONTROL,
-    ACTION_CONFIG,
-    ACTION_SHOW,
-    ACTION_DIFF,
-    ACTION_ADD,
-    ACTION_DELETE,
-};
-
 Command cmdAvg, cmdConfig, cmdPower, cmdShow, cmdExec, cmdHelp, cmdPrint, cmdSet,
     cmdGet, cmdRm, cmdClock, cmdPlot, cmdLog, cmdWol, cmdRestart, cmdRun, cmdLs,
-    cmdCrash, cmdLed, cmdSyslog, cmdWifi, cmdHost;
+    cmdCrash, cmdLed, cmdSyslog, cmdWifi, cmdHost, cmdService;
 
 SimpleCLI *cli_ = nullptr;
 Runner *runner_ = nullptr;
@@ -65,7 +37,6 @@ Runner *get() {
 
 void onCommandError(cmd_error *e);
 
-void onExec(cmd *c);
 void onSet(cmd *c);
 void onGet(cmd *c);
 
@@ -74,7 +45,6 @@ void onConfig(cmd *c);
 void onPower(cmd *c);
 void onShow(cmd *c);
 void onHelp(cmd *c);
-void onHost(cmd *c);
 void onPrint(cmd *c);
 void onPlot(cmd *c);
 void onRemove(cmd *c);
@@ -91,108 +61,7 @@ void onCrash(cmd *c);
 void onLed(cmd *c);
 void onLoop(cmd *c);
 void onSyslog(cmd *c);
-
-const String getActionStr(Command &command) {
-    return command.getArgument(FPSTR(str_action)).getValue();
-}
-
-const String getParamStr(Command &command) {
-    return command.getArgument(FPSTR(str_param)).getValue();
-}
-
-const String getIpStr(Command &command) {
-    return command.getArgument(FPSTR(str_ip)).getValue();
-}
-
-const String getMacStr(Command &command) {
-    return command.getArgument(FPSTR(str_mac)).getValue();
-}
-
-const String getModStr(Command &command) {
-    return command.getArgument(FPSTR(str_mod)).getValue();
-}
-
-const String getPathStr(Command &command) {
-    return command.getArgument(FPSTR(str_path)).getValue();
-}
-
-const String getItemStr(Command &command) {
-    return command.getArgument(FPSTR(str_item)).getValue();
-}
-
-const String getValueStr(Command &command) {
-    return command.getArgument(FPSTR(str_value)).getValue();
-}
-
-void onExec(cmd *c) {
-    Command cmd(c);
-    String item = getItemStr(cmd);
-    String param = getParamStr(cmd);
-    String value = getValueStr(cmd);
-    Module *obj = app.getInstanceByName(item);
-    if (obj) {
-        if (!obj->execute(param, value)) {
-            PrintUtils::print(out_, obj->getError());
-            PrintUtils::println(out_);
-        }
-    } else {
-        PrintUtils::println_unknown_item(out_, item);
-    }
-}
-
-CommandAction getAction(Command &cmd) {
-    String str = getActionStr(cmd);
-    if (strcasecmp_P(str.c_str(), str_print) == 0) {
-        return ACTION_PRINT;
-    } else if (strcasecmp_P(str.c_str(), str_reset) == 0) {
-        return ACTION_RESET;
-    } else if (strcasecmp_P(str.c_str(), str_save) == 0) {
-        return ACTION_SAVE;
-    } else if (strcasecmp_P(str.c_str(), str_load) == 0) {
-        return ACTION_LOAD;
-    } else if (strcasecmp_P(str.c_str(), str_apply) == 0) {
-        return ACTION_APPLY;
-    } else if (strcasecmp_P(str.c_str(), str_status) == 0) {
-        return ACTION_STATUS;
-    } else if (strcasecmp_P(str.c_str(), str_log) == 0) {
-        return ACTION_LOG;
-    } else if (strcasecmp_P(str.c_str(), str_avg) == 0) {
-        return ACTION_AVG;
-    } else if (strcasecmp_P(str.c_str(), str_on) == 0) {
-        return ACTION_ON;
-    } else if (strcasecmp_P(str.c_str(), str_off) == 0) {
-        return ACTION_OFF;
-    } else if (strcasecmp_P(str.c_str(), str_restart) == 0) {
-        return ACTION_RESTART;
-    } else if (strcasecmp_P(str.c_str(), str_backlight) == 0) {
-        return ACTION_BACKLIGHT;
-    } else if (strcasecmp_P(str.c_str(), str_uptime) == 0) {
-        return ACTION_UPTIME;
-    } else if (strcasecmp_P(str.c_str(), str_time) == 0) {
-        return ACTION_TIME;
-    } else if (strcasecmp_P(str.c_str(), str_wol) == 0) {
-        return ACTION_WOL;
-    } else if (strcasecmp_P(str.c_str(), str_list) == 0) {
-        return ACTION_LIST;
-    } else if (strcasecmp_P(str.c_str(), str_clear) == 0) {
-        return ACTION_CLEAR;
-    } else if (strcasecmp_P(str.c_str(), str_test) == 0) {
-        return ACTION_TEST;
-    } else if (strcasecmp_P(str.c_str(), str_config) == 0) {
-        return ACTION_CONFIG;
-    } else if (strcasecmp_P(str.c_str(), str_set) == 0) {
-        return ACTION_SET;
-    } else if (strcasecmp_P(str.c_str(), str_show) == 0) {
-        return ACTION_SHOW;
-    } else if (strcasecmp_P(str.c_str(), str_diff) == 0) {
-        return ACTION_DIFF;
-    } else if (strcasecmp_P(str.c_str(), str_add) == 0) {
-        return ACTION_ADD;
-    } else if (strcasecmp_P(str.c_str(), str_delete) == 0) {
-        return ACTION_DELETE;
-    }
-    return ACTION_UNKNOWN;
-}  // namespace Cli
+void onService(cmd *c);
 
 void init() {
     // if (BootWatcher::isSafeBooMode())
@@ -220,19 +89,13 @@ void init() {
     cmdPrint.addPositionalArgument("path");
     cmdPrint.setCallback(Cli::onPrint);
 
-    cmdExec = cli_->addCommand("exec");
-    cmdExec.addPositionalArgument("item", "");
-    cmdExec.addPositionalArgument("param", "");
-    cmdExec.addPositionalArgument("value", "");
-    cmdExec.setCallback(Cli::onExec);
-
     cmdShow = cli_->addCommand("show");
     cmdShow.addPositionalArgument("item", "app");
     cmdShow.setCallback(Cli::onShow);
 
     cmdSet = cli_->addCommand("set");
     cmdSet.addPositionalArgument("param");
-    cmdSet.addPositionalArgument("value");
+    cmdSet.addPositionalArgument("value", "");
     cmdSet.setCallback(Cli::onSet);
 
     cmdGet = cli_->addCommand("get");
@@ -298,10 +161,16 @@ void init() {
     cmdWifi.addPositionalArgument("action", "scan");
     cmdWifi.setCallback(Cli::onWiFi);
 
+    cmdService = cli_->addCommand("service");
+    cmdService.addPositionalArgument("action");
+    cmdService.addPositionalArgument("item");
+    cmdService.setCallback(Cli::onService);
+
     cmdHost = cli_->addCommand("host");
     cmdHost.addPositionalArgument("action", "show");
     cmdHost.addPositionalArgument("param", "");
     cmdHost.addPositionalArgument("name", "");
+    cmdHost.setCallback(Cli::onHost);
 }
 
 void onHost(cmd *c) {
@@ -310,6 +179,15 @@ void onHost(cmd *c) {
     String param = getParamStr(cmd);
     String value = getValueStr(cmd);
     switch (getAction(cmd)) {
+        case ACTION_RESOLVE: {
+            IPAddress ip;
+            if (WiFi.hostByName(param.c_str(), ip)) {
+                PrintUtils::println(out_, ip.toString());
+            } else {
+                PrintUtils::println(out_, FPSTR(str_error));
+            }
+            break;
+        }
         case ACTION_SHOW:
             // Print var/host
             FSUtils::print(out_, FS_HOST_VAR);
@@ -353,11 +231,11 @@ void onLed(cmd *c) {
 void onSyslog(cmd *c) {
     Command cmd(c);
     String value = getValueStr(cmd);
-    app.syslog()->info(FPSTR(str_cli), value);  
+    app.syslog()->info(FPSTR(str_cli), value);
     Error e = app.syslog()->getError();
-    if(e) {
-       PrintUtils::print(out_, e);       
-       PrintUtils::println(out_);
+    if (e) {
+        PrintUtils::print(out_, e);
+        PrintUtils::println(out_);
     }
 }
 
@@ -593,7 +471,7 @@ void onPlot(cmd *c) {
 void onPrint(cmd *c) {
     Command cmd(c);
     auto path = getPathStr(cmd);
-    if (FSUtils::exist(path)) {
+    if (FSUtils::exists(path)) {
         FSUtils::print(out_, path);
     } else {
         print_file_not_found(out_, path);
@@ -619,7 +497,7 @@ void onRemove(cmd *c) {
     Command cmd(c);
     String name = getPathStr(cmd);
     PrintUtils::print(out_, FPSTR(str_file));
-    if (FSUtils::exist(name)) {
+    if (FSUtils::exists(name)) {
         if (SPIFFS.remove(name)) {
             PrintUtils::println(out_, FPSTR(str_deleted));
         } else {
@@ -677,6 +555,30 @@ void onCrash(cmd *c) {
         case ACTION_UNKNOWN:
         default:
             PrintUtils::println_unknown_action(out_, getActionStr(cmd));
+            break;
+    }
+}
+
+void onService(cmd *c) {
+    Command cmd(c);
+    String item = getItemStr(cmd);
+    Module *obj = app.getInstanceByName(item);
+    if (!obj) {
+        println_unknown_item(out_, item);
+        return;
+    }
+    switch (getAction(cmd)) {
+        case ACTION_START:
+            if (!obj->start(true)) {
+                PrintUtils::print(out_, obj->getError());
+                PrintUtils::println(out_);
+            }
+            break;
+        case ACTION_STOP:
+            obj->stop();
+            break;
+        default:
+            println_unknown_action(out_, getActionStr(cmd).c_str());
             break;
     }
 }

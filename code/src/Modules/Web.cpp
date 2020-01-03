@@ -143,7 +143,7 @@ void Web::onData(const uint32_t num, const String &data) {
             setError(ERROR_UNSUPPORTED, "unhandled");
             return;
         }
-        setError(Error::ok());
+        setError(Error::none());
     }
 };
 
@@ -170,7 +170,7 @@ String Web::getPageData(const WebPageEnum page) {
     String json;
     size_t size = serializeJson(doc, json);
     if (size > JSON_BUFFER_SIZE) {
-        setError(Error::BufferLow(JSON_BUFFER_SIZE));
+        setError(ERROR_SIZE, String(size).c_str());
     }
     return json;
 }
@@ -276,7 +276,6 @@ void Web::fillVersion(JsonObject &obj) {
 void Web::fillNetwork(JsonObject &obj) {
     obj[FPSTR(str_phy)] = NetUtils::getWifiPhy();
     obj[FPSTR(str_ch)] = NetUtils::getWifiCh();
-
     NetInfo info;
     WiFiMode_t mode = WiFi.getMode();
     if (mode == WIFI_AP || mode == WIFI_AP_STA) {

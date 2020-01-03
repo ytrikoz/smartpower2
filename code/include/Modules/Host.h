@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Module.h"
+#include "MainLog.h"
 
 struct ModuleDef {
     Module *obj;
@@ -37,11 +38,11 @@ class Host {
         if (obj) obj->stop();
     };
     
-    void setOutput(Print *p) {
+    void setOutput(MainLog *p) {
         out_ = p;
     }
 
    protected:
     Error err_;
-    Print *out_ = &Serial;
+    MainLog *out_;
 };

@@ -6,6 +6,8 @@
 // now it's not for memory saving, but to collect literals in one place
 
 
+static const char strf_wrong_parameter[] PROGMEM = "wrong parameter (%s)";
+
 static const char str_dns_resolve[] PROGMEM = "dsn resolve";
 static const char str_interrupted[] PROGMEM = "interrupted";
 static const char str_down[] PROGMEM = "down";
@@ -109,6 +111,7 @@ static const char str_dhcp[] PROGMEM = "dhcp";
 static const char str_dns[] PROGMEM = "dns";
 static const char str_dir[] PROGMEM = "dir";
 static const char str_done[] PROGMEM = "done";
+static const char str_domain[] PROGMEM = "domain";
 static const char str_diff[] PROGMEM = "diff";
 static const char str_delete[] PROGMEM = "delete";
 static const char str_duration[] PROGMEM = "duration";
@@ -213,6 +216,7 @@ static const char str_reason[] PROGMEM = "reason";
 static const char str_restart[] PROGMEM = "restart";
 static const char str_restore[] PROGMEM = "restore";
 static const char str_restored[] PROGMEM = "restored";
+static const char str_resolve[] PROGMEM = "resolve";
 static const char str_receive[] PROGMEM = "receive";
 static const char str_redirected[] PROGMEM = "redirected";
 static const char str_rollover[] PROGMEM = "rollover";
@@ -230,6 +234,7 @@ static const char str_switched_on[] PROGMEM = "switched on";
 static const char str_switched_off[] PROGMEM = "switched off";
 static const char str_ssid[] PROGMEM = "ssid";
 static const char str_start[] PROGMEM = "start";
+static const char str_stop[] PROGMEM = "stop";
 static const char str_stopped[] PROGMEM = "stopped";
 static const char str_store[] PROGMEM = "store";
 static const char str_sta[] PROGMEM = "sta";

@@ -15,7 +15,7 @@ class StringPusher {
         virtual bool push(const String&) = 0;
 };
 
-class SourceLog {
+class StringPullable {
     public:
         virtual bool pull(String&) = 0;
 };

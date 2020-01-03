@@ -82,7 +82,12 @@ void App::setupMods() {
         PrintUtils::println(out_);
         onTelnetStatusChange(conn);
     });
-}
+
+    /*
+    * Syslog
+    */
+   syslog()->setSource(out_);
+};
 
 void App::systemRestart() {
     exitState_ = STATE_RESTART;
@@ -155,15 +160,10 @@ void App::onNetworkStatusChange(bool network, NetworkMode mode) {
 
 void App::begin() {
     initMods();
-    setupMods();
     displayProgress(0, BUILD_DATE);
-
-    displayProgress(40, "<WIFI>");
-
+    setupMods();
     displayProgress(80, "<INIT>");
-
     displayProgress(100, "<COMPLETE>");
-
     display()->refresh();
 }
 
@@ -224,12 +224,15 @@ size_t App::printDiag(Print *p) {
 
     for (uint8_t i = 0; i < MODULES_COUNT; ++i) {
         auto *obj = getInstance(i);
-        JsonVariant mod_diag = doc.createNestedObject(getName(i));
+        JsonVariant mod_root = doc.createNestedObject(getName(i));
         if (obj) {
-            mod_diag[FPSTR(str_state)] = obj->getModuleStateStr();
-            obj->onDiag(mod_diag);
+            mod_root[FPSTR(str_state)] = (uint8_t) obj->getNoduleState();
+            if (obj->failed()) {
+                mod_root[FPSTR(str_error)] = obj->getError().toString();
+            }
+            obj->onDiag(mod_root);
         } else {
-            mod_diag[FPSTR(str_error)] = FPSTR(str_error);
+            mod_root[FPSTR(str_state)] = FPSTR(str_error);
         }
     }
     size_t n = serializeJsonPretty(doc, *p);

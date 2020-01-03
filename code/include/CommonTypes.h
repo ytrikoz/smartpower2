@@ -207,5 +207,5 @@ enum ConfigItem {
     SYSLOG_SERVER
 };
 
-#define PARAMS_COUNT 23
+#define PARAMS_COUNT 24
 #define MODULES_COUNT 11

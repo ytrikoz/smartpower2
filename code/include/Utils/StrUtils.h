@@ -31,7 +31,7 @@ inline String bool2str(bool value, BoolEnum set = TRUE_FALSE) {
 
 inline bool setstr(char *dest, const char *src, size_t size) {
     bool res = false;
-    if (src == NULL) {
+    if (src == NULL || strlen(src) == 0) {
         memset(dest, 0, size);
     } else if (strcmp(src, dest) != 0) {
         size_t len = strlen(src);

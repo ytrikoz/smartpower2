@@ -7,12 +7,11 @@ namespace Modules {
 Syslog::Syslog() : Module(), proto_(VisualSyslogServer(&tranport_)) {}
 
 bool Syslog::log(const LogSeverity level, const char* tag, const char* message) {
-    setError(proto_.send(level, tag, message));
-    if (failed()) {
-        PrintUtils::print(out_, getError());
-        PrintUtils::println(out_);
+    clearError();
+    if (!proto_.send(level, tag, message)) {
+        setError(ERROR_EXECUTE);
     }
-    return success();
+    return ok();
 }
 
 void Syslog::onDiag(const JsonObject& doc) {
@@ -24,46 +23,53 @@ void Syslog::onDiag(const JsonObject& doc) {
 
 bool Syslog::onConfigChange(const ConfigItem param, const String& value) {
     if (param == SYSLOG_SERVER) {
-        PrintUtils::print_ident(out_, FPSTR(str_syslog));
-        PrintUtils::println(out_, value);
-        return init(value.c_str(), SYSLOG_PORT);
+        start(true);        
     }
     return true;
 }
 
 bool Syslog::onInit() {
-    bool res = init(config_->value(SYSLOG_SERVER), SYSLOG_PORT);
-    if (!res) {
-        setError(WRONG_PARAM, SYSLOG_SERVER);
-    }
-    return res;
+    clearError();
+    setServer(config_->value(SYSLOG_SERVER), SYSLOG_PORT);
+    return ok();
 }
 
 bool Syslog::onStart() {
     return log(LOG_INFO, String(FPSTR(str_syslog)).c_str(), String(FPSTR(str_start)).c_str());
 }
 
-void Syslog::setSource(SourceLog* source) {
+void Syslog::setSource(StringPullable* source) {
     source_ = source;
 }
 
-bool Syslog::init(const char* name, uint16_t port) {
-    bool res = false;
-
+void Syslog::setServer(const char* name, uint16_t port) {
     size_t len = strlen(name);
     if (name_) delete name_;
     name_ = new char[len + 1];
+    memset(name_, 0, len + 1);
+
+    if (strlen(name) == 0) {
+        setError(WRONG_PARAM, SYSLOG_SERVER);
+        return;
+    }
 
     if (StrUtils::setstr(name_, name, len + 1)) {
         IPAddress ip = IPAddress(IPADDR_ANY);
         if (ip.fromString(name_) || WiFi.hostByName(name_, ip)) {
             tranport_.setup(ip, port);
-            res = true;
+        } else {
+            setError(WRONG_PARAM, SYSLOG_SERVER);
         }
     };
-    return res;
 }
 
-void Syslog::onLoop() {}
+void Syslog::onLoop() {
+    if (source_) {
+        String buf;
+        if (source_->pull(buf)) {
+            log(LOG_DEBUG, "main", buf.c_str());
+        }
+    }
+}
 
 }  // namespace Modules

@@ -11,40 +11,42 @@
 
 namespace Modules {
 
-OTAUpdate::OTAUpdate(uint16_t port): port_(port){};
+OTAUpdate::OTAUpdate(uint16_t port) : port_(port){};
 
 bool OTAUpdate::onInit() {
+    ota_ = new ArduinoOTAClass();
     return true;
 }
 
 bool OTAUpdate::onStart() {
-    ota = new ArduinoOTAClass();
-    ota->setRebootOnSuccess(false);
-    ota->onStart([this]() { this->handleArduinoOTAClassOnStart(); });
-    ota->onProgress([this](unsigned int progress, unsigned int total) {
-        this->handleProgress(progress, total);
-    });
-    ota->onEnd([this]() { this->handleEnd(); });
-    ota->onError([this](ota_error_t error) { this->handleError(error); });
-    ota->setPassword("admin");
+    ota_->setPassword("admin");
     // arduinoOTA->setPasswordHash("21232f297a57a5a743894a0e4a801fc3"); //
     // MD5(admin)
-    return true;
     // ota->setHostname(Wireless::hostName().c_str());
-    ota->setPort(port_);
-    ota->begin(false);
+    ota_->setRebootOnSuccess(false);
+    ota_->onStart([this]() { this->handleArduinoOTAClassOnStart(); });
+    ota_->onProgress([this](unsigned int progress, unsigned int total) {
+        this->handleProgress(progress, total);
+    });
+    ota_->onEnd([this]() { this->handleEnd(); });
+    ota_->onError([this](ota_error_t error) { this->handleError(error); });
+    ota_->setPort(port_);
+    ota_->begin(false);
     return true;
 }
 
 void OTAUpdate::onStop() {
-    delete ota;
+    ota_->onStart(nullptr);
+    ota_->onProgress(nullptr);
+    ota_->onEnd(nullptr);
+    ota_->onError(nullptr);
 }
 
 void OTAUpdate::handleArduinoOTAClassOnStart(void) {
     PrintUtils::print_ident(out_, FPSTR(str_update));
     update_progress = 0;
     PGM_P strP;
-    switch (this->ota->getCommand()) {
+    switch (this->ota_->getCommand()) {
         case OTA_FLASH:
             strP = str_firmware;
             break;
@@ -99,6 +101,6 @@ void OTAUpdate::handleError(ota_error_t error) {
     PrintUtils::println(out_);
 }
 
-void OTAUpdate::onLoop() { ota->handle(); }
+void OTAUpdate::onLoop() { ota_->handle(); }
 
-}
+}  // namespace Modules

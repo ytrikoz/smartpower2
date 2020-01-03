@@ -28,7 +28,6 @@ class Wireless {
     void setStatus(NetworkStatus);
     void statusChangeEvent(unsigned long now = millis());
 
-    String getModeStr();
     void refreshStatus();
     NetworkMode getMode();
                     

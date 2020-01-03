@@ -8,7 +8,7 @@
 
 #include "Strings.h"
 
-class MainLog : protected TextLog, public Print {
+class MainLog : protected TextLog, public StringPullable, public Print {
    public:
     MainLog() : out_(nullptr) {
         buffer_ = new CharBuffer(128);
@@ -27,15 +27,13 @@ class MainLog : protected TextLog, public Print {
         }
         return buffer_->write(ch);
     }
-    void post() {
-        String buf;
-        if (pool_.pop(buf)) {
-            if (out_ != nullptr) out_->print(buf);
-        }
-    }
 
-    void setOutput(Print* p) {
-        out_ = p;
+    virtual bool pull(String& item) {
+        bool res = pool_.pop(item);
+        if (out_ != nullptr) {
+            out_->print(item);
+        }
+        return res;
     }
 
    protected:

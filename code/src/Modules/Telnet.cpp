@@ -19,7 +19,7 @@ bool Telnet::onInit() {
     return true;
 }
 
-void Telnet::onDeinit(){
+void Telnet::onEnd(){
     delete server_;
 }
 

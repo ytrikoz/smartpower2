@@ -82,25 +82,22 @@ inline String getMode() {
 }
 
 inline String getWifiPhy() {
-    char ch;
+    String str;
     switch (WiFi.getPhyMode()) {
-        case WIFI_PHY_MODE_11B:
-            ch = 'b';
+        case WiFiPhyMode_t::WIFI_PHY_MODE_11B:
+            str = "b";
             break;
-        case WIFI_PHY_MODE_11G:
-            ch = 'g';
+        case WiFiPhyMode_t::WIFI_PHY_MODE_11G:
+            str = "g";
             break;
-        case WIFI_PHY_MODE_11N:
-            ch = 'n';
+        case WiFiPhyMode_t::WIFI_PHY_MODE_11N:
+            str = "n";
             break;
-        default:
-            ch = '?';
-            break;
-    }
-    return "801.11" + ch;
+    } 
+    return str;
 }
 
-inline const char *encryptTypeStr(const int type) {
+inline const char* encryptTypeStr(const int type) {
     switch (type) {
         case AUTH_OPEN:
             return "none";
@@ -139,8 +136,8 @@ inline String getApMac() {
     return WiFi.softAPmacAddress();
 }
 
-inline String getWifiCh() {
-    return String(WiFi.channel(), DEC);
+inline uint8_t getWifiCh() {
+    return WiFi.channel();
 }
 
-}  // namespace WirelessUtils
+}  // namespace NetUtils

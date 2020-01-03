@@ -2,7 +2,7 @@
 
 namespace ModuleUtils {
 
-inline String getStateStr(const ModuleState state) {
+inline String getModuleStateStr(const ModuleState state) {
     String str;
     switch (state) {
         case STATE_INIT:
