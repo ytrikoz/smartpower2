@@ -5,7 +5,6 @@
 // TODO
 // now it's not for memory saving, but to collect literals in one place
 
-
 static const char strf_wrong_parameter[] PROGMEM = "wrong parameter (%s)";
 
 static const char str_dns_resolve[] PROGMEM = "dsn resolve";

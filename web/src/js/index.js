@@ -100,12 +100,10 @@ function getConnectionStatus() {
 
 function sendJsonObject(obj) {
   try {
-    const text = JSON.stringify(obj);
-    ws.send(text);
-    // eslint-disable-next-line no-console
-    console.log(text);
-    return true;
+    return ws.send(JSON.stringify(obj));
   } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error(e);
     return false;
   }
 }
@@ -188,11 +186,11 @@ const current = new Measurement('A', () => {
   $('#i_ss').sevenSeg({ digits: 5, decimalPlaces: 3, value: current.last });
 });
 
-const power = new Measurement('P', () => {
+const power = new Measurement('W', () => {
   $('#p_ss').sevenSeg({ digits: 5, decimalPlaces: 3, value: power.last });
 });
 
-const watth = new Measurement('W', () => {
+const watth = new Measurement('Wh', () => {
   if (watth.last < 10) {
     $('#wh_ss').sevenSeg({ digits: 5, decimalPlaces: 3 });
   } else if (watth.last < 100) {
@@ -552,7 +550,7 @@ $(document).ready(() => {
     setBootMode(value);
   });
 
-  $('#txt_syslog').change(()=> {
+  $('#txt_syslog').change(() => {
     const value = $('#txt_syslog').val();
     setSyslog(value);
   });
@@ -599,7 +597,7 @@ $(document).ready(() => {
     $.getJSON('version', (data) => {
       const items = [];
       $.each(data[0], (key, val) => {
-        items.push(`<li>${key}:${val}</li>`);
+        items.push(`<li>${key}: ${val}</li>`);
       });
       $('#version_div').replaceWith($('<ul/>', { class: 'key-value-list', html: items.join('') }));
     });

@@ -1,7 +1,6 @@
 #pragma once
 
-#include <Arduino.h>
-#include <Cli/Runner.h>
+#include "Cli/Runner.h"
 
 namespace Cli {
 

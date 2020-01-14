@@ -59,7 +59,7 @@ void CommandShell::onClose(Print *out) {
 }
 
 void CommandShell::onHistory(Print *out) {
-    if (!history.size()) return;
+    if (!history_.size()) return;
 
     if (term_->getLine().available()) {
         out->println();
@@ -79,32 +79,21 @@ void CommandShell::onData(const char *str) {
     printPrompt(term_);
 }
 
-void CommandShell::clearHistory() { history.clear(); }
+void CommandShell::clearHistory() { history_.reset(); }
 
 void CommandShell::setEditLine(const String &str) {
     term_->setLine((const uint8_t *)str.c_str(), str.length());
 }
 
 bool CommandShell::getLastInput(String &str) {
-    if (history.size()) {
-        str = String(history.back());
-        history.pop_back();
-        return true;
-    }
-    return false;
+    return history_.pop_back(str);
 }
 
 void CommandShell::addHistory(const char *str) {
-    if (str == NULL)
+    String buf;
+    if (str == NULL || !strlen(str) || (history_.peek(buf) && buf.equals(str)))
         return;
-    if (history.size() && history.back().equals(str))
-        return;
-    String _new(str);
-    if (_new.length()) {
-        history.push_back(_new);
-        if (history.size() > SHELL_HISTORY_SIZE)
-            history.pop_back();
-    }
+    history_.push(str);
 }
 
 size_t CommandShell::printGreetings(Print *p) {

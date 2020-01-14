@@ -5,6 +5,7 @@
 
 #include "Cli/Cli.h"
 #include "Cli/Terminal.h"
+#include "Core/CircularBuffer.h"
 
 namespace Cli {
 
@@ -37,15 +38,13 @@ class CommandShell {
     bool getLastInput(String &);
 
    private:
+    CircularBuffer<String, SHELL_HISTORY_SIZE> history_;
     Cli::Terminal *term_;
     Cli::Runner *runner_;
     String path_;
     bool active_;
     bool greetings_;
     bool farewell_;
-    std::vector<String> history;
-    uint8_t history_size;
-    uint8_t history_pos;
 };
 
 }  // namespace Cli

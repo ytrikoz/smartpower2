@@ -42,20 +42,18 @@ void test_push(void) {
     TEST_ASSERT_EQUAL(COUNT, buffer->size());
 
     for (size_t i = 0; i < CAPACITY; ++i)
-        buffer->push(i);        
+        buffer->push(i);
 
-    TEST_ASSERT_EQUAL(CAPACITY, buffer->size());    
+    TEST_ASSERT_EQUAL(CAPACITY, buffer->size());
 }
 
 void test_pop(void) {
-
 }
 
 int main(int argc, char** argv) {
-
     UNITY_BEGIN();
 
-    RUN_TEST(test_empty);    
+    RUN_TEST(test_empty);
     RUN_TEST(test_push);
     RUN_TEST(test_peek);
     RUN_TEST(test_push);

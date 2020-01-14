@@ -15,7 +15,13 @@ class CliRunner : public Runner {
         cli_->parse(command);
         while (cli_->available()) {
             cli_->getCmd().run();
-            if (cli_->getError()) {
+            if (cli_->errored()) {
+                CommandError cmdError = cli_->getError();
+                if (cmdError.hasCommand()) {
+                    Serial.print("Did you mean \"");
+                    Serial.print(cmdError.getCommand().toString());
+                }
+                Serial.println("\"?");
                 break;
             }
         }
@@ -25,5 +31,4 @@ class CliRunner : public Runner {
    private:
     SimpleCLI* cli_;
 };
-
-}
+}  // namespace Cli

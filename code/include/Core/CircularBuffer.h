@@ -1,7 +1,5 @@
 #pragma once
 
-#include <stddef.h>
-
 template <typename T, size_t BUFFER_SIZE>
 class CircularBuffer {
    public:
@@ -10,13 +8,11 @@ class CircularBuffer {
     ~CircularBuffer() {}
 
     void reset() {
-        head_ = 0;
-        tail_ = 0;
-        full_ = false;
+        head_ = tail_ = full_ = 0;
     }
 
     bool empty() const {
-        return (head_ == tail_) && !full_;
+        return head_ == tail_ && !full_;
     }
 
     bool full() const {
@@ -60,10 +56,21 @@ class CircularBuffer {
         return res;
     }
 
+    bool pop_back(T &item) {
+        bool res = false;
+        if (!empty()) {
+            item = pool_[--head_];
+            full_ = false;
+            res = true;
+        }
+        return res;
+    }
+
     bool peek(T &item) const {
         bool res = false;
         if (!empty()) {
             item = pool_[tail_];
+            
             res = true;
         }
         return res;
@@ -74,16 +81,4 @@ class CircularBuffer {
     size_t head_;
     size_t tail_;
     bool full_;
-};
-
-template <size_t Size>
-class CircularStringBuffer {
-    virtual void push(const String& item) {
-        pool_.push(item);
-    }
-    bool pull(String& item) {
-        return pool_.pop(item);
-    }
-   private:
-    CircularBuffer<String, Size> pool_;
 };
