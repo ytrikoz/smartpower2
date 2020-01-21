@@ -26,7 +26,7 @@
 <body onload="onload();" onunload="onunload();">
     <!-- Header -->
     <div data-role="header" data-type="header" data-position="fixed" data-theme="b">
-        <h1>SmartPower2</h1>
+        <h1>SP2</h1>
     </div>
     <!-- Home -->
 
@@ -43,6 +43,9 @@
                             <option value="off">Off</option>
                             <option value="on">On</option>
                         </select>
+                        <input id="slider_voltage" data-inline="true" name="slider_voltage" type="range" min="4"
+                            max="13" step="0.1" value="5" data-popup-enabled="true">
+                        <button id="btn_apply_voltage" data-mini="true" data-inline="true">Set voltage</button>
                     </div>
                 </fieldset>
             </div>
@@ -63,7 +66,7 @@
                 <div id="wh_ss" class="ss_cont">
                     <h3>Wh</h3>
                 </div>
-                <button id="btn_wh_zero" data-mini="true" data-inline="true">Zero</button>
+                <button id="btn_wh_zero" data-inline="true">Zero</button>
             </div>
 
             <!-- Display-->
@@ -83,36 +86,34 @@
             <!--General-->
             <div data-role="collapsible" data-iconpos="right">
                 <h3>General</h3>
-
-                <label>Power on boot</label>
-                <fieldset id="boot_mode_cont" data-role="controlgroup" data-type="horizontal">
-                    <input id="boot_mode_off" type="radio" name="boot_mode" value="0" />
-                    <input id="boot_mode_on" type="radio" name="boot_mode" value="1" />
-                    <input id="boot_mode_last" type="radio" name="boot_mode" value="2" />
-                    <label for="boot_mode_off">Off</label>
-                    <label for="boot_mode_on">On</label>
-                    <label for="boot_mode_last">Last state</label>
-                </fieldset>
-
-                <label>Voltage</label>
-                <fieldset id="slider_voltage_cont">
-                    <input id="slider_voltage" name="slider_voltage" type="range" min="4" max="13" step="0.1" value="5"
-                        data-popup-enabled="true">
-                </fieldset>
-                <button id="btn_apply_voltage" data-mini="true" data-inline="true">Apply voltage</button>
+                <div class="ui-field-contain">
+                    <label for="boot_mode_cont">Power on boot</label>
+                    <fieldset id="boot_mode_cont" data-role="controlgroup" data-type="horizontal">
+                        <input id="boot_mode_off" type="radio" name="boot_mode" value="0" />
+                        <input id="boot_mode_on" type="radio" name="boot_mode" value="1" />
+                        <input id="boot_mode_last" type="radio" name="boot_mode" value="2" />
+                        <label for="boot_mode_off">Off</label>
+                        <label for="boot_mode_on">On</label>
+                        <label for="boot_mode_last">Last state</label>
+                    </fieldset>
+                </div>
 
                 <fieldset>
-                    <div data-role="fieldcontain">
-                        <label for="flipswitch_store_wh">Totals</label>
-                        <select id="flipswitch_store_wh" data-role="flipswitch">
+                    <div class="ui-field-contain">
+                        <label for="flipswitch_store_wh">Summary Totals</label>
+                        <select id="flipswitch_store_wh" data-role="flipswitch" data-inline="true">
                             <option value="off">Off</option>
                             <option value="on">On</option>
                         </select>
                     </div>
+                    <div class="ui-field-contain">
+                        <label for="slider_maxwh">Limit (mW/h)</label>
+                        <input type="range" name="slider_maxwh" id="slider_maxwh" min="0" max="10000" value="1000">
+                    </div>
                 </fieldset>
 
                 <fieldset>
-                    <div data-role="fieldcontain">
+                    <div class="ui-field-contain">
                         <label for="flipswitch_backlight">Backlight</label>
                         <select id="flipswitch_backlight" data-role="flipswitch">
                             <option value="off">Off</option>
@@ -121,9 +122,14 @@
                     </div>
                 </fieldset>
 
-                <label>Syslog</label>
-                <input id="txt_syslog" type="text" maxlength="32" />
+                <fieldset>
+                    <div class="ui-field-contain">
+                        <label>Syslog</label>
+                        <input id="txt_syslog" type="text" maxlength="32" />
+                    </div>
+                </fieldset>
             </div>
+
             <!--WiFi-->
             <div data-role="collapsible" data-iconpos="right">
                 <h1>WiFi</h1>

@@ -108,6 +108,14 @@ void Wireless::start(const bool safe) {
             }
         });
 
+    if (mode == NETWORK_AP || mode == NETWORK_AP_STA) {
+        const char *ap_ssid = config->get()->value(ConfigItem::AP_SSID);
+        const char *ap_passwd = config->get()->value(ConfigItem::AP_PASSWORD);
+        IPAddress ap_ipaddr = config->get()->asIPAddress(ConfigItem::AP_IPADDR);
+        setupAP(ap_ipaddr);
+        ap_enabled_ = startAP(ap_ssid, ap_passwd);
+    }
+
     if (mode == NETWORK_STA || mode == NETWORK_AP_STA) {
         const char *ssid = config->get()->value(ConfigItem::SSID);
         const char *passwd = config->get()->value(ConfigItem::PASSWORD);
@@ -123,17 +131,10 @@ void Wireless::start(const bool safe) {
 
         if (startSTA(ssid, passwd)) {
             if (mode == NETWORK_AP_STA) setBroadcast(3);
-        }
+        }        
     }
 
-    if (mode == NETWORK_AP || mode == NETWORK_AP_STA) {
-        const char *ap_ssid = config->get()->value(ConfigItem::AP_SSID);
-        const char *ap_passwd = config->get()->value(ConfigItem::AP_PASSWORD);
-        IPAddress ap_ipaddr = config->get()->asIPAddress(ConfigItem::AP_IPADDR);
-        setupAP(ap_ipaddr);
-        ap_enabled_ = startAP(ap_ssid, ap_passwd);
-        refreshStatus();
-    }
+    refreshStatus();
 }
 
 void Wireless::init(const NetworkMode mode, const char *host, uint8_t tpw) {

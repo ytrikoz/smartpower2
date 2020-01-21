@@ -3,40 +3,49 @@
 const PAGE_HOME = 1;
 const PAGE_OPTIONS = 2;
 const PAGE_INFO = 3;
-const DEBUG_WS = '192.168.1.204';
+const DEFAULT_ADDRESS = '192.168.4.1';
 
 let ws;
 let conn = false;
 
-const RESET_INTERVAL = 60000;
+const RESET_INTERVAL = 10000;
 
 class Measurement {
   constructor(name, onChange) {
     this.name = name;
     this.onChange = onChange;
-    this.lastStatUpdate = $.now();
-    this.reset();
+    this.maxValue = undefined;
+    this.minValue = undefined;
+    this.lastStatUpdate = undefined;
+    this.samplesCounter = 0;
   }
 
   setValue(newValue) {
+    if (this.lastStatUpdate === undefined) {
+      this.lastStatUpdate = $.now();
+    }
     if ($.now() - RESET_INTERVAL > this.lastStatUpdate) {
-      this.reset();
+      this.printStat();
+      this.clear();
     }
-    let changes = false;
-    if ((typeof this.lastValue === 'undefined') || (this.curValue !== newValue)) {
+    let hasChanged = false;
+    if (this.lastValue === undefined || this.curValue !== newValue) {
       this.lastValue = newValue;
-      changes = true;
+      hasChanged = true;
     }
-    if ((typeof this.minValue === 'undefined') || ((this.minValue > newValue) || (this.newValue !== 0))) {
-      this.minValue = newValue;
-      changes = true;
+    if (this.minValue === undefined || this.minValue > newValue) {
+      if (newValue !== 0) {
+        this.minValue = newValue;
+        hasChanged = true;
+      }
     }
-    if ((typeof this.maxValue === 'undefined') || (this.maxValue < newValue)) {
+    if (this.maxValue === undefined || this.maxValue < newValue) {
       this.maxValue = newValue;
-      changes = true;
+      hasChanged = true;
     }
     this.samplesCounter += 1;
-    if (changes) {
+
+    if (hasChanged) {
       this.onChange(this);
     }
   }
@@ -58,14 +67,19 @@ class Measurement {
   }
 
   get stat() {
-    return `${this.name} - ${this.counter} from ${this.min} to ${this.max}`;
+    return `${this.name} range from ${this.min} to ${this.max}`;
   }
 
-  reset() {
+  clear() {
     this.maxValue = undefined;
     this.minValue = undefined;
-    this.lastValue = undefined;
+    this.lastStatUpdate = undefined;
     this.samplesCounter = 0;
+  }
+
+  printStat() {
+    console.log(this.stat);
+    this.lastStatUpdate = $.now();
   }
 }
 
@@ -82,11 +96,21 @@ function getPageIndex(title) {
   return -1;
 }
 
+function getAddress() {
+  let host = window.location.hostname;
+  if (host === '127.0.0.1') host = DEFAULT_ADDRESS;
+  return host;
+}
+
 function getWSUri() {
   const scheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-  let host = window.location.hostname;
-  if (host === '127.0.0.1') host = DEBUG_WS;
-  const uri = `${scheme}${host}/ws`;
+  const uri = `${scheme}${getAddress()}/ws`;
+  return uri;
+}
+
+function getBaseUri() {
+  const scheme = window.location.protocol === 'https:' ? 'https://' : 'http://';
+  const uri = `${scheme}${getAddress()}/`;
   return uri;
 }
 
@@ -96,6 +120,18 @@ function getConnectionStatus() {
   } catch (e) {
     return false;
   }
+}
+
+function fillCollapsible(name) {
+  const cont = `#${name}_div`;
+  const url = `${getBaseUri()}${name}`;
+  $.getJSON(url, (data) => {
+    const items = [];
+    $.each(data[0], (key, val) => {
+      items.push(`<li>${key}:${val}</li>`);
+    });
+    $(cont).replaceWith($('<ul/>', { class: 'key-value-list', html: items.join('') }));
+  });
 }
 
 function sendJsonObject(obj) {
@@ -303,6 +339,7 @@ function restart() {
 function setWh(value) {
   const data = { wh: value };
   sendJsonObject(data);
+  watth.setValue(value);
 }
 
 // Options
@@ -499,7 +536,7 @@ $(document).on('pagecontainerbeforeshow', (event, ui) => {
 
 $(document).on('pagecontainershow', (event, ui) => {
   const name = $(ui.toPage).jqmData('title');
-  const title = `SmartPower2: ${name}`;
+  const title = name;
   $('[data-role="header"] h1').text(title);
   $('[data-role="navbar"] a.ui-button-active').removeClass('ui-button-active');
   $('[data-role="navbar"] a').each((index, element) => {
@@ -594,32 +631,14 @@ $(document).ready(() => {
   });
 
   $('#version_cont').on('collapsibleexpand', (event, ui) => {
-    $.getJSON('version', (data) => {
-      const items = [];
-      $.each(data[0], (key, val) => {
-        items.push(`<li>${key}: ${val}</li>`);
-      });
-      $('#version_div').replaceWith($('<ul/>', { class: 'key-value-list', html: items.join('') }));
-    });
+    fillCollapsible('version');
   });
 
   $('#system_cont').on('collapsibleexpand', (event, ui) => {
-    $.getJSON('system', (data) => {
-      const items = [];
-      $.each(data[0], (key, val) => {
-        items.push(`<li>${key}:${val}</li>`);
-      });
-      $('#system_div').replaceWith($('<ul/>', { class: 'key-value-list', html: items.join('') }));
-    });
+    fillCollapsible('system');
   });
 
   $('#network_cont').on('collapsibleexpand', (event, ui) => {
-    $.getJSON('network', (data) => {
-      const items = [];
-      $.each(data[0], (key, val) => {
-        items.push(`<li>${key}:${val}</li>`);
-      });
-      $('#network_div').replaceWith($('<ul/>', { class: 'key-value-list', html: items.join('') }));
-    });
+    fillCollapsible('network');
   });
 });

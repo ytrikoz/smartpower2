@@ -20,7 +20,7 @@
 .ss_cont {
 	display: float;	
 	background-color: RGBa(0,0,0,.8);	
-	max-width: 320px;	
+	height: 100%;
 }
 
 .ss_cont h3 {
