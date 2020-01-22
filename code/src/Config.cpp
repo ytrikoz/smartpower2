@@ -65,12 +65,6 @@ bool Config::getParamByName(const char *name, ConfigItem &param) const {
     return res;
 }
 
-String Config::toJsonPair(ConfigItem param) {
-    char buf[128];
-    sprintf(buf, "\"%s\":%s", name(param).c_str(), value(param));
-    return buf;
-}
-
 String Config::toString(ConfigItem param) const {
     char buf[128];
     sprintf(buf, "%s=\"%s\"", name(param).c_str(), value(param));

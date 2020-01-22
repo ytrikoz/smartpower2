@@ -60,7 +60,7 @@ class App : public Host, PsuDataListener {
     void setWireless(Wireless *);
 
     void begin();
-    AppState loop(LoopTimer *looper = nullptr);
+    AppState loop(LoopWatcher *looper = nullptr);
     size_t printDiag(Print *p);
 
     void printPlot(PlotSummary *data, Print *p);

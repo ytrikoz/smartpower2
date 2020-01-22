@@ -74,8 +74,8 @@ void LedBlinker::set(LedSignal mode, bool forced) {
             size_ = 1;
             break;
         case BLINK:
-            pattern_[0] = {1, 250};
-            pattern_[1] = {0.5, 250};
+            pattern_[0] = {FULL_ON, 250};
+            pattern_[1] = {FULL_OFF, 250};
             size_ = 2;
             break;
         case BLINK_ALERT:

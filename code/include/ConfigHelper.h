@@ -11,6 +11,7 @@ class ConfigHelper : public Printable {
     ~ConfigHelper();
     size_t printTo(Print &p) const;
   public:
+    const String getKeyValuePair(const ConfigItem param) const;
     void setName(const char* name);
     bool isSecured(ConfigItem i);
     bool check();

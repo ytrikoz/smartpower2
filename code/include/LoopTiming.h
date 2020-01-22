@@ -99,7 +99,7 @@ struct LoopCapture : Printable {
     }
 };
 
-class LoopTimer {
+class LoopWatcher {
    public:
     void onResult(ModuleEnum item, unsigned long time) {
         if (state_ == CAPTURE_PROGRESS)
@@ -107,7 +107,7 @@ class LoopTimer {
     }
 
    public:
-    LoopTimer() : state_(CAPTURE_IDLE), start_(0) {}
+    LoopWatcher() : state_(CAPTURE_IDLE), start_(0) {}
 
     void tick() {
         if (state_ != CAPTURE_PROGRESS) return;

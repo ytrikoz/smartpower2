@@ -165,7 +165,7 @@ void App::begin() {
     updateDisplay();
 }
 
-AppState App::loop(LoopTimer *looper) {
+AppState App::loop(LoopWatcher *looper) {
     for (size_t i = 0; i < MODULES_COUNT; ++i) {
         auto *obj = getInstance(i);
         if (!obj) continue;
@@ -191,8 +191,8 @@ AppState App::loop(LoopTimer *looper) {
     }
 
     if (systemEvent_ || networkEvent_) {
-        updateBlue( hasWebClients_ || hasTelnetClients_, !hasNetwork_, state_ >= STATE_RESTART);
-    }  
+        updateBlue(hasWebClients_ || hasTelnetClients_, !hasNetwork_, state_ >= STATE_RESTART);
+    }
 
     if (systemEvent_ || powerEvent_) {
         updateRed(psu()->isPowerOn(), psu()->getError(), state_ >= STATE_FAILBACK);
@@ -200,16 +200,16 @@ AppState App::loop(LoopTimer *looper) {
 
     clearEvents();
 
-    if (!shutdown_) 
-        return STATE_NORMAL;    
-    else 
-        return state_;    
+    if (!shutdown_)
+        return STATE_NORMAL;
+    else
+        return state_;
 }
 
 void App::clearEvents() {
     networkEvent_ = systemEvent_ = powerEvent_ = false;
 }
-    
+
 size_t App::printDiag(Print *p) {
     DynamicJsonDocument doc(2048);
     doc[FPSTR(str_heap)] = SysInfo::getHeapStats();
@@ -235,7 +235,7 @@ size_t App::printDiag(Print *p) {
 
 void App::displayProgress(uint8_t currProgress, const char *message) {
     if (!display() || !(display()->connected())) return;
-    
+
     display()->showProgress(currProgress, message);
 }
 
@@ -252,7 +252,7 @@ void App::updateBlue(const bool activeState, const bool alertState, const bool e
     led()->set(BLUE_LED, mode);
 }
 
- void App::updateRed(const bool activeState, const bool alertState, const bool errorState) {
+void App::updateRed(const bool activeState, const bool alertState, const bool errorState) {
     LedSignal mode = LIGHT_ON;
     if (errorState) {
         mode = BLINK_ERROR;
@@ -267,13 +267,13 @@ void App::updateBlue(const bool activeState, const bool alertState, const bool e
 void App::updateDisplay(void) {
     if (!display() || !display()->connected()) return;
 
-    if (psu()->isPowerOn()) {        
+    if (psu()->isPowerOn()) {
         if (psu()->ok()) {
-            const PsuData* data = psu()->getData();
+            const PsuData *data = psu()->getData();
             display()->show_metering(data->V, data->I, data->P, data->Wh);
         } else {
             display()->showError(psu()->getError());
-        }    
+        }
     } else {
         display()->show_info(networkMode_);
     }
@@ -283,29 +283,29 @@ void App::setModules(ModuleDef *obj) {
     modules_ = obj;
 }
 
-void App::setPowerlog(PowerLog *powerlog) {
-    powerlog_ = powerlog;
+void App::setPowerlog(PowerLog *obj) {
+    powerlog_ = obj;
 }
 
-void App::setConfig(ConfigHelper *config) {
-    config_ = config;
-    config_->get()->setOnChange(
-        [this](ConfigItem param, const String &value) {
-            PrintUtils::print_ident(out_, FPSTR(str_config));
-            PrintUtils::print(out_, config_->get()->name(param), value);
-            PrintUtils::println(out_);
-            onConfigChange(param, value);
-        });
+void App::setConfig(ConfigHelper *obj) {
+    config_ = obj;
+
+    config_->get()->setOnChange([this](const ConfigItem param, const String &value) {
+        PrintUtils::print_ident(out_, FPSTR(str_config));
+        PrintUtils::print(out_, config_->getKeyValuePair(param));
+        PrintUtils::println(out_);
+        onConfigChange(param, value);
+    });
 }
 
 void App::setWireless(Wireless *obj) {
     wireless_ = obj;
-    wireless_->setOnStatusChange(
-        [this](bool network, unsigned long time) {
-            PrintUtils::print_ident(out_, FPSTR(str_app));
-            PrintUtils::println(out_, NetUtils::getStatusStr(network));
-            onNetworkStatusChange(network, wireless_->getMode());
-        });
+
+    wireless_->setOnStatusChange([this](bool network, unsigned long time) {
+        PrintUtils::print_ident(out_, FPSTR(str_app));
+        PrintUtils::println(out_, NetUtils::getStatusStr(network));
+        onNetworkStatusChange(network, wireless_->getMode());
+    });
 }
 
 String App::getName(uint8_t index) const {

@@ -66,7 +66,6 @@ void onService(cmd *c);
 void init() {
     // if (BootWatcher::isSafeBooMode())
     cli_ = new SimpleCLI();
-
     cli_->setErrorCallback(onCommandError);
 
     cmdHelp = cli_->addCommand("help");
@@ -74,7 +73,6 @@ void init() {
 
     cmdConfig = cli_->addCommand("config");
     cmdConfig.addPositionalArgument("action", "print");
-    cmdConfig.addPositionalArgument("param", "");
     cmdConfig.setCallback(Cli::onConfig);
 
     cmdPower = cli_->addCommand("power");
@@ -412,23 +410,19 @@ void onGet(cmd *c) {
 
 void onLoop(cmd *c) {
     Command cmd(c);
-    if (!loopTimer)
-        loopTimer = new LoopTimer();
-    switch (loopTimer->getState()) {
+    if (!looper) looper = new LoopWatcher();
+    switch (looper->getState()) {
         case CAPTURE_IDLE:
-            PrintUtils::print(out_, FPSTR(str_start), FPSTR(str_capture));
-            PrintUtils::println(out_);
-            loopTimer->start();
+            PrintUtils::println(out_, FPSTR(str_start));            
+            looper->start();
             break;
         case CAPTURE_PROGRESS:
-            PrintUtils::print(out_, FPSTR(str_progress));
-            PrintUtils::println(out_);
+            PrintUtils::println(out_, FPSTR(str_busy));
             break;
         case CAPTURE_DONE: {
-            PrintUtils::println(out_, FPSTR(str_done));
-            PrintUtils::print(out_, loopTimer->getData());
-            loopTimer->idle();
-            loopTimer = nullptr;
+            PrintUtils::print(out_, looper->getData());
+            looper->idle();
+            looper = nullptr;
             break;
         }
     }

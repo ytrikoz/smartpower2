@@ -50,12 +50,12 @@ void preinit() {
 }
 
 void setup() {
-    boot = new BootWatcher();
-    boot->setOutput(&mainlog);
-    safeMode = boot->init();
+    booter = new BootWatcher();
+    booter->setOutput(&mainlog);
+    safeMode = booter->init();
     initCrashReport();
 
-    boot->start();
+    booter->start();
     config = new ConfigHelper(FS_MAIN_CONFIG);
     config->setOutput(&mainlog);
     if (!config->check()) {
@@ -98,16 +98,13 @@ void setup() {
 void loop() {
     if (!setupDone)
         return;
-
-    AppState res = app.loop(loopTimer);
-
-    if (loopTimer)
-        loopTimer->tick();
-
-    if (boot) {
-        boot->end();
-        delete boot;
-        boot = nullptr;
+    AppState res = app.loop(looper);
+    if (looper)
+        looper->tick();
+    if (booter) {
+        booter->end();
+        delete booter;
+        booter = nullptr;
     }
     handleAppState(res);
 }

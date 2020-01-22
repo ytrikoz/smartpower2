@@ -22,7 +22,7 @@ bool ConfigHelper::check() {
 }
 
 void ConfigHelper::setName(const char *name) {
-    if (name_ != nullptr) 
+    if (name_ != nullptr)
         delete name_;
     size_t size = strlen(name);
     name_ = new char[size + 1];
@@ -30,8 +30,8 @@ void ConfigHelper::setName(const char *name) {
     name_[size] = '\x00';
 }
 
-void ConfigHelper::setOutput(Print *p) { 
-    out_ = p; 
+void ConfigHelper::setOutput(Print *p) {
+    out_ = p;
 }
 
 void ConfigHelper::load() {
@@ -77,6 +77,16 @@ String ConfigHelper::extractValue(const String &str) {
     return res;
 }
 
+const String ConfigHelper::getKeyValuePair(const ConfigItem param) const {
+    String res;
+    res += obj_.name(param);
+    res += '=';
+    res += '\"';
+    res += obj_.value(param);
+    res += '\"';
+    return res;
+}
+
 bool ConfigHelper::save(bool backup) {
     if (backup) FSUtils::move(FS_MAIN_CONFIG, FS_MAIN_CONFIG ".bak");
     auto file = StringFile(FS_MAIN_CONFIG);
@@ -112,7 +122,7 @@ bool ConfigHelper::getWhStoreEnabled() {
 }
 
 NetworkMode ConfigHelper::getWiFiMode() {
-    return (NetworkMode) obj_.asByte(WIFI);    
+    return (NetworkMode)obj_.asByte(WIFI);
 }
 
 Config *ConfigHelper::get() { return &obj_; }

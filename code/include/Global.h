@@ -10,9 +10,9 @@
 extern App app;
 extern MainLog mainlog;
 
-extern BootWatcher* boot;
+extern BootWatcher* booter;
 extern Wireless* wireless;
 extern ConfigHelper* config;
 extern PowerLog* powerlog;
-extern LoopTimer* loopTimer;
+extern LoopWatcher* looper;
 

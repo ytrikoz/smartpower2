@@ -3,8 +3,8 @@
 App app;
 MainLog mainlog;
 
-BootWatcher* boot;
+BootWatcher* booter;
 Wireless* wireless;
 ConfigHelper* config;
 PowerLog* powerlog;
-LoopTimer* loopTimer = nullptr;
+LoopWatcher* looper = nullptr;
