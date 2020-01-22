@@ -23,7 +23,7 @@
 enum AppState {
     STATE_NORMAL,
     STATE_RESTART,
-    STATE_RESET
+    STATE_FAILBACK
 };
 
 class App : public Host, PsuDataListener {
@@ -34,7 +34,7 @@ class App : public Host, PsuDataListener {
     void onConfigChange(const ConfigItem param, const String &value);
     void onPsuData(PsuData &item) override;
     void onPsuStateChange(PsuState);
-    void onPsuStatusChange(PsuStatus);
+    void onPsuError(Error);
     void onWebStatusChange(bool connected);
     void onTelnetStatusChange(bool connected);
 
@@ -52,7 +52,8 @@ class App : public Host, PsuDataListener {
     void setupMods();
     void systemRestart();
     void systemReset();
-    void setModules(ModuleDef*);
+    void setModules(ModuleDef *);
+
    public:
     void setConfig(ConfigHelper *);
     void setPowerlog(PowerLog *);
@@ -76,25 +77,28 @@ class App : public Host, PsuDataListener {
 
     Config *params() { return config_->get(); }
 
-    void refreshRed();
-    void refreshBlue();
-    void refreshDisplay();
+    void updateRed(const bool activeState, const bool alertState, const bool errorState);
+    void updateBlue(const bool activeState, const bool alertState, const bool errorState);
+    void updateDisplay();
+
    private:
     void displayProgress(uint8_t progress, const char *message);
     void restart();
+    void clearEvents();
 
    private:
-    AppState exitState_;
-    bool exitFlag_;
+    AppState state_;
+    bool shutdown_;
 
     bool systemEvent_;
     bool networkEvent_;
-    bool psuEvent_;
+    bool powerEvent_;
 
     bool hasNetwork_;
+    bool hasWebClients_;
+    bool hasTelnetClients_;
+
     NetworkMode networkMode_;
-    bool webClients_;
-    bool telnetClients_;
 
     Wireless *wireless_;
     ConfigHelper *config_;
@@ -104,5 +108,5 @@ class App : public Host, PsuDataListener {
     uint8_t boot_per;
 
    private:
-    ModuleDef* modules_;
+    ModuleDef *modules_;
 };

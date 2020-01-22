@@ -6,7 +6,7 @@
 struct ModuleDef {
     Module *obj;
     PGM_P name;
-    NetworkMode network;
+    bool network;
 };
 
 class Host {

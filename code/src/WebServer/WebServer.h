@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 
-#include "index.html.gz.h"
+// #include "index.html.gz.h"
 
 class WebServerHandler {
    public:

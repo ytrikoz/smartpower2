@@ -98,6 +98,14 @@ class Module {
         return modError_.code() == 0;
     }
 
+    virtual String getStateStr() {
+        String str = String(FPSTR(str_ok));
+        if (failed()) {
+            str = getError().toString();
+        }
+        return str;
+    }
+
    protected:
     virtual bool onConfigChange(const ConfigItem item, const String &value) {
         return true;
@@ -119,17 +127,29 @@ class Module {
     }
 
     void setError(ErrorCode code) {
-        setError(Error(code));
+        setError(Error(code, ERROR_CRITICAL));
+    }
+    
+    void setAlert(ErrorCode code) {
+        setError(Error(code, ERROR_ALERT));
     }
 
     void setError(ErrorCode code, const char *desc) {
         setError(Error(code, desc));
     }
-
-    void setError(ErrorCode code, ConfigItem param) {
+    
+    void setErrorf_P(const ErrorCode code, PGM_P strf, const char *arg) {
         char buf[OUTPUT_MAX_LENGTH];
-        sprintf_P(buf, strf_wrong_parameter, config_->name(param).c_str());
+        sprintf_P(buf, strf, arg);
         setError(code, buf);
+    }        
+
+    void setSerializeError(const char *json) {
+        setErrorf_P(ERROR_SERIALIZE, strf_json_serilialize, json);
+    }
+
+    void setInvalidParamError(const ConfigItem param) {
+        setErrorf_P(INVALID_PARAM, strf_invalid_param, config_->name(param).c_str());
     }
 
    protected:

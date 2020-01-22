@@ -70,13 +70,6 @@
 #define FS_WH_VAR FS_VAR_ROOT "wh"
 #define FS_HOST_VAR FS_VAR_ROOT "host"
 
-#define PARAM_CHAR 1
-#define PARAM_BYTE 3
-#define PARAM_STRING 31
-#define PARAM_IPADDR 16
-#define PARAM_NUMBER 8
-#define PARAM_FLOAT 12
-
 #define HOST_DOMAIN "local"
 #define WIFI_CONNECT_TIMEOUT 40
 #define WEB_SERVER_CLIENT_MAX 5

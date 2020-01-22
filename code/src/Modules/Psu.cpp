@@ -11,8 +11,8 @@ namespace Modules {
 
 bool Psu::onInit() {
     ina231_configure();
-    clearErrorsAndAlerts();
-    if (isWhStoreEnabled()) restoreWh(info_.Wh);
+    clearError();
+    if (isWhStoreEnabled()) restoreWh(metering_.Wh);
     return true;
 }
 
@@ -44,33 +44,33 @@ void Psu::onLoop() {
     unsigned long passed = millis_passed(infoUpdated_, now);
     if (passed >= MEASUREMENT_INTERVAL_ms) {
         infoUpdated_ = now;
-        info_.V = ina231_read_voltage();
-        info_.I = ina231_read_current();
-        info_.P = ina231_read_power();
+        metering_.V = ina231_read_voltage();
+        metering_.I = ina231_read_current();
+        metering_.P = ina231_read_power();
         double sec = (double)passed / 1000;
-        double ws = sec * info_.P;
-        info_.Wh += (ws / 3600);
-        info_.time = now;
+        double ws = sec * metering_.P;
+        metering_.Wh += (ws / 3600);
+        metering_.time = now;
     }
 
     if (millis_passed(listenerUpdate_, now) >= PSU_LOG_INTERVAL_ms) {
-        if (dataListener_) dataListener_->onPsuData(info_);
+        if (dataListener_) dataListener_->onPsuData(metering_);
         listenerUpdate_ = now;
     }
 
     if (millis_passed(lastCheck_, now) > PSU_CHECK_INTERVAL_s * ONE_SECOND_ms) {
-        if (info_.V < PSU_VOLTAGE_LOW_v) {
-            setError(PSU_ERROR_LOW_VOLTAGE);
-        } else if (info_.I <= PSU_LOAD_LOW_a) {
-            setAlert(PSU_ALERT_LOAD_LOW);
+        if (metering_.V < PSU_VOLTAGE_LOW_v) {
+            setError(ERROR_VOLTAGE_LOW);
+        } else if (metering_.I <= PSU_LOAD_LOW_a) {
+            setAlert(ERROR_NO_LOAD);
         } else {
-            clearErrorsAndAlerts();
+            clearError();
         }
         lastCheck_ = now;
     }
 
     if (millis_passed(lastStore_, now) > ONE_MINUTE_ms) {
-        if (isWhStoreEnabled() && info_.Wh != lastStoredWh_) storeWh(info_.Wh);
+        if (isWhStoreEnabled() && metering_.Wh != lastStoredWh_) storeWh(metering_.Wh);
         lastStore_ = now;
     }
 }
@@ -102,7 +102,7 @@ void Psu::powerOff() {
     digitalWrite(POWER_SWITCH_PIN, mapState(POWER_OFF));
     if (state_ == POWER_OFF) return;
     state_ = POWER_OFF;
-    if (isWhStoreEnabled() && lastStoredWh_ != info_.Wh) storeWh(info_.Wh);
+    if (isWhStoreEnabled() && lastStoredWh_ != metering_.Wh) storeWh(metering_.Wh);
     if (isStateStoreEnabled() && state_ != lastStore_) storeState(POWER_OFF);
     onStateChangeEvent(state_);
 }
@@ -166,8 +166,8 @@ bool Psu::isStateStoreEnabled() const {
 }
 
 void Psu::setWh(double value) {
-    info_.Wh = value;
-    if (isWhStoreEnabled()) storeWh(info_.Wh);
+    metering_.Wh = value;
+    if (isWhStoreEnabled()) storeWh(metering_.Wh);
 }
 
 bool Psu::storeWh(double value) {
@@ -234,8 +234,8 @@ void Psu::onDiag(const JsonObject& doc) {
     doc[FPSTR(str_power)] = getStateStr(state_);
     if (state_ == POWER_ON) {
         doc[FPSTR(str_time)] = TimeUtils::format_elapsed_short(getUptime());
-        doc[FPSTR(str_status)] = getStatusStr();
-        doc[FPSTR(str_data)] = info_.toJson();
+        doc[FPSTR(str_status)] = getStateStr();
+        doc[FPSTR(str_data)] = metering_.toJson();
     }
 }
 
@@ -250,55 +250,22 @@ const unsigned long Psu::getUptime() const {
     return millis_passed(startTime_, infoUpdated_);
 }
 
-PsuStatus Psu::getStatus(void) const { return status_; }
-
 PsuState Psu::getState(void) const { return state_; }
-
-PsuError Psu::getError(void) const { return error_; }
-
-PsuAlert Psu::getAlert(void) const { return alert_; }
-
-void Psu::setError(PsuError value) {
-    error_ = value;
-    setStatus(PSU_ERROR);
-}
-
-void Psu::setAlert(PsuAlert value) {
-    alert_ = value;
-    setStatus(PSU_ALERT);
-}
-
-void Psu::setStatus(PsuStatus value) {
-    if (status_ == value) return;
-    status_ = value;
-    if (state_ == POWER_ON) {        
-        if (statusChangeHandler_) {
-            String str = getStatusStr();
-            statusChangeHandler_(status_, str);
-        }
-    }
-}
 
 void Psu::setOnStateChange(PsuStateChangeHandler h) {
     stateChangeHandler_ = h;
 };
 
-void Psu::setOnStatusChange(PsuStatusChangeHandler h) {
-    statusChangeHandler_ = h;
+void Psu::setOnError(ErrorHandler h) {
+    errorHandler_ = h;
 };
 
 void Psu::setOnData(PsuDataListener* l) {
     dataListener_ = l;
 }
 
-const PsuData Psu::getData() const {
-    return info_;
-}
-
-void Psu::clearErrorsAndAlerts() {
-    alert_ = PSU_ALERT_NONE;
-    error_ = PSU_ERROR_NONE;
-    status_ = PSU_OK;
+const PsuData* Psu::getData() const {
+    return &metering_;
 }
 
 uint8_t Psu::quadratic_regression(const float value, const float c) const {
@@ -317,60 +284,8 @@ String Psu::getStateStr() const {
     return getStateStr(state_);
 }
 
-String Psu::getAlertStr() const {
-    return getAlertStr(alert_);
-}
-
-String Psu::getErrorStr() const {
-    return getErrorStr(error_);
-}
-
 String Psu::getStateStr(const PsuState value) const {
     return String(FPSTR(value == POWER_ON ? str_on : str_off));
-}
-
-String Psu::getStatusStr() const {
-    String str;
-    switch (status_) {
-        case PSU_OK:
-            str = String(FPSTR(str_ok));
-            break;
-        case PSU_ALERT:
-            str =  String(FPSTR(str_alert));
-            str += ':';
-            str += getAlertStr(alert_);
-            break;
-        case PSU_ERROR:
-            str = String(FPSTR(str_error));
-            str += ':';
-            str += getErrorStr(error_);
-            break;
-    }
-    return str;
-}
-
-String Psu::getErrorStr(const PsuError value) const {
-    String str;
-    switch (value) {
-        case PSU_ERROR_LOW_VOLTAGE:
-            str = String(FPSTR(str_low_voltage));
-            break;
-        case PSU_ERROR_NONE:
-            break;
-    }
-    return str;
-}
-
-String Psu::getAlertStr(const PsuAlert value) const {
-    String str;
-    switch (value) {
-        case PSU_ALERT_LOAD_LOW:
-            str = String(FPSTR(str_load_low));
-            break;
-        case PSU_ALERT_NONE:
-            break;
-    }
-    return str;
 }
 
 }  // namespace Modules

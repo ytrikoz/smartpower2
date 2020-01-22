@@ -7,7 +7,7 @@
 using namespace PrintUtils;
 using namespace StrUtils;
 
-App::App() : exitState_(STATE_NORMAL), exitFlag_(false), systemEvent_(true), networkEvent_(false), psuEvent_(false) {}
+App::App() : state_(STATE_NORMAL), shutdown_(false), systemEvent_(true), networkEvent_(false), powerEvent_(false) {}
 
 void App::initMods() {
     for (uint8_t i = 0; i < MODULES_COUNT; ++i) {
@@ -37,30 +37,29 @@ void App::setupMods() {
     */
     btn()->setOnClick([this]() { if (psu()) psu()->togglePower(); });
     btn()->setOnHold([this](time_t time) {
-        if (time >= HOLD_TIME_RESTART_s && exitState_ < STATE_RESTART) {
+        if (time >= HOLD_TIME_RESTART_s && state_ < STATE_RESTART) {
             PrintUtils::print_ident(out_, FPSTR(str_app));
             PrintUtils::println(out_, FPSTR(str_restart));
-            exitState_ = STATE_RESTART;
+            state_ = STATE_RESTART;
         }
-        if (time >= HOLD_TIME_RESET_s && exitState_ < STATE_RESET) {
+        if (time >= HOLD_TIME_RESET_s && state_ < STATE_FAILBACK) {
             PrintUtils::print_ident(out_, FPSTR(str_app));
             PrintUtils::println(out_, FPSTR(str_reset));
-            exitState_ = STATE_RESET;
+            state_ = STATE_FAILBACK;
         }
-        systemEvent_ = exitState_ != STATE_NORMAL;
+        systemEvent_ = state_ != STATE_NORMAL;
     });
     btn()->setholdReleaseEvent([this](time_t time) {
-        exitFlag_ = exitState_ != STATE_NORMAL;
+        shutdown_ = state_ != STATE_NORMAL;
     });
     /*
     * Power
     */
     psu()->setOnData(this);
-    psu()->setOnStatusChange([this](const PsuStatus status, const String description) {
+    psu()->setOnError([this](const Error e) {
         PrintUtils::print_ident(out_, FPSTR(str_psu));
-        PrintUtils::print(out_, description);
-        PrintUtils::println(out_);
-        onPsuStatusChange(status);
+        PrintUtils::println(out_, e.toString());
+        onPsuError(e);
     });
     psu()->setOnStateChange([this](const PsuState state, const String description) {
         PrintUtils::print_ident(out_, FPSTR(str_psu));
@@ -90,25 +89,25 @@ void App::setupMods() {
 };
 
 void App::systemRestart() {
-    exitState_ = STATE_RESTART;
-    exitFlag_ = true;
+    state_ = STATE_RESTART;
+    shutdown_ = true;
 }
 
 void App::systemReset() {
-    exitState_ = STATE_RESET;
-    exitFlag_ = true;
+    state_ = STATE_FAILBACK;
+    shutdown_ = true;
 }
 
 void App::onPsuStateChange(PsuState state) {
-    psuEvent_ = true;
+    powerEvent_ = true;
 }
 
-void App::onPsuStatusChange(PsuStatus status) {
-    psuEvent_ = true;
+void App::onPsuError(Error e) {
+    powerEvent_ = true;
 }
 
 void App::onPsuData(PsuData &item) {
-    refreshDisplay();
+    updateDisplay();
 
     if (powerlog_) powerlog_->onPsuData(item);
 
@@ -143,19 +142,19 @@ void App::onConfigChange(const ConfigItem param, const String &value) {
 
 void App::onTelnetStatusChange(bool clients) {
     networkEvent_ = true;
-    telnetClients_ = clients;
+    hasTelnetClients_ = clients;
 }
 
 void App::onWebStatusChange(bool clients) {
     networkEvent_ = true;
-    webClients_ = clients;
+    hasWebClients_ = clients;
 }
 
 void App::onNetworkStatusChange(bool network, NetworkMode mode) {
     networkEvent_ = true;
     hasNetwork_ = network;
     networkMode_ = mode;
-    if (!network) webClients_ = telnetClients_ = 0;
+    if (!network) hasWebClients_ = hasTelnetClients_ = 0;
 }
 
 void App::begin() {
@@ -163,57 +162,60 @@ void App::begin() {
     setupMods();
     displayProgress(0, BUILD_DATE);
     displayProgress(100, BUILD_DATE);
-    refreshDisplay();
+    updateDisplay();
 }
 
 AppState App::loop(LoopTimer *looper) {
     for (size_t i = 0; i < MODULES_COUNT; ++i) {
         auto *obj = getInstance(i);
         if (!obj) continue;
-        if (exitFlag_) {
+        if (shutdown_) {
             obj->end();
             continue;
         }
-        if ((!hasNetwork_ && modules_[i].network) ||
-            (hasNetwork_ && networkMode_ == NetworkMode::NETWORK_AP && modules_[i].network == NetworkMode::NETWORK_STA)) {
+        if (!hasNetwork_ && modules_[i].network) {
             obj->stop();
             continue;
-        } else {
-            if (obj->start()) {
-                if (looper) looper->start(i);
-                obj->loop();
-                if (looper) looper->end();
-            }
-            delay(0);
         }
+        if (obj->start()) {
+            if (looper) looper->start(i);
+            obj->loop();
+            if (looper) looper->end();
+        }
+        yield();
     }
 
-    if (psuEvent_ || networkEvent_) {
+    if (powerEvent_ || networkEvent_) {
         web()->updatePage(PAGE_HOME);
-        refreshDisplay();
+        updateDisplay();
     }
 
-    if (systemEvent_ || networkEvent_)
-        refreshBlue();
+    if (systemEvent_ || networkEvent_) {
+        updateBlue( hasWebClients_ || hasTelnetClients_, !hasNetwork_, state_ >= STATE_RESTART);
+    }  
 
-    if (systemEvent_ || psuEvent_)
-        refreshRed();
+    if (systemEvent_ || powerEvent_) {
+        updateRed(psu()->isPowerOn(), psu()->getError(), state_ >= STATE_FAILBACK);
+    }
 
-    networkEvent_ = systemEvent_ = psuEvent_ = false;
+    clearEvents();
 
-    if (exitFlag_)
-        return exitState_;
-
-    return STATE_NORMAL;
+    if (!shutdown_) 
+        return STATE_NORMAL;    
+    else 
+        return state_;    
 }
 
+void App::clearEvents() {
+    networkEvent_ = systemEvent_ = powerEvent_ = false;
+}
+    
 size_t App::printDiag(Print *p) {
     DynamicJsonDocument doc(2048);
     doc[FPSTR(str_heap)] = SysInfo::getHeapStats();
     doc[FPSTR(str_file)] = FSUtils::getFSUsed();
     doc[FPSTR(str_wifi)] = NetUtils::getMode();
     doc[FPSTR(str_network)] = hasNetwork_;
-
     for (uint8_t i = 0; i < MODULES_COUNT; ++i) {
         auto *obj = getInstance(i);
         JsonVariant mod_root = doc.createNestedObject(getName(i));
@@ -231,53 +233,49 @@ size_t App::printDiag(Print *p) {
     return n += p->println();
 }
 
-void App::displayProgress(uint8_t progress, const char *message) {
-    if (display() && (display()->connected()))
-        display()->showProgress(progress, message);
+void App::displayProgress(uint8_t currProgress, const char *message) {
+    if (!display() || !(display()->connected())) return;
+    
+    display()->showProgress(currProgress, message);
 }
 
-void App::refreshBlue() {
+void App::updateBlue(const bool activeState, const bool alertState, const bool errorState) {
     LedSignal mode = LIGHT_OFF;
-    if (systemEvent_ && exitState_ >= STATE_RESTART) {
+    if (errorState) {
         mode = BLINK_ERROR;
-    } else if (hasNetwork_) {
+    } else if (alertState) {
         mode = LIGHT_ON;
-        if (webClients_ || telnetClients_)
-            mode = BLINK;
+    }
+    if (activeState) {
+        mode = BLINK;
     }
     led()->set(BLUE_LED, mode);
 }
 
-void App::refreshRed() {
+ void App::updateRed(const bool activeState, const bool alertState, const bool errorState) {
     LedSignal mode = LIGHT_ON;
-    if (systemEvent_ && exitState_ >= STATE_RESET) {
+    if (errorState) {
         mode = BLINK_ERROR;
-    } else if (psu()->getState() == POWER_ON) {
-        mode = psu()->getStatus() == PSU_OK ? BLINK : BLINK_ALERT;
-    } else {
-        mode = LIGHT_ON;
+    } else if (alertState) {
+        mode = BLINK_ALERT;
+    } else if (activeState) {
+        mode = BLINK;
     }
     led()->set(RED_LED, mode);
 }
 
-void App::refreshDisplay(void) {
-    if (!display()) return;
+void App::updateDisplay(void) {
+    if (!display() || !display()->connected()) return;
 
-    if (psu()->getState() == POWER_ON) {
-        PsuStatus status = psu()->getStatus();
-        switch (status) {
-            case PSU_OK:
-                display()->show_psu_data(psu()->getData());
-                return;
-            case PSU_ALERT:
-                display()->show_message(String(FPSTR(str_alert)).c_str(), psu()->getAlertStr().c_str());
-                return;
-            case PSU_ERROR:
-                display()->show_message(String(FPSTR(str_error)).c_str(), psu()->getErrorStr().c_str());
-                return;
-        }
+    if (psu()->isPowerOn()) {        
+        if (psu()->ok()) {
+            const PsuData* data = psu()->getData();
+            display()->show_metering(data->V, data->I, data->P, data->Wh);
+        } else {
+            display()->showError(psu()->getError());
+        }    
     } else {
-        display()->show_network(networkMode_);
+        display()->show_info(networkMode_);
     }
 }
 

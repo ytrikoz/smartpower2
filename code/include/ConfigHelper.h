@@ -58,7 +58,7 @@ class ConfigHelper : public Printable {
     String extractValue(const String &str);    
 
     Config obj_;
-    char* name_;
+    char* name_ = nullptr;
     bool changed_;
     Print *out_;
 };

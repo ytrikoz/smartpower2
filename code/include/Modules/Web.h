@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Core/Module.h"
-
 #include "WebServer/WebServer.h"
 #include "WebServer/WebServerAsync.h"
 
@@ -30,9 +29,9 @@ class Web : public Module, public WebServerHandler {
     void onLoop() override;
 
    public:
-    void send(const String &data, const WebPageEnum page, const uint32_t num);
+    void send(const String& data, const WebPageEnum page, const uint32_t num);
     void updatePage(const WebPageEnum page);
-    void broadcast(const String &data, const WebPageEnum page, const uint32_t num = 0);
+    void broadcast(const String& data, const WebPageEnum page, const uint32_t num = 0);
     size_t getClients();
 
    private:
@@ -47,6 +46,7 @@ class Web : public Module, public WebServerHandler {
     bool getSlot(WebClient** c);
     bool getClient(uint32_t num, WebClient** c);
     void setClientPage(const uint32_t num, const WebPageEnum page);
+
    private:
     WebClient client_[WEB_SERVER_CLIENT_MAX];
     size_t client_cnt_;

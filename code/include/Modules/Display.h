@@ -11,16 +11,17 @@ class Display : public Module {
     void showProgress(uint8_t per, const char *str);
     void showPlot(PlotSummary *data, size_t cols);
     void showMessage(const char *header, const char *message);
+    void showError(const Error error);
     void clear(void);
     void updateScreen(void);
     bool enableBacklight(const bool value = true);
     
     bool connected();
 
-    void show_psu_data(const PsuData& data);
+    void show_metering(const float v, const float i, const float p, const double wh);
     void show_psu_stat();
     void show_message(const char *header, const char *message);
-    void show_network(const NetworkMode mode);
+    void show_info(const NetworkMode mode);    
 
    public:
     Display() : Module(){};

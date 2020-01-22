@@ -1,10 +1,19 @@
 #pragma once
 
-#include "CommonTypes.h"
-
+#include <Arduino.h>
 #include <IPAddress.h>
 
-typedef std::function<void(const ConfigItem, const String &)> ConfigChangeEventHandler;
+#include "Config.h"
+#include "Strings.h"
+
+#define PARAMS_COUNT 24
+
+#define PARAM_CHAR 1
+#define PARAM_BYTE 3
+#define PARAM_STRING 31
+#define PARAM_IPADDR 16
+#define PARAM_NUMBER 8
+#define PARAM_FLOAT 12
 
 struct Param {
     PGM_P key_name;
@@ -12,6 +21,34 @@ struct Param {
     uint8_t value_size;
     const char *value_default;
 };
+
+enum ConfigItem {
+    WIFI,
+    SSID,
+    PASSWORD,
+    DHCP,
+    IPADDR,
+    NETMASK,
+    GATEWAY,
+    DNS,
+    OUTPUT_VOLTAGE,
+    BOOT_POWER,
+    LOGIN,
+    PASSWD,
+    AP_SSID,
+    AP_PASSWORD,
+    AP_IPADDR,
+    TIME_ZONE,
+    TPW,
+    NTP_SYNC_INTERVAL,
+    NTP_POOL_SERVER,
+    TIME_BACKUP_INTERVAL,
+    WH_STORE_ENABLED,
+    BACKLIGHT,
+    SYSLOG_SERVER
+};
+
+typedef std::function<void(const ConfigItem, const String &)> ConfigChangeEventHandler;
 
 class Config {
    public:
@@ -47,8 +84,8 @@ class Config {
     size_t getValueSize(size_t index) const;
     const char *getDefault(const size_t index) const;
     bool exist(const char *name) const;
-   private:
 
+   private:
     const Param *get(const size_t index) const;
 
     void onChangedEvent(ConfigItem param);
@@ -80,6 +117,5 @@ class Config {
         {str_store_wh, nullptr, PARAM_CHAR, "0"},
         {str_backlight, nullptr, PARAM_CHAR, "1"},
         {str_syslog, nullptr, PARAM_STRING, "192.168.1.1"},
-        {str_domain, nullptr, PARAM_STRING, ""}
-        };
+        {str_domain, nullptr, PARAM_STRING, ""}};
 };

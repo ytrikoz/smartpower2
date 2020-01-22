@@ -17,20 +17,20 @@ bool setupDone = true;
 bool safeMode = false;
 
 ModuleDef mods[MODULES_COUNT] = {
-    {0, str_btn, NETWORK_OFF},
-    {0, str_led, NETWORK_OFF},
-    {0, str_clock, NETWORK_OFF},
-    {0, str_psu, NETWORK_OFF},
-    {0, str_display, NETWORK_OFF},
-    {0, str_console, NETWORK_OFF},
-    {0, str_netsvc, NETWORK_STA},
-    {0, str_telnet, NETWORK_STA},
-    {0, str_update, NETWORK_AP},
-    {0, str_syslog, NETWORK_STA},
-    {0, str_web, NETWORK_AP}};
+    {0, str_btn, false},
+    {0, str_led, false},
+    {0, str_clock, false},
+    {0, str_psu, false},
+    {0, str_display, false},
+    {0, str_console, false},
+    {0, str_netsvc, true},
+    {0, str_telnet, true},
+    {0, str_update, true},
+    {0, str_syslog, true},
+    {0, str_web, true}};
 
-void handleState(AppState state) {
-    if (state == STATE_RESET) {
+void handleAppState(AppState state) {
+    if (state == STATE_FAILBACK) {
         PrintUtils::print_ident(&Serial, FPSTR(str_config));
         PrintUtils::print(&Serial, FPSTR(str_reset));
         config->setDefaultConfig();
@@ -109,7 +109,7 @@ void loop() {
         delete boot;
         boot = nullptr;
     }
-    handleState(res);
+    handleAppState(res);
 }
 
 void initCrashReport() {

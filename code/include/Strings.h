@@ -4,9 +4,8 @@
 
 // TODO
 // now it's not for memory saving, but to collect literals in one place
-
-static const char strf_wrong_parameter[] PROGMEM = "wrong parameter (%s)";
-
+static const char strf_json_serilialize[] PROGMEM = "json serialize (%s)";
+static const char strf_invalid_param[] PROGMEM = "invalid param (%s)";
 static const char str_dns_resolve[] PROGMEM = "dsn resolve";
 static const char str_interrupted[] PROGMEM = "interrupted";
 static const char str_down[] PROGMEM = "down";

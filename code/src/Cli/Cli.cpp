@@ -1,6 +1,6 @@
 #include "Cli/Cli.h"
-#include "Cli/CliUtils.h"
 
+#include "Cli/CliUtils.h"
 #include "Actions/Avg.h"
 #include "Actions/WakeOnLan.h"
 

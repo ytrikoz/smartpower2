@@ -4,10 +4,79 @@
 
 #define POWER_SWITCH_PIN D6
 
+struct PsuData : Printable {
+    unsigned long time;
+    float V;
+    float I;
+    float P;
+    double Wh;
+
+   public:
+    PsuData() { time = V = I = P = Wh = 0; }
+
+    PsuData(unsigned long time_ms, float V, float I, float P, double Wh)
+        : time(time_ms), V(V), I(I), P(P), Wh(Wh){};
+
+    void reset(void) { time = V = I = P = Wh = 0; }
+
+    char* prettyNumber(char* buf, float value, const char* name) const {
+        char tmp[8];
+        if (I < 0.5) {
+            strcpy(buf, dtostrf(value * 1000, 3, 0, tmp));
+            strcat(buf, "m");
+        } else {
+            strcpy(buf, dtostrf(value, 2, 2, tmp));
+        }
+        strcat(buf, name);
+        return buf;
+    }
+
+    size_t toPretty(char* buf) const {
+        char tmp[32];
+        memset(tmp, 0, 32);
+        // Volt
+        strcat(buf, dtostrf(V, 2, 2, tmp));
+        strcat(buf, "V ");
+        // Amper
+        strcat(buf, prettyNumber(tmp, I, "A "));
+        // Watt
+        strcat(buf, dtostrf(P, 2, 2, tmp));
+        strcat(buf, "W");
+
+        return strlen(buf);
+    }
+
+    String toJson() const {
+        String res = "{";
+        res += "\"v\":" + String(V, 3) + ",";
+        res += "\"i\":" + String(I, 3) + ",";
+        res += "\"p\":" + String(P, 3) + ",";
+        res += "\"wh\":" + String(Wh, 6) + "}";
+        return res;
+    }
+
+    size_t printTo(Print& p) const {
+        size_t n = 0;
+        n += p.print(V, 3);
+        n += p.print("V, ");
+        n += p.print(I, 3);
+        n += p.print("A, ");
+        n += p.print(P, 3);
+        n += p.print("W, ");
+        n += p.print(Wh, 3);
+        n += p.print("Wh");
+        return n;
+    }
+};
+
+class PsuDataListener {
+   public:
+    virtual void onPsuData(PsuData& item){};
+};
+
 namespace Modules {
 
 typedef std::function<void(const PsuState, const String)> PsuStateChangeHandler;
-typedef std::function<void(const PsuStatus, const String)> PsuStatusChangeHandler;
 
 class Psu : public Module {
    public:
@@ -20,7 +89,7 @@ class Psu : public Module {
     void powerOn();
 
     void setOnStateChange(PsuStateChangeHandler);
-    void setOnStatusChange(PsuStatusChangeHandler);
+    void setOnError(ErrorHandler);
     void setOnData(PsuDataListener*);
 
     void setWh(double value);
@@ -34,16 +103,10 @@ class Psu : public Module {
     PsuState getState(void) const;
     String getStateStr(void) const;
     String getStateStr(const PsuState) const;
-    PsuStatus getStatus(void) const;
-    String getStatusStr(void) const;
-
-    PsuAlert getAlert(void) const;
-    PsuError getError(void) const;
+    
     float getOutputVoltage() const;
     const unsigned long getUptime() const;
-    const PsuData getData() const;
-    String getErrorStr() const;
-    String getAlertStr() const;
+    const PsuData* getData() const;
 
    protected:
     bool onInit() override;
@@ -54,13 +117,6 @@ class Psu : public Module {
    private:
     void onStateChangeEvent(PsuState);
     void applyVoltage(const float);
-
-    void clearErrorsAndAlerts(void);
-    void setStatus(PsuStatus);
-    void setError(PsuError);
-    String getErrorStr(const PsuError) const;
-    void setAlert(PsuAlert);
-    String getAlertStr(const PsuAlert) const;
 
     bool storeWh(double);
     bool restoreWh(double&);
@@ -74,13 +130,9 @@ class Psu : public Module {
    private:
     PsuDataListener* dataListener_;
     PsuStateChangeHandler stateChangeHandler_;
-    PsuStatusChangeHandler statusChangeHandler_;
-
-    PsuState state_;
-    PsuStatus status_;
-    PsuError error_;
-    PsuAlert alert_;
-    PsuData info_;
+    PsuState state_;   
+    ErrorHandler errorHandler_;
+    PsuData metering_;
     unsigned long startTime_, infoUpdated_, powerInfoUpdated_, listenerUpdate_,
         lastStore_, lastCheck_;
     double lastStoredWh_;

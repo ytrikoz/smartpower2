@@ -49,9 +49,17 @@ bool Display::enableBacklight(const bool enabled) {
 
 void Display::clear(void) { 
     activeScreen = SCREEN_CLEAR; 
+}   
+
+void Display::showError(const Error error) {
+    setScreen(SCREEN_MESSAGE);
+    screen.set(0, error.source().c_str());
+    screen.set(1, error.toString().c_str());
+    screen.setCount(2);
+    screen.moveFirst();
 }
 
-void Display::show_network(const NetworkMode mode) {
+void Display::show_info(const NetworkMode mode) {
     lcd->loadBank(BANK_NONE);
     size_t n = 0;
     screen.set(n++, "READY> ", TimeUtils::format_time(app.clock()->local()));
@@ -73,20 +81,22 @@ void Display::show_network(const NetworkMode mode) {
     screen.moveFirst();
 }
 
-void Display::show_psu_data(const PsuData &data) {
+void Display::show_metering(const float v, const float i, const float p, const double wh) {
     setScreen(SCREEN_PSU);
-    String str = String(data.V, 3);
+
+    String str = String(v, 3);
     if (str.length() == 5) str += " ";
     str += "V ";
-    str += String(data.I, 3);
+    
+    str += String(i, 3);
     str += " A ";
+
     screen.set(0, str.c_str());
 
-    double p = data.P;
     str = String(p, p < 10 ? 3 : 2);
     str += " W ";
 
-    double total = data.Wh;
+    double total = wh;
     if (total < 1000) {
         str += String(total, total < 10 ? 3 : total < 100 ? 2 : 1);
         str += " Wh";
@@ -95,8 +105,10 @@ void Display::show_psu_data(const PsuData &data) {
         str += String(total, 3);
         str += "KWh";
     }
+
     screen.set(1, str.c_str());
     screen.setCount(2);
+
     screen.moveFirst();
 }
 
@@ -109,8 +121,8 @@ void Display::show_psu_stat() {
 
 void Display::setScreen(ScreenEnum value) {
     if (activeScreen == value) return;
-    screenUpdated = lastScroll = screenRedraw = millis();
     activeScreen = value;
+    screenUpdated = lastScroll = screenRedraw = millis();
     lcd->clear();
 }
 

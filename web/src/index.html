@@ -26,32 +26,33 @@
 <body onload="onload();" onunload="onunload();">
     <!-- Header -->
     <div data-role="header" data-type="header" data-position="fixed" data-theme="b">
-        <h1>SP2</h1>
+        <h1>SmartPower2</h1>
     </div>
-    <!-- Home -->
 
+    <!-- home -->
     <div id="home" data-role="page" data-title="Home">
-        <!-- Main-->
+        <!-- main-->
         <div role="main" class="ui-content">
-            <!-- Switch-->
-            <div id="switch" data-role="collapsible" data-collapsed-icon="power" data-expanded-icon="power">
+            <!-- switch-->
+            <div id="switch" data-role="collapsible" data-iconpos="right" data-collapsed-icon="power" data-expanded-icon="power">
                 <h3>Switch</h3>
-                <fieldset>
-                    <div data-role="fieldcontain">
-                        <label for="flipswitch_power">Output power</label>
-                        <select id="flipswitch_power" data-role="flipswitch">
-                            <option value="off">Off</option>
-                            <option value="on">On</option>
-                        </select>
-                        <input id="slider_voltage" data-inline="true" name="slider_voltage" type="range" min="4"
-                            max="13" step="0.1" value="5" data-popup-enabled="true">
-                        <button id="btn_apply_voltage" data-mini="true" data-inline="true">Set voltage</button>
-                    </div>
-                </fieldset>
+                <div class="ui-field-contain">
+                    <label for="flipswitch_power">Output power</label>
+                    <select id="flipswitch_power" data-role="flipswitch">
+                        <option value="off">Off</option>
+                        <option value="on">On</option>
+                    </select>
+                </div>
+                <div class="ui-field-contain">
+                    <label for="slider_voltage">Voltage</label>
+                    <input id="slider_voltage" data-inline="true" name="slider_voltage" type="range" min="4" max="13"
+                        step="0.1" value="5" data-popup-enabled="true">
+                </div>
+                <button id="btn_apply_voltage" data-inline="true">Apply</button>
             </div>
 
-            <!-- Dashboard-->
-            <div id="dashboard" data-role="collapsible" data-collapsed="false" data-collapsed-icon="search"
+            <!-- dashboard-->
+            <div id="dashboard" data-role="collapsible" data-iconpos="right" data-collapsed="false" data-collapsed-icon="search"
                 data-expanded-icon="search" data-content-theme="b">
                 <h3>Dashboard</h3>
                 <div id="v_ss" class="ss_cont">
@@ -70,24 +71,27 @@
             </div>
 
             <!-- Display-->
-            <div id="display" data-role="collapsible">
+            <div id="display" data-iconpos="right" data-role="collapsible">
                 <h3>Display</h3>
-                <label>Averaging</label>
-                <input id="slider_averaging" name="slider_averaging" type="range" min="1" max="1024" step="4" value="3">
+                <div class="ui-field-contain">
+                    <label for="slider_averaging">Averaging</label>
+                    <input id="slider_averaging" name="slider_averaging" type="range" min="1" max="1024" step="4"
+                        value="3">
+                </div>
             </div>
 
         </div><!-- /main-->
-    </div><!-- /Home -->
+    </div><!-- /home -->
 
-    <!-- Options -->
+    <!-- options -->
     <div id="options" data-role="page" data-title="Options">
         <!-- main-->
         <div role="main" class="ui-content">
-            <!--General-->
+            <!--general-->
             <div data-role="collapsible" data-iconpos="right">
                 <h3>General</h3>
                 <div class="ui-field-contain">
-                    <label for="boot_mode_cont">Power on boot</label>
+                    <label for="boot_mode_cont">Power On Boot</label>
                     <fieldset id="boot_mode_cont" data-role="controlgroup" data-type="horizontal">
                         <input id="boot_mode_off" type="radio" name="boot_mode" value="0" />
                         <input id="boot_mode_on" type="radio" name="boot_mode" value="1" />
@@ -98,141 +102,159 @@
                     </fieldset>
                 </div>
 
-                <fieldset>
-                    <div class="ui-field-contain">
-                        <label for="flipswitch_store_wh">Summary Totals</label>
-                        <select id="flipswitch_store_wh" data-role="flipswitch" data-inline="true">
-                            <option value="off">Off</option>
-                            <option value="on">On</option>
-                        </select>
-                    </div>
-                    <div class="ui-field-contain">
-                        <label for="slider_maxwh">Limit (mW/h)</label>
-                        <input type="range" name="slider_maxwh" id="slider_maxwh" min="0" max="10000" value="1000">
-                    </div>
-                </fieldset>
-
-                <fieldset>
-                    <div class="ui-field-contain">
-                        <label for="flipswitch_backlight">Backlight</label>
-                        <select id="flipswitch_backlight" data-role="flipswitch">
-                            <option value="off">Off</option>
-                            <option value="on">On</option>
-                        </select>
-                    </div>
-                </fieldset>
-
-                <fieldset>
-                    <div class="ui-field-contain">
-                        <label>Syslog</label>
-                        <input id="txt_syslog" type="text" maxlength="32" />
-                    </div>
-                </fieldset>
-            </div>
-
-            <!--WiFi-->
-            <div data-role="collapsible" data-iconpos="right">
-                <h1>WiFi</h1>
-                <label>Mode</label>
-                <fieldset data-role="controlgroup" data-type="horizontal">
-                    <input id="wifi_sta" type="radio" name="wifi_mode" value="1" />
-                    <input id="wifi_ap" type="radio" name="wifi_mode" value="2" />
-                    <input id="wifi_ap_sta" type="radio" name="wifi_mode" value="3" />
-                    <label for="wifi_sta">STA</label>
-                    <label for="wifi_ap">AP</label>
-                    <label for="wifi_ap_sta">AP + STA</label>
-                </fieldset>
-                <label>Strength</label>
-                <fieldset id="slider_twp_cont">
-                    <input id="slider_twp" name="slider_twp" type="range" min="0" max="82" step="1" value="82"
-                        data-popup-enabled="true">
-                </fieldset>
-                <button id="btn_save_wifi" data-inline="true" data-mini="true">Apply</button>
-            </div>
-            <!-- Station Mode-->
-            <div data-role="collapsible" data-iconpos="right">
-                <h3>Station Mode</h3>
-
-                <label>SSID</label>
-                <input id="txt_ssid" type="text" maxlength="32" />
-
-                <label>Password</label>
-                <input id="txt_passwd" type="password" maxlength="32" />
-
-                <fieldset>
-                    <div data-role="fieldcontain">
-                        <label for="flipswitch_dhcp">DHCP</label>
-                        <select id="flipswitch_dhcp" data-role="flipswitch">
-                            <option value="off">Off</option>
-                            <option value="on">On</option>
-                        </select>
-                    </div>
-                </fieldset>
-                <div id="ipaddr_cont">
-                    <label>IP Address</label>
-                    <input id="txt_ipaddr" type="text" maxlength="16">
-                    <label>IP Mask</label>
-                    <input id="txt_netmask" type="text" maxlength="16">
-                    <label>Gateway</label>
-                    <input id="txt_gateway" type="text" maxlength="16">
-                    <label>DNS</label>
-                    <input id="txt_dns" type="text" maxlength="16">
+                <div class="ui-field-contain">
+                    <label for="flipswitch_store_wh">Summary Totals</label>
+                    <select id="flipswitch_store_wh" data-role="flipswitch" data-inline="true">
+                        <option value="off">Off</option>
+                        <option value="on">On</option>
+                    </select>
                 </div>
-                <button id="btn_save_sta" data-mini="true" data-inline="true">Save</button>
+
+                <div class="ui-field-contain">
+                    <label for="flipswitch_backlight">LCD Backlight</label>
+                    <select id="flipswitch_backlight" data-role="flipswitch" data-inline="true">
+                        <option value="off">Off</option>
+                        <option value="on">On</option>
+                    </select>
+                </div>
+
+                <div class="ui-field-contain">
+                    <label for="txt_syslog">Syslog Server</label>
+                    <input id="txt_syslog" type="text" maxlength="32">
+                </div>
             </div>
-            <!-- AP Mode-->
+
+            <!--limits and alerts-->
             <div data-role="collapsible" data-iconpos="right">
-                <h3>AP Mode</h3>
-                <label>SSID</label>
-                <input id="txt_ap_ssid" type="text" maxlength="16" />
-                <label>Password</label>
-                <input id="txt_ap_passwd" type="password" maxlength="32" />
-                <label>IP</label>
-                <input id="txt_ap_ipaddr" type="text" maxlength="16" />
-                <button id="btn_save_ap" data-mini="true" data-inline="true">Save</button>
-            </div><!-- /AP Mode-->
-        </div><!-- /Main-->
-    </div><!-- /Options -->
-
-    <!-- Info -->
-    <div id="info" data-role="page" data-title="Info">
-        <div role="main" class="ui-content">
-            <div id="version_cont" data-role="collapsible">
-                <h3>Version</h3>
-                <div id="version_div"></div>
+                <h3>Limits and Alerts</h3>
+                <div class="ui-field-contain">
+                    <label for="slider_maxwh">Consumption (mW/h)</label>
+                    <input id="slider_maxwh" name="slider_maxwh"  type="range"  min="0" max="10000" value="1000">
+                </div>
             </div>
-            <div id="system_cont" data-role="collapsible">
-                <h3>System</h3>
-                <div id="system_div"></div>
-            </div>
-            <div id="network_cont" data-role="collapsible">
-                <h3>Network</h3>
-                <div id="network_div"></div>
-            </div>
-        </div>
-    </div>
 
-    <div id="restart" data-role="page" data-dialog="true" data-close-btn="none">
-        <div data-type="header">
-            <h1>Are you sure?</h1>
-        </div>
-        <div role="main" class="ui-content ui-corner-all custom-corners">
-            <p>Configuration changes require restarting...</p>
-            <a id="restart-button" data-role="button" href="#" data-rel="back">Do it!</a>
-            <a id="postpone-button" data-role="button" href="#" data-rel="back">Postpone</a>
-        </div>
-    </div>
+            <!--wifi-->
+            <div data-role="collapsible" data-iconpos="right">
+                <h1>Wireless</h1>
+                <div class="ui-field-contain">
+                    <label>WiFi Mode</label>
+                    <fieldset data-role="controlgroup" data-type="horizontal">
+                        <input id="wifi_sta" type="radio" name="wifi_mode" value="1" />
+                        <input id="wifi_ap" type="radio" name="wifi_mode" value="2" />
+                        <input id="wifi_ap_sta" type="radio" name="wifi_mode" value="3" />
+                        <label for="wifi_sta">STA</label>
+                        <label for="wifi_ap">AP</label>
+                        <label for="wifi_ap_sta">AP+STA</label>
+                    </fieldset>
+                </div>
+                <div class="ui-field-contain">
+                    <label>Transmitter Strength</label>
+                    <fieldset id="slider_twp_cont">
+                        <input id="slider_twp" name="slider_twp" type="range" min="0" max="82" step="1" value="82"
+                            data-popup-enabled="true">
+                    </fieldset>
+                </div>
+                <button id="btn_save_wifi" data-inline="true">Apply</button>
+                <!-- Station Mode-->
+                <div data-role="collapsible" data-iconpos="right">
+                    <h3>Station Mode</h3>
+                    <fieldset>
+                        <div class="ui-field-contain">
+                            <label for="txt_ssid">SSID</label>
+                            <input id="txt_ssid" type="text" maxlength="32">
+                        </div>
+                        <div class="ui-field-contain">
+                            <label for="txt_passwd">Password</label>
+                            <input id="txt_passwd" type="password" maxlength="32">
+                        </div>
+                        <div class="ui-field-contain">
+                            <label for="flipswitch_dhcp">DHCP</label>
+                            <select id="flipswitch_dhcp" data-role="flipswitch">
+                                <option value="off">Off</option>
+                                <option value="on">On</option>
+                            </select>
+                        </div>
+                        <div id="ipaddr_cont">
+                            <div class="ui-field-contain">
+                                <label for="txt_ipaddr">IP</label>
+                                <input id="txt_ipaddr" type="text" maxlength="16">
+                            </div>
+                            <div class="ui-field-contain">
+                                <label for="txt_netmask">Mask</label>
+                                <input id="txt_netmask" type="text" maxlength="16">
+                            </div>
+                            <div class="ui-field-contain">
+                                <label for="txt_gateway">Gateway</label>
+                                <input id="txt_gateway" type="text" maxlength="16">
+                            </div>
+                            <div class="ui-field-contain">
+                                <label for="txt_dns">DNS</label>
+                                <input id="txt_dns" type="text" maxlength="16">
+                            </div>
+                        </div>
+                    </fieldset>
+                    <button id="btn_save_sta" data-inline="true">Save</button>
+                </div>
 
-    <div id="footer" data-role="footer" data-type="footer" data-position="fixed" data-theme="b">
-        <div data-role="navbar">
-            <ul>
-                <li><a href="#home" data-icon="ui-icon-grid">Home</a></li>
-                <li><a href="#options" data-icon="ui-icon-gear">Options</a></li>
-                <li><a href="#info" data-icon="ui-icon-info">Info</a></li>
-            </ul>
-        </div><!-- /navbar -->
-    </div><!-- /footer -->
+                <!-- ap mode-->
+                <div data-role="collapsible" data-iconpos="right">
+                    <h3>AP Mode</h3>
+                    <fieldset>
+                        <div class="ui-field-contain">
+                            <label for="txt_ap_ssid">SSID</label>
+                            <input id="txt_ap_ssid" type="text" maxlength="16">
+                        </div>
+                        <div class="ui-field-contain">
+                            <label for="txt_ap_passwd">Password</label>
+                            <input id="txt_ap_passwd" type="password" maxlength="32">
+                        </div>
+                        <div class="ui-field-contain">
+                            <label for="txt_ap_ipaddr">IP</label>
+                            <input id="txt_ap_ipaddr" type="text" maxlength="16">
+                        </div>
+                    </fieldset>
+                    <button id="btn_save_ap" data-inline="true">Save</button>
+                </div><!-- /ap mode-->
+            </div </div> <!-- /main--> </div> <!-- /options -->
 
+            <!-- info -->
+            <div id="info" data-role="page" data-title="Info">
+                <div role="main" class="ui-content">
+                    <div id="version_cont" data-role="collapsible" data-iconpos="right">
+                        <h3>Version</h3>
+                        <div id="version_div"></div>
+                    </div>
+                    <div id="system_cont" data-role="collapsible" data-iconpos="right">
+                        <h3>System</h3>
+                        <div id="system_div"></div>
+                    </div>
+                    <div id="network_cont" data-role="collapsible" data-iconpos="right">
+                        <h3>Network</h3>
+                        <div id="network_div"></div>
+                    </div>
+                </div><!-- /main -->
+            </div><!-- /info -->
+
+            <div id="restart" data-role="page" data-dialog="true" data-close-btn="none">
+                <div data-type="header">
+                    <h1>Are you sure?</h1>
+                </div>
+                <div role="main" class="ui-content ui-corner-all custom-corners">
+                    <p>Configuration changes require restarting...</p>
+                    <a id="restart-button" data-role="button" href="#" data-rel="back">Do it!</a>
+                    <a id="postpone-button" data-role="button" href="#" data-rel="back">Postpone</a>
+                </div><!-- /main -->
+            </div><!-- /restart -->
+
+            <div id="footer" data-role="footer" data-type="footer" data-position="fixed" data-theme="b">
+                <div data-role="navbar">
+                    <ul>
+                        <li><a href="#home" data-icon="ui-icon-grid">Home</a></li>
+                        <li><a href="#options" data-icon="ui-icon-gear">Options</a></li>
+                        <li><a href="#info" data-icon="ui-icon-info">Info</a></li>
+                    </ul>
+                </div><!-- /navbar -->
+            </div><!-- /footer -->
 </body>
 
 </html>

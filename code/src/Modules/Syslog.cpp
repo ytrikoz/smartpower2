@@ -9,7 +9,7 @@ Syslog::Syslog() : Module(), proto_(VisualSyslogServer(&tranport_)) {}
 bool Syslog::log(const LogSeverity level, const char* tag, const char* message) {
     clearError();
     if (!proto_.send(level, tag, message)) {
-        setError(ERROR_EXECUTE);
+        setError(ERROR_NETWORK);
     }
     return ok();
 }
@@ -49,7 +49,7 @@ void Syslog::setServer(const char* name, uint16_t port) {
     memset(name_, 0, len + 1);
 
     if (strlen(name) == 0) {
-        setError(WRONG_PARAM, SYSLOG_SERVER);
+        setInvalidParamError(SYSLOG_SERVER);
         return;
     }
 
@@ -58,7 +58,7 @@ void Syslog::setServer(const char* name, uint16_t port) {
         if (ip.fromString(name_) || WiFi.hostByName(name_, ip)) {
             tranport_.setup(ip, port);
         } else {
-            setError(WRONG_PARAM, SYSLOG_SERVER);
+            setInvalidParamError(SYSLOG_SERVER);
         }
     };
 }

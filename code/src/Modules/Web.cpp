@@ -91,7 +91,7 @@ void Web::onData(const uint32_t num, const String &data) {
     PrintUtils::print_ident(out_, FPSTR(str_web));
     PrintUtils::println(out_, data);
     if (jsonError) {
-        setError(ERROR_JSON, jsonError.c_str());
+        setSerializeError(jsonError.c_str());
         return;
     }
     for (JsonPair item : doc.as<JsonObject>()) {
@@ -140,7 +140,7 @@ void Web::onData(const uint32_t num, const String &data) {
                 }
             }
         } else {
-            setError(ERROR_UNSUPPORTED, "unhandled");
+            setError(UNKNOWN_OBJECT, cmd);
             return;
         }
         setError(Error::none());
@@ -174,6 +174,99 @@ String Web::getPageData(const WebPageEnum page) {
     }
     return json;
 }
+
+void Web::updatePage(const WebPageEnum page) {
+    String data = getPageData(page);
+    broadcast(data, page);
+}
+
+void Web::send(const String &data, const WebPageEnum page, const uint32_t num) {
+    WebClient *c;
+    if (getClient(num, &c)) {  
+        if (c->connected && c->page == page) web_->sendData(c->num, data);    
+    }
+}
+
+void Web::broadcast(const String &data, const WebPageEnum page, const uint32_t except_num) {
+    for (uint8_t i = 0; i < WEB_SERVER_CLIENT_MAX; ++i) {
+        WebClient *c = &client_[i];
+        if (c->num != except_num && c->connected && c->page == page) {
+            web_->sendData(c->num, data);
+        }
+    }
+}
+
+void Web::fillOptions(JsonObject &obj) {
+    Config *cfg = config->get();
+    for (uint8_t i = 0; i < PARAMS_COUNT; ++i) {
+        ConfigItem param = ConfigItem(i);
+        if (!config->isSecured(param)) {
+            obj[cfg->name(param)] = cfg->value(param);
+        }
+    }
+}
+
+void Web::fillMain(JsonObject &obj) {
+    Modules::Psu *ps = app.psu();
+    Config *cfg = config->get();
+    obj[FPSTR(str_power)] = (int)ps->getState();
+    obj[FPSTR(str_wh)] = ps->getData()->Wh;
+    obj[FPSTR(str_voltage)] = cfg->value(OUTPUT_VOLTAGE);
+}
+
+void Web::fillVersion(JsonObject &obj) {
+    obj[FPSTR(str_fw)] = SysInfo::getFW();
+    obj[FPSTR(str_sdk)] = SysInfo::getSDK();
+    obj[FPSTR(str_core)] = SysInfo::getCore();
+}
+
+void Web::fillNetwork(JsonObject &obj) {
+    obj[FPSTR(str_phy)] = NetUtils::getWifiPhy();
+    obj[FPSTR(str_ch)] = NetUtils::getWifiCh();
+    NetInfo info;
+    WiFiMode_t mode = WiFi.getMode();
+    if (mode == WIFI_AP || mode == WIFI_AP_STA) {
+        info = NetUtils::getNetInfo(0);
+        obj[FPSTR(str_ssid)] = NetUtils::getApSsid();
+        obj[FPSTR(str_ip)] = info.ip.toString();
+        obj[FPSTR(str_subnet)] = info.subnet.toString();
+        obj[FPSTR(str_gateway)] = info.gateway.toString();
+        obj[FPSTR(str_mac)] = NetUtils::getApMac();
+    }
+    if (mode == WIFI_STA || mode == WIFI_AP_STA) {
+        info = NetUtils::getNetInfo(1);
+        obj[FPSTR(str_ssid)] = NetUtils::getStaSsid();
+        obj[FPSTR(str_mac)] = WiFi.macAddress();
+        obj[FPSTR(str_host)] = WiFi.hostname();
+        obj[FPSTR(str_ip)] = info.ip.toString();
+        obj[FPSTR(str_subnet)] = info.subnet.toString();
+        obj[FPSTR(str_gateway)] = info.gateway.toString();
+        obj[FPSTR(str_dns)] = WiFi.dnsIP().toString();
+    }
+}
+
+void Web::fillSystem(JsonObject &obj) {
+    obj[FPSTR(str_cpu)] = SysInfo::getCpuFreq();
+    obj[FPSTR(str_heap)] == SysInfo::getHeapStats();
+    obj[FPSTR(str_chip)] = SysInfo::getChipId();
+    obj[FPSTR(str_file)] = FSUtils::getFSUsed();
+}
+
+bool Web::getResponse(const String &uri, String &body) {
+    DynamicJsonDocument doc(1024);
+    JsonObject obj = doc.createNestedObject();
+    if (uri.endsWith("version"))
+        fillVersion(obj);
+    else if (uri.endsWith("network"))
+        fillNetwork(obj);
+    else if (uri.endsWith("system"))
+        fillSystem(obj);
+    serializeJson(doc, body);
+    return true;
+}
+
+}  // namespace Modules
+
 
 // switch (tag) {
 //     case TAG_SET_ON_OFF: {
@@ -231,91 +324,3 @@ String Web::getPageData(const WebPageEnum page) {
 //     }
 // }
 
-
-void Web::updatePage(const WebPageEnum page) {
-    String data = getPageData(page);
-    broadcast(data, page);
-}
-
-void Web::send(const String &data, const WebPageEnum page, const uint32_t num) {
-    WebClient *c;
-    if (getClient(num, &c)) {  
-        if (c->connected && c->page == page) web_->sendData(c->num, data);    
-    }
-}
-
-void Web::broadcast(const String &data, const WebPageEnum page, const uint32_t except_num) {
-    for (uint8_t i = 0; i < WEB_SERVER_CLIENT_MAX; ++i) {
-        WebClient *c = &client_[i];
-        if (c->num != except_num && c->connected && c->page == page)
-            web_->sendData(c->num, data);
-    }
-}
-
-void Web::fillMain(JsonObject &obj) {
-    Modules::Psu *ps = app.psu();
-    obj[FPSTR(str_power)] = (int)ps->isPowerOn();
-    obj[FPSTR(str_wh)] = ps->getData().Wh;
-}
-
-void Web::fillOptions(JsonObject &obj) {
-    Config *cfg = config->get();
-    for (uint8_t i = 0; i < PARAMS_COUNT; ++i) {
-        ConfigItem param = ConfigItem(i);
-        if (!config->isSecured(param))
-            obj[cfg->name(param)] = cfg->value(param);
-    }
-}
-
-void Web::fillVersion(JsonObject &obj) {
-    obj[FPSTR(str_fw)] = SysInfo::getFW();
-    obj[FPSTR(str_sdk)] = SysInfo::getSDK();
-    obj[FPSTR(str_core)] = SysInfo::getCore();
-}
-
-void Web::fillNetwork(JsonObject &obj) {
-    obj[FPSTR(str_phy)] = NetUtils::getWifiPhy();
-    obj[FPSTR(str_ch)] = NetUtils::getWifiCh();
-    NetInfo info;
-    WiFiMode_t mode = WiFi.getMode();
-    if (mode == WIFI_AP || mode == WIFI_AP_STA) {
-        info = NetUtils::getNetInfo(0);
-        obj[FPSTR(str_ssid)] = NetUtils::getApSsid();
-        obj[FPSTR(str_ip)] = info.ip.toString();
-        obj[FPSTR(str_subnet)] = info.subnet.toString();
-        obj[FPSTR(str_gateway)] = info.gateway.toString();
-        obj[FPSTR(str_mac)] = NetUtils::getApMac();
-    }
-    if (mode == WIFI_STA || mode == WIFI_AP_STA) {
-        info = NetUtils::getNetInfo(1);
-        obj[FPSTR(str_ssid)] = NetUtils::getStaSsid();
-        obj[FPSTR(str_mac)] = WiFi.macAddress();
-        obj[FPSTR(str_host)] = WiFi.hostname();
-        obj[FPSTR(str_ip)] = info.ip.toString();
-        obj[FPSTR(str_subnet)] = info.subnet.toString();
-        obj[FPSTR(str_gateway)] = info.gateway.toString();
-        obj[FPSTR(str_dns)] = WiFi.dnsIP().toString();
-    }
-}
-
-void Web::fillSystem(JsonObject &obj) {
-    obj[FPSTR(str_cpu)] = SysInfo::getCpuFreq();
-    obj[FPSTR(str_heap)] == SysInfo::getHeapStats();
-    obj[FPSTR(str_chip)] = SysInfo::getChipId();
-    obj[FPSTR(str_file)] = FSUtils::getFSUsed();
-}
-
-bool Web::getResponse(const String &uri, String &body) {
-    DynamicJsonDocument doc(1024);
-    JsonObject obj = doc.createNestedObject();
-    if (uri.endsWith("version"))
-        fillVersion(obj);
-    else if (uri.endsWith("network"))
-        fillNetwork(obj);
-    else if (uri.endsWith("system"))
-        fillSystem(obj);
-    serializeJson(doc, body);
-    return true;
-}
-
-}  // namespace Modules

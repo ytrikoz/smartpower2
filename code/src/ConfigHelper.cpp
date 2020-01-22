@@ -5,7 +5,7 @@
 
 using namespace PrintUtils;
 
-ConfigHelper::ConfigHelper(const char *name) : name_(nullptr) {
+ConfigHelper::ConfigHelper(const char *name) {
     setName(name);
 }
 
