@@ -69,7 +69,7 @@ class Module {
         DynamicJsonDocument doc(512);
         doc[FPSTR(str_state)] = (uint8_t)modState_;
         if (failed()) {
-            doc[FPSTR(str_error)] = modError_;
+            doc[FPSTR(str_error)] = modError_.toString().c_str();
         }
         JsonVariant obj = doc.as<JsonObject>();
         onDiag(obj);
