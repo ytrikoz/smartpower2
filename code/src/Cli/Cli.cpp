@@ -477,7 +477,7 @@ void onLs(cmd *c) {
     String str = getPathStr(cmd);
     String path = FSUtils::asDir(str.c_str());
     uint8_t level = FSUtils::getNestedLevel(path);
-    auto dir = SPIFFS.openDir(path);
+    auto dir = LittleFS.openDir(path);
     while (dir.next()) {
         String name = dir.fileName();
         if (FSUtils::getNestedLevel(name) <= level) {
@@ -492,7 +492,7 @@ void onRemove(cmd *c) {
     String name = getPathStr(cmd);
     PrintUtils::print(out_, FPSTR(str_file));
     if (FSUtils::exists(name)) {
-        if (SPIFFS.remove(name)) {
+        if (LittleFS.remove(name)) {
             PrintUtils::println(out_, FPSTR(str_deleted));
         } else {
             PrintUtils::println(out_, FPSTR(str_failed));
@@ -528,7 +528,7 @@ void onCrash(cmd *c) {
             break;
         }
         case ACTION_PRINT: {
-            File f = SPIFFS.open(item, "r");
+            File f = LittleFS.open(item, "r");
             if (!f)
                 print_not_found(out_, item);
             else

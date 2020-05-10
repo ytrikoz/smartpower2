@@ -4,7 +4,7 @@
 
 WebServerAsync::WebServerAsync(uint16_t port) {    
     web_ = new AsyncWebServer(port);
-    web_->serveStatic("/", SPIFFS, FS_WEB_ROOT).setDefaultFile("index.html");
+    web_->serveStatic("/", LittleFS, FS_WEB_ROOT).setDefaultFile("index.html");
 
     web_->onNotFound([this](AsyncWebServerRequest *request) {
         String lastModified;        

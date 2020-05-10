@@ -10,15 +10,15 @@
 namespace FSUtils {
 
 inline bool move(const char *src, const char *dst) {
-    return SPIFFS.exists(src) && SPIFFS.rename(src, dst);
+    return LittleFS.exists(src) && LittleFS.rename(src, dst);
 }
 
 inline bool exists(const String &name) {
-    return SPIFFS.exists(name);
+    return LittleFS.exists(name);
 }
 
 inline void print(Print *p, const String &name) {
-    if (auto f = SPIFFS.open(name, "r")) {
+    if (auto f = LittleFS.open(name, "r")) {
         while (f.available()) {
             p->println(f.readStringUntil('\n'));
         }
@@ -28,18 +28,18 @@ inline void print(Print *p, const String &name) {
 
 inline const String getFSUsed() {
     FSInfo fsi;
-    SPIFFS.info(fsi);
+    LittleFS.info(fsi);
     return StrUtils::prettyBytes(fsi.usedBytes);
 }
 
 inline const String getFSTotal() {
     FSInfo fsi;
-    SPIFFS.info(fsi);
+    LittleFS.info(fsi);
     return StrUtils::prettyBytes(fsi.totalBytes);
 }
 
 inline bool formatFS() {
-    bool res = SPIFFS.format();
+    bool res = LittleFS.format();
     return res;
 }
 
@@ -60,7 +60,7 @@ inline const String asDir(const char *path) {
 inline size_t getFilesCount(const char *path) {
     String dir = asDir(path);
     size_t level = getNestedLevel(asDir(dir.c_str()));
-    Dir d = SPIFFS.openDir(path);
+    Dir d = LittleFS.openDir(path);
     size_t res = 0;
     while (d.next()) {
         if (getNestedLevel(d.fileName()) <= level) res++;
@@ -71,7 +71,7 @@ inline size_t getFilesCount(const char *path) {
 inline void printFileList(Print *p, const char *path) {
     String dir = asDir(path);
     uint8_t level = getNestedLevel(dir);
-    Dir d = SPIFFS.openDir(dir);
+    Dir d = LittleFS.openDir(dir);
     while (d.next()) {
         String name = d.fileName();
         if (getNestedLevel(name) <= level) {
@@ -87,18 +87,18 @@ inline void printFileList(Print *p, const char *path) {
 inline void rmDir(Print *p, const char *path) {
     String dir = asDir(path);
     uint8_t level = getNestedLevel(dir);
-    Dir d = SPIFFS.openDir(dir);
+    Dir d = LittleFS.openDir(dir);
     while (d.next()) {
         String name = d.fileName();
         if (getNestedLevel(name) <= level) {
-            SPIFFS.remove(name);
+            LittleFS.remove(name);
         }
     }
 }
 
 inline bool writeString(const char *name, const String &value) {
     bool res = false;
-    auto f = SPIFFS.open(name, "w");
+    auto f = LittleFS.open(name, "w");
     if (f) {
         f.println(value);
         f.close();
@@ -122,7 +122,7 @@ inline bool writeDouble(const char *file, double value) {
 
 inline bool readString(const char *name, String &value) {
     bool res = false;
-    auto f = SPIFFS.open(name, "r");
+    auto f = LittleFS.open(name, "r");
     if (f) {
         value = f.readStringUntil('\n');
         f.close();

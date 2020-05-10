@@ -1,6 +1,7 @@
 #pragma once
 
 #include <FS.h>
+#include <LittleFS.h>
 
 #include "CommonTypes.h"
 #include "Core/Queue.h"
@@ -29,10 +30,10 @@ class Storage : public Storable<T> {
     }
 
     bool doOpenRead() {
-        return file_ = SPIFFS.open(name_, "r");
+        return file_ = LittleFS.open(name_, "r");
     };
 
-    bool doOpenWrite() { return file_ = SPIFFS.open(name_, "w"); };
+    bool doOpenWrite() { return file_ = LittleFS.open(name_, "w"); };
 
     bool doRead() {
         while (file_.available()) {
@@ -68,7 +69,7 @@ class Storage : public Storable<T> {
     };
 
     bool doExist() {
-        return SPIFFS.exists(name_);
+        return LittleFS.exists(name_);
     };
 
    private:

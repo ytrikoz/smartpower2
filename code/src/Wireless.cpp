@@ -217,7 +217,7 @@ void Wireless::startWiFiScan(bool hidden) {
 
 void Wireless::onScanComplete(int found) {
     Wireless::scanning_ = false;
-    File f = SPIFFS.open("/var/networks", "w");
+    File f = LittleFS.open("/var/networks", "w");
     if (found > 0) {
         for (int i = 0; i < found; ++i) {
             f.printf("%-18s", WiFi.BSSIDstr(i).c_str());

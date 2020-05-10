@@ -37,7 +37,7 @@ class BootWatcher {
         fs_ = initFS();
         switch (fs_) {
             case FS_NORMAL:
-                mode_ = SPIFFS.exists(BOOT_FLAG) && getRestartReason() == REASON_FAILURE ? BT_SAFE : BT_NORMAL;
+                mode_ = LittleFS.exists(BOOT_FLAG) && getRestartReason() == REASON_FAILURE ? BT_SAFE : BT_NORMAL;
                 break;
             case FS_EMPTY:
                 mode_ = BT_NORMAL;
@@ -91,14 +91,14 @@ class BootWatcher {
     }
 
     void setBootFlag() {
-        File f = SPIFFS.open(BOOT_FLAG, "w");
+        File f = LittleFS.open(BOOT_FLAG, "w");
         f.println(APP_VERSION __DATE__ __TIME__);
         f.flush();
         f.close();
     }
 
     void removeBootFlag() {
-        SPIFFS.remove(BOOT_FLAG);
+        LittleFS.remove(BOOT_FLAG);
     }
 
     void initSerial() {
@@ -113,7 +113,7 @@ class BootWatcher {
     FSState initFS() {
         FSState res = FS_ERROR;
         PrintUtils::print_ident(out_, FPSTR(str_spiffs));
-        if (SPIFFS.begin()) {
+        if (LittleFS.begin()) {
             res = FS_NORMAL;
         } else {
             PrintUtils::print(out_, FPSTR(str_format));

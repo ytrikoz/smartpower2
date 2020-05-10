@@ -127,7 +127,7 @@ extern "C" void custom_crash_callback(struct rst_info *rst_info,
     if (!crashReportEnabled_) return;
     char buf[32];
     sprintf(buf, "%s%d_%lu", CRASH_ROOT, crashReportNumber_ + 1, millis());
-    if (File f = SPIFFS.open(buf, "w")) {
+    if (File f = LittleFS.open(buf, "w")) {
         CrashHeader h;
         h.reason = rst_info->reason;
         h.exccause = rst_info->exccause;
