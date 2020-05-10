@@ -34,7 +34,8 @@
         <!-- main-->
         <div role="main" class="ui-content">
             <!-- switch-->
-            <div id="switch" data-role="collapsible" data-iconpos="right" data-collapsed-icon="power" data-expanded-icon="power">
+            <div id="switch" data-role="collapsible" data-iconpos="right" data-collapsed-icon="power"
+                data-expanded-icon="power">
                 <h3>Switch</h3>
                 <div class="ui-field-contain">
                     <label for="flipswitch_power">Output power</label>
@@ -52,8 +53,8 @@
             </div>
 
             <!-- dashboard-->
-            <div id="dashboard" data-role="collapsible" data-iconpos="right" data-collapsed="false" data-collapsed-icon="search"
-                data-expanded-icon="search" data-content-theme="b">
+            <div id="dashboard" data-role="collapsible" data-iconpos="right" data-collapsed="false"
+                data-collapsed-icon="search" data-expanded-icon="search" data-content-theme="b">
                 <h3>Dashboard</h3>
                 <div id="v_ss" class="ss_cont">
                     <h3>V</h3>
@@ -129,7 +130,7 @@
                 <h3>Limits and Alerts</h3>
                 <div class="ui-field-contain">
                     <label for="slider_maxwh">Consumption (mW/h)</label>
-                    <input id="slider_maxwh" name="slider_maxwh"  type="range"  min="0" max="10000" value="1000">
+                    <input id="slider_maxwh" name="slider_maxwh" type="range" min="0" max="10000" value="1000">
                 </div>
             </div>
 
@@ -215,46 +216,47 @@
                     </fieldset>
                     <button id="btn_save_ap" data-inline="true">Save</button>
                 </div><!-- /ap mode-->
-            </div </div> <!-- /main--> </div> <!-- /options -->
+            </div <!-- /main-->
+        </div> <!-- /options -->
+    </div>
+    <!-- info -->
+    <div id="info" data-role="page" data-title="Info">
+        <div role="main" class="ui-content">
+            <div id="version_cont" data-role="collapsible" data-iconpos="right">
+                <h3>Version</h3>
+                <div id="version_div"></div>
+            </div>
+            <div id="system_cont" data-role="collapsible" data-iconpos="right">
+                <h3>System</h3>
+                <div id="system_div"></div>
+            </div>
+            <div id="network_cont" data-role="collapsible" data-iconpos="right">
+                <h3>Network</h3>
+                <div id="network_div"></div>
+            </div>
+        </div><!-- /main -->
+    </div><!-- /info -->
 
-            <!-- info -->
-            <div id="info" data-role="page" data-title="Info">
-                <div role="main" class="ui-content">
-                    <div id="version_cont" data-role="collapsible" data-iconpos="right">
-                        <h3>Version</h3>
-                        <div id="version_div"></div>
-                    </div>
-                    <div id="system_cont" data-role="collapsible" data-iconpos="right">
-                        <h3>System</h3>
-                        <div id="system_div"></div>
-                    </div>
-                    <div id="network_cont" data-role="collapsible" data-iconpos="right">
-                        <h3>Network</h3>
-                        <div id="network_div"></div>
-                    </div>
-                </div><!-- /main -->
-            </div><!-- /info -->
+    <div id="restart" data-role="page" data-dialog="true" data-close-btn="none">
+        <div data-type="header">
+            <h1>Are you sure?</h1>
+        </div>
+        <div role="main" class="ui-content ui-corner-all custom-corners">
+            <p>Configuration changes require restarting...</p>
+            <a id="restart-button" data-role="button" href="#" data-rel="back">Do it!</a>
+            <a id="postpone-button" data-role="button" href="#" data-rel="back">Postpone</a>
+        </div><!-- /main -->
+    </div><!-- /restart -->
 
-            <div id="restart" data-role="page" data-dialog="true" data-close-btn="none">
-                <div data-type="header">
-                    <h1>Are you sure?</h1>
-                </div>
-                <div role="main" class="ui-content ui-corner-all custom-corners">
-                    <p>Configuration changes require restarting...</p>
-                    <a id="restart-button" data-role="button" href="#" data-rel="back">Do it!</a>
-                    <a id="postpone-button" data-role="button" href="#" data-rel="back">Postpone</a>
-                </div><!-- /main -->
-            </div><!-- /restart -->
-
-            <div id="footer" data-role="footer" data-type="footer" data-position="fixed" data-theme="b">
-                <div data-role="navbar">
-                    <ul>
-                        <li><a href="#home" data-icon="ui-icon-grid">Home</a></li>
-                        <li><a href="#options" data-icon="ui-icon-gear">Options</a></li>
-                        <li><a href="#info" data-icon="ui-icon-info">Info</a></li>
-                    </ul>
-                </div><!-- /navbar -->
-            </div><!-- /footer -->
+    <div id="footer" data-role="footer" data-type="footer" data-position="fixed" data-theme="b">
+        <div data-role="navbar">
+            <ul>
+                <li><a href="#home" data-icon="ui-icon-grid">Home</a></li>
+                <li><a href="#options" data-icon="ui-icon-gear">Options</a></li>
+                <li><a href="#info" data-icon="ui-icon-info">Info</a></li>
+            </ul>
+        </div><!-- /navbar -->
+    </div><!-- /footer -->
 </body>
 
 </html>

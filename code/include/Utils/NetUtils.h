@@ -81,7 +81,7 @@ inline String getMode() {
     return getMode((NetworkMode)WiFi.getMode());
 }
 
-inline String getWifiPhy() {
+inline const String getWifiPhy() {
     String str;
     switch (WiFi.getPhyMode()) {
         case WiFiPhyMode_t::WIFI_PHY_MODE_11B:
@@ -114,7 +114,7 @@ inline const char* encryptTypeStr(const int type) {
     }
 }
 
-inline String getApSsid() {
+inline const String getApSsid() {
     return WiFi.softAPSSID();
 }
 
@@ -132,7 +132,7 @@ inline IPAddress getApIp() {
     return WiFi.softAPIP();
 }
 
-inline String getApMac() {
+inline const String getApMac() {
     return WiFi.softAPmacAddress();
 }
 

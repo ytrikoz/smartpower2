@@ -363,8 +363,8 @@ Modules::Telnet *App::telnet() {
     return (Modules::Telnet *)modules_[MOD_TELNET].obj;
 }
 
-Modules::Web *App::web() {
-    return (Modules::Web *)modules_[MOD_WEB].obj;
+Modules::WebUI *App::web() {
+    return (Modules::WebUI *)modules_[MOD_WEB].obj;
 }
 
 Modules::Psu *App::psu() {

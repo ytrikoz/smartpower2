@@ -1,27 +1,27 @@
 #pragma once
 
+#include <Arduino.h>
+#include <user_interface.h>
+
 #include "Consts.h"
 #include "Utils/StrUtils.h"
 #include "Utils/FSUtils.h"
 
-#include <Arduino.h>
-#include <user_interface.h>
-
 namespace SysInfo {
 
-inline String getFW() {
+inline const char* getFW() {
     return APP_VERSION APP_BUILD_COMMIT;
 }
 
-inline String getSDK() {
+inline const char* getSDK() {
     return system_get_sdk_version();
 }
 
-inline String getCore() {
+inline const String getCore() {
     return ESP.getCoreVersion();     
 }
 
-inline String getCpuFreq() {
+inline const String getCpuFreq() {
     String str(system_get_cpu_freq());
     str += "MHz";
     return str;

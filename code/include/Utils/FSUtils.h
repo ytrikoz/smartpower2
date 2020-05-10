@@ -1,10 +1,12 @@
 #pragma once
 
+#include <FS.h>
+#include <Print.h>
+#include <time.h>
+
 #include "StrUtils.h"
 #include "Core/Storage.h"
 
-#include <Print.h>
-#include <time.h>
 
 
 namespace FSUtils {
@@ -27,15 +29,15 @@ inline void print(Print *p, const String &name) {
 }
 
 inline const String getFSUsed() {
-    FSInfo fsi;
-    LittleFS.info(fsi);
-    return StrUtils::prettyBytes(fsi.usedBytes);
+    FSInfo info;
+    LittleFS.info(info);
+    return StrUtils::prettyBytes(info.usedBytes);
 }
 
 inline const String getFSTotal() {
-    FSInfo fsi;
-    LittleFS.info(fsi);
-    return StrUtils::prettyBytes(fsi.totalBytes);
+    FSInfo info;
+    LittleFS.info(info);
+    return StrUtils::prettyBytes(info.totalBytes);
 }
 
 inline bool formatFS() {

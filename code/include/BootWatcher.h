@@ -89,6 +89,11 @@ class BootWatcher {
         PrintUtils::println(out_);
         return res;
     }
+    void setFormatFlag() {
+        File f = LittleFS.open(FORMAT_FLAG, "w");
+        f.println(APP_VERSION __DATE__ __TIME__);
+        f.close();
+    }
 
     void setBootFlag() {
         File f = LittleFS.open(BOOT_FLAG, "w");
@@ -112,11 +117,11 @@ class BootWatcher {
 
     FSState initFS() {
         FSState res = FS_ERROR;
-        PrintUtils::print_ident(out_, FPSTR(str_spiffs));
+        PrintUtils::print_ident(out_, FPSTR(str_littlefs));
         if (LittleFS.begin()) {
             res = FS_NORMAL;
         } else {
-            PrintUtils::print(out_, FPSTR(str_format));
+            setFormatFlag();
             if (FSUtils::formatFS()) {
                 res = FS_EMPTY;
             } else {

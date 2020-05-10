@@ -1,4 +1,4 @@
-#include "Modules/Web.h"
+#include "Modules/WebUI.h"
 
 #include "Global.h"
 #include "Modules/Psu.h"
@@ -7,36 +7,35 @@
 
 namespace Modules {
 
-Web::Web() : Module() {
-    memset(client_, 0, sizeof(WebClient) * WEB_SERVER_CLIENT_MAX);
+WebUI::WebUI() : Module(), client_cnt_{0} {
+    memset(&client_, 0, sizeof(WebClient) * WEB_SERVER_CLIENT_MAX);
     sprintf(last_modified_, "%s %s GMT", __DATE__, __TIME__);
-    client_cnt_ = 0;
 }
 
-bool Web::onInit() {
+bool WebUI::onInit() {
     web_ = new WebServerAsync(HTTP_PORT);
-    web_->init(this);
+    web_->setHandler(this);
     return true;
 }
 
-bool Web::onStart() {
+bool WebUI::onStart() {
     web_->start();
     return true;
 }
 
-void Web::onStop() {
+void WebUI::onStop() {
     web_->stop();
 }
 
-void Web::onLoop() {
+void WebUI::onLoop() {
     web_->loop();
 }
 
-size_t Web::getClients() {
+size_t WebUI::getClients() {
     return client_cnt_;
 }
 
-bool Web::getSlot(WebClient **c) {
+bool WebUI::getSlot(WebClient **c) {
     bool res = false;
     for (uint8_t i = 0; i < WEB_SERVER_CLIENT_MAX; ++i) {
         if (!client_[i].connected) {
@@ -48,7 +47,7 @@ bool Web::getSlot(WebClient **c) {
     return res;
 }
 
-bool Web::getClient(uint32_t num, WebClient **c) {
+bool WebUI::getClient(uint32_t num, WebClient **c) {
     bool res = false;
     for (uint8_t i = 0; i < WEB_SERVER_CLIENT_MAX; ++i) {
         if (client_[i].num == num) {
@@ -60,7 +59,7 @@ bool Web::getClient(uint32_t num, WebClient **c) {
     return res;
 }
 
-void Web::setClientPage(const uint32_t num, const WebPageEnum page) {
+void WebUI::setClientPage(const uint32_t num, const WebPageEnum page) {
     WebClient* c;
     if (getClient(num, &c)) {
         c->connected = true;
@@ -68,7 +67,7 @@ void Web::setClientPage(const uint32_t num, const WebPageEnum page) {
     }
 }
 
-void Web::onConnection(const uint32_t num, const bool connected) {
+void WebUI::onConnection(const uint32_t num, const bool connected) {
     WebClient *c;
     if (connected) {
         if (getSlot(&c)) {
@@ -85,7 +84,7 @@ void Web::onConnection(const uint32_t num, const bool connected) {
     app.onWebStatusChange(client_cnt_);
 }
 
-void Web::onData(const uint32_t num, const String &data) {
+void WebUI::onData(const uint32_t num, const String &data) {
     DynamicJsonDocument doc(1024);
     DeserializationError jsonError = deserializeJson(doc, data);
     PrintUtils::print_ident(out_, FPSTR(str_web));
@@ -128,7 +127,7 @@ void Web::onData(const uint32_t num, const String &data) {
                 app.psu()->powerOff();
         }
         // wh
-        else if (strcmp(cmd, "wh") == 0) {
+        else if (strcmp_P(cmd, str_wh) == 0) {
             double value = item.value().as<double>();
             app.psu()->setWh(value);
         }
@@ -147,12 +146,12 @@ void Web::onData(const uint32_t num, const String &data) {
     }
 };
 
-bool Web::uriExist(const String &uri, String &lastModified) {
+bool WebUI::exists(const String &uri, String &lastModified) {
     lastModified = last_modified_;
     return uri.endsWith("version") || uri.endsWith("system") || uri.endsWith("network");
 }
 
-String Web::getPageData(const WebPageEnum page) {
+String WebUI::getPageData(const WebPageEnum page) {
     DynamicJsonDocument doc(JSON_BUFFER_SIZE);
     JsonObject obj = doc.createNestedObject();
     switch (page) {
@@ -175,19 +174,19 @@ String Web::getPageData(const WebPageEnum page) {
     return json;
 }
 
-void Web::updatePage(const WebPageEnum page) {
+void WebUI::updatePage(const WebPageEnum page) {
     String data = getPageData(page);
     broadcast(data, page);
 }
 
-void Web::send(const String &data, const WebPageEnum page, const uint32_t num) {
+void WebUI::send(const String &data, const WebPageEnum page, const uint32_t num) {
     WebClient *c;
     if (getClient(num, &c)) {  
         if (c->connected && c->page == page) web_->sendData(c->num, data);    
     }
 }
 
-void Web::broadcast(const String &data, const WebPageEnum page, const uint32_t except_num) {
+void WebUI::broadcast(const String &data, const WebPageEnum page, const uint32_t except_num) {
     for (uint8_t i = 0; i < WEB_SERVER_CLIENT_MAX; ++i) {
         WebClient *c = &client_[i];
         if (c->num != except_num && c->connected && c->page == page) {
@@ -196,7 +195,7 @@ void Web::broadcast(const String &data, const WebPageEnum page, const uint32_t e
     }
 }
 
-void Web::fillOptions(JsonObject &obj) {
+void WebUI::fillOptions(JsonObject &obj) {
     Config *cfg = config->get();
     for (uint8_t i = 0; i < PARAMS_COUNT; ++i) {
         ConfigItem param = ConfigItem(i);
@@ -206,121 +205,63 @@ void Web::fillOptions(JsonObject &obj) {
     }
 }
 
-void Web::fillMain(JsonObject &obj) {
+void WebUI::fillMain(JsonObject &obj) {
     Modules::Psu *ps = app.psu();
     Config *cfg = config->get();
-    obj[FPSTR(str_power)] = (int)ps->getState();
+    obj[FPSTR(str_power)] = (int) ps->getState();
     obj[FPSTR(str_wh)] = ps->getData()->Wh;
     obj[FPSTR(str_voltage)] = cfg->value(OUTPUT_VOLTAGE);
 }
 
-void Web::fillVersion(JsonObject &obj) {
+void WebUI::fillVersion(JsonObject &obj) {
     obj[FPSTR(str_fw)] = SysInfo::getFW();
     obj[FPSTR(str_sdk)] = SysInfo::getSDK();
-    obj[FPSTR(str_core)] = SysInfo::getCore();
+    obj[FPSTR(str_core)] = SysInfo::getCore().c_str();
 }
 
-void Web::fillNetwork(JsonObject &obj) {
-    obj[FPSTR(str_phy)] = NetUtils::getWifiPhy();
+void WebUI::fillNetwork(JsonObject &obj) {
+    obj[FPSTR(str_phy)] = NetUtils::getWifiPhy().c_str();
     obj[FPSTR(str_ch)] = NetUtils::getWifiCh();
     NetInfo info;
     WiFiMode_t mode = WiFi.getMode();
     if (mode == WIFI_AP || mode == WIFI_AP_STA) {
         info = NetUtils::getNetInfo(0);
-        obj[FPSTR(str_ssid)] = NetUtils::getApSsid();
-        obj[FPSTR(str_ip)] = info.ip.toString();
-        obj[FPSTR(str_subnet)] = info.subnet.toString();
-        obj[FPSTR(str_gateway)] = info.gateway.toString();
-        obj[FPSTR(str_mac)] = NetUtils::getApMac();
+        obj[FPSTR(str_ssid)] = NetUtils::getApSsid().c_str();
+        obj[FPSTR(str_ip)] = info.ip.toString().c_str();
+        obj[FPSTR(str_subnet)] = info.subnet.toString().c_str();
+        obj[FPSTR(str_gateway)] = info.gateway.toString().c_str();
+        obj[FPSTR(str_mac)] = NetUtils::getApMac().c_str();
     }
     if (mode == WIFI_STA || mode == WIFI_AP_STA) {
         info = NetUtils::getNetInfo(1);
-        obj[FPSTR(str_ssid)] = NetUtils::getStaSsid();
+        obj[FPSTR(str_ssid)] = NetUtils::getStaSsid().c_str();
         obj[FPSTR(str_mac)] = WiFi.macAddress();
         obj[FPSTR(str_host)] = WiFi.hostname();
-        obj[FPSTR(str_ip)] = info.ip.toString();
-        obj[FPSTR(str_subnet)] = info.subnet.toString();
-        obj[FPSTR(str_gateway)] = info.gateway.toString();
-        obj[FPSTR(str_dns)] = WiFi.dnsIP().toString();
+        obj[FPSTR(str_ip)] = info.ip.toString().c_str();
+        obj[FPSTR(str_subnet)] = info.subnet.toString().c_str();
+        obj[FPSTR(str_gateway)] = info.gateway.toString().c_str();
+        obj[FPSTR(str_dns)] = WiFi.dnsIP().toString().c_str();
     }
 }
 
-void Web::fillSystem(JsonObject &obj) {
-    obj[FPSTR(str_cpu)] = SysInfo::getCpuFreq();
-    obj[FPSTR(str_heap)] == SysInfo::getHeapStats();
-    obj[FPSTR(str_chip)] = SysInfo::getChipId();
-    obj[FPSTR(str_file)] = FSUtils::getFSUsed();
+void WebUI::fillSystem(JsonObject &obj) {
+    obj[FPSTR(str_cpu)] = SysInfo::getCpuFreq().c_str();
+    obj[FPSTR(str_heap)] == SysInfo::getHeapStats().c_str();
+    obj[FPSTR(str_chip)] = SysInfo::getChipId().c_str();
+    obj[FPSTR(str_file)] = FSUtils::getFSUsed().c_str();
 }
 
-bool Web::getResponse(const String &uri, String &body) {
+bool WebUI::getResponse(const String &uri, String &body) {
     DynamicJsonDocument doc(1024);
-    JsonObject obj = doc.createNestedObject();
-    if (uri.endsWith("version"))
-        fillVersion(obj);
-    else if (uri.endsWith("network"))
-        fillNetwork(obj);
-    else if (uri.endsWith("system"))
-        fillSystem(obj);
+    JsonObject root = doc.createNestedObject();
+    if (uri.endsWith(FPSTR(str_version)))
+        fillVersion(root);
+    else if (uri.endsWith(FPSTR(str_network)))
+        fillNetwork(root);
+    else if (uri.endsWith(FPSTR(str_system)))
+        fillSystem(root);
     serializeJson(doc, body);
     return true;
 }
 
-}  // namespace Modules
-
-
-// switch (tag) {
-//     case TAG_SET_ON_OFF: {
-//         PsuState value = PsuState(data.substring(1).toInt());
-//         Modules::Psu *psu = app.psu();
-//         if (value == POWER_ON)
-//             psu->powerOn();
-//         else
-//             psu->powerOff();
-//         String data = "{\"switch\":" + getBoolStr(value) + "}";
-//         sendData(data, PAGE_HOME, num);
-//         break;
-//     }
-//     case TAG_SET_VOLTAGE: {
-//         float value = data.substring(1).toFloat();
-//         app.setOutputVoltage(value);
-//         String data = "{\"voltage\":" + String(value, 2) + "}";
-//         sendData(data, PAGE_OPTIONS, num);
-//         break;
-//     }
-//     case SET_DEFAULT_VOLTAGE: {
-//         config->save();
-//         break;
-//     }
-//     case TAG_SET_STORE_WH_TOTAL: {
-//         long value = data.substring(1).toInt();
-//         config->get()->setValueBool(WH_STORE_ENABLED, value);
-//         String data = "{\"total\":" + getBoolStr(value) + "}";
-//         sendData(data, PAGE_HOME, num);
-//         break;
-//     }
-//     case SET_BOOT_POWER_MODE: {
-//         BootPowerState value = BootPowerState(data.substring(1).toInt());
-//         if (config->get()->setValueByte(POWER, (uint8_t)(value))) {
-//             config->save();
-//             String data = "{\"boot\":" + String(value, DEC) + "}";
-//             sendData(data, PAGE_INFO, num);
-//         }
-//         break;
-//     }
-//     case TAG_SET_NETWORK: {
-//         static const ConfigItem items[] = {WIFI, SSID, PASSWORD, DHCP,
-//                                            IPADDR, NETMASK, GATEWAY, DNS};
-//         static const size_t paramCount = sizeof(items) / sizeof(ConfigItem);
-//         size_t index = 0;
-//         size_t last = 0;
-//         size_t pos = 0;
-//         while (index < paramCount && (pos = data.indexOf(",", last))) {
-//             app.params()->setValue(items[index++],
-//                                    data.substring(last, pos).c_str());
-//             last = pos + 1;
-//         }
-//         config->save();
-//         break;
-//     }
-// }
-
+}

@@ -4,12 +4,13 @@
 
 WebServerAsync::WebServerAsync(uint16_t port) {    
     web_ = new AsyncWebServer(port);
+
     web_->serveStatic("/", LittleFS, FS_WEB_ROOT).setDefaultFile("index.html");
 
     web_->onNotFound([this](AsyncWebServerRequest *request) {
         String lastModified;        
         String url = request->url();
-        if (!handler_->uriExist(url, lastModified)) {
+        if (!handler_->exists(url, lastModified)) {
             request->send(404);  
             return;
         }        

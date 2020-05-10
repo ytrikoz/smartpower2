@@ -1,8 +1,6 @@
 #include "ina231.h"
 
-#include "Arduino.h"
-#include <Wire.h>
-#include <BuildConfig.h>
+#define I2C_DELAY 10
 
 void ina231_writeWord(uint8_t addr, uint16_t value) {
     uint8_t data[2];
@@ -98,12 +96,9 @@ void ina231_set_avg(const INA231_AVERAGES avgs) {
 }
 
 void ina231_alert_on_conversation(bool enabled) {
-    uint16_t alert_reg = ina231_readWord(INA231_REG_MASK_ENABLE);
-    DEBUG.println(alert_reg, BIN);
+    uint16_t alert_reg = ina231_readWord(INA231_REG_MASK_ENABLE);    
     alert_reg &= INA231_ALERT_MASK;
     if (enabled) bitSet(alert_reg, INA231_ALERT_CONVERSION_READY_BIT);
-    DEBUG.println(alert_reg, BIN);
-
     ina231_writeWord(INA231_REG_MASK_ENABLE, alert_reg);
 }
 

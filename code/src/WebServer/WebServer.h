@@ -2,19 +2,13 @@
 
 #include <Arduino.h>
 
-// #include "index.html.gz.h"
+#include "WebHandler.h"
 
-class WebServerHandler {
-   public:
-    virtual void onConnection(const uint32_t num, const bool connected) = 0;
-    virtual void onData(const uint32_t num, const String& data) = 0;
-    virtual bool getResponse(const String& uri, String& body) = 0;
-    virtual bool uriExist(const String& uri, String& lastModified) = 0;
-};
+// #include "index.html.gz.h"
 
 class WebServer {
    public:
-    virtual void init(WebServerHandler* h) {
+    virtual void setHandler(WebServerHandler* h) {
         handler_ = h;
     }
     virtual bool start() = 0;

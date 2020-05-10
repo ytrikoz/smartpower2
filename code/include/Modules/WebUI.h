@@ -3,7 +3,7 @@
 #include "Core/Module.h"
 #include "WebServer/WebServer.h"
 #include "WebServer/WebServerAsync.h"
-
+#include "WebServer/WebHandler.h"
 struct WebClient {
     bool connected;
     uint32_t num;
@@ -12,15 +12,15 @@ struct WebClient {
 
 namespace Modules {
 
-class Web : public Module, public WebServerHandler {
+class WebUI : public Module, public WebServerHandler {
    public:
     void onConnection(const uint32_t num, const bool connected) override;
     void onData(const uint32_t num, const String& data) override;
     bool getResponse(const String& uri, String& body) override;
-    bool uriExist(const String& uri, String& lastModified) override;
+    bool exists(const String& uri, String& lastModified) override;
 
    public:
-    Web();
+    WebUI();
 
    protected:
     bool onInit() override;

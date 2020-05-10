@@ -20,13 +20,11 @@
 #define LCD_ROW_1 0
 #define LCD_ROW_2 1
 
-#define I2C_DELAY 10
 #define I2C_SDA D2
 #define I2C_SCL D5
 
 #define POWER_BTN_PIN D7
-#define INA231_ALERT_PIN 16
-#define INA231_I2C_ADDR 0x40
+
 
 #define DEBUG Serial
 #define ERROR Serial
@@ -39,7 +37,7 @@
 #define NO_GLOBAL_ARDUINOOTA
 #define NO_GLOBAL_EEPROM
 #define ATOMIC_FS_UPDATE
-
+#define NO_GLOBAL_SPIFFS
 //#define INFO_DEBUG
 
 //#define DEBUG_APP

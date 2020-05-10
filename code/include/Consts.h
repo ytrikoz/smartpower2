@@ -60,6 +60,7 @@
 #define CRASH_ROOT "/err/"
 #define FS_VAR_ROOT "/var/"
 #define BOOT_FLAG "/var/boot"
+#define FORMAT_FLAG "/var/format"
 
 #define FS_VERSION FS_WEB_ROOT "version"
 #define FS_SYSTEM FS_WEB_ROOT "system"

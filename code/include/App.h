@@ -12,7 +12,7 @@
 #include "Modules/Syslog.h"
 #include "Modules/Shell.h"
 #include "Modules/Telnet.h"
-#include "Modules/Web.h"
+#include "Modules/WebUI.h"
 
 #include "CommonTypes.h"
 #include "ConfigHelper.h"
@@ -71,7 +71,7 @@ class App : public Host, PsuDataListener {
     Modules::Led *led();
     Modules::Console *console();
     Modules::Telnet *telnet();
-    Modules::Web *web();
+    Modules::WebUI *web();
     Modules::Psu *psu();
     Modules::Syslog *syslog();
 

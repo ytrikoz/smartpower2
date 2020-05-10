@@ -51,7 +51,7 @@ void OTAUpdate::handleArduinoOTAClassOnStart(void) {
             strP = str_firmware;
             break;
         case OTA_FS:
-            strP = str_spiffs;
+            strP = str_littlefs;
             break;
         default:
             strP = str_unknown;
@@ -68,7 +68,7 @@ void OTAUpdate::handleEnd() {
 }
 
 void OTAUpdate::handleProgress(unsigned int progress, unsigned int total) {
-    if (progress % 5 == 0) {
+    if ((progress % 5) == 0) {
         PrintUtils::print_ident(out_, FPSTR(str_update));
         PrintUtils::print(out_, FPSTR(strf_progress), progress, '%');
         PrintUtils::println(out_);

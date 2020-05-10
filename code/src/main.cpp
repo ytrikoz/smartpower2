@@ -80,7 +80,7 @@ void setup() {
     mods[MOD_TELNET].obj = new Modules ::Telnet(TELNET_PORT);
     mods[MOD_UPDATE].obj = new Modules::OTAUpdate(OTA_PORT);
     mods[MOD_SYSLOG].obj = new Modules::Syslog();
-    mods[MOD_WEB].obj = new Modules::Web();
+    mods[MOD_WEB].obj = new Modules::WebUI();
 
     app.setConfig(config);
     app.setWireless(wireless);

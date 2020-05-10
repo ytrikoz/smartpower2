@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Arduino.h>
+
 #include <Wire.h>
 
 #define INA231_REG_CONFIG 0x00
@@ -10,6 +12,9 @@
 #define INA231_REG_CALIBRATION 0x05
 #define INA231_REG_MASK_ENABLE 0x06
 #define INA231_REG_ALERT_LIMIT 0x07
+
+#define INA231_ALERT_PIN 16
+#define INA231_I2C_ADDR 0x40
 
 // bits 9-11
 const uint16_t INA231_CONFIG_AVG_MASK = 0x0e00;
